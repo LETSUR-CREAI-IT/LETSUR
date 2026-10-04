@@ -1,0 +1,11 @@
+.DS_Store
+
+# Python and pytest caches
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Local environments, generated collection runs, and logs
+.local/
+data/market_collection/
+*.log
