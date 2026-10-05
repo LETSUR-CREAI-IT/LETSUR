@@ -48,8 +48,8 @@ class VideoAdapterTests(unittest.TestCase):
         return result
 
     def test_registry_routes_and_identifiers(self):
-        self.assertEqual(len(self.specs), 3)
-        self.assertEqual({s.route for s in self.specs.values()}, {"fal", "BytePlus ModelArk"})
+        self.assertEqual(len(self.specs), 13)
+        self.assertEqual({s.route for s in self.specs.values()}, {"fal", "BytePlus ModelArk", "google_direct", "vercel_ai_gateway"})
         self.assertEqual({s.task for s in self.specs.values()}, {"text-to-video"})
 
     def test_fal_rate_estimates_and_conflict(self):

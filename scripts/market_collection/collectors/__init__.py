@@ -3,13 +3,14 @@ from __future__ import annotations
 
 from scripts.market_collection.core import SourceSpec
 from scripts.market_collection.sources import source_specs
-from . import google, openai, anthropic, openrouter, vercel, aws_bedrock, azure_foundry, fal, byteplus
+from . import google, openai, anthropic, openrouter, vercel, aws_bedrock, azure_foundry, fal, byteplus, google_vertex, azure_databricks
 
 SUPPLIERS = {
     "google_direct": google, "openai_direct": openai, "openai": openai,
     "anthropic_direct": anthropic, "openrouter": openrouter,
     "vercel_ai_gateway": vercel, "vercel": vercel,
     "aws_bedrock": aws_bedrock, "azure_foundry": azure_foundry,
+    "google_vertex": google_vertex, "azure_databricks": azure_databricks,
     "fal": fal, "BytePlus ModelArk": byteplus,
 }
 

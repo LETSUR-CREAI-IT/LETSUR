@@ -18,7 +18,7 @@ from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import Callable
 
-MAX_BODY_BYTES = 3 * 1024 * 1024
+MAX_BODY_BYTES = 4 * 1024 * 1024
 TIMEOUT_SECONDS = 20
 MAX_REDIRECTS = 2
 SOURCE_FIELDS = ("run_id", "source_id", "source_key", "model_id", "route", "requested_url", "effective_url", "fetched_at_utc", "http_status", "fetch_status", "parse_status", "raw_path", "raw_sha256", "body_bytes", "error")
@@ -140,7 +140,7 @@ def fetch(spec: SourceSpec) -> tuple[bytes, str, int]:
                     break
                 body.extend(chunk)
                 if len(body) > MAX_BODY_BYTES:
-                    raise CollectionError("response body exceeds 3 MB")
+                    raise CollectionError("response body exceeds 4 MiB")
             return bytes(body), url, status
     raise CollectionError("redirect limit exceeded")
 

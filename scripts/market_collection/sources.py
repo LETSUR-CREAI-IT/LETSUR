@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from scripts.market_collection.core import SourceSpec, CollectionError
-from scripts.market_collection.models import (GOOGLE_LLM_MODEL, ASTRA_MODEL, FABLE_MODEL, STANDARD_LLM_MODELS, BROKER_CATALOG_MODELS, _AWS_OPENAI, _AWS_ANTHROPIC, _AZURE_MODELS, SUNBURST_MODEL, FLARE_MODEL, SEEDANCE_MODEL, MODEL_MODALITIES)
+from scripts.market_collection.models import (GOOGLE_LLM_MODEL, ASTRA_MODEL, FABLE_MODEL, STANDARD_LLM_MODELS, BROKER_CATALOG_MODELS, _AWS_OPENAI, _AWS_ANTHROPIC, _AZURE_MODELS, SUNBURST_MODEL, FLARE_MODEL, SEEDANCE_MODEL, MODEL_MODALITIES, VEO_MODELS, VEO_VERCEL_IDS)
 
 def _targets() -> dict[str, tuple[str, str, str, str, str]]:
     targets = {
@@ -51,7 +51,10 @@ def llm_source_specs() -> list[SourceSpec]:
             SourceSpec(f"openrouter_{key}", "llm", model, "openrouter", "text_generation", f"https://openrouter.ai/{provider}/{slug}/providers", f"openrouter_{key}"),
             SourceSpec(f"vercel_{key}", "llm", model, "vercel_ai_gateway", "text_generation", f"https://vercel.com/ai-gateway/models/{slug}.md", f"vercel_{key}"),
         ))
-    return specs + cloud_source_specs() + broker_catalog_source_specs()
+    return specs + cloud_source_specs() + broker_catalog_source_specs() + [
+        SourceSpec("vertex_gemini_38_flash", "llm", GOOGLE_LLM_MODEL, "google_vertex", "text_generation", "https://cloud.google.com/gemini-enterprise-agent-platform/generative-ai/pricing", "vertex_gemini"),
+        SourceSpec("databricks_gemini_38_flash", "llm", GOOGLE_LLM_MODEL, "azure_databricks", "text_generation", "https://learn.microsoft.com/en-us/azure/databricks/machine-learning/foundation-model-apis/supported-models", "databricks_gemini"),
+    ]
 
 
 def broker_catalog_source_specs() -> list[SourceSpec]:
@@ -82,6 +85,9 @@ def cloud_source_specs() -> list[SourceSpec]:
     return specs
 
 
+_AZURE_IMAGE_PRICING = "https://prices.azure.com/api/retail/prices?$filter=contains(productName,'OpenAI')%20and%20contains(meterName,'2.5')%20and%20armRegionName%20eq%20'koreacentral'"
+
+
 def image_source_specs() -> list[SourceSpec]:
     sources = (
         ("openai_sunburst", "openai", "https://developers.openai.com/api/docs/models/gpt-image-2.5-sunburst.md", "openai"),
@@ -90,7 +96,10 @@ def image_source_specs() -> list[SourceSpec]:
         ("openrouter_sunburst", "openrouter", "https://openrouter.ai/openai/gpt-image-2.5-sunburst-20260908", "openrouter"),
         ("vercel_sunburst", "vercel", "https://vercel.com/ai-gateway/models/gpt-image-2.5-sunburst", "vercel"),
     )
-    return [SourceSpec(key, "image", SUNBURST_MODEL, route, "text-to-image", url, parser) for key, route, url, parser in sources] + flare_source_specs()
+    return [SourceSpec(key, "image", SUNBURST_MODEL, route, "text-to-image", url, parser) for key, route, url, parser in sources] + flare_source_specs() + [
+        SourceSpec("azure_" + model.split("-")[-1], "image", model, "azure_foundry", "text-to-image", _AZURE_IMAGE_PRICING, "azure_image_retail")
+        for model in (SUNBURST_MODEL, FLARE_MODEL)
+    ]
 
 
 def flare_source_specs() -> list[SourceSpec]:
@@ -105,11 +114,22 @@ def flare_source_specs() -> list[SourceSpec]:
 
 
 def video_source_specs() -> list[SourceSpec]:
-    return [
+    specs = [
         SourceSpec("fal_seedance_25_t2v", "video", SEEDANCE_MODEL, "fal", "text-to-video", "https://fal.ai/models/bytedance/seedance-2.5/text-to-video", "fal"),
         SourceSpec("byteplus_seedance_25_t2v", "video", SEEDANCE_MODEL, "BytePlus ModelArk", "text-to-video", "https://docs.byteplus.com/id/docs/modelark/model-pricing?redirect=1", "byteplus_pricing"),
         SourceSpec("byteplus_seedance_promotion_rules", "video", SEEDANCE_MODEL, "BytePlus ModelArk", "text-to-video", "https://docs.byteplus.com/en/docs/modelark/seedance-2-0-mini-fast-limited-time-discount?redirect=1", "byteplus_campaign"),
     ]
+    for model, provider_id in zip(VEO_MODELS, VEO_VERCEL_IDS):
+        key = _key(model)
+        specs.extend((
+            SourceSpec("google_" + key, "video", model, "google_direct", "text-to-video", "https://ai.google.dev/gemini-api/docs/pricing", "google_veo"),
+            SourceSpec("vercel_" + key, "video", model, "vercel_ai_gateway", "text-to-video", "https://vercel.com/ai-gateway/models/" + provider_id, "vercel_video"),
+        ))
+    for model, endpoint in zip(VEO_MODELS, ("fal-ai/veo3.1", "fal-ai/veo3.1/fast", "fal-ai/veo3.1/lite")):
+        specs.append(SourceSpec("fal_" + _key(model), "video", model, "fal", "text-to-video", "https://fal.ai/models/" + endpoint, "fal_veo"))
+    specs.append(SourceSpec("vercel_seedance_25_t2v", "video", SEEDANCE_MODEL, "vercel_ai_gateway", "text-to-video", "https://vercel.com/ai-gateway/models/seedance-2.5", "vercel_video"))
+    return specs
+
 
 def source_specs() -> list[SourceSpec]:
     specs = llm_source_specs() + image_source_specs() + video_source_specs()

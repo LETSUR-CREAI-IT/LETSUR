@@ -143,7 +143,7 @@ class Response:
 def test_fetch_rejects_oversize_and_timeout():
     opener = SimpleNamespace(open=lambda *args, **kwargs: Response(b"x" * (core.MAX_BODY_BYTES + 1)))
     with patch.object(core.urllib.request, "build_opener", return_value=opener):
-        with pytest.raises(core.CollectionError, match="3 MB"):
+        with pytest.raises(core.CollectionError, match="4 MiB"):
             core.fetch(SPEC)
     opener = SimpleNamespace(open=lambda *args, **kwargs: (_ for _ in ()).throw(socket.timeout("timed out")))
     with patch.object(core.urllib.request, "build_opener", return_value=opener):

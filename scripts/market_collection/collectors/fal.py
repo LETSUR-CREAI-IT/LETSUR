@@ -205,4 +205,35 @@ def parse_source(spec: SourceSpec, body: bytes, source_id: str) -> tuple[list[di
         decoded = body.decode("utf-8")
         return {"fal_task": _sun_fal_task, "fal_overview": _fal_overview,
                 "flare_fal_task": _flare_fal_task}[spec.parser](spec, decoded)
+    if spec.parser == "fal_veo":
+        return _veo_metadata(spec, body.decode("utf-8"))
     return _video_fal(_page(body), source_id)
+
+
+def _veo_metadata(spec, body):
+    from .video_common import flight_payloads, objects_with_key, price, conditions
+    variant = spec.model_id.split("-")[-1]
+    endpoint = "fal-ai/veo3.1" + ("/" + variant if variant in ("fast", "lite") else "")
+    roots = [obj for payload in flight_payloads(body) for obj in objects_with_key(payload, "modelData")
+             if obj.get("endpointId") == endpoint and obj.get("modelData", {}).get("endpointId") == endpoint]
+    if len(roots) != 1:
+        raise ValueError("fal exact primary endpoint container absent or duplicate")
+    model = roots[0].get("model", {})
+    if model.get("modelUrl") != "https://fal.run/" + endpoint or model.get("id") != endpoint or "pricingInfoOverride" not in model or model.get("category") != "text-to-video" or model.get("status") != "public":
+        raise ValueError("fal exact modelUrl pricing object absent")
+    pricing = model["pricingInfoOverride"].replace("**", "")
+    if variant == "lite":
+        match = re.search(r'For every second of video you generate you will be charged \$(\d+(?:\.\d+)?) for 720p with audio, \$(\d+(?:\.\d+)?) for 720p without audio, \$(\d+(?:\.\d+)?) for 1080p with audio or \$(\d+(?:\.\d+)?) for 1080p without audio\.', pricing)
+        rows = (("720p", "on", 1), ("720p", "off", 2), ("1080p", "on", 3), ("1080p", "off", 4))
+    else:
+        match = re.search(r'For every second of video you generate you will be charged \$(\d+(?:\.\d+)?) without audio or \$(\d+(?:\.\d+)?) with audio for 720p or 1080p\. At 4k, you will be charged \$(\d+(?:\.\d+)?) per second without audio, or \$(\d+(?:\.\d+)?) with\.', pricing)
+        rows = (("720p", "off", 1), ("720p", "on", 2), ("1080p", "off", 1), ("1080p", "on", 2), ("4k", "off", 3), ("4k", "on", 4))
+    if not match:
+        raise ValueError("fal exact endpoint per-second audio/resolution quote absent")
+    prices, own_conditions = [], []
+    for resolution, audio, index in rows:
+        group = f"{spec.source_key}_{resolution}_{audio}"
+        locator = f"modelUrl=https://fal.run/{endpoint}; pricingInfoOverride: {match[0]}"
+        prices.append(price(spec, endpoint, "Google", match[index], "1 second", group, locator))
+        own_conditions.extend(conditions(group, locator, resolution=resolution, audio=audio, input_video="none"))
+    return prices, own_conditions

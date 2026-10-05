@@ -50,5 +50,8 @@ def _azure(page: _Page, model: str) -> tuple[list[dict], list[dict]]:
 
 
 def parse_source(spec: SourceSpec, body: bytes, source_id: str) -> tuple[list[dict], list[dict]]:
+    if spec.modality == "image":
+        from . import azure_retail
+        return azure_retail.parse_source(spec, body, source_id)
     page = _Page(); page.feed(body.decode("utf-8", errors="replace")); page.close()
     return _azure(page, spec.model_id)

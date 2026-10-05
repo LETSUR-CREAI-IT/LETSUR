@@ -169,6 +169,8 @@ def _flare_vercel(spec: SourceSpec, body: str) -> tuple[list[dict], list[dict]]:
 
 def parse_source(spec: SourceSpec, body: bytes, source_id: str) -> tuple[list[dict], list[dict]]:
     decoded = body.decode("utf-8", errors="replace" if spec.modality == "llm" else "strict")
+    if spec.modality == "video":
+        return _video_metadata(spec, decoded)
     if spec.modality == "image":
         return {"vercel": _sun_vercel, "flare_vercel": _flare_vercel}[spec.parser](spec, decoded)
     if spec.parser == "vercel":
@@ -181,3 +183,64 @@ def parse_source(spec: SourceSpec, body: bytes, source_id: str) -> tuple[list[di
     from scripts.market_collection.sources import _targets
     _, _, _, title, provider_id = _targets()[spec.model_id]
     return _vercel_markdown(decoded, title, provider_id, spec.parser)
+
+
+def _video_metadata(spec, body):
+    from .video_common import flight_payloads, objects_with_key, price, conditions
+    from scripts.market_collection.models import VEO_MODELS, VEO_VERCEL_IDS
+    provider = "seedance-2.5" if spec.model_id == "seedance-2.5" else VEO_VERCEL_IDS[VEO_MODELS.index(spec.model_id)]
+    supplier = "bytedance" if spec.model_id == "seedance-2.5" else "vertex"
+    roots = [obj for payload in flight_payloads(body) for obj in objects_with_key(payload, "backingModels")
+             if "recommendedModels" in obj]
+    if len(roots) != 1:
+        raise ValueError("Vercel primary backing model container absent or duplicate")
+    matches = [obj for obj in roots[0]["backingModels"] if obj.get("primaryModel") == provider
+               and obj.get("provider") == supplier and obj.get("type") == "video"]
+    if len(matches) != 1:
+        raise ValueError("Vercel exact primary video backing model absent or duplicate")
+    model = matches[0]
+    capabilities = model.get("videoCapabilities", {})
+    resolutions = capabilities.get("supportedResolutions", [])
+    if "text-to-video" not in capabilities.get("supportedOperations", []) or not resolutions or len(resolutions) != len(set(resolutions)):
+        raise ValueError("Vercel text-to-video capabilities missing or ambiguous")
+    upstream = "ByteDance" if supplier == "bytedance" else "Google"
+    prices, own_conditions, seen = [], [], set()
+    def add(value, resolution, audio, unit, field):
+        identity = (resolution, audio)
+        if identity in seen:
+            raise ValueError("Vercel duplicate video rate condition")
+        seen.add(identity)
+        group = f"{spec.source_key}_{resolution}_{audio}"
+        locator = f"backingModels/primaryModel={provider}; provider={supplier}; {field}"
+        prices.append(price(spec, provider, upstream, value, unit, group, locator, version="2.5" if supplier == "bytedance" else "3.1"))
+        own_conditions.extend(conditions(group, locator, resolution=resolution, audio=audio, input_video="none", price_basis="Vercel backing metadata", provider=supplier))
+        for key in ("supportedOperations", "supportedAspectRatios", "supportedDurationsSeconds", "supportedFps", "generateAudio"):
+            if key in capabilities:
+                own_conditions.extend(conditions(group, f"backingModels/{provider}/videoCapabilities/{key}", **{key: json.dumps(capabilities[key], separators=(",", ":"))}))
+    dimensions = model.get("videoDimensionPricing")
+    tokens = model.get("videoTokenPricing")
+    if isinstance(dimensions, list) and dimensions:
+        for i, row in enumerate(dimensions):
+            if row.get("costUnit") != "sec" or row.get("size") not in resolutions or type(row.get("hasAudio")) is not bool:
+                raise ValueError("Vercel video price unit/resolution/audio invalid")
+            if row["hasAudio"] and capabilities.get("generateAudio") is False:
+                raise ValueError("Vercel audio price conflicts with capabilities")
+            if "cost" not in row:
+                raise ValueError("Vercel video price missing")
+            add(row["cost"], row["size"], "on" if row["hasAudio"] else "off", "1 second", f"videoDimensionPricing/{i}={json.dumps(row, separators=(',', ':'))}")
+    elif isinstance(tokens, dict) and tokens:
+        tiers = tokens.get("tiers", [])
+        tier_resolutions = [row.get("resolution") for row in tiers]
+        if len(tier_resolutions) != len(set(tier_resolutions)) or any(res not in resolutions for res in tier_resolutions):
+            raise ValueError("Vercel token tier resolution invalid or duplicate")
+        for resolution in resolutions:
+            row = next((row for row in tiers if row["resolution"] == resolution), tokens)
+            if "costPerMillionTokens" not in row:
+                raise ValueError("Vercel video token price missing")
+            add(row["costPerMillionTokens"], resolution, "supported; rate has no audio distinction", "1M tokens", f"videoTokenPricing; resolution={resolution}; costPerMillionTokens={row['costPerMillionTokens']}")
+    else:
+        group = spec.source_key + "_unquoted"
+        locator = f"backingModels/primaryModel={provider}; video pricing absent"
+        prices.append(price(spec, provider, upstream, None, "", group, locator, version="2.5" if supplier == "bytedance" else "3.1", reason="Exact video backing model supplies no video price metadata"))
+        own_conditions.extend(conditions(group, locator, price_basis="Vercel backing metadata", input_video="none"))
+    return prices, own_conditions

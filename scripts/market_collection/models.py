@@ -60,7 +60,12 @@ SEEDANCE_FAL_ID = "bytedance/seedance-2.5/text-to-video"
 
 BYTEPLUS_ID = "dreamina-seedance-2-5-260628"
 
+VEO_MODELS = ("veo-3.1-standard", "veo-3.1-fast", "veo-3.1-lite")
+VEO_VERCEL_IDS = ("veo-3.1-generate-001", "veo-3.1-fast-generate-001", "veo-3.1-lite-generate-001")
+VEO_GOOGLE_IDS = ("veo-3.1-generate-preview", "veo-3.1-fast-generate-preview", "veo-3.1-lite-generate-preview")
+
 MODEL_MODALITIES = {
+    **{model: "video" for model in VEO_MODELS},
     **{model: "llm" for model in (GOOGLE_LLM_MODEL, ASTRA_MODEL, FABLE_MODEL)},
     **{model: "llm" for model, _, _ in STANDARD_LLM_MODELS},
     **{model: "llm" for model, *_ in BROKER_CATALOG_MODELS},

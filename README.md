@@ -39,6 +39,7 @@ scripts/market_collection/   임시 CLI 구현. 공개 URL과 replay 원문을 �
 tests/market_collection/     수집기 모듈 회귀 테스트와 저장 HTML/Markdown fixture
 docs/market-collection.md    실행, 데이터 연결, 출처 확장, 검증 경계 안내
 samples/market_collection/   날짜·모드별 보존 snapshot과 CSV 안내 index
+ai-log/                     작업별 계획·개발·QA 기록. collector-gaps-v2 자료는 현재 로컬 전용
 ```
 
 현재 임시 CLI의 내부 구성은 다음과 같다.
@@ -50,14 +51,16 @@ scripts/market_collection/
 ├── collectors/
 │   ├── __init__.py           명시적 공급자 dispatch registry
 │   ├── common.py              공급자 parser가 공유하는 parsing helper
-│   └── <supplier>.py          Google, OpenAI, Anthropic, OpenRouter, Vercel,
-│                              AWS Bedrock, Azure Foundry, fal, BytePlus parser
+│   ├── video_common.py        공급자 영상 응답 해석에 쓰는 공용 helper
+│   └── <supplier>.py          Google, Google Vertex, OpenAI, Anthropic,
+│                              OpenRouter, Vercel, AWS Bedrock, Azure Foundry,
+│                              Azure retail, Azure Databricks, fal, BytePlus parser
 ├── adapters/{llm,image,video}/__init__.py
 │                              기존 modality API를 잇는 얇은 facade
 └── core/                      fetch, 원문·CSV 저장, replay/history와 CLI
 ```
 
-CLI는 Python 표준 라이브러리로 실행한다. 테스트에는 `pytest`가 필요하다. 실행·데이터 형식·출처 추가 절차와 보존 범위는 [수집기 안내](docs/market-collection.md)를 참고한다. 날짜·모드별 결과와 CSV 바로가기는 [보존 snapshot index](samples/market_collection/README.md)에서 확인한다. 수집기 경로는 임시 도구이며 현재 `src/` architecture를 구현하거나 그 구조에 통합하기로 한 결정이 아니다. `src/`의 폴더와 역할은 팀이 결정한 구조 설명을 따른다.
+CLI는 Python 표준 라이브러리로 실행한다. 테스트에는 `pytest`가 필요하며, `tests/market_collection/gaps/`에는 새 출처 parser의 원문 fixture와 범위 회귀 검사가 있다. 실행·데이터 형식·출처 추가 절차와 보존 범위는 [수집기 안내](docs/market-collection.md)를 참고한다. [수집 범위 검토](docs/collector-coverage-review.md)는 추가 출처별 조건과 확인하지 못한 항목을 요약한다. 날짜·모드별 결과와 CSV 바로가기는 [보존 snapshot index](samples/market_collection/README.md)에서 확인한다. 현재 고정 registry는 97개 출처 사양이지만 이 수치는 서로 다른 URL 개수가 아니다. 새 QA 원문과 보고서는 `ai-log/` 아래 로컬 자료로, 이 문서 작업 시점에는 아직 GitHub에 반영되지 않았다. 수집기 경로는 임시 도구이며 현재 `src/` architecture를 구현하거나 그 구조에 통합하기로 한 결정이 아니다. `src/`의 폴더와 역할은 팀이 결정한 구조 설명을 따른다.
 
 ## 하루 네 번 자동 수집 설정
 
