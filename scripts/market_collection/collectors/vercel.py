@@ -1,0 +1,183 @@
+"""Vercel public price parsers."""
+
+from __future__ import annotations
+
+import html
+import json
+import re
+from datetime import datetime
+from decimal import Decimal
+
+from scripts.market_collection.core import ADAPTER_CONDITION_FIELDS, ADAPTER_PRICE_FIELDS, SourceSpec
+from scripts.market_collection.models import GOOGLE_BROKER_MODEL, SUNBURST_MODEL, FLARE_MODEL
+from .common import GeminiPricingScopeReader, _clean, llm_condition, llm_price, _markdown_identity, _number
+
+
+MONEY = r"\$([0-9]+(?:\.[0-9]+)?)"
+
+
+def _broker(reader: GeminiPricingScopeReader, parser: str) -> tuple[list[dict], list[dict]]:
+    page = " ".join(reader.scoped_text)
+    if not page:
+        return [], []
+    # React HTML comments may split the sr-only quote into text nodes; the
+    # shared reader joins those nodes with layout whitespace.
+    pattern = re.compile(rf"Prices from:\s*Input\s*{MONEY}\s*,\s*Output\s*{MONEY}\s*,\s*Per\s+1M\s+tokens", re.I)
+    match = pattern.search(page)
+    if not match:
+        return [], []
+    set_id = f"{parser}_prices_from_minimum"
+    locator = f"Gemini 3.8 Flash > {match.group(0)}"
+    conditions = [llm_condition(set_id, "price_basis", "prices_from_minimum", locator)]
+    prices = [llm_price(provider_model_id=GOOGLE_BROKER_MODEL, upstream="", item=item, kind="published_rate",
+                        amount=amount, unit="1M tokens", set_id=set_id, locator=locator)
+              for item, amount in zip(("input", "output"), match.groups())]
+    return prices, conditions
+
+
+def _vercel_markdown(body: str, title: str, provider_id: str, parser: str) -> tuple[list[dict], list[dict]]:
+    lines = body.strip().splitlines()
+    if not lines or lines[0] != "# " + title:
+        return [], []
+    end = next((i for i, line in enumerate(lines[1:], 1) if re.match(r"^#{1,2}\s", line)), len(lines))
+    scoped = "\n".join(lines[:end])
+    if not _markdown_identity(scoped, title, provider_id):
+        return [], []
+    matches = re.findall(r"^- \*\*Pricing:\*\* \$([0-9]+(?:\.[0-9]+)?)/1M input tokens, \$([0-9]+(?:\.[0-9]+)?)/1M output tokens\s*$", scoped, re.M)
+    if len(matches) != 1:
+        return [], []
+    amounts = matches[0]
+    set_id = parser + "_listed_model_rate"
+    locator = f"{title} > Model ID: {provider_id} > Pricing: ${amounts[0]}/1M input tokens, ${amounts[1]}/1M output tokens"
+    conditions = [llm_condition(set_id, "price_basis", "listed_model_rate", locator)]
+    prices = [llm_price(provider_model_id=provider_id, upstream="", item=item, kind="published_rate", amount=amount, unit="1M tokens", set_id=set_id, locator=locator) for item, amount in zip(("input", "output"), amounts)]
+    return prices, conditions
+
+
+def _catalog_condition(set_id: str, key: str, value: str, locator: str) -> dict:
+    return dict(zip(ADAPTER_CONDITION_FIELDS, (set_id, key, "eq", value, "", "stated", locator)))
+
+
+def _catalog_price(model_id: str, item: str, amount: str, set_id: str, locator: str, *, upstream: str = "") -> dict:
+    row = dict.fromkeys(ADAPTER_PRICE_FIELDS, "")
+    row.update(provider_model_id=model_id, upstream_provider=upstream, task="text_generation", billing_item=item,
+               price_kind="published_rate", amount=amount, currency="USD", unit="1M tokens",
+               condition_set_id=set_id, locator=locator, evidence_status="direct")
+    return row
+
+
+def _catalog_vercel(body: str, title: str, provider_id: str, parser: str) -> tuple[list[dict], list[dict]]:
+    lines = body.strip().splitlines()
+    if not lines or lines[0] != "# " + title:
+        return [], []
+    # A page's initial model block is the evidence boundary.  A later section
+    # may describe a related model and must not supply a target price.
+    end = next((i for i, line in enumerate(lines[1:], 1) if re.match(r"^#{1,2}\s", line)), len(lines))
+    block = "\n".join(lines[:end])
+    if len(re.findall(r"^- \*\*Model ID:\*\* `" + re.escape(provider_id) + r"`\s*$", block, re.M)) != 1:
+        return [], []
+    prices = re.findall(r"^- \*\*Pricing:\*\* \$([0-9]+(?:\.[0-9]+)?)/1M input tokens, \$([0-9]+(?:\.[0-9]+)?)/1M output tokens\s*$", block, re.M)
+    if len(prices) != 1:
+        return [], []
+    amounts = prices[0]
+    set_id = f"{parser}_listed_model_rate"
+    locator = f"{title} > Model ID: {provider_id} > Pricing: ${amounts[0]}/1M input tokens, ${amounts[1]}/1M output tokens"
+    return [_catalog_price(provider_id, item, amount, set_id, locator) for item, amount in zip(("input", "output"), amounts)], [_catalog_condition(set_id, "price_basis", "listed_model_rate", locator)]
+
+
+def _sun_price(spec: SourceSpec, label: str, amount: str, unit: str, locator: str,
+           *, provider_model_id: str = "", condition_set_id: str = "",
+           kind: str = "published_rate", status: str = "direct", unknown: str = "") -> dict[str, str]:
+    return dict(provider_model_id=provider_model_id or SUNBURST_MODEL, model_version="", upstream_provider="OpenAI",
+                task=spec.task, billing_item=label, price_kind=kind, amount=amount,
+                currency="USD" if amount else "", unit=unit if amount else "",
+                normalized_amount="", normalized_unit="", condition_set_id=condition_set_id,
+                effective_from="", effective_until="", locator=locator,
+                evidence_status=status, unknown_reason=unknown)
+
+
+def _sun_vercel(spec: SourceSpec, body: str) -> tuple[list[dict], list[dict]]:
+    decoded = body.replace('\\"', '"')
+    match = re.search(r'"primaryModel":"' + SUNBURST_MODEL + r'"(.{0,5000}?)\}', decoded, re.S)
+    if not match or '"provider":"openai"' not in match.group(1) or '"type":"image"' not in match.group(1):
+        raise ValueError("Vercel exact image backing model absent")
+    scoped = match.group(1)
+    visible = re.search(r'Input \$([\d,.]+), Output \$([\d,.]+)(?:<!-- -->)?, Per 1M tokens', body)
+    if not visible:
+        raise ValueError("Vercel visible price unit absent")
+    fields = (("inputCost", "Input"), ("outputCost", "Output"),
+              ("imageInputCost", "imageInputCost"), ("cachedInputCost", "cachedInputCost"))
+    prices = []
+    for field, label in fields:
+        value = re.search(r'"' + field + r'":"([\d,.]+)"', scoped)
+        if not value:
+            continue
+        if field in {"inputCost", "outputCost"} and _number(value.group(1)) != _number(visible.group(1 if field == "inputCost" else 2)):
+            raise ValueError("Vercel visible and backing prices differ")
+        prices.append(_sun_price(spec, label, _number(value.group(1)), "1M tokens",
+                             f"primaryModel={SUNBURST_MODEL}; backingModels/{field}={value.group(1)}; visible: {visible.group(0)}"))
+    if not prices:
+        raise ValueError("Vercel scoped rates absent")
+    return prices, []
+
+
+def _flare_price(spec: SourceSpec, label: str, amount: str, locator: str, *,
+           provider_model_id: str = FLARE_MODEL, condition_set_id: str = "",
+           kind: str = "published_rate", status: str = "direct",
+           unknown: str = "") -> dict[str, str]:
+    return dict(provider_model_id=provider_model_id, model_version="", upstream_provider="OpenAI",
+                task=spec.task, billing_item=label, price_kind=kind, amount=amount,
+                currency="USD" if amount else "", unit="1M tokens" if amount else "",
+                normalized_amount="", normalized_unit="", condition_set_id=condition_set_id,
+                effective_from="", effective_until="", locator=locator,
+                evidence_status=status, unknown_reason=unknown)
+
+
+def _flare_condition(group: str, key: str, value: str, locator: str,
+               *, status: str = "stated") -> dict[str, str]:
+    return dict(condition_set_id=group, condition_key=key, operator="=", value=value,
+                unit="", status=status, locator=locator)
+
+
+def _flare_vercel(spec: SourceSpec, body: str) -> tuple[list[dict], list[dict]]:
+    decoded = body.replace('\\"', '"')
+    match = re.search(r'"primaryModel":"' + FLARE_MODEL + r'"(.{0,5000}?)\}', decoded, re.S)
+    if not match or '"provider":"openai"' not in match.group(1) or '"type":"image"' not in match.group(1):
+        raise ValueError("Vercel exact Flare image backing model absent")
+    scoped = match.group(1)
+    visible = re.search(r'Input \$([\d,.]+), Output \$([\d,.]+)(?:<!-- -->)?, Per 1M tokens', body)
+    if not visible:
+        raise ValueError("Vercel Flare visible price unit absent")
+    fields = (("inputCost", "Input"), ("outputCost", "Output"),
+              ("imageInputCost", "imageInputCost"), ("cachedInputCost", "cachedInputCost"))
+    prices = []
+    group = "flare_vercel_displayed_model_quote"
+    for field, label in fields:
+        value = re.search(r'"' + field + r'":"([\d,.]+)"', scoped)
+        if not value:
+            continue
+        if field in {"inputCost", "outputCost"} and _number(value.group(1)) != _number(visible.group(1 if field == "inputCost" else 2)):
+            raise ValueError("Vercel Flare visible and backing prices differ")
+        prices.append(_flare_price(spec, label, _number(value.group(1)),
+                             f"primaryModel={FLARE_MODEL}; backingModels/{field}={value.group(1)}; visible: {visible.group(0)}",
+                             condition_set_id=group))
+    if not prices:
+        raise ValueError("Vercel Flare scoped rates absent")
+    return prices, [_flare_condition(group, "price_basis", "displayed model quote",
+                               f"Vercel model summary | {visible.group(0)}")]
+
+
+def parse_source(spec: SourceSpec, body: bytes, source_id: str) -> tuple[list[dict], list[dict]]:
+    decoded = body.decode("utf-8", errors="replace" if spec.modality == "llm" else "strict")
+    if spec.modality == "image":
+        return {"vercel": _sun_vercel, "flare_vercel": _flare_vercel}[spec.parser](spec, decoded)
+    if spec.parser == "vercel":
+        reader = GeminiPricingScopeReader(); reader.feed(decoded); reader.close()
+        return _broker(reader, spec.parser)
+    if spec.parser.startswith("missing_"):
+        from scripts.market_collection.models import BROKER_CATALOG_MODELS
+        _, title, _, _, provider_id = next(row for row in BROKER_CATALOG_MODELS if row[0] == spec.model_id)
+        return _catalog_vercel(decoded, title, provider_id, spec.parser)
+    from scripts.market_collection.sources import _targets
+    _, _, _, title, provider_id = _targets()[spec.model_id]
+    return _vercel_markdown(decoded, title, provider_id, spec.parser)

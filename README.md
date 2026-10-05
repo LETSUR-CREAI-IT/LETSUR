@@ -37,8 +37,24 @@ tests/                각 모듈과 워크플로에 대응하는 검증 코드
 ```text
 scripts/market_collection/   임시 CLI 구현. 공개 URL과 replay 원문을 입력으로 읽어 run별 manifest, raw 원문, CSV를 출력
 tests/market_collection/     수집기 모듈 회귀 테스트와 저장 HTML/Markdown fixture
-docs/market-collection.md    실행, 데이터 연결, adapter 확장, 검증 경계 안내
-samples/market_collection/   재현·검토용 2026-10-04 검증본 live 결과
+docs/market-collection.md    실행, 데이터 연결, 출처 확장, 검증 경계 안내
+samples/market_collection/   날짜·모드별 보존 snapshot과 CSV 안내 index
 ```
 
-CLI는 Python 표준 라이브러리로 실행한다. 테스트에는 `pytest`가 필요하다. 빠른 실행과 보존된 결과는 [2026-10-04 수집기 시범 자료](docs/market-collection.md)를 참고한다. 새 출처는 유형별 adapter에 `source_specs()`와 `parse_source()`를 등록하고 fixture 기반 회귀 검사를 추가한다. 한 실행에서 출처를 끄려면 `--disable-source <source-key>`를 쓴다. 이들 경로는 현재 `src/` architecture를 구현한 것으로 간주하지 않는다.
+현재 임시 CLI의 내부 구성은 다음과 같다.
+
+```text
+scripts/market_collection/
+├── models.py                 정규 모델 ID와 modality 목록
+├── sources.py                모델·공급 경로별 SourceSpec(URL과 parser 키 포함)
+├── collectors/
+│   ├── __init__.py           명시적 공급자 dispatch registry
+│   ├── common.py              공급자 parser가 공유하는 parsing helper
+│   └── <supplier>.py          Google, OpenAI, Anthropic, OpenRouter, Vercel,
+│                              AWS Bedrock, Azure Foundry, fal, BytePlus parser
+├── adapters/{llm,image,video}/__init__.py
+│                              기존 modality API를 잇는 얇은 facade
+└── core/                      fetch, 원문·CSV 저장, replay/history와 CLI
+```
+
+CLI는 Python 표준 라이브러리로 실행한다. 테스트에는 `pytest`가 필요하다. 실행·데이터 형식·출처 추가 절차와 보존 범위는 [수집기 안내](docs/market-collection.md)를 참고한다. 날짜·모드별 결과와 CSV 바로가기는 [보존 snapshot index](samples/market_collection/README.md)에서 확인한다. 수집기 경로는 임시 도구이며 현재 `src/` architecture를 구현하거나 그 구조에 통합하기로 한 결정이 아니다. `src/`의 폴더와 역할은 팀이 결정한 구조 설명을 따른다.

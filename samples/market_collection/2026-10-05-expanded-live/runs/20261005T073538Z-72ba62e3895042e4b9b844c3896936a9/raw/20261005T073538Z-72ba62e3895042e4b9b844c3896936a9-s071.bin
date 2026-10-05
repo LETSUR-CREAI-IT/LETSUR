@@ -1,0 +1,120 @@
+# Kimi K3
+
+Kimi K3 accepts text, image, and video input, holds a context window of 1.0M tokens, and thinks before every answer. It targets long-horizon software engineering, knowledge work, and deep reasoning.
+
+- **Model ID:** `moonshotai/kimi-k3`
+- **Type:** chat
+- **Providers:** moonshotai, fireworks, baseten, morph, nebius, togetherai, digitalocean, modal, wafer, alibaba, deepinfra, runware, parasail, boundless, inference-net, bedrock, relace
+- **Context window:** 1,048,576
+- **Maximum output tokens:** 1,048,576
+- **Pricing:** $1.35/1M input tokens, $9/1M output tokens
+- **Canonical page:** https://vercel.com/ai-gateway/models/kimi-k3
+
+## Supported parameters
+
+Detailed capability metadata has not been reported for this model.
+
+## Example
+
+```ts
+import { streamText } from 'ai'
+
+const result = streamText({
+  model: 'moonshotai/kimi-k3',
+  prompt: 'Why is the sky blue?'
+})
+```
+
+## About
+
+Kimi K3, released July 16, 2026, is an open-source model from Moonshot AI with a context window of 1.0M tokens and native visual understanding. It accepts text, image, and video input. Thinking mode is always on, so every response includes a deliberation pass you can't switch off.
+
+Kimi K3 handles software engineering that spans many turns, knowledge work across large document sets, and reasoning problems that need sustained attention. Moonshot AI points to tasks where code meets visual and spatial reasoning as the strongest fit, which covers frontend development, game development, and computer-aided design (CAD) workflows.
+
+Native visual understanding changes how those pipelines compose. A coding agent reads a screenshot of a broken layout or a screen recording of a reproduction without a separate vision model in the pipeline. Design references and diagrams feed the same request as the prompt.
+
+AI Gateway routes Kimi K3 across Moonshot AI, Fireworks, Baseten, Morph, Nebius, Together AI, DigitalOcean, Modal, Wafer, Alibaba Cloud, DeepInfra, Runware, Parasail, Boundless, Inference.net, Bedrock, Relace, including US-based providers for teams with data residency and compliance requirements. Provider selection and fallback sit behind one model ID, which gives you failover and more available throughput than a single provider offers. To keep inference in US data centers, set `inferenceRegion` with scope `zone` and geo region `us`. Regional inference lists above the standard rate, so check the pricing panel on this page.
+
+For lower latency, set the `speed` option to `fast` and keep the model ID on `moonshotai/kimi-k3`. Requests route to the faster serving path and fall back to standard speed when the fast tier isn't available. You can also call `kimi-k3-fast` directly, which pins every request to that tier at a higher per-token rate. Zero Data Retention is configured per request with `zeroDataRetention` or turned on for every request from AI Gateway dashboard settings, and support varies by provider.
+
+Use the identifier `moonshotai/kimi-k3` with the AI SDK or any supported interface like Chat Completions, Responses, or Messages. Kimi K3 supports a context window of 1.0M tokens and completions up to 1.0M tokens per request, at $1.35 per million input tokens and $9 per million output tokens.
+
+## What to consider
+
+Thinking mode is always on, so budget output tokens for reasoning on top of the answer and note the completion cap of 1.0M tokens per request. Image and video inputs consume context faster than text of the same apparent length, so measure representative payloads against the window of 1.0M tokens rather than word counts. If latency matters more than rate, the fast serving path costs more per token, so compare both before you move production traffic. US-only inference and Zero Data Retention are request-level or key-level settings, not separate model IDs.
+
+## When to use
+
+### Best For
+
+- Long-horizon software engineering sessions that run across many turns and tool calls
+- Frontend, game development, and CAD work where code meets visual and spatial reasoning
+- Debugging loops that feed screenshots or screen recordings straight into the agent
+- Knowledge work over large document sets that fit inside the context window of 1.0M tokens
+- Deployments with data residency requirements that need US-based providers
+
+### Consider Alternatives When
+
+- Response time drives the experience. Kimi K3 Fast serves the same model on a lower-latency path
+- Thinking mode must be optional. A non-thinking Kimi K2 variant generates answers directly
+- The task is one short prompt where deliberation adds tokens without changing the answer
+- Cost per token dominates and an earlier Kimi variant meets your quality bar
+
+## Best for
+
+- **Long-Horizon Coding Agents:** Engineering sessions that run across many turns and tool calls
+- **Visual and Spatial Coding:** Frontend, game development, and CAD work that pairs code with imagery
+- **Screenshot-Driven Debugging:** Reproduction captures that feed straight into the coding loop
+- **Large Document Reasoning:** Knowledge work that fits inside the context window of 1.0M tokens
+- **US Data Residency:** Deployments that must run inference on US-based providers
+
+## Consider alternatives
+
+- **Latency-Sensitive Interfaces:** Kimi K3 Fast serves the same model on a lower-latency path
+- **Optional Thinking Mode:** A non-thinking Kimi K2 variant answers without a reasoning pass
+- **Short Single-Turn Prompts:** Deliberation adds output tokens without changing a simple answer
+- **Cost-Sensitive Traffic:** An earlier Kimi variant may meet your quality bar for less
+
+## Frequently asked questions
+
+### What input types does Kimi K3 accept?
+
+Text, image, and video. Visual understanding is native to Kimi K3, so screenshots, design references, and screen recordings go in alongside your prompt without a separate vision model. Confirm modality limits on https://platform.kimi.ai/docs/pricing/chat-k3 before you build a media-heavy pipeline.
+
+### Can I turn off thinking mode on Kimi K3?
+
+No. Thinking mode is always on, so every response includes a deliberation pass. Budget output tokens for it, and reach for a non-thinking Kimi K2 variant when deliberation doesn't improve the result.
+
+### What kind of engineering work is Kimi K3 built for?
+
+Long-horizon software engineering, knowledge work, and deep reasoning. Moonshot AI highlights tasks where code meets visual and spatial reasoning, which covers frontend development, game development, and CAD workflows.
+
+### How do I get lower latency from Kimi K3?
+
+Set the `speed` option to `fast` and keep the model ID on `moonshotai/kimi-k3`. Requests route to the faster serving path and fall back to standard speed when that tier isn't available. Calling `kimi-k3-fast` directly pins every request to the fast tier at a higher per-token rate.
+
+### Can I keep Kimi K3 inference in the United States?
+
+Yes. AI Gateway serves Kimi K3 from US-based providers, and `inferenceRegion` restricts a request to US data centers. Regional inference lists above the standard rate, so check the pricing panel on this page before you route production traffic.
+
+### Is Kimi K3 open source?
+
+Yes. Moonshot AI released Kimi K3 as an open-source model. Through AI Gateway you get hosted access across Moonshot AI, Fireworks, Baseten, Morph, Nebius, Together AI, DigitalOcean, Modal, Wafer, Alibaba Cloud, DeepInfra, Runware, Parasail, Boundless, Inference.net, Bedrock, Relace without running the deployment yourself.
+
+### Can I use Kimi K3 in my coding agent?
+
+Yes. Run `vercel ai-gateway setup` and select Kimi K3. The command detects the agents on your machine, provisions an AI Gateway key, and writes their configuration.
+
+### How do I use Kimi K3 on AI Gateway?
+
+Use the identifier `moonshotai/kimi-k3` with the AI SDK or any supported interface like Chat Completions, Responses, or Messages. AI Gateway routes across `moonshotai`, `fireworks`, `baseten`, `morph`, `nebius`, `togetherai`, `digitalocean`, `modal`, `wafer`, `alibaba`, `deepinfra`, `runware`, `parasail`, `boundless`, `inference-net`, `bedrock`, `relace` and handles failover automatically.
+
+### Does Kimi K3 support zero data retention?
+
+Yes, Zero Data Retention is available for this model. Zero Data Retention is offered on a per-provider basis. See https://vercel.com/docs/ai-gateway/capabilities/zdr for details.
+
+## Links
+
+- [Model page](https://vercel.com/ai-gateway/models/kimi-k3)
+- [AI Gateway documentation](https://vercel.com/docs/ai-gateway)
+- [Provider model documentation](https://platform.kimi.ai/docs/pricing/chat-k3)

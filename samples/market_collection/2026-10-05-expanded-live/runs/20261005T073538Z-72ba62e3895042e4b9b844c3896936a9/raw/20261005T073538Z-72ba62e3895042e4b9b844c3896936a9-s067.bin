@@ -1,0 +1,116 @@
+# GLM 5.2
+
+Z.AI's flagship long-horizon coding model. GLM 5.2 sustains project-scale engineering work across a 1.0M tokens context window, with selectable reasoning effort and open weights under the MIT License.
+
+- **Model ID:** `zai/glm-5.2`
+- **Type:** chat
+- **Providers:** zai, baseten, wafer, deepinfra, parasail, togetherai, streamlake, novita, alibaba, digitalocean, nebius, friendli, runware, gmicloud, inceptron
+- **Context window:** 1,048,576
+- **Maximum output tokens:** 1,048,576
+- **Pricing:** $0.23/1M input tokens, $1.8/1M output tokens
+- **Canonical page:** https://vercel.com/ai-gateway/models/glm-5.2
+
+## Supported parameters
+
+Detailed capability metadata has not been reported for this model.
+
+## Example
+
+```ts
+import { streamText } from 'ai'
+
+const result = streamText({
+  model: 'zai/glm-5.2',
+  prompt: 'Why is the sky blue?'
+})
+```
+
+## About
+
+GLM 5.2 was released June 16, 2026 as Z.AI's flagship model for long-horizon tasks, with weights published under the MIT License. GLM 5.2 succeeds GLM-5.1 and extends the context window to 1.0M tokens, up from 200K on GLM-5.1, so a single task can hold an entire project's code, history, and instructions.
+
+The architecture is Mixture-of-Experts, activating roughly 40B parameters per token. An IndexShare sparse-attention design reuses the same indexer across every four sparse attention layers, cutting per-token compute by roughly 2.9 times at full context length. You control depth per request: toggle thinking on or off, and set a reasoning effort level up to `max` to trade latency and token budget for stronger results on hard problems.
+
+The focus is agentic software engineering: codebase takeover, long-horizon refactoring, end-to-end feature work, and research reproduction. GLM 5.2 scores 81.0 on Terminal-Bench 2.1 and 62.1 on SWE-bench Pro in Z.AI's published evaluations, ahead of GLM-5.1 on both. Treat the numbers as vendor-reported until independent results accumulate.
+
+Through AI Gateway, you call GLM 5.2 with a single API key using the AI SDK, the Chat Completions API, the Responses API, the Messages API, or other API formats. Built-in observability, provider routing, and failover come standard, and GLM 5.2 supports tool calling, structured output, streaming, and implicit caching.
+
+## What to consider
+
+Reasoning effort is the main dial. Higher effort improves results on hard, multi-step problems but consumes more tokens and time. Start at a moderate setting, then raise it only for tasks that need deep deliberation.
+
+A 1.0M tokens window invites large prompts, and large prompts cost tokens on every request. Structure long-running agents to reuse stable context so implicit caching keeps repeat reads cheap, and watch spend in AI Gateway's observability tools.
+
+Published benchmark numbers come from Z.AI's own evaluations. Run GLM 5.2 on your own tasks before standardizing on it, and keep code review in the loop for anything headed to production. If per-step latency dominates your workload, `glm-5.2-fast` serves the same weights on faster infrastructure.
+
+## When to use
+
+### Best For
+
+- **Long-horizon coding agents** that plan, edit, test, and iterate across multi-step engineering tasks
+- **Project-scale refactors** holding whole-repository context in a single window instead of chunked retrieval
+- **Codebase takeover** onboarding onto an unfamiliar project by loading its code and history at once
+- **Adjustable reasoning depth** covering quick edits and deep deliberation with one model via effort settings
+- **Agentic tool use** with reliable function calling and structured output across long tool-call chains
+
+### Consider Alternatives When
+
+- Per-step latency dominates your workload. `glm-5.2-fast` serves the same weights on faster infrastructure
+- You run high-volume lightweight tasks. GLM-5-Turbo handles extraction and classification at lower per-token cost
+- You need vision or GUI input. GLM-5V-Turbo adds screenshot and image understanding to the GLM-5 generation
+- Your prompts are short and simple. GLM-4.7-Flash keeps costs down when project-scale context is unnecessary
+
+## Best for
+
+- **Long-Horizon Coding Agents:** Multi-step engineering tasks that require planning, editing, testing, and iterating without losing the thread
+- **Project-Scale Refactors:** Whole-repository context held in a single window instead of chunked retrieval
+- **Codebase Takeover:** Onboarding onto an unfamiliar project by loading its code and history at once
+- **Adjustable Reasoning Depth:** One model covering both quick edits and deep deliberation via effort settings
+- **Agentic Tool Use:** Reliable function calling and structured output across long tool-call chains
+
+## Consider alternatives
+
+- **Latency-Sensitive Loops:** `glm-5.2-fast` serves the same weights on faster infrastructure for interactive agents
+- **High-Volume Lightweight Tasks:** GLM-5-Turbo handles extraction and classification at lower per-token cost
+- **Vision or GUI Input:** GLM-5V-Turbo adds screenshot and image understanding to the GLM-5 generation
+- **Simple Short Prompts:** GLM-4.7-Flash keeps costs down when project-scale context is unnecessary
+
+## Frequently asked questions
+
+### What's new in GLM 5.2 compared to GLM-5.1?
+
+GLM 5.2 extends the context window to 1.0M tokens, up from 200K on GLM-5.1, and posts higher scores on coding benchmarks like Terminal-Bench 2.1 and SWE-bench Pro. GLM 5.2 also carries project-level engineering context across a single task and runs long-running tasks more reliably.
+
+### What is the context window for GLM 5.2?
+
+1.0M tokens.
+
+### Is GLM 5.2 open source?
+
+The weights are published under the MIT License. Through AI Gateway you call hosted providers with the `zai/glm-5.2` identifier, so you get the model without managing weights or GPUs yourself.
+
+### Does GLM 5.2 support reasoning controls?
+
+Yes. You can enable or disable thinking per request and set a reasoning effort level up to `max`. Lower effort answers faster; higher effort spends more tokens on hard problems.
+
+### How does GLM 5.2 differ from GLM 5.2 Fast?
+
+`glm-5.2-fast` serves the same underlying weights on inference infrastructure tuned for higher throughput, at different per-token rates. Compare live throughput, latency, and pricing on each model's page and pick per workload.
+
+### What is the pricing for GLM 5.2?
+
+Check the pricing panel on this page for today's numbers. AI Gateway tracks rates across every provider that serves GLM 5.2.
+
+### Does GLM 5.2 support Zero Data Retention?
+
+Yes, Zero Data Retention is available for this model. Zero Data Retention is offered on a per-provider basis. See https://vercel.com/docs/ai-gateway/capabilities/zdr for details.
+
+### How do I access GLM 5.2 through AI Gateway?
+
+Use the `zai/glm-5.2` model identifier with your AI Gateway API key via the AI SDK, the Chat Completions API, the Responses API, the Messages API, or other API formats. No separate Z.AI account is needed. BYOK is also supported.
+
+## Links
+
+- [Model page](https://vercel.com/ai-gateway/models/glm-5.2)
+- [AI Gateway documentation](https://vercel.com/docs/ai-gateway)
+- [Provider model documentation](https://docs.z.ai/guides/overview/overview)

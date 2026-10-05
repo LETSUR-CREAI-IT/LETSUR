@@ -6,6 +6,7 @@ import tempfile
 from pathlib import Path
 
 from scripts.market_collection.adapters import video
+from scripts.market_collection.models import BYTEPLUS_ID
 from scripts.market_collection.core import _validate_parse, live
 
 
@@ -73,7 +74,7 @@ class VideoAdapterTests(unittest.TestCase):
     def test_byteplus_model_unit_scope_and_formula(self):
         prices, conditions = self.parse("byteplus_seedance_25_t2v", BYTEPLUS)
         self.assertEqual([(p["amount"], p["unit"]) for p in prices], [("10.70", "1M tokens"), ("11.7", "1M tokens")])
-        self.assertTrue(all(p["provider_model_id"] == video.BYTEPLUS_ID for p in prices))
+        self.assertTrue(all(p["provider_model_id"] == BYTEPLUS_ID for p in prices))
         self.assertIn("estimated_token_formula", {c["condition_key"] for c in conditions})
         self.assertIn("seedance_25_discount_eligibility", {c["condition_key"] for c in conditions})
         changed, _ = self.parse("byteplus_seedance_25_t2v", BYTEPLUS.replace(b"10.70", b"12.70"))

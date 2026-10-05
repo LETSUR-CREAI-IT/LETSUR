@@ -1,0 +1,102 @@
+# DeepSeek V4 Pro
+
+DeepSeek V4 Pro is the capability tier of the V4 series. It handles complex reasoning, multi-step problem solving, and tool-using agents at the 1.0M tokens context window.
+
+- **Model ID:** `deepseek/deepseek-v4-pro`
+- **Type:** chat
+- **Providers:** deepseek, novita, deepinfra, baseten, azure, alibaba
+- **Context window:** 1,048,600
+- **Maximum output tokens:** 1,048,600
+- **Pricing:** $0.66/1M input tokens, $1.98/1M output tokens
+- **Canonical page:** https://vercel.com/ai-gateway/models/deepseek-v4-pro
+
+## Supported parameters
+
+Detailed capability metadata has not been reported for this model.
+
+## Example
+
+```ts
+import { streamText } from 'ai'
+
+const result = streamText({
+  model: 'deepseek/deepseek-v4-pro',
+  prompt: 'Why is the sky blue?'
+})
+```
+
+## About
+
+DeepSeek V4 Pro was released April 23, 2026 as the high-capability tier of DeepSeek's V4 generation. The V4 series introduces a hybrid attention architecture that combines Compressed Sparse Attention (CSA) with Heavily Compressed Attention (HCA), and uses ManifoldConstrained Hyper-Connections (mHC) in place of standard residual connections. The combination supports efficient inference at the 1.0M tokens window.
+
+DeepSeek V4 Pro is positioned for complex reasoning, multi-step problem solving, and agentic workflows. Tool use, reasoning, and implicit caching are all supported, so DeepSeek V4 Pro fits planner-style pipelines where the model decides on tool calls, integrates results, and iterates toward an answer. Maximum output is 1.0M tokens, which gives long-form reasoning chains and tool-call sequences room to complete in a single response.
+
+Access is through AI Gateway with an AI Gateway API key or OIDC token. You can integrate through the AI SDK, Chat Completions, Responses, or Messages API formats. Implicit caching applies when a long input prefix repeats across calls, charging the cached input rate instead of the standard input rate for cached tokens.
+
+## What to consider
+
+DeepSeek V4 Pro is priced higher than the V4 Flash variant. If your workload is short-form instruction following or classification, DeepSeek V4 Flash delivers similar output limits at lower per-token rates.
+
+## When to use
+
+### Best For
+
+- Complex reasoning workloads (analytical research, technical synthesis, structured derivation) where the 1.0M tokens window and V4 architecture provide headroom
+- Multi-step agent pipelines that combine planning, tool calls, and integration of results in a single endpoint
+- Software engineering automation that requires both reasoning and reliable tool use across long context
+- Workloads that already use the AI SDK, Chat Completions, Responses, or Messages API formats and need a high-capability open-platform model
+
+### Consider Alternatives When
+
+- The task is short-form classification, routing, or instruction following. Use DeepSeek V4 Flash for lower per-token cost
+- You need a pure deep-reasoning specialist with MIT-licensed weights. DeepSeek-R1 remains the open-weights reasoning option
+- Earlier-generation DeepSeek V3 models meet your capability needs at lower cost and you don't require the V4 context window or architecture
+
+## Best for
+
+- **Complex reasoning workloads:** Analytical research, technical synthesis, and structured derivation benefit from the 1.0M tokens window and V4 architecture
+- **Multi-step agent pipelines:** Planning, tool calls, and result integration combine in a single endpoint
+- **Software engineering automation:** Reasoning and reliable tool use across long context support code-generation pipelines
+- **Multi-format API integrations:** AI SDK, Chat Completions, Responses, and Messages API formats route to the same high-capability model
+
+## Consider alternatives
+
+- **Short-form throughput:** Use DeepSeek V4 Flash for classification, routing, and instruction following at lower per-token cost
+- **MIT-licensed reasoning:** DeepSeek-R1 remains the open-weights reasoning specialist when license terms drive the selection
+- **Earlier-generation cost:** DeepSeek V3 family models may meet capability needs at lower cost when V4 context and architecture aren't required
+
+## Frequently asked questions
+
+### When should I pick DeepSeek V4 Pro over DeepSeek V4 Flash?
+
+Pick DeepSeek V4 Pro for complex reasoning, multi-step problem solving, and agentic tool orchestration. Use DeepSeek V4 Flash for short-form instruction following, classification, and high-volume routing where per-token cost dominates.
+
+### What is the context window and max output for DeepSeek V4 Pro?
+
+The context window is 1.0M tokens and the maximum output is 1.0M tokens.
+
+### What is the V4 hybrid attention architecture?
+
+DeepSeek V4 Pro combines Compressed Sparse Attention (CSA) with Heavily Compressed Attention (HCA), and uses ManifoldConstrained Hyper-Connections (mHC) in place of standard residual connections. The combination targets efficient inference at long context.
+
+### Does DeepSeek V4 Pro support tool calls inside reasoning steps?
+
+Yes. DeepSeek V4 Pro is tagged for reasoning and tool use, so agent pipelines can plan, call tools, integrate results, and iterate in a single call through the AI SDK or the Chat Completions, Responses, or Messages API formats.
+
+### How does implicit caching affect pricing for DeepSeek V4 Pro?
+
+Repeated input prefixes (typically long system prompts) are detected automatically and charged at the cached input rate of $0.022 per token instead of $0.66. No cache-control headers are required.
+
+### Do I need a DeepSeek platform account to use DeepSeek V4 Pro?
+
+No. Access DeepSeek V4 Pro through AI Gateway with an AI Gateway API key or OIDC token.
+
+### Does DeepSeek V4 Pro support zero data retention?
+
+Yes, Zero Data Retention is available for this model. Zero Data Retention is offered on a per-provider basis. See https://vercel.com/docs/ai-gateway/capabilities/zdr for details.
+
+## Links
+
+- [Model page](https://vercel.com/ai-gateway/models/deepseek-v4-pro)
+- [AI Gateway documentation](https://vercel.com/docs/ai-gateway)
+- [Provider model documentation](https://api-docs.deepseek.com/quick_start/pricing)

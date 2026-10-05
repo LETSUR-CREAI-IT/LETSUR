@@ -33,9 +33,9 @@ def _parse(key: str, body: bytes | None = None):
 
 def test_fixed_five_pages_four_routes():
     validate_registry(source_specs())
-    assert set(SPECS) == set(FILES)
+    assert set(SPECS) == set(FILES) | {"openai_flare", "fal_flare_t2i", "openrouter_flare", "vercel_flare"}
     assert {spec.route for spec in SPECS.values()} == {"openai", "fal", "openrouter", "vercel"}
-    assert {spec.model_id for spec in SPECS.values()} == {"gpt-image-2.5-sunburst"}
+    assert {spec.model_id for spec in SPECS.values()} == {"gpt-image-2.5-sunburst", "gpt-image-2.5-flare"}
     assert {spec.task for spec in SPECS.values()} == {"text-to-image"}
 
 
