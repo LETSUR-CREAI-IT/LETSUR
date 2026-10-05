@@ -58,3 +58,13 @@ scripts/market_collection/
 ```
 
 CLI는 Python 표준 라이브러리로 실행한다. 테스트에는 `pytest`가 필요하다. 실행·데이터 형식·출처 추가 절차와 보존 범위는 [수집기 안내](docs/market-collection.md)를 참고한다. 날짜·모드별 결과와 CSV 바로가기는 [보존 snapshot index](samples/market_collection/README.md)에서 확인한다. 수집기 경로는 임시 도구이며 현재 `src/` architecture를 구현하거나 그 구조에 통합하기로 한 결정이 아니다. `src/`의 폴더와 역할은 팀이 결정한 구조 설명을 따른다.
+
+## 하루 네 번 자동 수집 설정
+
+```text
+.github/workflows/market-collection.yml   GitHub Actions 예약·수동 실행. 기존 수집기 CLI 결과를 XZ로 묶어 회차별 artifact로 보관
+```
+
+한국 시간 **03:17·09:17·15:17·21:17** 실행 설정이다. 최신 수집기와 이 workflow를 기본 브랜치 `develop`에 머지하면 예약 실행이 시작된다. 작업 브랜치에만 있는 동안에는 시작되지 않는다. Actions에서 수동 실행과 결과 다운로드도 가능하다.
+
+입력은 기존 수집기의 공개 출처 registry, 출력은 CSV·manifest·원문이 들어 있는 `market-collection.tar.xz`다. Python 표준 라이브러리와 GitHub Actions만 사용하며 별도 API 키를 추가하지 않는다. Artifact는 90일 보관 설정이고 실행별로 분리된다. 실행·다운로드·여러 회차 합치기와 사용량 확인 방법은 [수집기 안내](docs/market-collection.md)를 참고한다. 원격 runner·실제 업로드·예약 실행은 머지 전 검증하지 않았다.

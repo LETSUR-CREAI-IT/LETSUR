@@ -1,6 +1,6 @@
 # 여러 모델·공급 경로 가격 관측기
 
-이 수동 CLI는 공개 가격 문서의 조회 시점별 원문과 해석한 가격 관측을 보존한다. LLM, 이미지, 영상 adapter가 모델별 공급 경로를 읽고, 팀 화면에서 출처 근거와 가격 조건을 비교할 수 있도록 같은 세 CSV 형식으로 내보낸다. 이는 공개 문서 관측이며 LETSUR 사용 순위, 공급 경로 추천, 최저가 판정, 계정 적용 요금이나 실제 청구 검증을 뜻하지 않는다.
+이 CLI는 공개 가격 문서의 조회 시점별 원문과 해석한 가격 관측을 보존한다. LLM, 이미지, 영상 adapter가 모델별 공급 경로를 읽고, 팀 화면에서 출처 근거와 가격 조건을 비교할 수 있도록 같은 세 CSV 형식으로 내보낸다. 이는 공개 문서 관측이며 LETSUR 사용 순위, 공급 경로 추천, 최저가 판정, 계정 적용 요금이나 실제 청구 검증을 뜻하지 않는다.
 
 | 유형 | 기준 모델 | 경로 | 출처 문서 수 |
 |---|---|---|---:|
@@ -51,6 +51,47 @@ Replay는 보존 원문을 현재 parser로 다시 해석한다. 이는 새 live
 
 10월 5일 live CSV에는 당시 출력된 Vercel basis label이 보존되어 있다. 그 원본에는 16개 가격 행의 condition reference와 7개 condition row에 기존 label이 있다. 확장 replay는 supplier-layout 변경 전 교정된 parser를 사용해 83개 출처·348개 가격 관측·731개 조건을 출력하고, 저장된 원문과 원래 fetch/observation 시각을 유지한다. 이 replay는 또 다른 날짜의 관측이나 현재 live 가격 확인이 아니다. 화면 연결을 시작할 때는 [expanded replay CSV](../samples/market_collection/2026-10-05-expanded-replay/README.md)를 사용한다. 상세 snapshot과 CSV 바로가기는 [index](../samples/market_collection/README.md)를 참고한다.
 
+## GitHub Actions에서 하루 네 번 수집
+
+[Market collection workflow](../.github/workflows/market-collection.yml)는 매일 한국 시간 **03:17·09:17·15:17·21:17**에 전체 수집기를 실행하도록 설정되어 있다. UTC cron은 `17 0,6,12,18 * * *`이다. GitHub 사정에 따라 시작이 늦어지거나 예약 실행이 누락될 수 있으므로 시각과 회차는 Actions 기록으로 확인한다.
+
+예약 실행은 기본 브랜치 `develop`에 수집기와 workflow가 들어간 뒤 시작된다. 작업 브랜치에만 있는 동안에는 예약 실행이 시작되지 않는다. 이번 작업은 설정을 준비한 것이며 `develop` 머지나 원격 실행을 완료했다는 뜻은 아니다. 최신 수집기와 이번 설정을 함께 포함한 PR을 머지하면 앞선 수집기 브랜치를 각각 머지할 필요는 없다.
+
+### 수동 실행과 결과 확인
+
+1. 머지 후 저장소의 **Actions → Market collection → Run workflow**에서 `develop`을 선택해 첫 실행을 확인한다.
+2. 완료된 실행을 열어 Summary의 회차·출처·가격 관측·조건 수와 실패 출처 키를 확인한다.
+3. **Artifacts**의 `market-collection-<GitHub 실행 ID>-<재실행 번호>`를 내려받는다.
+4. 다운로드한 ZIP 안의 `market-collection.tar.xz`를 다시 풀면 `market_collection/runs/<수집 회차 ID>/`에 CSV 세 개, manifest, 원문이 있다.
+
+일부 출처의 조회나 해석이 실패하면 작업을 실패로 표시한다. 수집기가 남긴 다른 출처의 자료와 실패 기록은 압축·업로드 단계에서 함께 보존한다. 자료 디렉터리가 없으면 압축도 실패한다. 작업 시간 초과나 runner 중단 등에서는 업로드까지 완료되지 않을 수 있으므로 artifact가 실제로 있는지 확인한다. 자동 재수집, 가격 보정, 담당자 알림은 이 workflow에 없다.
+
+### 여러 회차 합치기
+
+각 실행의 artifact는 그 실행 자료만 담는다. 이전 실행의 CSV를 자동으로 가져오거나 하나의 누적 CSV로 합치지는 않는다. 여러 artifact를 풀어 로컬의 같은 `data/market_collection/runs/` 아래에 서로 다른 회차 폴더를 모은 뒤 기존 `history` 명령으로 합친다. GitHub CLI를 쓰는 예시는 다음과 같다.
+
+```bash
+gh run download <GitHub-실행-ID> --repo LETSUR-CREAI-IT/LETSUR \
+  --name market-collection-<GitHub-실행-ID>-<재실행-번호> \
+  --dir /tmp/collection-<GitHub-실행-ID>
+mkdir -p data
+tar -xJf /tmp/collection-<GitHub-실행-ID>/market-collection.tar.xz -C data
+python3 -B -m scripts.market_collection.core history \
+  --output-root data/market_collection --output data/market_collection/export-new
+```
+
+`history`의 출력 폴더는 아직 없어야 한다. 각 수집 회차의 원문과 CSV를 수정하지 않은 상태로 사용한다.
+
+### 보관 기간과 사용량
+
+Artifact 보관 설정은 **90일**이며 저장소·조직의 허용 범위가 적용된다. 영구 보관이 아니므로 필요한 자료는 만료 전에 따로 내려받아 보존한다. 원문은 Python 표준 라이브러리의 XZ 압축으로 묶고 artifact 단계에서는 다시 압축하지 않는다.
+
+현재 조직은 GitHub Free이며 공식 기본 제공량은 조직 전체 기준 Actions artifact·Packages 공유 저장 용량 500MB와 월 2,000분이다. 보존된 확장 샘플 한 회차를 XZ로 묶은 로컬 측정값은 약 1.2MB였다. 같은 크기로 하루 네 번, 90일 저장하면 약 445MB라는 추정이지만 실제 원격 크기와 향후 문서 크기, 다른 저장소 사용량은 확인해야 한다. 무료 범위 내 동작을 보장하는 수치가 아니다. 첫 원격 실행 후 조직 Settings의 Billing 화면에서 조직 사용량과 예산을 확인한다. 이 설정은 결제 수단이나 사용 한도를 변경하지 않는다. [GitHub 사용량 안내](https://docs.github.com/en/billing/concepts/product-billing/github-actions)
+
+### 이번 설정의 검증 범위
+
+로컬 문법 검사, 보존 원문 replay, 동일 summary의 정상·부분 실패·자료 누락 처리, XZ 압축 후 원문·manifest·CSV hash 일치를 검증한다. 저장 원문 replay는 새로운 live 관측이 아니다. GitHub runner에서의 실제 수집, artifact 업로드, 예약 실행은 머지 전 **NOT_RUN**이며 첫 수동 실행으로 확인해야 한다.
+
 ## CSV를 화면에 연결할 때
 
 각 회차에는 `manifest.json`, `raw/`, `sources.csv`, `price_observations.csv`, `conditions.csv`가 있다. `history --output-root <dir>`는 그 디렉터리 바로 아래 `runs/`에 있는 live 회차만 세 CSV로 합친다. 별도 sample bundle root의 회차까지 자동으로 합치지는 않는다.
@@ -95,4 +136,4 @@ AWS Haiku 카드의 버전이 붙은 Global inference ID는 현재 카드에서 
 
 `2026-10-04-first-live` 폴더는 2026-10-04 검증본에서 성공한 첫 live 회차 `20261004T062258Z-af1a11a5b11a4260956c51559ca448ff`를 담는다. manifest, 원문 11개, CSV 세 개로 구성된 당시 3모델 범위의 snapshot이다. 확장된 2026-10-05 live와 replay는 [sample index](../samples/market_collection/README.md)에서 확인한다. 전체 66개 문서 QA live 회차는 위에 적은 `data/market_collection/qa_broad_llm_live/` 아래에만 있다. 실패한 이전 통합 QA 회차는 공개 sample에 포함하지 않았다. 각 보존 회차의 원문과 CSV는 수동 보정하지 않았으며, 문서 내용과 공개 가격은 해당 조회 시점의 기록이다.
 
-단일 회차는 날짜별 변화나 가격의 지속성을 입증하지 않는다. 공개 표시 가격은 고객의 적용 조건이나 실제 청구액이 아니다. 수집은 위 수동 `live` 또는 저장 원문에 대한 `replay` 명령으로 시작한다. 회차는 실제 청구, 최저 경로, 또는 어떤 변경이 담당자 알림을 받아야 하는지를 검증하지 않는다. `price_kind`와 조건, 원문 근거를 별도로 검토해야 한다.
+단일 회차는 날짜별 변화나 가격의 지속성을 입증하지 않는다. 공개 표시 가격은 고객의 적용 조건이나 실제 청구액이 아니다. 수집은 위 `live` 명령, GitHub Actions 또는 저장 원문에 대한 `replay` 명령으로 시작한다. 회차는 실제 청구, 최저 경로, 또는 어떤 변경이 담당자 알림을 받아야 하는지를 검증하지 않는다. `price_kind`와 조건, 원문 근거를 별도로 검토해야 한다.

@@ -1,0 +1,122 @@
+name: Market collection
+
+on:
+  schedule:
+    - cron: '17 0,6,12,18 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: market-collection-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.12'
+
+      - name: Collect market data
+        run: python3 -B -m scripts.market_collection.core live --output-root data/market_collection
+
+      - name: Summarize collection
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import csv
+          import json
+          import os
+          from pathlib import Path
+
+          root = Path("data/market_collection/runs")
+          run_dirs = sorted(path for path in root.iterdir() if path.is_dir()) if root.is_dir() else []
+          totals = {"runs": len(run_dirs), "sources": 0, "prices": 0, "conditions": 0}
+          invalid_runs = 0
+          failed_source_keys = set()
+
+          for run_dir in run_dirs:
+              manifest_path = run_dir / "manifest.json"
+              sources_path = run_dir / "sources.csv"
+              prices_path = run_dir / "price_observations.csv"
+              conditions_path = run_dir / "conditions.csv"
+              try:
+                  manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+                  if manifest.get("run_id") != run_dir.name or manifest.get("mode") != "live":
+                      raise ValueError
+
+                  with sources_path.open(newline="", encoding="utf-8") as stream:
+                      reader = csv.DictReader(stream)
+                      if not {"source_key", "fetch_status", "parse_status"}.issubset(reader.fieldnames or ()):
+                          raise ValueError
+                      sources = list(reader)
+                  with prices_path.open(newline="", encoding="utf-8") as stream:
+                      prices = list(csv.DictReader(stream))
+                  with conditions_path.open(newline="", encoding="utf-8") as stream:
+                      conditions = list(csv.DictReader(stream))
+                  if not sources or len(sources) != len(manifest.get("sources", [])):
+                      raise ValueError
+
+                  totals["sources"] += len(sources)
+                  totals["prices"] += len(prices)
+                  totals["conditions"] += len(conditions)
+                  for source in sources:
+                      if source.get("fetch_status") != "ok" or source.get("parse_status") != "ok":
+                          failed_source_keys.add(source.get("source_key") or "unknown")
+              except (OSError, UnicodeError, json.JSONDecodeError, csv.Error, TypeError, ValueError):
+                  invalid_runs += 1
+
+          summary = [
+              "## Market collection",
+              "",
+              f"Runs: {totals['runs']}",
+              f"Sources: {totals['sources']}",
+              f"Prices: {totals['prices']}",
+              f"Conditions: {totals['conditions']}",
+              f"Invalid or missing runs: {invalid_runs}",
+              "Failed source keys: " + (", ".join(sorted(failed_source_keys)) if failed_source_keys else "none"),
+              "",
+          ]
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as stream:
+              stream.write("\n".join(summary))
+
+          if not run_dirs or invalid_runs or failed_source_keys:
+              raise SystemExit(1)
+          PY
+
+      - name: Pack collection data
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import tarfile
+          from pathlib import Path
+
+          root = Path("data/market_collection")
+          if not root.is_dir():
+              raise SystemExit("collection data directory is missing")
+
+          archive = Path("collection-artifact/market-collection.tar.xz")
+          archive.parent.mkdir(parents=True, exist_ok=True)
+          with tarfile.open(archive, mode="w:xz", preset=6) as output:
+              output.add(root, arcname="market_collection")
+          PY
+
+      - name: Upload collection data
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: market-collection-${{ github.run_id }}-${{ github.run_attempt }}
+          path: collection-artifact/market-collection.tar.xz
+          retention-days: 90
+          compression-level: 0
+          if-no-files-found: error
