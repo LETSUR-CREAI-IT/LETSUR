@@ -1,0 +1,33 @@
+# DeepSeek V4.1 Flash
+
+DeepSeek V4.1 Flash is an AI model from DeepSeek designed for fast, efficient multimodal interactions. It combines native multimodal capabilities with a new architecture focused on stronger performance, faster responses, and lower computational cost.
+
+- **Model ID:** `deepseek/deepseek-v4.1-flash`
+- **Type:** chat
+- **Providers:** deepseek, novita, deepinfra, morph, fireworks, gmicloud, parasail, baseten, wafer, modal, particle, togetherai, alibaba, relace, boundless, runware, inference-net, runinfra
+- **Context window:** 1,048,576
+- **Maximum output tokens:** 1,048,576
+- **Pricing:** $0.02/1M input tokens, $0.383/1M output tokens
+- **Canonical page:** https://vercel.com/ai-gateway/models/deepseek-v4.1-flash
+
+## Supported parameters
+
+Detailed capability metadata has not been reported for this model.
+
+## Example
+
+```ts
+import { streamText } from 'ai'
+
+const result = streamText({
+  model: 'deepseek/deepseek-v4.1-flash',
+  prompt: 'Why is the sky blue?'
+})
+```
+
+## Links
+
+- [Model page](https://vercel.com/ai-gateway/models/deepseek-v4.1-flash)
+- [AI Gateway documentation](https://vercel.com/docs/ai-gateway)
+- [Provider model documentation](https://api-docs.deepseek.com/quick_start/pricing)
+- [Provider pricing](https://api-docs.deepseek.com/quick_start/pricing)

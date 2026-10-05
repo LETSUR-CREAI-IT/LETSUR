@@ -1,0 +1,32 @@
+# Claude Fable 5.1
+
+Claude Fable 5.1 improves on Fable 5 across long-running agentic coding, knowledge work, and research, following instructions precisely over sessions that run unattended for hours.
+
+- **Model ID:** `anthropic/claude-fable-5.1`
+- **Type:** chat
+- **Providers:** anthropic, bedrock, vertexAnthropic
+- **Context window:** 1,000,000
+- **Maximum output tokens:** 128,000
+- **Pricing:** $10/1M input tokens, $50/1M output tokens
+- **Canonical page:** https://vercel.com/ai-gateway/models/claude-fable-5.1
+
+## Supported parameters
+
+Detailed capability metadata has not been reported for this model.
+
+## Example
+
+```ts
+import { streamText } from 'ai'
+
+const result = streamText({
+  model: 'anthropic/claude-fable-5.1',
+  prompt: 'Why is the sky blue?'
+})
+```
+
+## Links
+
+- [Model page](https://vercel.com/ai-gateway/models/claude-fable-5.1)
+- [AI Gateway documentation](https://vercel.com/docs/ai-gateway)
+- [Provider model documentation](https://www.anthropic.com/news/)

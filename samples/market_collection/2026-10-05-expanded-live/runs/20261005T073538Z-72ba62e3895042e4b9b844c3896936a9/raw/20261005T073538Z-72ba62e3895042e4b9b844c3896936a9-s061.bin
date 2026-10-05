@@ -1,0 +1,112 @@
+# Claude Sonnet 5
+
+Claude Sonnet 5 upgrades the Sonnet line for agents, improving on Claude Sonnet 4.6 across reasoning, tool use, coding, and knowledge work while keeping a context window of 1M tokens at Sonnet pricing.
+
+- **Model ID:** `anthropic/claude-sonnet-5`
+- **Type:** chat
+- **Providers:** anthropic, vertexAnthropic, bedrock, claudeaws
+- **Context window:** 1,000,000
+- **Maximum output tokens:** 128,000
+- **Pricing:** $2/1M input tokens, $10/1M output tokens
+- **Canonical page:** https://vercel.com/ai-gateway/models/claude-sonnet-5
+
+## Supported parameters
+
+Detailed capability metadata has not been reported for this model.
+
+## Example
+
+```ts
+import { streamText } from 'ai'
+
+const result = streamText({
+  model: 'anthropic/claude-sonnet-5',
+  prompt: 'Why is the sky blue?'
+})
+```
+
+## About
+
+Claude Sonnet 5 became available on AI Gateway on June 29, 2026. Anthropic calls Claude Sonnet 5 the most agentic Sonnet model yet: Claude Sonnet 5 makes plans, uses tools like browsers and terminals, and runs autonomously at a level that recently required larger, more expensive models.
+
+The gains over Claude Sonnet 4.6 land across reasoning, tool use, coding, and knowledge work. Anthropic reports strict improvements over Claude Sonnet 4.6 on agentic search and computer use evaluations, along with lower hallucination and sycophancy rates. Anthropic also reports overall performance that approaches its Opus line at a lower price, and Claude Sonnet 5 launched with real-time cyber safeguards enabled by default.
+
+Effort levels define the cost-performance curve. Claude Sonnet 5 supports configurable effort, including an extra-high `xhigh` level, and higher effort can match Opus-tier output on some tasks while medium effort keeps mixed workloads efficient. Claude Sonnet 5 also uses an updated tokenizer, so the same input can map to more tokens than earlier Sonnet models; verify budgets against real usage rather than prior baselines.
+
+Through AI Gateway, Claude Sonnet 5 is available with the standard unified API, observability, retries, and failover across Anthropic, Google Vertex AI, Bedrock, Claude Platform on AWS. Set the model to `anthropic/claude-sonnet-5` in the AI SDK, Chat Completions API, Responses API, Messages API, or other API formats, from TypeScript or Python. AI Gateway mirrors provider pricing with no markup and adds no platform fee on inference, including for Bring Your Own Key requests.
+
+## What to consider
+
+Configurable effort spans a wide cost-performance range, including an extra-high `xhigh` level for the hardest requests. Tune effort per workload so simple traffic stays cheap and hard tasks get deeper reasoning.
+
+Claude Sonnet 5 uses an updated tokenizer, so the same input can produce more tokens than earlier Sonnet models. Re-measure token usage with AI Gateway observability instead of reusing Claude Sonnet 4.6 baselines. Cyber safeguards are enabled by default and can block requests that resemble dangerous cybersecurity work.
+
+## When to use
+
+### Best For
+
+- **Agentic Coding Workflows:** Multi-step engineering work where Claude Sonnet 5 plans, edits, runs terminals, and verifies output
+- **Autonomous Tool Use:** Browser, terminal, and API workflows that run with minimal supervision
+- **Everyday Professional Work:** Drafting, analysis, and knowledge work at Sonnet pricing and scale
+- **Large-Context Agents:** A context window of 1M tokens covers whole codebases and long agent histories
+- **Mixed-Complexity Production Traffic:** Configurable effort keeps simple requests cheap while hard requests get deeper reasoning
+
+### Consider Alternatives When
+
+- **Maximum Capability Ceiling:** Claude Fable 5 is Anthropic's most capable widely released model for the hardest reasoning and longest-horizon work
+- **Latency-Critical Simple Tasks:** A Haiku-tier model is faster and cheaper for well-bounded, high-throughput requests
+- **Stable Token Baselines:** Claude Sonnet 4.6 keeps the earlier tokenizer if you need consistent token counts mid-migration
+
+## Best for
+
+- **Agentic Coding Workflows:** Multi-step engineering work where Claude Sonnet 5 plans, edits, runs terminals, and verifies output
+- **Autonomous Tool Use:** Browser, terminal, and API workflows that run with minimal supervision
+- **Everyday Professional Work:** Drafting, analysis, and knowledge work at Sonnet pricing and scale
+- **Large-Context Agents:** A context window of 1M tokens covers whole codebases and long agent histories
+- **Mixed-Complexity Production Traffic:** Configurable effort keeps simple requests cheap while hard requests get deeper reasoning
+
+## Consider alternatives
+
+- **Maximum Capability Ceiling:** Claude Fable 5 is Anthropic's most capable widely released model for the hardest reasoning and longest-horizon work
+- **Latency-Critical Simple Tasks:** A Haiku-tier model is faster and cheaper for well-bounded, high-throughput requests
+- **Stable Token Baselines:** Claude Sonnet 4.6 keeps the earlier tokenizer if you need consistent token counts mid-migration
+
+## Frequently asked questions
+
+### What's new in Claude Sonnet 5 compared with Claude Sonnet 4.6?
+
+Claude Sonnet 5 improves on Claude Sonnet 4.6 across reasoning, tool use, coding, and knowledge work. Anthropic reports strict gains on agentic search and computer use evaluations, plus lower hallucination and sycophancy rates.
+
+### How do effort levels work on Claude Sonnet 5?
+
+Effort controls how deeply Claude Sonnet 5 reasons per request, from efficient low-effort responses to an extra-high `xhigh` level. Higher effort can match Opus-tier output on some tasks; medium effort keeps mixed workloads cost-efficient.
+
+### Does Claude Sonnet 5 use a new tokenizer?
+
+Yes. Claude Sonnet 5 uses an updated tokenizer, so the same input can produce more tokens than earlier Sonnet models. Re-measure token usage with AI Gateway observability before locking in cost estimates.
+
+### What makes Claude Sonnet 5 agentic?
+
+Claude Sonnet 5 makes plans, uses tools like browsers and terminals, and runs autonomously at a level that recently required larger, more expensive models. Anthropic calls Claude Sonnet 5 the most agentic Sonnet model yet.
+
+### What context window does Claude Sonnet 5 support?
+
+Claude Sonnet 5 has a context window of 1M tokens and supports up to 128K tokens output tokens per request, at Sonnet pricing.
+
+### Does AI Gateway support Zero Data Retention for Claude Sonnet 5?
+
+Yes, Zero Data Retention is available for this model. Zero Data Retention is offered on a per-provider basis. See https://vercel.com/docs/ai-gateway/capabilities/zdr for details.
+
+### What is the pricing for Claude Sonnet 5?
+
+AI Gateway mirrors provider pricing with no markup and adds no platform fee on inference. Rates are listed on this page and shift when providers update their pricing.
+
+### How do I call Claude Sonnet 5 through AI Gateway?
+
+Set the model to `anthropic/claude-sonnet-5` in the AI SDK, Chat Completions API, Responses API, Messages API, or other API formats, from TypeScript or Python. AI Gateway handles authentication, retries, and failover across `anthropic`, `vertex`, `bedrock`, `claudeaws`.
+
+## Links
+
+- [Model page](https://vercel.com/ai-gateway/models/claude-sonnet-5)
+- [AI Gateway documentation](https://vercel.com/docs/ai-gateway)
+- [Provider model documentation](https://platform.claude.com/docs/en/about-claude/models/overview)

@@ -1,0 +1,32 @@
+# GLM 5.3 Flash
+
+GLM-5.3-Flash is Z.ai’s native multimodal coding model, featuring 320B total parameters, 18B activated parameters, and a 1M-token context window. Its efficient hybrid attention architecture supports visual coding, tool use, and end-to-end professional workflows across code, browsers, documents, and graphical interfaces.
+
+- **Model ID:** `zai/glm-5.3-flash`
+- **Type:** chat
+- **Providers:** zai, baseten, novita, gmicloud, deepinfra, runinfra, wafer, modal, togetherai, morph, parasail, friendli, digitalocean, fireworks, relace, runware, particle, streamlake, boundless, inference-net
+- **Context window:** 1,048,576
+- **Maximum output tokens:** 1,048,576
+- **Pricing:** $0.035/1M input tokens, $0.25/1M output tokens
+- **Canonical page:** https://vercel.com/ai-gateway/models/glm-5.3-flash
+
+## Supported parameters
+
+Detailed capability metadata has not been reported for this model.
+
+## Example
+
+```ts
+import { streamText } from 'ai'
+
+const result = streamText({
+  model: 'zai/glm-5.3-flash',
+  prompt: 'Why is the sky blue?'
+})
+```
+
+## Links
+
+- [Model page](https://vercel.com/ai-gateway/models/glm-5.3-flash)
+- [AI Gateway documentation](https://vercel.com/docs/ai-gateway)
+- [Provider model documentation](https://docs.z.ai/guides/vlm/glm-5.3-flash)

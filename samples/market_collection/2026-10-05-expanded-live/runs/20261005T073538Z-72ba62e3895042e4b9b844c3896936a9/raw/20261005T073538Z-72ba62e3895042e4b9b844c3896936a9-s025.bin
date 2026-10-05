@@ -1,0 +1,117 @@
+# GPT 5.6 Terra
+
+GPT 5.6 Terra is the everyday model of the GPT-5.6 family. It weighs intelligence against cost, so most production traffic can run here instead of on the flagship.
+
+- **Model ID:** `openai/gpt-5.6-terra`
+- **Type:** chat
+- **Providers:** openai, azure, bedrock
+- **Context window:** 1,050,000
+- **Maximum output tokens:** 128,000
+- **Pricing:** $2/1M input tokens, $12/1M output tokens
+- **Canonical page:** https://vercel.com/ai-gateway/models/gpt-5.6-terra
+
+## Supported parameters
+
+Detailed capability metadata has not been reported for this model.
+
+## Example
+
+```ts
+import { streamText } from 'ai'
+
+const result = streamText({
+  model: 'openai/gpt-5.6-terra',
+  prompt: 'Why is the sky blue?'
+})
+```
+
+## About
+
+GPT 5.6 Terra became available on AI Gateway on July 9, 2026 as the balanced model of the GPT-5.6 family, alongside GPT-5.6 Sol and GPT-5.6 Luna. All three GPT-5.6 models handle agentic work across coding, biology, and cybersecurity better than the previous generation, and all three use fewer tokens to reach an answer.
+
+OpenAI describes GPT 5.6 Terra as the GPT-5.6 model that balances intelligence and cost, and it maps to the mini tier of earlier GPT-5 families. Performance compares to the previous generation at a lower price, so GPT 5.6 Terra is a practical default for everyday production traffic: application features, internal tooling, support automation, and the routine steps of a longer agent run.
+
+GPT 5.6 Terra accepts text and image input and returns text, with a context window of 1.1M tokens and up to 128K tokens of output per request. Reasoning tokens, streaming, function calling, and structured outputs are supported, and the Responses API adds web search, file search, code interpreter, computer use, and MCP (Model Context Protocol) tools.
+
+Set the model to `openai/gpt-5.6-terra` in the AI SDK, the Chat Completions API, the Responses API, or another supported API format, from TypeScript or Python. AI Gateway routing rules can rewrite an existing model slug to `openai/gpt-5.6-terra` when you want to move traffic without touching application code. List pricing is $2 per million input tokens and $12 per million output tokens, with cached input at $0.2. Upstream list prices came down after launch, and AI Gateway mirrors provider pricing with no markup and adds no platform fee on inference, including for Bring Your Own Key requests.
+
+## What to consider
+
+GPT 5.6 Terra corresponds to the mini tier of earlier GPT-5 families, and OpenAI designed it for workloads that balance intelligence and cost. Performance compares to the previous generation at a lower price, which makes GPT 5.6 Terra a straightforward swap for teams already running a mid-tier GPT-5.x model in production.
+
+Capability limits still apply. Benchmark your hardest prompts against GPT-5.6 Sol before assuming the balanced tier covers them, and check GPT-5.6 Luna for the high-volume tail where cost dominates. Pricing splits into short-context and long-context rates, so measure your real prompt sizes rather than an average.
+
+## When to use
+
+### Best For
+
+- **Everyday Production Traffic:** Application features and internal tooling that run continuously at predictable cost
+- **Mid-Tier Agent Steps:** Routine planning, retrieval, and tool calls inside a longer agent run
+- **Balanced Coding Work:** Day-to-day development help, code review, and bug diagnosis
+- **Long-Context Reading:** Document sets and repositories that fit inside the context window without flagship pricing
+- **Drop-In Tier Upgrade:** A direct replacement for a mid-tier GPT-5.x model already in production
+
+### Consider Alternatives When
+
+- **Hardest Agentic Tasks:** GPT-5.6 Sol is the flagship and the most capable model in the family
+- **High-Volume Cost Control:** GPT-5.6 Luna carries the lowest price in the GPT-5.6 family
+- **Autonomous Coding Agents:** GPT-5.x codex variants target sandboxed software engineering directly
+- **Voice and Audio Input:** The gpt-realtime family handles live speech, since GPT-5.6 models read text and images only
+
+## Best for
+
+- **Everyday Production Traffic:** Application features and internal tooling that run continuously at predictable cost
+- **Mid-Tier Agent Steps:** Routine planning, retrieval, and tool calls inside a longer agent run
+- **Balanced Coding Work:** Day-to-day development help, code review, and bug diagnosis
+- **Long-Context Reading:** Document sets and repositories that fit inside the context window without flagship pricing
+- **Drop-In Tier Upgrade:** A direct replacement for a mid-tier GPT-5.x model already in production
+
+## Consider alternatives
+
+- **Hardest Agentic Tasks:** GPT-5.6 Sol is the flagship and the most capable model in the family
+- **High-Volume Cost Control:** GPT-5.6 Luna carries the lowest price in the GPT-5.6 family
+- **Autonomous Coding Agents:** GPT-5.x codex variants target sandboxed software engineering directly
+- **Voice and Audio Input:** The gpt-realtime family handles live speech, since GPT-5.6 models read text and images only
+
+## Frequently asked questions
+
+### What is GPT 5.6 Terra built for?
+
+Everyday production work. OpenAI designed GPT 5.6 Terra to balance intelligence and cost, which puts it between the GPT-5.6 Sol flagship and the low-cost GPT-5.6 Luna tier.
+
+### How does GPT 5.6 Terra compare with the previous generation?
+
+Performance compares to the previous generation at a lower price, and GPT 5.6 Terra handles agentic coding, biology, and cybersecurity work better. It also reaches answers in fewer tokens.
+
+### What context window and output limit does GPT 5.6 Terra support?
+
+1.1M tokens, with up to 128K tokens of output per request, matching the rest of the GPT-5.6 family.
+
+### What inputs does GPT 5.6 Terra accept?
+
+Text and images, with text output. Audio and video input are not supported, so route voice work to the gpt-realtime family instead.
+
+### Which APIs can I use to call GPT 5.6 Terra?
+
+Set the model to `openai/gpt-5.6-terra` in the AI SDK, the Chat Completions API, the Responses API, or another supported API format. AI Gateway accepts each format and routes the request.
+
+### When should I escalate from GPT 5.6 Terra to GPT-5.6 Sol?
+
+Escalate when the balanced tier misses on your hardest prompts. Log the turns where GPT 5.6 Terra falls short, retry those against GPT-5.6 Sol, and route only that traffic to the flagship.
+
+### What does GPT 5.6 Terra cost?
+
+List pricing is $2 per million input tokens and $12 per million output tokens, with cached input at $0.2. Short-context and long-context requests are priced separately, and AI Gateway mirrors provider pricing with no markup.
+
+### Does GPT 5.6 Terra support zero data retention through AI Gateway?
+
+Yes, Zero Data Retention is available for this model. Zero Data Retention is offered on a per-provider basis. See https://vercel.com/docs/ai-gateway/capabilities/zdr for details.
+
+### What are typical latency characteristics?
+
+This page shows live throughput and time-to-first-token metrics measured across real AI Gateway traffic.
+
+## Links
+
+- [Model page](https://vercel.com/ai-gateway/models/gpt-5.6-terra)
+- [AI Gateway documentation](https://vercel.com/docs/ai-gateway)

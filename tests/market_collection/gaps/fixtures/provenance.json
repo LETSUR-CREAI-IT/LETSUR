@@ -1,0 +1,68 @@
+[
+  {
+    "fixture": "azure.json",
+    "origin": "azure_image.bin",
+    "sha256": "b27f1dbd38132630f20f74768af93f6a3df204ac6ec03d2968b20fa691ab8861",
+    "method": "Retained semantic table cells / exact direct metadata fields; no prices invented."
+  },
+  {
+    "fixture": "vertex.html",
+    "origin": "google_vertex_full.bin",
+    "sha256": "cf081434be03e6201beec1ecc10281644c6efc90729ea7a6829ad97782664909",
+    "method": "Retained semantic table cells / exact direct metadata fields; no prices invented."
+  },
+  {
+    "fixture": "google.html",
+    "origin": "google_direct.bin",
+    "sha256": "e1b334ec8dc655c0343fcf071aa1718ce1156f855501f667861afa50f15caefa",
+    "method": "Retained semantic table cells / exact direct metadata fields; no prices invented."
+  },
+  {
+    "fixture": "databricks.html",
+    "origin": "databricks.bin",
+    "sha256": "906b2dc3a3eee6674349071e6e89c7fdf9b3e75c21260431e2d2699bed3c1590",
+    "method": "Retained semantic table cells / exact direct metadata fields; no prices invented."
+  },
+  {
+    "fixture": "veo-3.1-lite-generate-001.json",
+    "origin": "vercel_html_veo-3.1-lite-generate-001.bin",
+    "sha256": "06fa56c02fc8a7f24741a969392fa0989ffe5c45627afbc70cb1e5fea92a6fea",
+    "method": "Retained semantic table cells / exact direct metadata fields; no prices invented."
+  },
+  {
+    "fixture": "veo-3.1-generate-001.json",
+    "origin": "vercel_html_veo-3.1-generate-001.bin",
+    "sha256": "c1e9a1600d62ab2911dc55b5a0de28cef67f4a735b973b546d6c7d302a251fbe",
+    "method": "Retained semantic table cells / exact direct metadata fields; no prices invented."
+  },
+  {
+    "fixture": "seedance-2.5.json",
+    "origin": "vercel_html_seedance-2.5.bin",
+    "sha256": "16ea9b0c14e6e8b60158701377a1f50d3f6ea01e863173f5a3d5b10db2d3b30f",
+    "method": "Retained semantic table cells / exact direct metadata fields; no prices invented."
+  },
+  {
+    "fixture": "veo-3.1-fast-generate-001.json",
+    "origin": "vercel_html_veo-3.1-fast-generate-001.bin",
+    "sha256": "0d3ddbca7eccff4fb710b9df61f16823c555f9a41947684d850e9f869becdf6a",
+    "method": "Retained semantic table cells / exact direct metadata fields; no prices invented."
+  },
+  {
+    "fixture": "fal_standard.json",
+    "origin": "fal_veo_standard.bin",
+    "sha256": "11fa8667cd642f5de1bcbcd776e69910d7407355591cad3ddba523431b75593f",
+    "method": "Retained semantic table cells / exact direct metadata fields; no prices invented."
+  },
+  {
+    "fixture": "fal_fast.json",
+    "origin": "fal_veo_fast.bin",
+    "sha256": "ddaff157dea8e2eca3163c2fdbdfa75cb824aceb5f454eb235896f9558bf15d9",
+    "method": "Retained semantic table cells / exact direct metadata fields; no prices invented."
+  },
+  {
+    "fixture": "fal_lite.json",
+    "origin": "fal_veo_lite_candidate.bin",
+    "sha256": "0726fd68405bb94a013c6b6287c9027b82ab2c638dddbf27d28805b3da916be2",
+    "method": "Exact direct primary metadata fields from retained GET; no prices invented."
+  }
+]

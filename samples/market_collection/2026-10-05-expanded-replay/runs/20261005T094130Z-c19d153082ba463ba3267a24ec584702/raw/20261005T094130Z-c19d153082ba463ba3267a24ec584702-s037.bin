@@ -1,0 +1,109 @@
+# Claude Haiku 4.5
+
+Claude Haiku 4.5 pairs Haiku-tier speed with Sonnet 4-level performance on coding, computer use, and agent tasks, raising the capability ceiling for Anthropic's fast tier.
+
+- **Model ID:** `anthropic/claude-haiku-4.5`
+- **Type:** chat
+- **Providers:** anthropic, bedrock, vertexAnthropic, claudeaws
+- **Context window:** 200,000
+- **Maximum output tokens:** 64,000
+- **Pricing:** $1/1M input tokens, $5/1M output tokens
+- **Canonical page:** https://vercel.com/ai-gateway/models/claude-haiku-4.5
+
+## Supported parameters
+
+Detailed capability metadata has not been reported for this model.
+
+## Example
+
+```ts
+import { streamText } from 'ai'
+
+const result = streamText({
+  model: 'anthropic/claude-haiku-4.5',
+  prompt: 'Why is the sky blue?'
+})
+```
+
+## About
+
+Claude Haiku 4.5 became available on AI Gateway on October 15, 2025. It matches Sonnet 4's performance on coding, computer use, and agent tasks at lower cost and faster speeds. Earlier Haiku generations told a similar story relative to their era's highest-tier release; Claude Haiku 4.5 applies it to the Claude 4 generation.
+
+Workloads that previously required a Sonnet 4 deployment can now be evaluated against Claude Haiku 4.5. For organizations running large agent fleets or high-frequency pipelines, the cost differential between Haiku and Sonnet tiers compounds at scale.
+
+Access Claude Haiku 4.5 by setting the model string to `anthropic/claude-haiku-4.5` in the AI SDK, Chat Completions API, Responses API, Messages API, or other API formats, from TypeScript or Python. Through AI Gateway, you get observability for tracking usage and cost, bring-your-own-key support, and provider routing across Anthropic, Bedrock, Google Vertex AI, Claude Platform on AWS.
+
+Claude Haiku 4.5 inherits the Claude 4 generation's improvements in agentic task execution and instruction following. For teams building with the AI SDK v5, the integration requires only the model string update. No other code changes are needed for the common case.
+
+## What to consider
+
+For agentic pipelines that deploy Claude Haiku 4.5 as a sub-agent alongside a larger orchestrating model, AI Gateway per-request observability helps attribute token costs across each pipeline stage.
+
+## When to use
+
+### Best For
+
+- **High-volume agentic pipelines** where cost per agent step is a primary architecture constraint and Sonnet 4-level capability is required at scale
+- **Computer use tasks** at throughput that Sonnet 4 pricing makes impractical
+- **Sub-agent roles** in multi-model pipelines that need fast, capable, low-latency handling of defined subtasks
+- **Real-time user-facing features** like code completion, inline suggestions, and live chat where latency sensitivity rules out slower models
+- **Coding workflows** where the benchmark parity with Sonnet 4 on coding tasks means no capability sacrifice
+
+### Consider Alternatives When
+
+- The task requires the deepest reasoning or the most complex multi-step problem solving. Claude Sonnet 4.5 or Opus 4-tier models handle harder problems
+- Extended thinking or adaptive thinking modes are essential for your use case
+- You need maximum context window size. Check Haiku 4.5's context specs against tasks processing extremely large inputs
+- Your task profile exceeds what a Haiku-tier model can handle even with 4.5's improvements
+
+## Best for
+
+- **High-volume agentic pipelines:** Cost per agent step is a primary architecture constraint and Sonnet 4-level capability is required at scale
+- **Computer use tasks:** Throughput where Sonnet 4 pricing becomes impractical
+- **Sub-agent roles:** Fast, capable, low-latency handling of defined subtasks in multi-model pipelines
+- **Real-time user-facing features:** Code completion, inline suggestions, and live chat where latency sensitivity rules out slower models
+- **Coding workflows:** Benchmark parity with Sonnet 4 on coding tasks means no capability sacrifice
+
+## Consider alternatives
+
+- **Deepest reasoning tasks:** Claude Sonnet 4.5 or Opus 4-tier models handle the most complex multi-step problem solving
+- **Extended or adaptive thinking:** Thinking modes for harder reasoning are unavailable on this tier
+- **Maximum context window:** Check the context specs on this page against tasks processing extremely large inputs
+- **Haiku-tier ceiling:** Task profiles that exceed Haiku-tier capability require a larger model
+
+## Frequently asked questions
+
+### What does it mean that Claude Haiku 4.5 matches Sonnet 4 performance on coding and agent tasks?
+
+Claude Haiku 4.5 delivers equivalent performance to Sonnet 4 on coding, computer use, and agent tasks at lower cost and faster speeds. Run your own benchmarks against your specific workloads to validate this for your use case.
+
+### How do I use Claude Haiku 4.5 in the AI SDK?
+
+Set the model to `anthropic/claude-haiku-4.5` in your AI SDK v5 integration. No other code changes are required for the common case.
+
+### Which providers back Claude Haiku 4.5 on AI Gateway?
+
+AI Gateway routes Claude Haiku 4.5 through Anthropic, Bedrock, Google Vertex AI, Claude Platform on AWS, with automatic failover.
+
+### Does Claude Haiku 4.5 support computer use?
+
+Yes. Claude Haiku 4.5 matches Sonnet 4's performance on computer use tasks.
+
+### What latency should I expect for Claude Haiku 4.5 through AI Gateway?
+
+See live performance metrics on this page for current throughput. AI Gateway surfaces real traffic data rather than published benchmark numbers.
+
+### Can I use Claude Haiku 4.5 as a drop-in replacement for Sonnet 4 in my agent pipeline?
+
+For coding, computer use, and agent tasks where benchmarks align, Claude Haiku 4.5 may function as a drop-in with cost savings. Test against your specific workflows. General benchmark parity doesn't guarantee equivalent performance on every task profile.
+
+### What observability does AI Gateway provide for Claude Haiku 4.5 usage?
+
+AI Gateway tracks usage and cost per request, enabling cost attribution across pipeline stages and budget management without additional instrumentation.
+
+## Links
+
+- [Model page](https://vercel.com/ai-gateway/models/claude-haiku-4.5)
+- [AI Gateway documentation](https://vercel.com/docs/ai-gateway)
+- [Provider model documentation](https://www.anthropic.com/claude/sonnet)
+- [Provider pricing](https://www.anthropic.com/pricing#anthropic-api)

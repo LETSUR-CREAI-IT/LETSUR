@@ -1,0 +1,317 @@
+{
+  "created_at_utc": "2026-10-04T06:22:58.627754Z",
+  "disabled_sources": [],
+  "mode": "live",
+  "run_id": "20261004T062258Z-af1a11a5b11a4260956c51559ca448ff",
+  "schema_version": 1,
+  "sources": [
+    {
+      "source": {
+        "body_bytes": "255842",
+        "effective_url": "https://ai.google.dev/gemini-api/docs/pricing",
+        "error": "",
+        "fetch_status": "ok",
+        "fetched_at_utc": "2026-10-04T06:22:58.627763Z",
+        "http_status": "200",
+        "model_id": "gemini-3.8-flash",
+        "parse_status": "ok",
+        "raw_path": "raw/20261004T062258Z-af1a11a5b11a4260956c51559ca448ff-s001.bin",
+        "raw_sha256": "635fa4b355d24adde97fb44e105b1b07efe1ded901b120ae369f37a8e2959057",
+        "requested_url": "https://ai.google.dev/gemini-api/docs/pricing",
+        "route": "google_direct",
+        "run_id": "20261004T062258Z-af1a11a5b11a4260956c51559ca448ff",
+        "source_id": "20261004T062258Z-af1a11a5b11a4260956c51559ca448ff-s001",
+        "source_key": "google_gemini_38_flash"
+      },
+      "spec": {
+        "modality": "llm",
+        "model_id": "gemini-3.8-flash",
+        "parser": "google",
+        "route": "google_direct",
+        "source_key": "google_gemini_38_flash",
+        "task": "text_generation",
+        "url": "https://ai.google.dev/gemini-api/docs/pricing"
+      }
+    },
+    {
+      "source": {
+        "body_bytes": "576908",
+        "effective_url": "https://openrouter.ai/google/gemini-3.8-flash/providers",
+        "error": "",
+        "fetch_status": "ok",
+        "fetched_at_utc": "2026-10-04T06:22:59.430720Z",
+        "http_status": "200",
+        "model_id": "gemini-3.8-flash",
+        "parse_status": "ok",
+        "raw_path": "raw/20261004T062258Z-af1a11a5b11a4260956c51559ca448ff-s002.bin",
+        "raw_sha256": "bab799d6a248440053d9917e97edd4765b660d06109ef3178587ee1414e74707",
+        "requested_url": "https://openrouter.ai/google/gemini-3.8-flash/providers",
+        "route": "openrouter",
+        "run_id": "20261004T062258Z-af1a11a5b11a4260956c51559ca448ff",
+        "source_id": "20261004T062258Z-af1a11a5b11a4260956c51559ca448ff-s002",
+        "source_key": "openrouter_gemini_38_flash"
+      },
+      "spec": {
+        "modality": "llm",
+        "model_id": "gemini-3.8-flash",
+        "parser": "openrouter",
+        "route": "openrouter",
+        "source_key": "openrouter_gemini_38_flash",
+        "task": "text_generation",
+        "url": "https://openrouter.ai/google/gemini-3.8-flash/providers"
+      }
+    },
+    {
+      "source": {
+        "body_bytes": "1463231",
+        "effective_url": "https://vercel.com/ai-gateway/models/gemini-3.8-flash",
+        "error": "",
+        "fetch_status": "ok",
+        "fetched_at_utc": "2026-10-04T06:23:03.729527Z",
+        "http_status": "200",
+        "model_id": "gemini-3.8-flash",
+        "parse_status": "ok",
+        "raw_path": "raw/20261004T062258Z-af1a11a5b11a4260956c51559ca448ff-s003.bin",
+        "raw_sha256": "135cd456d064f858ec17b14d0b95d67a9a34a6b53c3987fbf9254fcd68fe8c39",
+        "requested_url": "https://vercel.com/ai-gateway/models/gemini-3.8-flash",
+        "route": "vercel_ai_gateway",
+        "run_id": "20261004T062258Z-af1a11a5b11a4260956c51559ca448ff",
+        "source_id": "20261004T062258Z-af1a11a5b11a4260956c51559ca448ff-s003",
+        "source_key": "vercel_gemini_38_flash"
+      },
+      "spec": {
+        "modality": "llm",
+        "model_id": "gemini-3.8-flash",
+        "parser": "vercel",
+        "route": "vercel_ai_gateway",
+        "source_key": "vercel_gemini_38_flash",
+        "task": "text_generation",
+        "url": "https://vercel.com/ai-gateway/models/gemini-3.8-flash"
+      }
+    },
+    {
+      "source": {
+        "body_bytes": "3472",
+        "effective_url": "https://developers.openai.com/api/docs/models/gpt-image-2.5-sunburst.md",
+        "error": "",
+        "fetch_status": "ok",
+        "fetched_at_utc": "2026-10-04T06:23:04.241956Z",
+        "http_status": "200",
+        "model_id": "gpt-image-2.5-sunburst",
+        "parse_status": "ok",
+        "raw_path": "raw/20261004T062258Z-af1a11a5b11a4260956c51559ca448ff-s004.bin",
+        "raw_sha256": "4b83a727c044e4b772db4636b751d18791df8412501e13e21a51bd2e2e3b5ff6",
+        "requested_url": "https://developers.openai.com/api/docs/models/gpt-image-2.5-sunburst.md",
+        "route": "openai",
+        "run_id": "20261004T062258Z-af1a11a5b11a4260956c51559ca448ff",
+        "source_id": "20261004T062258Z-af1a11a5b11a4260956c51559ca448ff-s004",
+        "source_key": "openai_sunburst"
+      },
+      "spec": {
+        "modality": "image",
+        "model_id": "gpt-image-2.5-sunburst",
+        "parser": "openai",
+        "route": "openai",
+        "source_key": "openai_sunburst",
+        "task": "text-to-image",
+        "url": "https://developers.openai.com/api/docs/models/gpt-image-2.5-sunburst.md"
+      }
+    },
+    {
+      "source": {
+        "body_bytes": "455931",
+        "effective_url": "https://fal.ai/models/openai/gpt-image-2.5/sunburst/text-to-image",
+        "error": "",
+        "fetch_status": "ok",
+        "fetched_at_utc": "2026-10-04T06:23:04.582074Z",
+        "http_status": "200",
+        "model_id": "gpt-image-2.5-sunburst",
+        "parse_status": "ok",
+        "raw_path": "raw/20261004T062258Z-af1a11a5b11a4260956c51559ca448ff-s005.bin",
+        "raw_sha256": "b565ad496f8afbc15b31ea857304cbf1ad3849be7051d41ace495b275883efdf",
+        "requested_url": "https://fal.ai/models/openai/gpt-image-2.5/sunburst/text-to-image",
+        "route": "fal",
+        "run_id": "20261004T062258Z-af1a11a5b11a4260956c51559ca448ff",
+        "source_id": "20261004T062258Z-af1a11a5b11a4260956c51559ca448ff-s005",
+        "source_key": "fal_sunburst_t2i"
+      },
+      "spec": {
+        "modality": "image",
+        "model_id": "gpt-image-2.5-sunburst",
+        "parser": "fal_task",
+        "route": "fal",
+        "source_key": "fal_sunburst_t2i",
+        "task": "text-to-image",
+        "url": "https://fal.ai/models/openai/gpt-image-2.5/sunburst/text-to-image"
+      }
+    },
+    {
+      "source": {
+        "body_bytes": "509621",
+        "effective_url": "https://fal.ai/gpt-image-2.5",
+        "error": "",
+        "fetch_status": "ok",
+        "fetched_at_utc": "2026-10-04T06:23:05.186677Z",
+        "http_status": "200",
+        "model_id": "gpt-image-2.5-sunburst",
+        "parse_status": "ok",
+        "raw_path": "raw/20261004T062258Z-af1a11a5b11a4260956c51559ca448ff-s006.bin",
+        "raw_sha256": "9bddded65705bda6d8af3298121239f72bfb5739386570a89f2178846c275e7f",
+        "requested_url": "https://fal.ai/gpt-image-2.5",
+        "route": "fal",
+        "run_id": "20261004T062258Z-af1a11a5b11a4260956c51559ca448ff",
+        "source_id": "20261004T062258Z-af1a11a5b11a4260956c51559ca448ff-s006",
+        "source_key": "fal_sunburst_overview"
+      },
+      "spec": {
+        "modality": "image",
+        "model_id": "gpt-image-2.5-sunburst",
+        "parser": "fal_overview",
+        "route": "fal",
+        "source_key": "fal_sunburst_overview",
+        "task": "text-to-image",
+        "url": "https://fal.ai/gpt-image-2.5"
+      }
+    },
+    {
+      "source": {
+        "body_bytes": "573433",
+        "effective_url": "https://openrouter.ai/openai/gpt-image-2.5-sunburst-20260908",
+        "error": "",
+        "fetch_status": "ok",
+        "fetched_at_utc": "2026-10-04T06:23:06.126505Z",
+        "http_status": "200",
+        "model_id": "gpt-image-2.5-sunburst",
+        "parse_status": "ok",
+        "raw_path": "raw/20261004T062258Z-af1a11a5b11a4260956c51559ca448ff-s007.bin",
+        "raw_sha256": "2a8f5e5e7fbe65bd0f71cbac9962d6c669fc59843610fc861ed87698c22cb6b3",
+        "requested_url": "https://openrouter.ai/openai/gpt-image-2.5-sunburst-20260908",
+        "route": "openrouter",
+        "run_id": "20261004T062258Z-af1a11a5b11a4260956c51559ca448ff",
+        "source_id": "20261004T062258Z-af1a11a5b11a4260956c51559ca448ff-s007",
+        "source_key": "openrouter_sunburst"
+      },
+      "spec": {
+        "modality": "image",
+        "model_id": "gpt-image-2.5-sunburst",
+        "parser": "openrouter",
+        "route": "openrouter",
+        "source_key": "openrouter_sunburst",
+        "task": "text-to-image",
+        "url": "https://openrouter.ai/openai/gpt-image-2.5-sunburst-20260908"
+      }
+    },
+    {
+      "source": {
+        "body_bytes": "1206546",
+        "effective_url": "https://vercel.com/ai-gateway/models/gpt-image-2.5-sunburst",
+        "error": "",
+        "fetch_status": "ok",
+        "fetched_at_utc": "2026-10-04T06:23:06.681758Z",
+        "http_status": "200",
+        "model_id": "gpt-image-2.5-sunburst",
+        "parse_status": "ok",
+        "raw_path": "raw/20261004T062258Z-af1a11a5b11a4260956c51559ca448ff-s008.bin",
+        "raw_sha256": "be0f343222410733baa5056035b461e0535b1e7fdeb79d40863c5462f9dacbd6",
+        "requested_url": "https://vercel.com/ai-gateway/models/gpt-image-2.5-sunburst",
+        "route": "vercel",
+        "run_id": "20261004T062258Z-af1a11a5b11a4260956c51559ca448ff",
+        "source_id": "20261004T062258Z-af1a11a5b11a4260956c51559ca448ff-s008",
+        "source_key": "vercel_sunburst"
+      },
+      "spec": {
+        "modality": "image",
+        "model_id": "gpt-image-2.5-sunburst",
+        "parser": "vercel",
+        "route": "vercel",
+        "source_key": "vercel_sunburst",
+        "task": "text-to-image",
+        "url": "https://vercel.com/ai-gateway/models/gpt-image-2.5-sunburst"
+      }
+    },
+    {
+      "source": {
+        "body_bytes": "492198",
+        "effective_url": "https://fal.ai/models/bytedance/seedance-2.5/text-to-video",
+        "error": "",
+        "fetch_status": "ok",
+        "fetched_at_utc": "2026-10-04T06:23:06.903687Z",
+        "http_status": "200",
+        "model_id": "seedance-2.5",
+        "parse_status": "ok",
+        "raw_path": "raw/20261004T062258Z-af1a11a5b11a4260956c51559ca448ff-s009.bin",
+        "raw_sha256": "14fca53677c2ec3fffc9574b412051bc68f1b2bfae81769c71931aaaaea1b8b4",
+        "requested_url": "https://fal.ai/models/bytedance/seedance-2.5/text-to-video",
+        "route": "fal",
+        "run_id": "20261004T062258Z-af1a11a5b11a4260956c51559ca448ff",
+        "source_id": "20261004T062258Z-af1a11a5b11a4260956c51559ca448ff-s009",
+        "source_key": "fal_seedance_25_t2v"
+      },
+      "spec": {
+        "modality": "video",
+        "model_id": "seedance-2.5",
+        "parser": "fal",
+        "route": "fal",
+        "source_key": "fal_seedance_25_t2v",
+        "task": "text-to-video",
+        "url": "https://fal.ai/models/bytedance/seedance-2.5/text-to-video"
+      }
+    },
+    {
+      "source": {
+        "body_bytes": "825909",
+        "effective_url": "https://docs.byteplus.com/id/docs/modelark/model-pricing?redirect=1",
+        "error": "",
+        "fetch_status": "ok",
+        "fetched_at_utc": "2026-10-04T06:23:07.608233Z",
+        "http_status": "200",
+        "model_id": "seedance-2.5",
+        "parse_status": "ok",
+        "raw_path": "raw/20261004T062258Z-af1a11a5b11a4260956c51559ca448ff-s010.bin",
+        "raw_sha256": "3d7b192f9de0264f65b0d9ce93dc8214c80d96f274b418cb553bff4b9cd7e8ff",
+        "requested_url": "https://docs.byteplus.com/id/docs/modelark/model-pricing?redirect=1",
+        "route": "BytePlus ModelArk",
+        "run_id": "20261004T062258Z-af1a11a5b11a4260956c51559ca448ff",
+        "source_id": "20261004T062258Z-af1a11a5b11a4260956c51559ca448ff-s010",
+        "source_key": "byteplus_seedance_25_t2v"
+      },
+      "spec": {
+        "modality": "video",
+        "model_id": "seedance-2.5",
+        "parser": "byteplus_pricing",
+        "route": "BytePlus ModelArk",
+        "source_key": "byteplus_seedance_25_t2v",
+        "task": "text-to-video",
+        "url": "https://docs.byteplus.com/id/docs/modelark/model-pricing?redirect=1"
+      }
+    },
+    {
+      "source": {
+        "body_bytes": "402807",
+        "effective_url": "https://docs.byteplus.com/en/docs/modelark/seedance-2-0-mini-fast-limited-time-discount?redirect=1",
+        "error": "",
+        "fetch_status": "ok",
+        "fetched_at_utc": "2026-10-04T06:23:08.762637Z",
+        "http_status": "200",
+        "model_id": "seedance-2.5",
+        "parse_status": "ok",
+        "raw_path": "raw/20261004T062258Z-af1a11a5b11a4260956c51559ca448ff-s011.bin",
+        "raw_sha256": "7164399ce22258dbaf1583eefddbd780611d61ec397db4498caf40e05b4fc7dc",
+        "requested_url": "https://docs.byteplus.com/en/docs/modelark/seedance-2-0-mini-fast-limited-time-discount?redirect=1",
+        "route": "BytePlus ModelArk",
+        "run_id": "20261004T062258Z-af1a11a5b11a4260956c51559ca448ff",
+        "source_id": "20261004T062258Z-af1a11a5b11a4260956c51559ca448ff-s011",
+        "source_key": "byteplus_seedance_promotion_rules"
+      },
+      "spec": {
+        "modality": "video",
+        "model_id": "seedance-2.5",
+        "parser": "byteplus_campaign",
+        "route": "BytePlus ModelArk",
+        "source_key": "byteplus_seedance_promotion_rules",
+        "task": "text-to-video",
+        "url": "https://docs.byteplus.com/en/docs/modelark/seedance-2-0-mini-fast-limited-time-discount?redirect=1"
+      }
+    }
+  ]
+}

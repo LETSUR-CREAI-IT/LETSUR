@@ -1,0 +1,749 @@
+[
+  {
+    "source_key": "google_gemini_38_flash",
+    "modality": "llm",
+    "model_id": "gemini-3.8-flash",
+    "route": "google_direct",
+    "task": "text_generation",
+    "url": "https://ai.google.dev/gemini-api/docs/pricing",
+    "parser": "google"
+  },
+  {
+    "source_key": "openrouter_gemini_38_flash",
+    "modality": "llm",
+    "model_id": "gemini-3.8-flash",
+    "route": "openrouter",
+    "task": "text_generation",
+    "url": "https://openrouter.ai/google/gemini-3.8-flash/providers",
+    "parser": "openrouter"
+  },
+  {
+    "source_key": "vercel_gemini_38_flash",
+    "modality": "llm",
+    "model_id": "gemini-3.8-flash",
+    "route": "vercel_ai_gateway",
+    "task": "text_generation",
+    "url": "https://vercel.com/ai-gateway/models/gemini-3.8-flash",
+    "parser": "vercel"
+  },
+  {
+    "source_key": "openai_gpt_6_astra",
+    "modality": "llm",
+    "model_id": "gpt-6-astra",
+    "route": "openai_direct",
+    "task": "text_generation",
+    "url": "https://developers.openai.com/api/docs/models/gpt-6-astra.md",
+    "parser": "openai_astra"
+  },
+  {
+    "source_key": "openrouter_gpt_6_astra",
+    "modality": "llm",
+    "model_id": "gpt-6-astra",
+    "route": "openrouter",
+    "task": "text_generation",
+    "url": "https://openrouter.ai/openai/gpt-6-astra/providers",
+    "parser": "openrouter_astra"
+  },
+  {
+    "source_key": "vercel_gpt_6_astra",
+    "modality": "llm",
+    "model_id": "gpt-6-astra",
+    "route": "vercel_ai_gateway",
+    "task": "text_generation",
+    "url": "https://vercel.com/ai-gateway/models/gpt-6-astra.md",
+    "parser": "vercel_astra"
+  },
+  {
+    "source_key": "anthropic_claude_fable_51",
+    "modality": "llm",
+    "model_id": "claude-fable-5-1",
+    "route": "anthropic_direct",
+    "task": "text_generation",
+    "url": "https://platform.claude.com/docs/en/about-claude/pricing.md",
+    "parser": "anthropic_fable"
+  },
+  {
+    "source_key": "openrouter_claude_fable_51",
+    "modality": "llm",
+    "model_id": "claude-fable-5-1",
+    "route": "openrouter",
+    "task": "text_generation",
+    "url": "https://openrouter.ai/anthropic/claude-fable-5.1/providers",
+    "parser": "openrouter_fable"
+  },
+  {
+    "source_key": "vercel_claude_fable_51",
+    "modality": "llm",
+    "model_id": "claude-fable-5-1",
+    "route": "vercel_ai_gateway",
+    "task": "text_generation",
+    "url": "https://vercel.com/ai-gateway/models/claude-fable-5.1.md",
+    "parser": "vercel_fable"
+  },
+  {
+    "source_key": "bedrock_claude_fable_51",
+    "modality": "llm",
+    "model_id": "claude-fable-5-1",
+    "route": "aws_bedrock",
+    "task": "text_generation",
+    "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/model-card-anthropic-claude-fable-5-1.md",
+    "parser": "bedrock_fable"
+  },
+  {
+    "source_key": "openai_gpt_6_sol",
+    "modality": "llm",
+    "model_id": "gpt-6-sol",
+    "route": "openai_direct",
+    "task": "text_generation",
+    "url": "https://developers.openai.com/api/docs/models/gpt-6-sol.md",
+    "parser": "openai_gpt_6_sol"
+  },
+  {
+    "source_key": "openrouter_gpt_6_sol",
+    "modality": "llm",
+    "model_id": "gpt-6-sol",
+    "route": "openrouter",
+    "task": "text_generation",
+    "url": "https://openrouter.ai/openai/gpt-6-sol/providers",
+    "parser": "openrouter_gpt_6_sol"
+  },
+  {
+    "source_key": "vercel_gpt_6_sol",
+    "modality": "llm",
+    "model_id": "gpt-6-sol",
+    "route": "vercel_ai_gateway",
+    "task": "text_generation",
+    "url": "https://vercel.com/ai-gateway/models/gpt-6-sol.md",
+    "parser": "vercel_gpt_6_sol"
+  },
+  {
+    "source_key": "openai_gpt_6_1_sol",
+    "modality": "llm",
+    "model_id": "gpt-6.1-sol",
+    "route": "openai_direct",
+    "task": "text_generation",
+    "url": "https://developers.openai.com/api/docs/models/gpt-6.1-sol.md",
+    "parser": "openai_gpt_6_1_sol"
+  },
+  {
+    "source_key": "openrouter_gpt_6_1_sol",
+    "modality": "llm",
+    "model_id": "gpt-6.1-sol",
+    "route": "openrouter",
+    "task": "text_generation",
+    "url": "https://openrouter.ai/openai/gpt-6.1-sol/providers",
+    "parser": "openrouter_gpt_6_1_sol"
+  },
+  {
+    "source_key": "vercel_gpt_6_1_sol",
+    "modality": "llm",
+    "model_id": "gpt-6.1-sol",
+    "route": "vercel_ai_gateway",
+    "task": "text_generation",
+    "url": "https://vercel.com/ai-gateway/models/gpt-6.1-sol.md",
+    "parser": "vercel_gpt_6_1_sol"
+  },
+  {
+    "source_key": "openai_gpt_6_luna",
+    "modality": "llm",
+    "model_id": "gpt-6-luna",
+    "route": "openai_direct",
+    "task": "text_generation",
+    "url": "https://developers.openai.com/api/docs/models/gpt-6-luna.md",
+    "parser": "openai_gpt_6_luna"
+  },
+  {
+    "source_key": "openrouter_gpt_6_luna",
+    "modality": "llm",
+    "model_id": "gpt-6-luna",
+    "route": "openrouter",
+    "task": "text_generation",
+    "url": "https://openrouter.ai/openai/gpt-6-luna/providers",
+    "parser": "openrouter_gpt_6_luna"
+  },
+  {
+    "source_key": "vercel_gpt_6_luna",
+    "modality": "llm",
+    "model_id": "gpt-6-luna",
+    "route": "vercel_ai_gateway",
+    "task": "text_generation",
+    "url": "https://vercel.com/ai-gateway/models/gpt-6-luna.md",
+    "parser": "vercel_gpt_6_luna"
+  },
+  {
+    "source_key": "openai_gpt_5_6_sol",
+    "modality": "llm",
+    "model_id": "gpt-5.6-sol",
+    "route": "openai_direct",
+    "task": "text_generation",
+    "url": "https://developers.openai.com/api/docs/models/gpt-5.6-sol.md",
+    "parser": "openai_gpt_5_6_sol"
+  },
+  {
+    "source_key": "openrouter_gpt_5_6_sol",
+    "modality": "llm",
+    "model_id": "gpt-5.6-sol",
+    "route": "openrouter",
+    "task": "text_generation",
+    "url": "https://openrouter.ai/openai/gpt-5.6-sol/providers",
+    "parser": "openrouter_gpt_5_6_sol"
+  },
+  {
+    "source_key": "vercel_gpt_5_6_sol",
+    "modality": "llm",
+    "model_id": "gpt-5.6-sol",
+    "route": "vercel_ai_gateway",
+    "task": "text_generation",
+    "url": "https://vercel.com/ai-gateway/models/gpt-5.6-sol.md",
+    "parser": "vercel_gpt_5_6_sol"
+  },
+  {
+    "source_key": "openai_gpt_5_6_terra",
+    "modality": "llm",
+    "model_id": "gpt-5.6-terra",
+    "route": "openai_direct",
+    "task": "text_generation",
+    "url": "https://developers.openai.com/api/docs/models/gpt-5.6-terra.md",
+    "parser": "openai_gpt_5_6_terra"
+  },
+  {
+    "source_key": "openrouter_gpt_5_6_terra",
+    "modality": "llm",
+    "model_id": "gpt-5.6-terra",
+    "route": "openrouter",
+    "task": "text_generation",
+    "url": "https://openrouter.ai/openai/gpt-5.6-terra/providers",
+    "parser": "openrouter_gpt_5_6_terra"
+  },
+  {
+    "source_key": "vercel_gpt_5_6_terra",
+    "modality": "llm",
+    "model_id": "gpt-5.6-terra",
+    "route": "vercel_ai_gateway",
+    "task": "text_generation",
+    "url": "https://vercel.com/ai-gateway/models/gpt-5.6-terra.md",
+    "parser": "vercel_gpt_5_6_terra"
+  },
+  {
+    "source_key": "openai_gpt_5_6_luna",
+    "modality": "llm",
+    "model_id": "gpt-5.6-luna",
+    "route": "openai_direct",
+    "task": "text_generation",
+    "url": "https://developers.openai.com/api/docs/models/gpt-5.6-luna.md",
+    "parser": "openai_gpt_5_6_luna"
+  },
+  {
+    "source_key": "openrouter_gpt_5_6_luna",
+    "modality": "llm",
+    "model_id": "gpt-5.6-luna",
+    "route": "openrouter",
+    "task": "text_generation",
+    "url": "https://openrouter.ai/openai/gpt-5.6-luna/providers",
+    "parser": "openrouter_gpt_5_6_luna"
+  },
+  {
+    "source_key": "vercel_gpt_5_6_luna",
+    "modality": "llm",
+    "model_id": "gpt-5.6-luna",
+    "route": "vercel_ai_gateway",
+    "task": "text_generation",
+    "url": "https://vercel.com/ai-gateway/models/gpt-5.6-luna.md",
+    "parser": "vercel_gpt_5_6_luna"
+  },
+  {
+    "source_key": "anthropic_claude_opus_5_5",
+    "modality": "llm",
+    "model_id": "claude-opus-5-5",
+    "route": "anthropic_direct",
+    "task": "text_generation",
+    "url": "https://platform.claude.com/docs/en/about-claude/pricing.md",
+    "parser": "anthropic_claude_opus_5_5"
+  },
+  {
+    "source_key": "openrouter_claude_opus_5_5",
+    "modality": "llm",
+    "model_id": "claude-opus-5-5",
+    "route": "openrouter",
+    "task": "text_generation",
+    "url": "https://openrouter.ai/anthropic/claude-opus-5.5/providers",
+    "parser": "openrouter_claude_opus_5_5"
+  },
+  {
+    "source_key": "vercel_claude_opus_5_5",
+    "modality": "llm",
+    "model_id": "claude-opus-5-5",
+    "route": "vercel_ai_gateway",
+    "task": "text_generation",
+    "url": "https://vercel.com/ai-gateway/models/claude-opus-5.5.md",
+    "parser": "vercel_claude_opus_5_5"
+  },
+  {
+    "source_key": "anthropic_claude_sonnet_5_5",
+    "modality": "llm",
+    "model_id": "claude-sonnet-5-5",
+    "route": "anthropic_direct",
+    "task": "text_generation",
+    "url": "https://platform.claude.com/docs/en/about-claude/pricing.md",
+    "parser": "anthropic_claude_sonnet_5_5"
+  },
+  {
+    "source_key": "openrouter_claude_sonnet_5_5",
+    "modality": "llm",
+    "model_id": "claude-sonnet-5-5",
+    "route": "openrouter",
+    "task": "text_generation",
+    "url": "https://openrouter.ai/anthropic/claude-sonnet-5.5/providers",
+    "parser": "openrouter_claude_sonnet_5_5"
+  },
+  {
+    "source_key": "vercel_claude_sonnet_5_5",
+    "modality": "llm",
+    "model_id": "claude-sonnet-5-5",
+    "route": "vercel_ai_gateway",
+    "task": "text_generation",
+    "url": "https://vercel.com/ai-gateway/models/claude-sonnet-5.5.md",
+    "parser": "vercel_claude_sonnet_5_5"
+  },
+  {
+    "source_key": "anthropic_claude_haiku_4_5",
+    "modality": "llm",
+    "model_id": "claude-haiku-4-5",
+    "route": "anthropic_direct",
+    "task": "text_generation",
+    "url": "https://platform.claude.com/docs/en/about-claude/pricing.md",
+    "parser": "anthropic_claude_haiku_4_5"
+  },
+  {
+    "source_key": "openrouter_claude_haiku_4_5",
+    "modality": "llm",
+    "model_id": "claude-haiku-4-5",
+    "route": "openrouter",
+    "task": "text_generation",
+    "url": "https://openrouter.ai/anthropic/claude-haiku-4.5/providers",
+    "parser": "openrouter_claude_haiku_4_5"
+  },
+  {
+    "source_key": "vercel_claude_haiku_4_5",
+    "modality": "llm",
+    "model_id": "claude-haiku-4-5",
+    "route": "vercel_ai_gateway",
+    "task": "text_generation",
+    "url": "https://vercel.com/ai-gateway/models/claude-haiku-4.5.md",
+    "parser": "vercel_claude_haiku_4_5"
+  },
+  {
+    "source_key": "bedrock_gpt_6_astra",
+    "modality": "llm",
+    "model_id": "gpt-6-astra",
+    "route": "aws_bedrock",
+    "task": "text_generation",
+    "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/model-card-openai-gpt-6-astra.html",
+    "parser": "cloud_bedrock_gpt_6_astra"
+  },
+  {
+    "source_key": "bedrock_gpt_6_sol",
+    "modality": "llm",
+    "model_id": "gpt-6-sol",
+    "route": "aws_bedrock",
+    "task": "text_generation",
+    "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/model-card-openai-gpt-6-sol.html",
+    "parser": "cloud_bedrock_gpt_6_sol"
+  },
+  {
+    "source_key": "bedrock_gpt_6_1_sol",
+    "modality": "llm",
+    "model_id": "gpt-6.1-sol",
+    "route": "aws_bedrock",
+    "task": "text_generation",
+    "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/model-card-openai-gpt-6-1-sol.html",
+    "parser": "cloud_bedrock_gpt_6_1_sol"
+  },
+  {
+    "source_key": "bedrock_gpt_6_luna",
+    "modality": "llm",
+    "model_id": "gpt-6-luna",
+    "route": "aws_bedrock",
+    "task": "text_generation",
+    "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/model-card-openai-gpt-6-luna.html",
+    "parser": "cloud_bedrock_gpt_6_luna"
+  },
+  {
+    "source_key": "bedrock_gpt_5_6_sol",
+    "modality": "llm",
+    "model_id": "gpt-5.6-sol",
+    "route": "aws_bedrock",
+    "task": "text_generation",
+    "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/model-card-openai-gpt-56-sol.html",
+    "parser": "cloud_bedrock_gpt_5_6_sol"
+  },
+  {
+    "source_key": "bedrock_gpt_5_6_terra",
+    "modality": "llm",
+    "model_id": "gpt-5.6-terra",
+    "route": "aws_bedrock",
+    "task": "text_generation",
+    "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/model-card-openai-gpt-56-terra.html",
+    "parser": "cloud_bedrock_gpt_5_6_terra"
+  },
+  {
+    "source_key": "bedrock_gpt_5_6_luna",
+    "modality": "llm",
+    "model_id": "gpt-5.6-luna",
+    "route": "aws_bedrock",
+    "task": "text_generation",
+    "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/model-card-openai-gpt-56-luna.html",
+    "parser": "cloud_bedrock_gpt_5_6_luna"
+  },
+  {
+    "source_key": "bedrock_claude_opus_5_5",
+    "modality": "llm",
+    "model_id": "claude-opus-5-5",
+    "route": "aws_bedrock",
+    "task": "text_generation",
+    "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/model-card-anthropic-claude-opus-5-5.html",
+    "parser": "cloud_bedrock_claude_opus_5_5"
+  },
+  {
+    "source_key": "bedrock_claude_sonnet_5_5",
+    "modality": "llm",
+    "model_id": "claude-sonnet-5-5",
+    "route": "aws_bedrock",
+    "task": "text_generation",
+    "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/model-card-anthropic-claude-sonnet-5-5.html",
+    "parser": "cloud_bedrock_claude_sonnet_5_5"
+  },
+  {
+    "source_key": "bedrock_claude_haiku_4_5",
+    "modality": "llm",
+    "model_id": "claude-haiku-4-5",
+    "route": "aws_bedrock",
+    "task": "text_generation",
+    "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/model-card-anthropic-claude-haiku-4-5.html",
+    "parser": "cloud_bedrock_claude_haiku_4_5"
+  },
+  {
+    "source_key": "azure_gpt_6_astra",
+    "modality": "llm",
+    "model_id": "gpt-6-astra",
+    "route": "azure_foundry",
+    "task": "text_generation",
+    "url": "https://ai.azure.com/catalog/models/gpt-6-astra",
+    "parser": "cloud_azure_gpt_6_astra"
+  },
+  {
+    "source_key": "azure_gpt_6_sol",
+    "modality": "llm",
+    "model_id": "gpt-6-sol",
+    "route": "azure_foundry",
+    "task": "text_generation",
+    "url": "https://ai.azure.com/catalog/models/gpt-6-sol",
+    "parser": "cloud_azure_gpt_6_sol"
+  },
+  {
+    "source_key": "azure_gpt_6_1_sol",
+    "modality": "llm",
+    "model_id": "gpt-6.1-sol",
+    "route": "azure_foundry",
+    "task": "text_generation",
+    "url": "https://ai.azure.com/catalog/models/gpt-6.1-sol",
+    "parser": "cloud_azure_gpt_6_1_sol"
+  },
+  {
+    "source_key": "azure_gpt_6_luna",
+    "modality": "llm",
+    "model_id": "gpt-6-luna",
+    "route": "azure_foundry",
+    "task": "text_generation",
+    "url": "https://ai.azure.com/catalog/models/gpt-6-luna",
+    "parser": "cloud_azure_gpt_6_luna"
+  },
+  {
+    "source_key": "azure_gpt_5_6_sol",
+    "modality": "llm",
+    "model_id": "gpt-5.6-sol",
+    "route": "azure_foundry",
+    "task": "text_generation",
+    "url": "https://ai.azure.com/catalog/models/gpt-5.6-sol",
+    "parser": "cloud_azure_gpt_5_6_sol"
+  },
+  {
+    "source_key": "azure_gpt_5_6_terra",
+    "modality": "llm",
+    "model_id": "gpt-5.6-terra",
+    "route": "azure_foundry",
+    "task": "text_generation",
+    "url": "https://ai.azure.com/catalog/models/gpt-5.6-terra",
+    "parser": "cloud_azure_gpt_5_6_terra"
+  },
+  {
+    "source_key": "azure_gpt_5_6_luna",
+    "modality": "llm",
+    "model_id": "gpt-5.6-luna",
+    "route": "azure_foundry",
+    "task": "text_generation",
+    "url": "https://ai.azure.com/catalog/models/gpt-5.6-luna",
+    "parser": "cloud_azure_gpt_5_6_luna"
+  },
+  {
+    "source_key": "azure_claude_fable_5_1",
+    "modality": "llm",
+    "model_id": "claude-fable-5-1",
+    "route": "azure_foundry",
+    "task": "text_generation",
+    "url": "https://ai.azure.com/catalog/models/claude-fable-5-1",
+    "parser": "cloud_azure_claude_fable_5_1"
+  },
+  {
+    "source_key": "azure_claude_opus_5_5",
+    "modality": "llm",
+    "model_id": "claude-opus-5-5",
+    "route": "azure_foundry",
+    "task": "text_generation",
+    "url": "https://ai.azure.com/catalog/models/claude-opus-5-5",
+    "parser": "cloud_azure_claude_opus_5_5"
+  },
+  {
+    "source_key": "azure_claude_sonnet_5_5",
+    "modality": "llm",
+    "model_id": "claude-sonnet-5-5",
+    "route": "azure_foundry",
+    "task": "text_generation",
+    "url": "https://ai.azure.com/catalog/models/claude-sonnet-5-5",
+    "parser": "cloud_azure_claude_sonnet_5_5"
+  },
+  {
+    "source_key": "azure_claude_haiku_4_5",
+    "modality": "llm",
+    "model_id": "claude-haiku-4-5",
+    "route": "azure_foundry",
+    "task": "text_generation",
+    "url": "https://ai.azure.com/catalog/models/claude-haiku-4-5",
+    "parser": "cloud_azure_claude_haiku_4_5"
+  },
+  {
+    "source_key": "anthropic_claude_sonnet_5",
+    "modality": "llm",
+    "model_id": "claude-sonnet-5",
+    "route": "anthropic_direct",
+    "task": "text_generation",
+    "url": "https://platform.claude.com/docs/en/about-claude/pricing.md",
+    "parser": "missing_anthropic_claude_sonnet_5"
+  },
+  {
+    "source_key": "openrouter_claude_sonnet_5",
+    "modality": "llm",
+    "model_id": "claude-sonnet-5",
+    "route": "openrouter",
+    "task": "text_generation",
+    "url": "https://openrouter.ai/anthropic/claude-sonnet-5",
+    "parser": "missing_openrouter_claude_sonnet_5"
+  },
+  {
+    "source_key": "vercel_claude_sonnet_5",
+    "modality": "llm",
+    "model_id": "claude-sonnet-5",
+    "route": "vercel_ai_gateway",
+    "task": "text_generation",
+    "url": "https://vercel.com/ai-gateway/models/claude-sonnet-5.md",
+    "parser": "missing_vercel_claude_sonnet_5"
+  },
+  {
+    "source_key": "openrouter_deepseek_v4_pro",
+    "modality": "llm",
+    "model_id": "deepseek-v4-pro",
+    "route": "openrouter",
+    "task": "text_generation",
+    "url": "https://openrouter.ai/deepseek/deepseek-v4-pro",
+    "parser": "missing_openrouter_deepseek_v4_pro"
+  },
+  {
+    "source_key": "vercel_deepseek_v4_pro",
+    "modality": "llm",
+    "model_id": "deepseek-v4-pro",
+    "route": "vercel_ai_gateway",
+    "task": "text_generation",
+    "url": "https://vercel.com/ai-gateway/models/deepseek-v4-pro.md",
+    "parser": "missing_vercel_deepseek_v4_pro"
+  },
+  {
+    "source_key": "openrouter_deepseek_v4_1_flash",
+    "modality": "llm",
+    "model_id": "deepseek-v4.1-flash",
+    "route": "openrouter",
+    "task": "text_generation",
+    "url": "https://openrouter.ai/deepseek/deepseek-v4.1-flash",
+    "parser": "missing_openrouter_deepseek_v4_1_flash"
+  },
+  {
+    "source_key": "vercel_deepseek_v4_1_flash",
+    "modality": "llm",
+    "model_id": "deepseek-v4.1-flash",
+    "route": "vercel_ai_gateway",
+    "task": "text_generation",
+    "url": "https://vercel.com/ai-gateway/models/deepseek-v4.1-flash.md",
+    "parser": "missing_vercel_deepseek_v4_1_flash"
+  },
+  {
+    "source_key": "openrouter_glm_5_2",
+    "modality": "llm",
+    "model_id": "glm-5.2",
+    "route": "openrouter",
+    "task": "text_generation",
+    "url": "https://openrouter.ai/z-ai/glm-5.2",
+    "parser": "missing_openrouter_glm_5_2"
+  },
+  {
+    "source_key": "vercel_glm_5_2",
+    "modality": "llm",
+    "model_id": "glm-5.2",
+    "route": "vercel_ai_gateway",
+    "task": "text_generation",
+    "url": "https://vercel.com/ai-gateway/models/glm-5.2.md",
+    "parser": "missing_vercel_glm_5_2"
+  },
+  {
+    "source_key": "openrouter_glm_5_3_flash",
+    "modality": "llm",
+    "model_id": "glm-5.3-flash",
+    "route": "openrouter",
+    "task": "text_generation",
+    "url": "https://openrouter.ai/z-ai/glm-5.3-flash",
+    "parser": "missing_openrouter_glm_5_3_flash"
+  },
+  {
+    "source_key": "vercel_glm_5_3_flash",
+    "modality": "llm",
+    "model_id": "glm-5.3-flash",
+    "route": "vercel_ai_gateway",
+    "task": "text_generation",
+    "url": "https://vercel.com/ai-gateway/models/glm-5.3-flash.md",
+    "parser": "missing_vercel_glm_5_3_flash"
+  },
+  {
+    "source_key": "openrouter_kimi_k3",
+    "modality": "llm",
+    "model_id": "kimi-k3",
+    "route": "openrouter",
+    "task": "text_generation",
+    "url": "https://openrouter.ai/moonshotai/kimi-k3",
+    "parser": "missing_openrouter_kimi_k3"
+  },
+  {
+    "source_key": "vercel_kimi_k3",
+    "modality": "llm",
+    "model_id": "kimi-k3",
+    "route": "vercel_ai_gateway",
+    "task": "text_generation",
+    "url": "https://vercel.com/ai-gateway/models/kimi-k3.md",
+    "parser": "missing_vercel_kimi_k3"
+  },
+  {
+    "source_key": "openai_sunburst",
+    "modality": "image",
+    "model_id": "gpt-image-2.5-sunburst",
+    "route": "openai",
+    "task": "text-to-image",
+    "url": "https://developers.openai.com/api/docs/models/gpt-image-2.5-sunburst.md",
+    "parser": "openai"
+  },
+  {
+    "source_key": "fal_sunburst_t2i",
+    "modality": "image",
+    "model_id": "gpt-image-2.5-sunburst",
+    "route": "fal",
+    "task": "text-to-image",
+    "url": "https://fal.ai/models/openai/gpt-image-2.5/sunburst/text-to-image",
+    "parser": "fal_task"
+  },
+  {
+    "source_key": "fal_sunburst_overview",
+    "modality": "image",
+    "model_id": "gpt-image-2.5-sunburst",
+    "route": "fal",
+    "task": "text-to-image",
+    "url": "https://fal.ai/gpt-image-2.5",
+    "parser": "fal_overview"
+  },
+  {
+    "source_key": "openrouter_sunburst",
+    "modality": "image",
+    "model_id": "gpt-image-2.5-sunburst",
+    "route": "openrouter",
+    "task": "text-to-image",
+    "url": "https://openrouter.ai/openai/gpt-image-2.5-sunburst-20260908",
+    "parser": "openrouter"
+  },
+  {
+    "source_key": "vercel_sunburst",
+    "modality": "image",
+    "model_id": "gpt-image-2.5-sunburst",
+    "route": "vercel",
+    "task": "text-to-image",
+    "url": "https://vercel.com/ai-gateway/models/gpt-image-2.5-sunburst",
+    "parser": "vercel"
+  },
+  {
+    "source_key": "openai_flare",
+    "modality": "image",
+    "model_id": "gpt-image-2.5-flare",
+    "route": "openai",
+    "task": "text-to-image",
+    "url": "https://developers.openai.com/api/docs/models/gpt-image-2.5-flare.md",
+    "parser": "flare_openai"
+  },
+  {
+    "source_key": "fal_flare_t2i",
+    "modality": "image",
+    "model_id": "gpt-image-2.5-flare",
+    "route": "fal",
+    "task": "text-to-image",
+    "url": "https://fal.ai/models/openai/gpt-image-2.5/flare/text-to-image",
+    "parser": "flare_fal_task"
+  },
+  {
+    "source_key": "openrouter_flare",
+    "modality": "image",
+    "model_id": "gpt-image-2.5-flare",
+    "route": "openrouter",
+    "task": "text-to-image",
+    "url": "https://openrouter.ai/openai/gpt-image-2.5-flare",
+    "parser": "flare_openrouter"
+  },
+  {
+    "source_key": "vercel_flare",
+    "modality": "image",
+    "model_id": "gpt-image-2.5-flare",
+    "route": "vercel",
+    "task": "text-to-image",
+    "url": "https://vercel.com/ai-gateway/models/gpt-image-2.5-flare",
+    "parser": "flare_vercel"
+  },
+  {
+    "source_key": "fal_seedance_25_t2v",
+    "modality": "video",
+    "model_id": "seedance-2.5",
+    "route": "fal",
+    "task": "text-to-video",
+    "url": "https://fal.ai/models/bytedance/seedance-2.5/text-to-video",
+    "parser": "fal"
+  },
+  {
+    "source_key": "byteplus_seedance_25_t2v",
+    "modality": "video",
+    "model_id": "seedance-2.5",
+    "route": "BytePlus ModelArk",
+    "task": "text-to-video",
+    "url": "https://docs.byteplus.com/id/docs/modelark/model-pricing?redirect=1",
+    "parser": "byteplus_pricing"
+  },
+  {
+    "source_key": "byteplus_seedance_promotion_rules",
+    "modality": "video",
+    "model_id": "seedance-2.5",
+    "route": "BytePlus ModelArk",
+    "task": "text-to-video",
+    "url": "https://docs.byteplus.com/en/docs/modelark/seedance-2-0-mini-fast-limited-time-discount?redirect=1",
+    "parser": "byteplus_campaign"
+  }
+]

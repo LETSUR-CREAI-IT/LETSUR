@@ -1,0 +1,33 @@
+# Claude Sonnet 5.5
+
+Claude Sonnet 5.5 is a step-change improvement over Sonnet 5 for well-scoped everyday work like building features, fixing bugs, and creating polished documents, slides, and spreadsheets. It also writes more clearly than Sonnet 5.
+
+- **Model ID:** `anthropic/claude-sonnet-5.5`
+- **Type:** chat
+- **Providers:** anthropic, vertexAnthropic, bedrock, claudeaws
+- **Context window:** 1,000,000
+- **Maximum output tokens:** 128,000
+- **Pricing:** $2/1M input tokens, $10/1M output tokens
+- **Canonical page:** https://vercel.com/ai-gateway/models/claude-sonnet-5.5
+
+## Supported parameters
+
+Detailed capability metadata has not been reported for this model.
+
+## Example
+
+```ts
+import { streamText } from 'ai'
+
+const result = streamText({
+  model: 'anthropic/claude-sonnet-5.5',
+  prompt: 'Why is the sky blue?'
+})
+```
+
+## Links
+
+- [Model page](https://vercel.com/ai-gateway/models/claude-sonnet-5.5)
+- [AI Gateway documentation](https://vercel.com/docs/ai-gateway)
+- [Provider model documentation](https://platform.claude.com/docs/en/about-claude/models/overview)
+- [Provider pricing](https://www.anthropic.com/pricing#anthropic-api)

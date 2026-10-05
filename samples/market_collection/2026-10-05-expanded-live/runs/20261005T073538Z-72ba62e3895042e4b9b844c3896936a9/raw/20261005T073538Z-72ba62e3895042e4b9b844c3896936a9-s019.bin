@@ -1,0 +1,33 @@
+# GPT-6 Luna
+
+GPT-6 Luna is OpenAI's efficient reasoning model for focused, high-volume tasks. It accepts text and images, generates text, and supports a 1,050,000-token context window with up to 128,000 output tokens. Configurable reasoning effort, structured outputs, prompt caching, and Responses API tools support cost-sensitive applications, coding tasks, and automated workflows.
+
+- **Model ID:** `openai/gpt-6-luna`
+- **Type:** chat
+- **Providers:** openai, azure, bedrock
+- **Context window:** 1,050,000
+- **Maximum output tokens:** 128,000
+- **Pricing:** $0.1/1M input tokens, $0.5/1M output tokens
+- **Canonical page:** https://vercel.com/ai-gateway/models/gpt-6-luna
+
+## Supported parameters
+
+Detailed capability metadata has not been reported for this model.
+
+## Example
+
+```ts
+import { streamText } from 'ai'
+
+const result = streamText({
+  model: 'openai/gpt-6-luna',
+  prompt: 'Why is the sky blue?'
+})
+```
+
+## Links
+
+- [Model page](https://vercel.com/ai-gateway/models/gpt-6-luna)
+- [AI Gateway documentation](https://vercel.com/docs/ai-gateway)
+- [Provider model documentation](https://developers.openai.com/api/docs/models/gpt-6-luna)
+- [Provider pricing](https://developers.openai.com/api/docs/pricing)

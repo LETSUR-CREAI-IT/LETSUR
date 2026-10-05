@@ -1,0 +1,117 @@
+# GPT 5.6 Luna
+
+GPT 5.6 Luna is the fast, low-cost end of the GPT-5.6 family. It holds strong capability at the lowest price in the series, which is what makes high-volume features affordable to run.
+
+- **Model ID:** `openai/gpt-5.6-luna`
+- **Type:** chat
+- **Providers:** openai, azure, bedrock
+- **Context window:** 1,050,000
+- **Maximum output tokens:** 128,000
+- **Pricing:** $0.2/1M input tokens, $1.2/1M output tokens
+- **Canonical page:** https://vercel.com/ai-gateway/models/gpt-5.6-luna
+
+## Supported parameters
+
+Detailed capability metadata has not been reported for this model.
+
+## Example
+
+```ts
+import { streamText } from 'ai'
+
+const result = streamText({
+  model: 'openai/gpt-5.6-luna',
+  prompt: 'Why is the sky blue?'
+})
+```
+
+## About
+
+GPT 5.6 Luna became available on AI Gateway on July 9, 2026 as the fast, low-cost model of the GPT-5.6 family, alongside GPT-5.6 Sol and GPT-5.6 Terra. All three GPT-5.6 models handle agentic work across coding, biology, and cybersecurity better than the previous generation, and all three use fewer tokens to reach an answer.
+
+OpenAI built GPT 5.6 Luna for cost-sensitive, high-volume workloads, and it maps to the nano tier of earlier GPT-5 families. The point of the tier is unit economics: features that touch every request, every session, or every document stay viable when the per-request cost stays low.
+
+GPT 5.6 Luna accepts text and image input and returns text, with a context window of 1.1M tokens and up to 128K tokens of output per request. Reasoning tokens, streaming, function calling, and structured outputs are supported, and the Responses API adds web search, file search, code interpreter, computer use, and MCP (Model Context Protocol) tools. The large context window means a low-cost model can still read a long document in one pass.
+
+Set the model to `openai/gpt-5.6-luna` in the AI SDK, the Chat Completions API, the Responses API, or another supported API format, from TypeScript or Python. List pricing is $0.2 per million input tokens and $1.2 per million output tokens, with cached input at $0.02. Short-context and long-context requests are priced separately. AI Gateway mirrors provider pricing with no markup and adds no platform fee on inference, including for Bring Your Own Key requests.
+
+## What to consider
+
+GPT 5.6 Luna corresponds to the nano tier of earlier GPT-5 families and targets cost-sensitive, high-volume workloads. Upstream list prices came down after launch, and AI Gateway passes the provider rate through with no markup.
+
+The tradeoff is capability headroom. Classification, extraction, routing, and short generation suit GPT 5.6 Luna; multi-step agentic runs and hard research questions belong on GPT-5.6 Terra or GPT-5.6 Sol. Test that boundary with your own prompts, because a lower rate only pays off while output quality holds.
+
+## When to use
+
+### Best For
+
+- **High-Volume Classification:** Labeling, routing, and moderation pipelines that run on every request
+- **Structured Extraction:** Pulling fields from documents, tickets, and logs at scale
+- **Fast Interactive Responses:** Autocomplete, summaries, and suggestions in latency-sensitive surfaces
+- **Agent Support Steps:** Cheap intermediate turns in a pipeline that escalates when a step gets hard
+- **Cost-Bound Product Features:** Surfaces where per-request price decides whether the feature ships
+
+### Consider Alternatives When
+
+- **Balanced Everyday Work:** GPT-5.6 Terra weighs intelligence against cost for general production traffic
+- **Hardest Agentic Tasks:** GPT-5.6 Sol is the flagship and the most capable model in the family
+- **Autonomous Coding Agents:** GPT-5.x codex variants target sandboxed software engineering directly
+- **Live Voice Interfaces:** The gpt-realtime family handles speech-to-speech conversation natively
+
+## Best for
+
+- **High-Volume Classification:** Labeling, routing, and moderation pipelines that run on every request
+- **Structured Extraction:** Pulling fields from documents, tickets, and logs at scale
+- **Fast Interactive Responses:** Autocomplete, summaries, and suggestions in latency-sensitive surfaces
+- **Agent Support Steps:** Cheap intermediate turns in a pipeline that escalates when a step gets hard
+- **Cost-Bound Product Features:** Surfaces where per-request price decides whether the feature ships
+
+## Consider alternatives
+
+- **Balanced Everyday Work:** GPT-5.6 Terra weighs intelligence against cost for general production traffic
+- **Hardest Agentic Tasks:** GPT-5.6 Sol is the flagship and the most capable model in the family
+- **Autonomous Coding Agents:** GPT-5.x codex variants target sandboxed software engineering directly
+- **Live Voice Interfaces:** The gpt-realtime family handles speech-to-speech conversation natively
+
+## Frequently asked questions
+
+### What is GPT 5.6 Luna built for?
+
+Cost-sensitive, high-volume workloads. OpenAI built GPT 5.6 Luna as the fast, affordable tier of the GPT-5.6 family, for pipelines where per-request price decides feasibility.
+
+### How does GPT 5.6 Luna compare with GPT-5.6 Terra and GPT-5.6 Sol?
+
+GPT 5.6 Luna carries the lowest price in the family and the least capability headroom. GPT-5.6 Terra balances intelligence against cost for everyday work, and GPT-5.6 Sol is the flagship for the hardest tasks.
+
+### What context window and output limit does GPT 5.6 Luna support?
+
+1.1M tokens, with up to 128K tokens of output per request, matching the rest of the GPT-5.6 family. A low-cost tier with that much context can read long documents in one pass.
+
+### What inputs does GPT 5.6 Luna accept?
+
+Text and images, with text output. Audio and video input are not supported, so route voice work to the gpt-realtime family instead.
+
+### Which APIs can I use to call GPT 5.6 Luna?
+
+Set the model to `openai/gpt-5.6-luna` in the AI SDK, the Chat Completions API, the Responses API, or another supported API format. AI Gateway accepts each format and routes the request.
+
+### Does GPT 5.6 Luna support tool calling and structured outputs?
+
+Yes. Function calling, structured outputs, and streaming all work, and the Responses API adds web search, file search, code interpreter, computer use, and MCP tools.
+
+### What does GPT 5.6 Luna cost?
+
+List pricing is $0.2 per million input tokens and $1.2 per million output tokens, with cached input at $0.02. Short-context and long-context requests are priced separately, and AI Gateway mirrors provider pricing with no markup.
+
+### Does GPT 5.6 Luna support zero data retention through AI Gateway?
+
+Yes, Zero Data Retention is available for this model. Zero Data Retention is offered on a per-provider basis. See https://vercel.com/docs/ai-gateway/capabilities/zdr for details.
+
+### What are typical latency characteristics?
+
+This page shows live throughput and time-to-first-token metrics measured across real AI Gateway traffic.
+
+## Links
+
+- [Model page](https://vercel.com/ai-gateway/models/gpt-5.6-luna)
+- [AI Gateway documentation](https://vercel.com/docs/ai-gateway)

@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+    <html xmlns="http://www.w3.org/1999/xhtml" lang="en-US"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>GPT-6 Sol - Amazon Bedrock</title><meta name="viewport" content="width=device-width,initial-scale=1" /><meta name="assets_root" content="/assets" /><meta name="target_state" content="model-card-openai-gpt-6-sol" /><meta name="default_state" content="model-card-openai-gpt-6-sol" /><link rel="icon" type="image/ico" href="/assets/images/favicon.ico" /><link rel="shortcut icon" type="image/ico" href="/assets/images/favicon.ico" /><link rel="canonical" href="https://docs.aws.amazon.com/bedrock/latest/userguide/model-card-openai-gpt-6-sol.html" /><meta name="description" content="GPT-6 Sol is designed for demanding development work. It can build features, debug and refactor code, and review code. It supports multi-step work across tools and apps. It accepts text and images and returns text, including code. Model launch date:" /><meta name="deployment_region" content="IAD" /><meta name="product" content="Amazon Bedrock" /><meta name="guide" content="User Guide" /><meta name="abstract" content="User Guide for the Amazon Bedrock service." /><meta name="guide-locale" content="en_us" /><meta name="tocs" content="toc-contents.json" /><link rel="canonical" href="https://docs.aws.amazon.com/bedrock/latest/userguide/model-card-openai-gpt-6-sol.html" /><link rel="alternate" href="https://docs.aws.amazon.com/id_id/bedrock/latest/userguide/model-card-openai-gpt-6-sol.html" hreflang="id-id" /><link rel="alternate" href="https://docs.aws.amazon.com/id_id/bedrock/latest/userguide/model-card-openai-gpt-6-sol.html" hreflang="id" /><link rel="alternate" href="https://docs.aws.amazon.com/de_de/bedrock/latest/userguide/model-card-openai-gpt-6-sol.html" hreflang="de-de" /><link rel="alternate" href="https://docs.aws.amazon.com/de_de/bedrock/latest/userguide/model-card-openai-gpt-6-sol.html" hreflang="de" /><link rel="alternate" href="https://docs.aws.amazon.com/bedrock/latest/userguide/model-card-openai-gpt-6-sol.html" hreflang="en-us" /><link rel="alternate" href="https://docs.aws.amazon.com/bedrock/latest/userguide/model-card-openai-gpt-6-sol.html" hreflang="en" /><link rel="alternate" href="https://docs.aws.amazon.com/es_es/bedrock/latest/userguide/model-card-openai-gpt-6-sol.html" hreflang="es-es" /><link rel="alternate" href="https://docs.aws.amazon.com/es_es/bedrock/latest/userguide/model-card-openai-gpt-6-sol.html" hreflang="es" /><link rel="alternate" href="https://docs.aws.amazon.com/fr_fr/bedrock/latest/userguide/model-card-openai-gpt-6-sol.html" hreflang="fr-fr" /><link rel="alternate" href="https://docs.aws.amazon.com/fr_fr/bedrock/latest/userguide/model-card-openai-gpt-6-sol.html" hreflang="fr" /><link rel="alternate" href="https://docs.aws.amazon.com/it_it/bedrock/latest/userguide/model-card-openai-gpt-6-sol.html" hreflang="it-it" /><link rel="alternate" href="https://docs.aws.amazon.com/it_it/bedrock/latest/userguide/model-card-openai-gpt-6-sol.html" hreflang="it" /><link rel="alternate" href="https://docs.aws.amazon.com/ja_jp/bedrock/latest/userguide/model-card-openai-gpt-6-sol.html" hreflang="ja-jp" /><link rel="alternate" href="https://docs.aws.amazon.com/ja_jp/bedrock/latest/userguide/model-card-openai-gpt-6-sol.html" hreflang="ja" /><link rel="alternate" href="https://docs.aws.amazon.com/ko_kr/bedrock/latest/userguide/model-card-openai-gpt-6-sol.html" hreflang="ko-kr" /><link rel="alternate" href="https://docs.aws.amazon.com/ko_kr/bedrock/latest/userguide/model-card-openai-gpt-6-sol.html" hreflang="ko" /><link rel="alternate" href="https://docs.aws.amazon.com/pt_br/bedrock/latest/userguide/model-card-openai-gpt-6-sol.html" hreflang="pt-br" /><link rel="alternate" href="https://docs.aws.amazon.com/pt_br/bedrock/latest/userguide/model-card-openai-gpt-6-sol.html" hreflang="pt" /><link rel="alternate" href="https://docs.aws.amazon.com/zh_cn/bedrock/latest/userguide/model-card-openai-gpt-6-sol.html" hreflang="zh-cn" /><link rel="alternate" href="https://docs.aws.amazon.com/zh_tw/bedrock/latest/userguide/model-card-openai-gpt-6-sol.html" hreflang="zh-tw" /><link rel="alternate" href="https://docs.aws.amazon.com/bedrock/latest/userguide/model-card-openai-gpt-6-sol.html" hreflang="x-default" /><meta name="feedback-folder" content="2d8c2a09-1dac-41bf-9893-c0333d272b2c" /><meta name="feedback-item" content="Bedrock" /><meta name="this_doc_product" content="Amazon Bedrock" /><meta name="this_doc_guide" content="User Guide" /><head xmlns="http://www.w3.org/1999/xhtml"> <script defer="" src="/assets/r/awsdocs-doc-page.2.0.0.js"></script><link href="/assets/r/awsdocs-doc-page.2.0.0.css" rel="stylesheet"/></head>
+<script defer="" id="awsc-panorama-bundle" type="text/javascript" src="https://prod.pa.cdn.uis.awsstatic.com/panorama-nav-init.js" data-config="{'appEntity':'aws-documentation','region':'us-east-1','service':'bedrock'}"></script><meta id="panorama-serviceSubSection" value="User Guide" /><meta id="panorama-serviceConsolePage" value="GPT-6 Sol" /></head><body class="awsdocs awsui"><div class="awsdocs-container"><p><a href="model-card-openai-gpt-6-sol.md">View a markdown version of this page</a></p><awsdocs-header></awsdocs-header><awsui-app-layout id="app-layout" class="awsui-util-no-gutters" ng-controller="ContentController as $ctrl" header-selector="awsdocs-header" navigation-hide="false" navigation-width="$ctrl.navWidth" navigation-open="$ctrl.navOpen" navigation-change="$ctrl.onNavChange($event)" tools-hide="$ctrl.hideTools" tools-width="$ctrl.toolsWidth" tools-open="$ctrl.toolsOpen" tools-change="$ctrl.onToolsChange($event)"><div id="guide-toc" dom-region="navigation"><awsdocs-toc></awsdocs-toc></div><div id="main-column" dom-region="content" tabindex="-1"><awsdocs-view class="awsdocs-view"><div id="awsdocs-content"><head><title>GPT-6 Sol - Amazon Bedrock</title><meta name="pdf" content="/pdfs/bedrock/latest/userguide/bedrock-ug.pdf#model-card-openai-gpt-6-sol" /><meta name="rss" content="bedrock-ug.rss" /><meta name="forums" content="https://repost.aws/tags/TAQeKlaPaNRQ2tWB6P7KrMag" /><meta name="feedback" content="https://docs.aws.amazon.com/forms/aws-doc-feedback?feedback_destination_id=2d8c2a09-1dac-41bf-9893-c0333d272b2c&amp;topic_url=https://docs.aws.amazon.com/en_us/bedrock/latest/userguide/model-card-openai-gpt-6-sol.html" /><meta name="feedback-yes" content="feedbackyes.html?topic_url=https://docs.aws.amazon.com/en_us/bedrock/latest/userguide/model-card-openai-gpt-6-sol.html" /><meta name="feedback-no" content="feedbackno.html?topic_url=https://docs.aws.amazon.com/en_us/bedrock/latest/userguide/model-card-openai-gpt-6-sol.html" /><meta name="keywords" content="Amazon Bedrock,bedrock" /><link rel="alternate" type="text/markdown" href="model-card-openai-gpt-6-sol.md" title="Markdown version" /><script type="application/ld+json">
+{
+    "@context" : "https://schema.org",
+    "@type" : "BreadcrumbList",
+    "itemListElement" : [
+      {
+        "@type" : "ListItem",
+        "position" : 1,
+        "name" : "AWS",
+        "item" : "https://aws.amazon.com"
+      },
+      {
+        "@type" : "ListItem",
+        "position" : 2,
+        "name" : "Amazon Bedrock",
+        "item" : "https://docs.aws.amazon.com/bedrock/index.html"
+      },
+      {
+        "@type" : "ListItem",
+        "position" : 3,
+        "name" : "User Guide",
+        "item" : "https://docs.aws.amazon.com/bedrock/latest/userguide"
+      },
+      {
+        "@type" : "ListItem",
+        "position" : 4,
+        "name" : "Models at a glance",
+        "item" : "https://docs.aws.amazon.com/bedrock/latest/userguide/model-cards.html"
+      },
+      {
+        "@type" : "ListItem",
+        "position" : 5,
+        "name" : "OpenAI",
+        "item" : "https://docs.aws.amazon.com/bedrock/latest/userguide/model-cards-openai.html"
+      },
+      {
+        "@type" : "ListItem",
+        "position" : 6,
+        "name" : "GPT-6 Sol",
+        "item" : "https://docs.aws.amazon.com/bedrock/latest/userguide/model-cards-openai.html"
+      }
+    ]
+}
+</script></head><body><div id="main"><div style="display: none"><a href="/pdfs/bedrock/latest/userguide/bedrock-ug.pdf#model-card-openai-gpt-6-sol" target="_blank" rel="noopener noreferrer" title="Open PDF"></a></div><div id="breadcrumbs" class="breadcrumb"><a href="/index.html">Documentation</a><a href="/bedrock/index.html">Amazon Bedrock</a><a href="what-is-bedrock.html">User Guide</a></div><div id="page-toc-src"><a href="#model-card-openai-gpt-6-sol-header"> OpenAI — GPT-6 Sol</a><a href="#model-card-openai-gpt-6-sol-details">Model details</a><a href="#model-card-openai-gpt-6-sol-apis-endpoints">Endpoints and APIs supported</a><a href="#model-card-openai-gpt-6-sol-capabilities">Capabilities and features</a><a href="#model-card-openai-gpt-6-sol-pricing">Pricing</a><a href="#model-card-openai-gpt-6-sol-programmatic-access">Call the model</a><a href="#model-card-openai-gpt-6-sol-tiers">Service tiers</a><a href="#model-card-openai-gpt-6-sol-regional-availability">Supported Regions</a><a href="#model-card-openai-gpt-6-sol-quotas">Quotas and limits</a><a href="#model-card-openai-gpt-6-sol-sample-code">Sample code</a></div><div id="main-content" class="awsui-util-container"><div id="main-col-body"><awsdocs-language-banner data-service="$ctrl.pageService"></awsdocs-language-banner><h1 class="topictitle" id="model-card-openai-gpt-6-sol">GPT-6 Sol</h1><div class="awsdocs-page-header-container"><awsdocs-page-header></awsdocs-page-header><awsdocs-filter-selector id="awsdocs-filter-selector"></awsdocs-filter-selector></div>
+  <h2 id="model-card-openai-gpt-6-sol-header"><span class="inlinemediaobject"><img src="/images/bedrock/latest/userguide/images/models/openai.png" class="aws-docs-img-whiteBg aws-docs-img-xs-padding" alt="OpenAI logo" data-alt-text-source="generated" height="30px" /></span> OpenAI — GPT-6 Sol</h2>
+  
+  <h2 id="model-card-openai-gpt-6-sol-details">Model details</h2>
+  <p>GPT-6 Sol is designed for demanding development work. It can build features, debug and refactor code, and review code. It supports multi-step work across tools and apps. It accepts text and images and returns text, including code.</p>
+
+  <div class="itemizedlist">
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+  <ul class="itemizedlist"><li class="listitem" style="list-style-type: none"><p><b>Model launch date:</b> September 22, 2026</p></li><li class="listitem" style="list-style-type: none"><p><b>EOL no sooner than:</b> September 22, 2027</p></li><li class="listitem" style="list-style-type: none"><p><b>Legacy period:</b> at least 6 months</p></li><li class="listitem" style="list-style-type: none"><p><b>Model lifecycle policy:</b> <a href="./model-lifecycle.html">Model lifecycle</a></p></li><li class="listitem" style="list-style-type: none"><p><b>Model EOL date:</b> N/A</p></li><li class="listitem" style="list-style-type: none"><p><b>End User License Agreements and Terms of Use:</b> <a href="https://aws.amazon.com/legal/bedrock/third-party-models/" rel="noopener noreferrer" target="_blank"><span>View</span><awsui-icon class="awsdocs-link-icon" name="external"></awsui-icon></a></p></li><li class="listitem" style="list-style-type: none"><p><b>Model lifecycle:</b> Active</p></li><li class="listitem" style="list-style-type: none"><p><b>Context window:</b> 1,050,000 tokens</p></li><li class="listitem" style="list-style-type: none"><p><b>Max output tokens:</b> 128,000</p></li><li class="listitem" style="list-style-type: none"><p><b>Knowledge cutoff:</b> April 20, 2026</p></li><li class="listitem" style="list-style-type: none"><p><b>Marketplace product ID:</b> <code class="code">prod-zpwu74hhojefo</code></p></li></ul></div>
+  <div class="table-container"><div class="table-contents"><table id="w637aac11c30c12b5b7"><thead>
+     <tr>
+      <th><b>Input modalities</b></th>
+      <th><b>Output modalities</b></th>
+     </tr>
+    </thead>
+     <tr><td tabindex="-1"><img src="/images/bedrock/latest/userguide/images/icons/icon-no.png" alt="Not supported" style="max-width:10px" height="10px" /> Audio</td><td tabindex="-1"><img src="/images/bedrock/latest/userguide/images/icons/icon-no.png" alt="Not supported" data-alt-text-source="generated" style="max-width:10px" height="10px" /> Embedding</td></tr>
+     <tr><td tabindex="-1"><img src="/images/bedrock/latest/userguide/images/icons/icon-yes.png" alt="Supported" data-alt-text-source="generated" style="max-width:10px" height="10px" /> Image</td><td tabindex="-1"><img src="/images/bedrock/latest/userguide/images/icons/icon-no.png" alt="Not supported" data-alt-text-source="generated" style="max-width:10px" height="10px" /> Image</td></tr>
+     <tr><td tabindex="-1"><img src="/images/bedrock/latest/userguide/images/icons/icon-no.png" alt="Not supported" style="max-width:10px" height="10px" /> Speech</td><td tabindex="-1"><img src="/images/bedrock/latest/userguide/images/icons/icon-no.png" alt="Not supported" data-alt-text-source="generated" style="max-width:10px" height="10px" /> Speech</td></tr>
+     <tr><td tabindex="-1"><img src="/images/bedrock/latest/userguide/images/icons/icon-yes.png" alt="Supported" data-alt-text-source="generated" style="max-width:10px" height="10px" /> Text</td><td tabindex="-1"><img src="/images/bedrock/latest/userguide/images/icons/icon-yes.png" alt="Supported" data-alt-text-source="generated" style="max-width:10px" height="10px" /> Text</td></tr>
+     <tr><td tabindex="-1"><img src="/images/bedrock/latest/userguide/images/icons/icon-no.png" alt="Not supported" style="max-width:10px" height="10px" /> Video</td><td tabindex="-1"><img src="/images/bedrock/latest/userguide/images/icons/icon-no.png" alt="Not supported" data-alt-text-source="generated" style="max-width:10px" height="10px" /> Video</td></tr>
+    </table></div></div>
+  
+  <h2 id="model-card-openai-gpt-6-sol-apis-endpoints">Endpoints and APIs supported</h2>
+  <p>These tables show the endpoints and APIs that GPT-6 Sol supports. See <a href="./apis.html">APIs supported by Amazon Bedrock</a> and <a href="./endpoints.html">Endpoints supported by Amazon Bedrock</a>.</p>
+  <p><b>Endpoint support</b></p>
+  <div class="table-container"><div class="table-contents"><table id="w637aac11c30c12b7b7"><thead>
+     <tr>
+      <th><b>Endpoint</b></th>
+      <th><b>Supported</b></th>
+     </tr>
+    </thead>
+     <tr>
+      <td tabindex="-1"><code class="code">bedrock-runtime</code></td>
+      <td align="center" style="text-align: center;" tabindex="-1"><img src="/images/bedrock/latest/userguide/images/icons/icon-yes.png" alt="supported" style="max-width:10px" height="10px" /></td>
+     </tr>
+     <tr>
+      <td tabindex="-1"><code class="code">bedrock-mantle</code></td>
+      <td align="center" style="text-align: center;" tabindex="-1"><img src="/images/bedrock/latest/userguide/images/icons/icon-yes.png" alt="supported" style="max-width:10px" height="10px" /></td>
+     </tr>
+    </table></div></div>
+  <p><b>APIs supported on the <code class="code">bedrock-runtime</code> endpoint</b></p>
+  <div class="table-container"><div class="table-contents"><table id="w637aac11c30c12b7c11"><thead>
+     <tr>
+      <th><b>Messages</b></th>
+      <th><b>Responses</b></th>
+      <th><b>Chat Completions</b></th>
+      <th><b>Converse</b></th>
+      <th><b>Invoke</b></th>
+     </tr>
+    </thead>
+     <tr>
+      <td align="center" style="text-align: center;" tabindex="-1"><img src="/images/bedrock/latest/userguide/images/icons/icon-no.png" alt="not-supported" style="max-width:10px" height="10px" /></td>
+      <td align="center" style="text-align: center;" tabindex="-1"><img src="/images/bedrock/latest/userguide/images/icons/icon-yes.png" alt="supported" style="max-width:10px" height="10px" /></td>
+      <td align="center" style="text-align: center;" tabindex="-1"><img src="/images/bedrock/latest/userguide/images/icons/icon-yes.png" alt="supported" style="max-width:10px" height="10px" /></td>
+      <td align="center" style="text-align: center;" tabindex="-1"><img src="/images/bedrock/latest/userguide/images/icons/icon-yes.png" alt="supported" style="max-width:10px" height="10px" /></td>
+      <td align="center" style="text-align: center;" tabindex="-1"><img src="/images/bedrock/latest/userguide/images/icons/icon-yes.png" alt="supported" style="max-width:10px" height="10px" /></td>
+     </tr>
+    </table></div></div>
+  <p><b>APIs supported on the <code class="code">bedrock-mantle</code> endpoint</b></p>
+  <div class="table-container"><div class="table-contents"><table id="w637aac11c30c12b7c15"><thead>
+     <tr>
+      <th><b>Messages</b></th>
+      <th><b>Responses</b></th>
+      <th><b>Chat Completions</b></th>
+      <th><b>Converse</b></th>
+      <th><b>Invoke</b></th>
+     </tr>
+    </thead>
+     <tr>
+      <td align="center" style="text-align: center;" tabindex="-1"><img src="/images/bedrock/latest/userguide/images/icons/icon-no.png" alt="not-supported" style="max-width:10px" height="10px" /></td>
+      <td align="center" style="text-align: center;" tabindex="-1"><img src="/images/bedrock/latest/userguide/images/icons/icon-yes.png" alt="supported" style="max-width:10px" height="10px" /></td>
+      <td align="center" style="text-align: center;" tabindex="-1"><img src="/images/bedrock/latest/userguide/images/icons/icon-yes.png" alt="supported" style="max-width:10px" height="10px" /></td>
+      <td align="center" style="text-align: center;" tabindex="-1"><img src="/images/bedrock/latest/userguide/images/icons/icon-no.png" alt="not-supported" style="max-width:10px" height="10px" /></td>
+      <td align="center" style="text-align: center;" tabindex="-1"><img src="/images/bedrock/latest/userguide/images/icons/icon-no.png" alt="not-supported" style="max-width:10px" height="10px" /></td>
+     </tr>
+    </table></div></div>
+  <div class="awsdocs-note"><div class="awsdocs-note-title"><awsui-icon name="status-info" variant="link"></awsui-icon><h6>Note</h6></div><div class="awsdocs-note-text"><p>On <code class="code">bedrock-mantle</code>, both APIs use the <code class="code">/openai/v1</code> base path. Do not use <code class="code">/v1</code>. Use either API with this model:</p><div class="itemizedlist">
+     
+     
+   <ul class="itemizedlist"><li class="listitem"><p>For Responses, use <code class="code">/openai/v1/responses</code>.</p></li><li class="listitem"><p>For Chat Completions, use <code class="code">/openai/v1/chat/completions</code>.</p></li></ul></div></div></div>
+  <div class="awsdocs-note awsdocs-tip"><div class="awsdocs-note-title"><awsui-icon name="status-info" variant="link"></awsui-icon><h6>Tip</h6></div><div class="awsdocs-note-text"><p>For new applications, use the <code class="code">bedrock-runtime</code> endpoint when possible. See <a href="./endpoints.html">Endpoints supported by Amazon Bedrock</a> for details.</p></div></div>
+  
+  <h2 id="model-card-openai-gpt-6-sol-capabilities">Capabilities and features</h2>
+
+  <p><b><u>Amazon Bedrock features</u></b></p>
+  <p><b>Features supported on the <code class="code">bedrock-runtime</code> endpoint</b></p>
+  <div class="table-container"><div class="table-contents"><table id="w637aac11c30c12b9b7"><thead>
+     <tr>
+      <th><b>Supported</b></th>
+      <th><b>Not Supported</b></th>
+     </tr>
+    </thead>
+     <tr>
+      <td style="vertical-align: top;" tabindex="-1">
+       <div class="itemizedlist">
+    
+    
+    
+    
+    
+    
+    
+    
+       
+     <ul class="itemizedlist"><li class="listitem" style="list-style-type: none"><p><img src="/images/bedrock/latest/userguide/images/icons/icon-yes.png" alt="Supported" data-alt-text-source="generated" style="max-width:10px" height="10px" /> <a href="projects.html" rel="noopener noreferrer" target="_blank">Projects (default project only)</a></p></li><li class="listitem" style="list-style-type: none"><p><img src="/images/bedrock/latest/userguide/images/icons/icon-yes.png" alt="Supported" data-alt-text-source="generated" style="max-width:10px" height="10px" /> <a href="model-invocation-logging.html" rel="noopener noreferrer" target="_blank">Invocation logs</a></p></li><li class="listitem" style="list-style-type: none"><p><img src="/images/bedrock/latest/userguide/images/icons/icon-yes.png" alt="Supported" data-alt-text-source="generated" style="max-width:10px" height="10px" /> <a href="/bedrock/latest/APIReference/API_runtime_InvokeModelWithResponseStream.html" rel="noopener noreferrer" target="_blank">Response streaming</a></p></li><li class="listitem" style="list-style-type: none"><p><img src="/images/bedrock/latest/userguide/images/icons/icon-yes.png" alt="Supported" data-alt-text-source="generated" style="max-width:10px" height="10px" /> <a href="abuse-detection.html" rel="noopener noreferrer" target="_blank">Abuse detection</a></p></li><li class="listitem" style="list-style-type: none"><p><img src="/images/bedrock/latest/userguide/images/icons/icon-yes.png" alt="Supported" data-alt-text-source="generated" style="max-width:10px" height="10px" /> <a href="guardrails.html" rel="noopener noreferrer" target="_blank">Guardrails</a> (Responses, Chat Completions, InvokeModel, and Converse APIs)</p></li><li class="listitem" style="list-style-type: none"><p><img src="/images/bedrock/latest/userguide/images/icons/icon-yes.png" alt="Supported" data-alt-text-source="generated" style="max-width:10px" height="10px" /> <a href="cost-mgmt-application-inference-profiles.html" rel="noopener noreferrer" target="_blank">Application inference profiles</a> (InvokeModel and <a href="conversation-inference.html" rel="noopener noreferrer" target="_blank">Converse</a> APIs only; not supported with Responses or Chat Completions)</p></li><li class="listitem" style="list-style-type: none"><p><img src="/images/bedrock/latest/userguide/images/icons/icon-yes.png" alt="Supported" data-alt-text-source="generated" style="max-width:10px" height="10px" /> <a href="#model-card-openai-gpt-6-sol-prompt-caching">Implicit Prompt Caching</a> (Responses, Chat Completions, InvokeModel, and Converse APIs)</p></li><li class="listitem" style="list-style-type: none"><p><img src="/images/bedrock/latest/userguide/images/icons/icon-yes.png" alt="Supported" data-alt-text-source="generated" style="max-width:10px" height="10px" /> <a href="#model-card-openai-gpt-6-sol-prompt-caching">Explicit Prompt Caching</a> (Responses, Chat Completions, and InvokeModel APIs; not supported with Converse)</p></li><li class="listitem" style="list-style-type: none"><p><img src="/images/bedrock/latest/userguide/images/icons/icon-yes.png" alt="supported" style="max-width:10px" height="10px" /> <a href="#model-card-openai-gpt-6-sol-structured-output">Structured outputs</a> (Responses, Chat Completions, InvokeModel, and Converse APIs)</p></li></ul></div>
+      </td>
+      <td style="vertical-align: top;" tabindex="-1">
+       <div class="itemizedlist">
+    
+    
+    
+    
+       <ul class="itemizedlist"><li class="listitem" style="list-style-type: none"><p><img src="/images/bedrock/latest/userguide/images/icons/icon-no.png" alt="Not supported" data-alt-text-source="generated" style="max-width:10px" height="10px" /> <a href="tool-use.html" rel="noopener noreferrer" target="_blank">Server-side tool use</a></p></li><li class="listitem" style="list-style-type: none"><p><img src="/images/bedrock/latest/userguide/images/icons/icon-no.png" alt="Not supported" data-alt-text-source="generated" style="max-width:10px" height="10px" /> <a href="prompt-routing.html" rel="noopener noreferrer" target="_blank">Intelligent prompt routing</a></p></li><li class="listitem" style="list-style-type: none"><p><img src="/images/bedrock/latest/userguide/images/icons/icon-no.png" alt="Not supported" data-alt-text-source="generated" style="max-width:10px" height="10px" /> <a href="count-tokens.html" rel="noopener noreferrer" target="_blank">Count tokens</a></p></li><li class="listitem" style="list-style-type: none"><p><img src="/images/bedrock/latest/userguide/images/icons/icon-no.png" alt="Not supported" data-alt-text-source="generated" style="max-width:10px" height="10px" /> <a href="knowledge-base.html" rel="noopener noreferrer" target="_blank">Knowledge Bases</a></p></li></ul></div>
+      </td>
+     </tr>
+    </table></div></div>
+  <p><b>Features supported on the <code class="code">bedrock-mantle</code> endpoint</b></p>
+  <div class="table-container"><div class="table-contents"><table id="w637aac11c30c12b9c11"><thead>
+     <tr>
+      <th><b>Supported</b></th>
+      <th><b>Not Supported</b></th>
+     </tr>
+    </thead>
+     <tr>
+      <td style="vertical-align: top;" tabindex="-1">
+       <div class="itemizedlist">
+    
+    
+    
+    
+    
+    
+       <ul class="itemizedlist"><li class="listitem" style="list-style-type: none"><p><img src="/images/bedrock/latest/userguide/images/icons/icon-yes.png" alt="Supported" data-alt-text-source="generated" style="max-width:10px" height="10px" /> <a href="tool-use.html" rel="noopener noreferrer" target="_blank">Server-side tool calling</a></p></li><li class="listitem" style="list-style-type: none"><p><img src="/images/bedrock/latest/userguide/images/icons/icon-yes.png" alt="Supported" data-alt-text-source="generated" style="max-width:10px" height="10px" /> <a href="projects.html" rel="noopener noreferrer" target="_blank">Projects</a></p></li><li class="listitem" style="list-style-type: none"><p><img src="/images/bedrock/latest/userguide/images/icons/icon-yes.png" alt="supported" style="max-width:10px" height="10px" /> <a href="./inference-responses-api.html#bedrock-mantle-responses-streaming">Response streaming</a></p></li><li class="listitem" style="list-style-type: none"><p><img src="/images/bedrock/latest/userguide/images/icons/icon-yes.png" alt="Supported" data-alt-text-source="generated" style="max-width:10px" height="10px" /> <a href="#model-card-openai-gpt-6-sol-prompt-caching">Implicit Prompt Caching</a> (Responses and Chat Completions APIs)</p></li><li class="listitem" style="list-style-type: none"><p><img src="/images/bedrock/latest/userguide/images/icons/icon-yes.png" alt="Supported" data-alt-text-source="generated" style="max-width:10px" height="10px" /> <a href="#model-card-openai-gpt-6-sol-prompt-caching">Explicit Prompt Caching</a> (Responses and Chat Completions APIs)</p></li><li class="listitem" style="list-style-type: none"><p><img src="/images/bedrock/latest/userguide/images/icons/icon-yes.png" alt="supported" style="max-width:10px" height="10px" /> <a href="#model-card-openai-gpt-6-sol-structured-output">Structured outputs</a> (Responses and Chat Completions APIs)</p></li></ul></div>
+      </td>
+      <td style="vertical-align: top;" tabindex="-1">
+       <div class="itemizedlist">
+    
+    
+    
+    
+    
+    
+    
+       <ul class="itemizedlist"><li class="listitem" style="list-style-type: none"><p><img src="/images/bedrock/latest/userguide/images/icons/icon-no.png" alt="Not supported" data-alt-text-source="generated" style="max-width:10px" height="10px" /> <a href="guardrails.html" rel="noopener noreferrer" target="_blank">Guardrails</a></p></li><li class="listitem" style="list-style-type: none"><p><img src="/images/bedrock/latest/userguide/images/icons/icon-no.png" alt="Not supported" data-alt-text-source="generated" style="max-width:10px" height="10px" /> <a href="model-invocation-logging.html" rel="noopener noreferrer" target="_blank">Invocation logs</a></p></li><li class="listitem" style="list-style-type: none"><p><img src="/images/bedrock/latest/userguide/images/icons/icon-no.png" alt="Not supported" data-alt-text-source="generated" style="max-width:10px" height="10px" /> <a href="cost-mgmt-application-inference-profiles.html" rel="noopener noreferrer" target="_blank">Application inference profiles</a></p></li><li class="listitem" style="list-style-type: none"><p><img src="/images/bedrock/latest/userguide/images/icons/icon-no.png" alt="Not supported" data-alt-text-source="generated" style="max-width:10px" height="10px" /> <a href="prompt-routing.html" rel="noopener noreferrer" target="_blank">Intelligent prompt routing</a></p></li><li class="listitem" style="list-style-type: none"><p><img src="/images/bedrock/latest/userguide/images/icons/icon-no.png" alt="Not supported" data-alt-text-source="generated" style="max-width:10px" height="10px" /> <a href="count-tokens.html" rel="noopener noreferrer" target="_blank">Count tokens</a></p></li><li class="listitem" style="list-style-type: none"><p><img src="/images/bedrock/latest/userguide/images/icons/icon-no.png" alt="Not supported" data-alt-text-source="generated" style="max-width:10px" height="10px" /> <a href="knowledge-base.html" rel="noopener noreferrer" target="_blank">Knowledge Bases</a></p></li><li class="listitem" style="list-style-type: none"><p><img src="/images/bedrock/latest/userguide/images/icons/icon-no.png" alt="Not supported" data-alt-text-source="generated" style="max-width:10px" height="10px" /> <a href="prompt-management-optimize.html" rel="noopener noreferrer" target="_blank">Prompt optimization</a></p></li></ul></div>
+      </td>
+     </tr>
+    </table></div></div>
+
+   
+   <h3 id="model-card-openai-gpt-6-sol-prompt-caching">Prompt caching</h3>
+   <p>GPT-6 Sol supports both <a href="prompt-caching.html#prompt-caching-implicit" rel="noopener noreferrer" target="_blank">Implicit Prompt Caching</a> and <a href="prompt-caching.html#prompt-caching-explicit" rel="noopener noreferrer" target="_blank">Explicit Prompt Caching</a>. API support differs by endpoint:</p>
+   <div class="itemizedlist">
+     
+     
+     
+   <ul class="itemizedlist"><li class="listitem"><p>Responses and Chat Completions support both caching types on the <code class="code">bedrock-runtime</code> and <code class="code">bedrock-mantle</code> endpoints.</p></li><li class="listitem"><p>InvokeModel supports both caching types on the <code class="code">bedrock-runtime</code> endpoint.</p></li><li class="listitem"><p>Converse supports implicit caching on the <code class="code">bedrock-runtime</code> endpoint. The native <code class="code">cachePoint</code> field isn't supported for explicit caching with this model.</p></li></ul></div>
+   <p>For explicit caching, set <code class="code">prompt_cache_options.mode</code> to <code class="code">explicit</code>. Set <code class="code">prompt_cache_options.ttl</code> to <code class="code">30m</code>, the only supported TTL and the default. In Responses requests, add <code class="code">"prompt_cache_breakpoint": <span>{</span>"mode": "explicit"}</code> to an <code class="code">input_text</code> content block. In Chat Completions and InvokeModel requests, add it to a <code class="code">text</code> content part.</p>
+   <p>A cacheable prompt prefix must contain at least 1,024 tokens. You can include multiple explicit breakpoints, and each request can create up to four cache writes. Check <code class="code">cached_tokens</code> and <code class="code">cache_write_tokens</code> in the response to determine whether tokens were read from or written to the cache.</p>
+   
+
+  <p><b>Reasoning effort</b></p>
+  <p>Set reasoning effort to <code class="code">none</code>, <code class="code">low</code>,
+   <code class="code">medium</code>, <code class="code">high</code>, <code class="code">xhigh</code>, or <code class="code">max</code>.
+   The default is <code class="code">medium</code>.</p>
+   
+   <h3 id="model-card-openai-gpt-6-sol-structured-output">JSON Schema output</h3>
+   <p>Use JSON Schema to set the format of the model response for non-streaming requests. Chat Completions and Responses support JSON Schema output on the <code class="code">bedrock-runtime</code> and <code class="code">bedrock-mantle</code> endpoints. InvokeModel and Converse support JSON Schema output on the <code class="code">bedrock-runtime</code> endpoint. Choose a model ID or inference profile ID from <a href="#model-card-openai-gpt-6-sol-programmatic-access">Programmatic access</a>.</p>
+   <div class="itemizedlist">
+     
+     
+     
+     
+   <ul class="itemizedlist"><li class="listitem"><p>For Chat Completions, set <code class="code">response_format.type</code> to <code class="code">json_schema</code>. Put <code class="code">name</code>, <code class="code">schema</code>, and <code class="code">strict: true</code> in <code class="code">response_format.json_schema</code>.</p></li><li class="listitem"><p>For Responses, set <code class="code">text.format.type</code> to <code class="code">json_schema</code>. Put <code class="code">name</code>, <code class="code">schema</code>, and <code class="code">strict: true</code> in <code class="code">text.format</code>.</p></li><li class="listitem"><p>For InvokeModel, use the same <code class="code">response_format</code> fields as Chat Completions.</p></li><li class="listitem"><p>For Converse, set <code class="code">outputConfig.textFormat.type</code> to <code class="code">json_schema</code>. In <code class="code">outputConfig.textFormat.structure.jsonSchema</code>, set <code class="code">name</code> and <code class="code">schema</code>. Encode the schema as a JSON string. Then set <code class="code">additionalModelRequestFields.text.format.strict</code> to <code class="code">true</code>.</p></li></ul></div>
+   <p>Use an object schema. Put all fields in <code class="code">required</code>. Set <code class="code">additionalProperties</code> to <code class="code">false</code>. Validate your schema before you send it. Check for refusals or incomplete responses before you parse the output.</p>
+   <div class="awsdocs-note awsdocs-important"><div class="awsdocs-note-title"><awsui-icon name="status-warning" variant="error"></awsui-icon><h6>Important</h6></div><div class="awsdocs-note-text"><p>For JSON Schema output with the Converse API, you must set <code class="code">additionalModelRequestFields.text.format.strict</code> to <code class="code">true</code>, in addition to specifying the schema in <code class="code">outputConfig</code>. Include the following field in your request.</p><pre class="programlisting"><div class="code-btn-container"><div class="btn-copy-code" title="Copy"><awsui-icon name="copy"></awsui-icon></div></div><!--DEBUG: cli (json)--><code class="json "><span>{</span>
+  "additionalModelRequestFields": <span>{</span>
+    "text": <span>{</span>
+      "format": <span>{</span> "strict": true }
+    }
+  }
+}</code></pre></div></div>
+   
+  
+  <h2 id="model-card-openai-gpt-6-sol-pricing">Pricing</h2>
+  <p>All prices are in USD per 1 million tokens for the Standard tier.</p>
+  <p>Mantle in-Region and US geographic cross-Region inference include a 10% premium.
+   The base rates are OpenAI first-party Standard rates. Global cross-Region inference uses those rates with no premium.
+   The prices below already include any premium.</p>
+  <p>Priority and Flex tiers are not supported for these inference options.</p>
+  
+   <h3 id="model-card-openai-gpt-6-sol-pricing-commercial-short">Commercial Regions — short context (272K input tokens or fewer)</h3>
+   <div class="table-container"><div class="table-contents"><table id="w637aac11c30c12c11b9b3"><thead><tr><th><b>Inference option</b></th><th><b>Input</b></th><th><b>Input — cache write</b></th><th><b>Input — cache read</b></th><th><b>Output</b></th></tr></thead>
+      <tr><td tabindex="-1">Mantle in-Region</td><td tabindex="-1">$2.20</td><td tabindex="-1">$2.75</td><td tabindex="-1">$0.22</td><td tabindex="-1">$11.00</td></tr>
+      <tr><td tabindex="-1">US Geo CRIS</td><td tabindex="-1">$2.20</td><td tabindex="-1">$2.75</td><td tabindex="-1">$0.22</td><td tabindex="-1">$11.00</td></tr>
+      <tr><td tabindex="-1">Global CRIS</td><td tabindex="-1">$2.00</td><td tabindex="-1">$2.50</td><td tabindex="-1">$0.20</td><td tabindex="-1">$10.00</td></tr>
+     </table></div></div>
+   
+  
+   <h3 id="model-card-openai-gpt-6-sol-pricing-commercial-long">Commercial Regions — long context (more than 272K input tokens)</h3>
+   <div class="table-container"><div class="table-contents"><table id="w637aac11c30c12c11c11b3"><thead><tr><th><b>Inference option</b></th><th><b>Input</b></th><th><b>Input — cache write</b></th><th><b>Input — cache read</b></th><th><b>Output</b></th></tr></thead>
+      <tr><td tabindex="-1">Mantle in-Region</td><td tabindex="-1">$4.40</td><td tabindex="-1">$5.50</td><td tabindex="-1">$0.44</td><td tabindex="-1">$16.50</td></tr>
+      <tr><td tabindex="-1">US Geo CRIS</td><td tabindex="-1">$4.40</td><td tabindex="-1">$5.50</td><td tabindex="-1">$0.44</td><td tabindex="-1">$16.50</td></tr>
+      <tr><td tabindex="-1">Global CRIS</td><td tabindex="-1">$4.00</td><td tabindex="-1">$5.00</td><td tabindex="-1">$0.40</td><td tabindex="-1">$15.00</td></tr>
+     </table></div></div>
+   
+  <p>Long-context rates apply to the full request when input exceeds 272,000 tokens.</p>
+  <div class="awsdocs-note"><div class="awsdocs-note-title"><awsui-icon name="status-info" variant="link"></awsui-icon><h6>Note</h6></div><div class="awsdocs-note-text"><p>Prices are subject to change. For current prices, see
+   <a href="https://aws.amazon.com/bedrock/pricing/" rel="noopener noreferrer" target="_blank"><span>Amazon Bedrock pricing</span><awsui-icon class="awsdocs-link-icon" name="external"></awsui-icon></a>.</p></div></div>
+  
+  <h2 id="model-card-openai-gpt-6-sol-programmatic-access">Call the model</h2>
+  <p>Use these model IDs and endpoint URLs to call the model. See <a href="apis.html" rel="noopener noreferrer" target="_blank">APIs supported</a> and <a href="endpoints.html" rel="noopener noreferrer" target="_blank">Endpoints supported</a>.</p>
+  <div class="table-container"><div class="table-contents"><table id="w637aac11c30c12c13b5"><thead>
+     <tr>
+      <th><b>Endpoint</b></th>
+      <th><b>Model ID</b></th>
+      <th><b>In-Region endpoint URL</b></th>
+      <th><b>Geo inference ID</b></th>
+      <th><b>Global inference ID</b></th>
+     </tr>
+    </thead>
+     <tr>
+      <td tabindex="-1"><code class="code">bedrock-runtime</code></td>
+      <td tabindex="-1"><code class="code">openai.gpt-6-sol</code></td>
+      <td tabindex="-1">Not supported</td>
+      <td tabindex="-1"><code class="code">us.openai.gpt-6-sol</code></td>
+      <td tabindex="-1"><code class="code">global.openai.gpt-6-sol</code></td>
+     </tr>
+     <tr>
+      <td tabindex="-1"><code class="code">bedrock-mantle</code></td>
+      <td tabindex="-1"><code class="code">openai.gpt-6-sol</code></td>
+      <td tabindex="-1"><code class="code">https://bedrock-mantle.<span>{</span>region}.api.aws/openai/v1</code></td>
+      <td tabindex="-1">Not supported</td>
+      <td tabindex="-1">Not supported</td>
+     </tr>
+    </table></div></div>
+  <p>On <code class="code">bedrock-runtime</code>:</p>
+  <div class="itemizedlist">
+    
+    
+    
+    
+  <ul class="itemizedlist"><li class="listitem"><p>Use this base URL: <code class="code">https://bedrock-runtime.<span>{</span>region}.amazonaws.com/openai/v1</code>.</p></li><li class="listitem"><p>Set the model ID to <code class="code">us.openai.gpt-6-sol</code> or <code class="code">global.openai.gpt-6-sol</code>.</p></li><li class="listitem"><p>Choose a profile that is available in your source Region.</p></li><li class="listitem"><p>You cannot use the base model ID for in-Region calls on this endpoint.</p></li></ul></div>
+  <p>On <code class="code">bedrock-mantle</code>, use <code class="code">openai.gpt-6-sol</code> with the
+   <code class="code">/openai/v1</code> base path. Use the US East (N. Virginia) (<code class="code">us-east-1</code>) Region for this model on this endpoint.</p>
+  
+  <h2 id="model-card-openai-gpt-6-sol-tiers">Service tiers</h2>
+  <p>This model supports only the <b>Standard</b> tier in Amazon Bedrock. You pay per token with no commitment. Set <code class="code">"service_tier": "default"</code> or omit the field. Priority, Flex, and Reserved are not supported. For more information, see <a href="service-tiers-inference.html" rel="noopener noreferrer" target="_blank">service tiers</a>.</p>
+  <div class="table-container"><div class="table-contents"><table id="w637aac11c30c12c15b5"><thead>
+     <tr>
+      <th><b>Standard</b></th>
+      <th><b>Priority</b></th>
+      <th><b>Flex</b></th>
+      <th><b>Reserved</b></th>
+     </tr>
+    </thead>
+     <tr>
+      <td tabindex="-1"><img src="/images/bedrock/latest/userguide/images/icons/icon-yes.png" alt="Supported" data-alt-text-source="generated" style="max-width:10px" height="10px" /></td>
+      <td tabindex="-1"><img src="/images/bedrock/latest/userguide/images/icons/icon-no.png" alt="Not supported" style="max-width:10px" height="10px" /></td>
+      <td tabindex="-1"><img src="/images/bedrock/latest/userguide/images/icons/icon-no.png" alt="Not supported" style="max-width:10px" height="10px" /></td>
+      <td tabindex="-1"><img src="/images/bedrock/latest/userguide/images/icons/icon-no.png" alt="Not supported" style="max-width:10px" height="10px" /></td>
+     </tr>
+    </table></div></div>
+  
+  <h2 id="model-card-openai-gpt-6-sol-regional-availability">Supported Regions</h2>
+  <p>Each endpoint supports a different set of Regions. See
+   <a href="./models-region-compatibility.html">Regional availability by models</a>.</p>
+  <p><b>The <code class="code">bedrock-mantle</code> endpoint</b></p>
+  <div class="table-container"><div class="table-contents"><table id="w637aac11c30c12c17b7"><thead><tr><th><b>Region</b></th><th><b>In-Region</b></th><th><b>Geo</b></th><th><b>Global</b></th></tr></thead>
+     <tr><td tabindex="-1"><code class="code">us-east-1</code> (US East (N. Virginia))</td><td tabindex="-1">Supported</td><td tabindex="-1">Not supported</td><td tabindex="-1">Not supported</td></tr>
+    </table></div></div>
+  <p><b>The <code class="code">bedrock-runtime</code> endpoint</b></p>
+  <div class="table-container"><div class="table-contents"><table id="w637aac11c30c12c17c11"><thead>
+    <tr><th><b>Source Region</b></th><th><b>In-Region</b></th><th><b>US Geo CRIS</b></th><th><b>Global CRIS</b></th></tr>
+    </thead>
+    <tr><td tabindex="-1"><code class="code">us-east-1</code></td><td tabindex="-1">Not supported</td><td tabindex="-1">Supported</td><td tabindex="-1">Supported</td></tr>
+    <tr><td tabindex="-1"><code class="code">us-east-2</code></td><td tabindex="-1">Not supported</td><td tabindex="-1">Supported</td><td tabindex="-1">Supported</td></tr>
+    <tr><td tabindex="-1"><code class="code">us-west-1</code></td><td tabindex="-1">Not supported</td><td tabindex="-1">Supported</td><td tabindex="-1">Supported</td></tr>
+    <tr><td tabindex="-1"><code class="code">us-west-2</code></td><td tabindex="-1">Not supported</td><td tabindex="-1">Supported</td><td tabindex="-1">Supported</td></tr>
+    <tr><td tabindex="-1"><code class="code">ca-central-1</code></td><td tabindex="-1">Not supported</td><td tabindex="-1">Supported</td><td tabindex="-1">Supported</td></tr>
+    <tr><td tabindex="-1"><code class="code">ca-west-1</code></td><td tabindex="-1">Not supported</td><td tabindex="-1">Supported</td><td tabindex="-1">Supported</td></tr>
+    <tr><td tabindex="-1"><code class="code">eu-central-1</code></td><td tabindex="-1">Not supported</td><td tabindex="-1">Not supported</td><td tabindex="-1">Supported</td></tr>
+    <tr><td tabindex="-1"><code class="code">eu-central-2</code></td><td tabindex="-1">Not supported</td><td tabindex="-1">Not supported</td><td tabindex="-1">Supported</td></tr>
+    <tr><td tabindex="-1"><code class="code">eu-north-1</code></td><td tabindex="-1">Not supported</td><td tabindex="-1">Not supported</td><td tabindex="-1">Supported</td></tr>
+    <tr><td tabindex="-1"><code class="code">eu-south-1</code></td><td tabindex="-1">Not supported</td><td tabindex="-1">Not supported</td><td tabindex="-1">Supported</td></tr>
+    <tr><td tabindex="-1"><code class="code">eu-south-2</code></td><td tabindex="-1">Not supported</td><td tabindex="-1">Not supported</td><td tabindex="-1">Supported</td></tr>
+    <tr><td tabindex="-1"><code class="code">eu-west-1</code></td><td tabindex="-1">Not supported</td><td tabindex="-1">Not supported</td><td tabindex="-1">Supported</td></tr>
+    <tr><td tabindex="-1"><code class="code">eu-west-2</code></td><td tabindex="-1">Not supported</td><td tabindex="-1">Not supported</td><td tabindex="-1">Supported</td></tr>
+    <tr><td tabindex="-1"><code class="code">eu-west-3</code></td><td tabindex="-1">Not supported</td><td tabindex="-1">Not supported</td><td tabindex="-1">Supported</td></tr>
+    <tr><td tabindex="-1"><code class="code">ap-east-2</code></td><td tabindex="-1">Not supported</td><td tabindex="-1">Not supported</td><td tabindex="-1">Supported</td></tr>
+    <tr><td tabindex="-1"><code class="code">ap-northeast-1</code></td><td tabindex="-1">Not supported</td><td tabindex="-1">Not supported</td><td tabindex="-1">Supported</td></tr>
+    <tr><td tabindex="-1"><code class="code">ap-northeast-2</code></td><td tabindex="-1">Not supported</td><td tabindex="-1">Not supported</td><td tabindex="-1">Supported</td></tr>
+    <tr><td tabindex="-1"><code class="code">ap-northeast-3</code></td><td tabindex="-1">Not supported</td><td tabindex="-1">Not supported</td><td tabindex="-1">Supported</td></tr>
+    <tr><td tabindex="-1"><code class="code">ap-south-1</code></td><td tabindex="-1">Not supported</td><td tabindex="-1">Not supported</td><td tabindex="-1">Supported</td></tr>
+    <tr><td tabindex="-1"><code class="code">ap-south-2</code></td><td tabindex="-1">Not supported</td><td tabindex="-1">Not supported</td><td tabindex="-1">Supported</td></tr>
+    <tr><td tabindex="-1"><code class="code">ap-southeast-1</code></td><td tabindex="-1">Not supported</td><td tabindex="-1">Not supported</td><td tabindex="-1">Supported</td></tr>
+    <tr><td tabindex="-1"><code class="code">ap-southeast-2</code></td><td tabindex="-1">Not supported</td><td tabindex="-1">Not supported</td><td tabindex="-1">Supported</td></tr>
+    <tr><td tabindex="-1"><code class="code">ap-southeast-3</code></td><td tabindex="-1">Not supported</td><td tabindex="-1">Not supported</td><td tabindex="-1">Supported</td></tr>
+    <tr><td tabindex="-1"><code class="code">ap-southeast-4</code></td><td tabindex="-1">Not supported</td><td tabindex="-1">Not supported</td><td tabindex="-1">Supported</td></tr>
+    <tr><td tabindex="-1"><code class="code">ap-southeast-5</code></td><td tabindex="-1">Not supported</td><td tabindex="-1">Not supported</td><td tabindex="-1">Supported</td></tr>
+    <tr><td tabindex="-1"><code class="code">ap-southeast-6</code></td><td tabindex="-1">Not supported</td><td tabindex="-1">Not supported</td><td tabindex="-1">Supported</td></tr>
+    <tr><td tabindex="-1"><code class="code">ap-southeast-7</code></td><td tabindex="-1">Not supported</td><td tabindex="-1">Not supported</td><td tabindex="-1">Supported</td></tr>
+    <tr><td tabindex="-1"><code class="code">il-central-1</code></td><td tabindex="-1">Not supported</td><td tabindex="-1">Not supported</td><td tabindex="-1">Supported</td></tr>
+    <tr><td tabindex="-1"><code class="code">af-south-1</code></td><td tabindex="-1">Not supported</td><td tabindex="-1">Not supported</td><td tabindex="-1">Supported</td></tr>
+    <tr><td tabindex="-1"><code class="code">sa-east-1</code></td><td tabindex="-1">Not supported</td><td tabindex="-1">Not supported</td><td tabindex="-1">Supported</td></tr>
+    <tr><td tabindex="-1"><code class="code">mx-central-1</code></td><td tabindex="-1">Not supported</td><td tabindex="-1">Not supported</td><td tabindex="-1">Supported</td></tr>
+    </table></div></div>
+  
+  <h2 id="model-card-openai-gpt-6-sol-quotas">Quotas and limits</h2>
+
+  <p>Quotas vary by account and Region. To review your quotas or request an increase,
+   see <a href="./quotas.html">Quotas for Amazon Bedrock</a> and <a href="quotas-increase.html" rel="noopener noreferrer" target="_blank">Request an increase to a quota</a>.</p>
+  <p>On <code class="code">bedrock-runtime</code>, the quota counts output tokens at a 10-to-1 rate.
+   Each output token uses 10 tokens of quota.</p>
+  
+  <h2 id="model-card-openai-gpt-6-sol-sample-code">Sample code</h2>
+  <p><b>Step 1 - Create an AWS account:</b> If you already have an AWS account, skip this step. Otherwise, sign up for an <a href="https://portal.aws.amazon.com/billing/signup" rel="noopener noreferrer" target="_blank"><span>AWS account</span><awsui-icon class="awsdocs-link-icon" name="external"></awsui-icon></a>.</p>
+  <p><b>Step 2 - Create an API key:</b> Open the <a href="https://console.aws.amazon.com/bedrock/home#/api-keys/long-term/create" rel="noopener noreferrer" target="_blank"><span>Amazon Bedrock console</span><awsui-icon class="awsdocs-link-icon" name="external"></awsui-icon></a>. Create a long-term API key.</p>
+  <p><b>Step 3 - Install the SDK:</b> You need Python to run these examples. Install the OpenAI SDK with the command below. Both APIs use this SDK.</p>
+  <awsdocs-tabs><dl style="display: none">
+   <dt>OpenAI SDK</dt><dd tab-id="openai-sdk">
+     <pre class="programlisting"><div class="code-btn-container"><div class="btn-copy-code" title="Copy"><awsui-icon name="copy"></awsui-icon></div></div><!--DEBUG: cli (bash)--><code class="bash ">python3 -m pip install openai</code></pre>
+    </dd>
+  </dl></awsdocs-tabs>
+   
+   <h3 id="model-card-openai-gpt-6-sol-sample-code-environment">Step 4 - Set environment variables</h3>
+  <p>Choose the tab for your endpoint. Set your API key and the base URL shown there.</p>
+  <awsdocs-tabs><dl style="display: none">
+   <dt>bedrock-runtime</dt><dd tab-id="bedrock-runtime">
+     <pre class="programlisting"><div class="code-btn-container"><div class="btn-copy-code" title="Copy"><awsui-icon name="copy"></awsui-icon></div></div><!--DEBUG: cli (bash)--><code class="bash ">export OPENAI_API_KEY="&lt;provide your Bedrock API key&gt;"
+export OPENAI_BASE_URL="https://bedrock-runtime.us-east-1.amazonaws.com/openai/v1"</code></pre>
+    </dd>
+   <dt>bedrock-mantle</dt><dd tab-id="bedrock-mantle">
+     <pre class="programlisting"><div class="code-btn-container"><div class="btn-copy-code" title="Copy"><awsui-icon name="copy"></awsui-icon></div></div><!--DEBUG: cli (bash)--><code class="bash ">export OPENAI_API_KEY="&lt;provide your Bedrock API key&gt;"
+export OPENAI_BASE_URL="https://bedrock-mantle.us-east-1.api.aws/openai/v1"</code></pre>
+    </dd>
+  </dl></awsdocs-tabs>
+  <div class="awsdocs-note"><div class="awsdocs-note-title"><awsui-icon name="status-info" variant="link"></awsui-icon><h6>Note</h6></div><div class="awsdocs-note-text"><p>On <code class="code">bedrock-runtime</code>, use a cross-Region inference profile as the model: <code class="code">us.openai.gpt-6-sol</code> or <code class="code">global.openai.gpt-6-sol</code>. This model does not support in-Region calls on this endpoint.</p><p>Your IAM identity needs <code class="code">bedrock:InvokeModel</code> permission for both resources:</p><div class="itemizedlist">
+     
+     
+   <ul class="itemizedlist"><li class="listitem"><p>The inference profile.</p></li><li class="listitem"><p>Your AWS account's default project: <code class="code">arn:aws:bedrock:<span>{</span>region}:<span>{</span>account-id}:project/default</code>.</p></li></ul></div></div></div>
+    
+   
+   <h3 id="model-card-openai-gpt-6-sol-sample-code-request">Step 5 - Send your first request</h3>
+   <p>Save one of the examples below as <code>bedrock-first-request.py</code>.</p>
+   
+   <h4 id="model-card-openai-gpt-6-sol-sample-code-runtime-openai">bedrock-runtime: OpenAI SDK</h4>
+   <p>Use the settings from <a href="#model-card-openai-gpt-6-sol-sample-code-environment">Step 4 - Set environment variables</a>. Choose the <code class="code">bedrock-runtime</code> tab. Both examples use the global system inference profile.</p>
+   <awsdocs-tabs><dl style="display: none">
+    <dt>Responses API</dt><dd tab-id="responses-api">
+     <pre class="programlisting"><div class="code-btn-container"><div class="btn-copy-code" title="Copy"><awsui-icon name="copy"></awsui-icon></div></div><!--DEBUG: cli (python)--><code class="python ">import os
+from openai import OpenAI
+
+client = OpenAI(base_url=os.environ["OPENAI_BASE_URL"])
+
+response = client.responses.create(
+    model="global.openai.gpt-6-sol",
+    input="Can you explain the features of Amazon Bedrock?"
+)
+print(response)</code></pre>
+    </dd>
+    <dt>Chat Completions API</dt><dd tab-id="chat-completions-api">
+     <pre class="programlisting"><div class="code-btn-container"><div class="btn-copy-code" title="Copy"><awsui-icon name="copy"></awsui-icon></div></div><!--DEBUG: cli (python)--><code class="python ">import os
+from openai import OpenAI
+
+client = OpenAI(base_url=os.environ["OPENAI_BASE_URL"])
+
+response = client.chat.completions.create(
+    model="global.openai.gpt-6-sol",
+    messages=[<span>{</span>"role": "user", "content": "Can you explain the features of Amazon Bedrock?"}]
+)
+print(response)</code></pre>
+    </dd>
+   </dl></awsdocs-tabs>
+   
+   
+   <h4 id="model-card-openai-gpt-6-sol-sample-code-mantle">bedrock-mantle</h4>
+   <p>Use the settings from <a href="#model-card-openai-gpt-6-sol-sample-code-environment">Step 4 - Set environment variables</a>. Choose the <code class="code">bedrock-mantle</code> tab.</p>
+   <awsdocs-tabs><dl style="display: none">
+    <dt>Responses API</dt><dd tab-id="responses-api">
+     <pre class="programlisting"><div class="code-btn-container"><div class="btn-copy-code" title="Copy"><awsui-icon name="copy"></awsui-icon></div></div><!--DEBUG: cli (python)--><code class="python ">import os
+from openai import OpenAI
+
+client = OpenAI(base_url=os.environ["OPENAI_BASE_URL"])
+
+response = client.responses.create(
+    model="openai.gpt-6-sol",
+    input="Can you explain the features of Amazon Bedrock?"
+)
+print(response)</code></pre>
+    </dd>
+    <dt>Chat Completions API</dt><dd tab-id="chat-completions-api">
+     <pre class="programlisting"><div class="code-btn-container"><div class="btn-copy-code" title="Copy"><awsui-icon name="copy"></awsui-icon></div></div><!--DEBUG: cli (python)--><code class="python ">import os
+from openai import OpenAI
+
+client = OpenAI(base_url=os.environ["OPENAI_BASE_URL"])
+
+response = client.chat.completions.create(
+    model="openai.gpt-6-sol",
+    messages=[<span>{</span>"role": "user", "content": "Can you explain the features of Amazon Bedrock?"}]
+)
+print(response)</code></pre>
+    </dd>
+   </dl></awsdocs-tabs>
+   
+   
+ <awsdocs-copyright class="copyright-print"></awsdocs-copyright><awsdocs-thumb-feedback right-edge="{{$ctrl.thumbFeedbackRightEdge}}"></awsdocs-thumb-feedback></div><noscript><div><div><div><div id="js_error_message"><p><img src="https://d1ge0kk1l5kms0.cloudfront.net/images/G/01/webservices/console/warning.png" alt="Warning" /> <strong>Javascript is disabled or is unavailable in your browser.</strong></p><p>To use the Amazon Web Services Documentation, Javascript must be enabled. Please refer to your browser's Help pages for instructions.</p></div></div></div></div></noscript><div id="main-col-footer" class="awsui-util-font-size-0"><div id="doc-conventions"><a target="_top" href="/general/latest/gr/docconventions.html">Document Conventions</a></div><div class="prev-next"><div id="previous" class="prev-link" accesskey="p" href="./model-card-openai-gpt-6-1-sol.html">GPT-6.1 Sol</div><div id="next" class="next-link" accesskey="n" href="./model-card-openai-gpt-6-luna.html">GPT-6 Luna</div></div></div><awsdocs-page-utilities></awsdocs-page-utilities></div><div id="quick-feedback-yes" style="display: none;"><div class="title">Did this page help you? - Yes</div><div class="content"><p>Thanks for letting us know we're doing a good job!</p><p>If you've got a moment, please tell us what we did right so we can do more of it.</p><p><awsui-button id="fblink" rel="noopener noreferrer" target="_blank" text="Feedback" click="linkClick($event)" href="https://docs.aws.amazon.com/forms/aws-doc-feedback?feedback_destination_id=2d8c2a09-1dac-41bf-9893-c0333d272b2c&amp;topic_url=https://docs.aws.amazon.com/en_us/bedrock/latest/userguide/model-card-openai-gpt-6-sol.html"></awsui-button></p></div></div><div id="quick-feedback-no" style="display: none;"><div class="title">Did this page help you? - No</div><div class="content"><p>Thanks for letting us know this page needs work. We're sorry we let you down.</p><p>If you've got a moment, please tell us how we can make the documentation better.</p><p><awsui-button id="fblink" rel="noopener noreferrer" target="_blank" text="Feedback" click="linkClick($event)" href="https://docs.aws.amazon.com/forms/aws-doc-feedback?feedback_destination_id=2d8c2a09-1dac-41bf-9893-c0333d272b2c&amp;topic_url=https://docs.aws.amazon.com/en_us/bedrock/latest/userguide/model-card-openai-gpt-6-sol.html"></awsui-button></p></div></div></div></body></div></awsdocs-view><div class="page-loading-indicator" id="page-loading-indicator"><awsui-spinner size="large"></awsui-spinner></div></div><div id="tools-panel" dom-region="tools"><awsdocs-tools-panel id="awsdocs-tools-panel"></awsdocs-tools-panel></div></awsui-app-layout><awsdocs-cookie-banner class="doc-cookie-banner"></awsdocs-cookie-banner></div></body></html>

@@ -1,0 +1,33 @@
+# GPT-6.1 Sol
+
+GPT-6.1 Sol is OpenAI's reasoning model for complex coding, computer use, and professional work. It accepts text and images, generates text, and supports a 1,050,000-token context window with up to 128,000 output tokens. Configurable reasoning effort, structured outputs, prompt caching, and Responses API tools support multi-step workflows.
+
+- **Model ID:** `openai/gpt-6.1-sol`
+- **Type:** chat
+- **Providers:** openai, bedrock, azure
+- **Context window:** 1,050,000
+- **Maximum output tokens:** 128,000
+- **Pricing:** $2/1M input tokens, $10/1M output tokens
+- **Canonical page:** https://vercel.com/ai-gateway/models/gpt-6.1-sol
+
+## Supported parameters
+
+Detailed capability metadata has not been reported for this model.
+
+## Example
+
+```ts
+import { streamText } from 'ai'
+
+const result = streamText({
+  model: 'openai/gpt-6.1-sol',
+  prompt: 'Why is the sky blue?'
+})
+```
+
+## Links
+
+- [Model page](https://vercel.com/ai-gateway/models/gpt-6.1-sol)
+- [AI Gateway documentation](https://vercel.com/docs/ai-gateway)
+- [Provider model documentation](https://developers.openai.com/api/docs/models/gpt-6.1-sol)
+- [Provider pricing](https://developers.openai.com/api/docs/pricing)

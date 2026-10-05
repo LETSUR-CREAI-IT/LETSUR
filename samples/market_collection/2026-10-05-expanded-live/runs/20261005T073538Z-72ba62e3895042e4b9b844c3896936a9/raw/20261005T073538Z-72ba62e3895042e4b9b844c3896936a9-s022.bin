@@ -1,0 +1,118 @@
+# GPT 5.6 Sol
+
+GPT 5.6 Sol is the flagship GPT-5.6 model. Reach for it on agentic coding, biology, and cybersecurity work where the quality ceiling decides the result rather than the unit cost.
+
+- **Model ID:** `openai/gpt-5.6-sol`
+- **Type:** chat
+- **Providers:** openai, azure, bedrock
+- **Context window:** 1,050,000
+- **Maximum output tokens:** 128,000
+- **Pricing:** $4/1M input tokens, $20/1M output tokens
+- **Canonical page:** https://vercel.com/ai-gateway/models/gpt-5.6-sol
+
+## Supported parameters
+
+Detailed capability metadata has not been reported for this model.
+
+## Example
+
+```ts
+import { streamText } from 'ai'
+
+const result = streamText({
+  model: 'openai/gpt-5.6-sol',
+  prompt: 'Why is the sky blue?'
+})
+```
+
+## About
+
+GPT 5.6 Sol became available on AI Gateway on July 9, 2026, alongside GPT-5.6 Terra and GPT-5.6 Luna. All three GPT-5.6 models handle agentic work across coding, biology, and cybersecurity better than the previous generation, and all three use fewer tokens to reach an answer. GPT 5.6 Sol is the most capable of the set.
+
+OpenAI positions GPT 5.6 Sol as the frontier model of the family for complex professional work. It corresponds to the unsuffixed tier of earlier GPT-5 families, so teams running a standard GPT-5.5 model today are looking at the direct successor. OpenAI routes the `gpt-5.6` alias to GPT 5.6 Sol.
+
+GPT 5.6 Sol accepts text and image input and returns text. The context window is 1.1M tokens, with up to 128K tokens of output per request. Reasoning tokens, streaming, function calling, and structured outputs are supported, along with web search, file search, code interpreter, computer use, and MCP (Model Context Protocol) tools through the Responses API. A fast mode is available when you want quicker responses from the same model, and it got faster after launch. See the live metrics on this page for current throughput.
+
+Set the model to `openai/gpt-5.6-sol` in the AI SDK, the Chat Completions API, the Responses API, or another supported API format, from TypeScript or Python. AI Gateway routing rules can also rewrite an existing model slug to `openai/gpt-5.6-sol`, which moves production traffic onto GPT 5.6 Sol without a code change. List pricing is $4 per million input tokens and $20 per million output tokens, with cached input at $0.4. AI Gateway mirrors provider pricing with no markup and adds no platform fee on inference, including for Bring Your Own Key requests.
+
+## What to consider
+
+GPT 5.6 Sol sits at the top of the GPT-5.6 lineup, so it carries the highest list price of the three. Route your hardest agentic and research requests here and send routine turns to GPT-5.6 Terra or GPT-5.6 Luna. A small routing layer keyed on task complexity keeps the cost profile predictable.
+
+Token efficiency improved across the GPT-5.6 family, so a request can finish in fewer tokens than the previous generation needed. Pricing splits into short-context and long-context rates, and very large prompts bill at the long-context rate. Read the pricing panel on this page before you routinely fill the context window of 1.1M tokens.
+
+## When to use
+
+### Best For
+
+- **Agentic Coding Workflows:** Multi-step engineering tasks where smaller tiers stall and the flagship finishes the job
+- **Security and Biology Research:** Two domains the GPT-5.6 family improved over the previous generation
+- **Long-Context Analysis:** Whole repositories, filings, or research corpora that fit inside the context window
+- **Tool-Heavy Agents:** Web search, file search, code interpreter, computer use, and MCP tools in one pipeline
+- **Quality-Critical Traffic:** Requests where the answer ceiling decides the outcome rather than the unit cost
+
+### Consider Alternatives When
+
+- **Everyday Production Traffic:** GPT-5.6 Terra balances intelligence against cost across routine work
+- **High-Volume Cost Control:** GPT-5.6 Luna carries the lowest price in the GPT-5.6 family
+- **Autonomous Coding Agents:** GPT-5.x codex variants target sandboxed software engineering directly
+- **Live Voice Interfaces:** The gpt-realtime family handles speech-to-speech conversation natively
+
+## Best for
+
+- **Agentic Coding Workflows:** Multi-step engineering tasks where smaller tiers stall and the flagship finishes the job
+- **Security and Biology Research:** Two domains the GPT-5.6 family improved over the previous generation
+- **Long-Context Analysis:** Whole repositories, filings, or research corpora that fit inside the context window
+- **Tool-Heavy Agents:** Web search, file search, code interpreter, computer use, and MCP tools in one pipeline
+- **Quality-Critical Traffic:** Requests where the answer ceiling decides the outcome rather than the unit cost
+
+## Consider alternatives
+
+- **Everyday Production Traffic:** GPT-5.6 Terra balances intelligence against cost across routine work
+- **High-Volume Cost Control:** GPT-5.6 Luna carries the lowest price in the GPT-5.6 family
+- **Autonomous Coding Agents:** GPT-5.x codex variants target sandboxed software engineering directly
+- **Live Voice Interfaces:** The gpt-realtime family handles speech-to-speech conversation natively
+
+## Frequently asked questions
+
+### What is GPT 5.6 Sol built for?
+
+Complex professional work. OpenAI positions GPT 5.6 Sol as the frontier model of the GPT-5.6 family, with agentic gains over the previous generation in coding, biology, and cybersecurity.
+
+### How does GPT 5.6 Sol compare with GPT-5.6 Terra and GPT-5.6 Luna?
+
+GPT 5.6 Sol is the most capable of the three. GPT-5.6 Terra balances intelligence against cost for everyday work, and GPT-5.6 Luna handles fast, cost-sensitive traffic at the lowest price in the family.
+
+### What context window and output limit does GPT 5.6 Sol support?
+
+1.1M tokens, with up to 128K tokens of output per request. That covers full repositories, long document sets, and extended agent histories in a single call.
+
+### What inputs does GPT 5.6 Sol accept?
+
+Text and images, with text output. Audio and video input are not supported, so route voice work to the gpt-realtime family instead.
+
+### Which APIs can I use to call GPT 5.6 Sol?
+
+Set the model to `openai/gpt-5.6-sol` in the AI SDK, the Chat Completions API, the Responses API, or another supported API format. AI Gateway accepts each format and routes the request.
+
+### Can I move existing traffic to GPT 5.6 Sol without changing my code?
+
+Yes. Add an AI Gateway routing rule that rewrites your current model slug to `openai/gpt-5.6-sol`. Requests keep their existing code path and land on GPT 5.6 Sol.
+
+### What does GPT 5.6 Sol cost?
+
+List pricing is $4 per million input tokens and $20 per million output tokens, with cached input at $0.4. Short-context and long-context requests are priced separately, and AI Gateway mirrors provider pricing with no markup.
+
+### Does GPT 5.6 Sol support zero data retention through AI Gateway?
+
+Yes, Zero Data Retention is available for this model. Zero Data Retention is offered on a per-provider basis. See https://vercel.com/docs/ai-gateway/capabilities/zdr for details.
+
+### What are typical latency characteristics?
+
+This page shows live throughput and time-to-first-token metrics measured across real AI Gateway traffic. GPT 5.6 Sol also offers a fast mode for quicker responses from the same model.
+
+## Links
+
+- [Model page](https://vercel.com/ai-gateway/models/gpt-5.6-sol)
+- [AI Gateway documentation](https://vercel.com/docs/ai-gateway)
+- [Provider model documentation](https://developers.openai.com/api/docs/models/gpt-5.6-sol)
