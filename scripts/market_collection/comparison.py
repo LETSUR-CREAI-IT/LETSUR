@@ -18,6 +18,10 @@ COMPARISON_BASIS = 'public_token_unit_rate'
 QUALITY_COST_CLAUSE = 'Changing the quality parameter significantly affects cost; by default we use high'
 QUALITY_USAGE_DESCRIPTION = "Quality for the generated image. Higher settings increase detail, latency, and token usage. Use 'auto' to let the model choose."
 
+# Only exact API contracts can block established request support on failure.
+CONTRACT_PARSERS = {'image25_openai_guide','image25_fal_api','image25_openrouter_api',
+                    'image25_vercel_api','image25_openrouter_endpoints','image25_azure_howto'}
+
 METERS = {'text_input','text_cached_input','image_input','image_cached_input','image_output'}
 DEFAULT_REQUEST = dict(task='text-to-image',quality='high',size='1024x1024',num_images=1,
                        processing='Standard',api_surface='images',billing_item='image_output')
@@ -187,12 +191,39 @@ def compare_run(run_dir, request):
     groups={}
     for row in conditions:
         if row['source_id'] in model_sources:groups.setdefault((row['source_id'],row['condition_set_id']),[]).append(row)
-    manufacturer=[];channels={};identities=[]
+    source_specs={item['source']['source_id']:item['spec'] for item in manifest['sources']}
+    documentary_profiles=[]
+    for sid, source in model_sources.items():
+        if source_specs[sid]['parser'] not in CONTRACT_PARSERS | {'image25_openai_generate','image25_azure_regions','image25_openrouter_guide','image25_vercel_ui','image25_fal_guide'}:
+            continue
+        own=[row for (source_id,_),rows in groups.items() if source_id==sid for row in rows]
+        scopes=[_value(r) for r in own if r['condition_key']=='profile_scope' and r['status']=='stated']
+        documentary_profiles.append(dict(source_id=sid,source_key=source['source_key'],route=source['route'],
+            scope=scopes[0] if len(set(map(str,scopes)))==1 else 'unknown',
+            fetch_status=source['fetch_status'],parse_status=source['parse_status'],error=source['error'],
+            source_evidence=dict(source_id=sid,URL=source['effective_url'] or source['requested_url'],
+                fetched_at=source['fetched_at_utc'],raw_sha256=source['raw_sha256'],raw_path=source['raw_path']),
+            conditions=own))
+    manufacturer=[];channels={};identities=[];supplements=[]
     for (sid,cid),rows in groups.items():
         scopes=[r['value'] for r in rows if r['condition_key']=='profile_scope' and r['status']=='stated']
         if scopes==['manufacturer_model']:manufacturer.extend(rows)
         if scopes and scopes[0] in {'channel_model','channel_task'}:channels.setdefault(sources[sid]['route'],[]).extend(rows)
         if scopes==['manufacturer_identity']:identities.extend(rows)
+        if scopes==['manufacturer_supplement'] and source_specs[sid]['parser']=='image25_openai_generate':
+            ids=[r for r in rows if r['condition_key']=='model_id']
+            if ids and all(r['status']=='stated' and _value(r)==query['model'] for r in ids):
+                supplements.extend(r for r in rows if r['condition_key']=='num_images_range')
+    # Only the known guide's generated absence marker can be filled by exact-model n evidence.
+    # Explicit unknown, conflicted or unsupported declarations retain authority.
+    def absence_marker(row):
+        return (source_specs[row['source_id']]['parser']=='image25_openai_guide'
+                and row['condition_key']=='num_images_range' and row['status']=='unknown'
+                and row['value']=='Not documented in the scoped public contract; requires verification'
+                and row['locator']==sources[row['source_id']]['source_key']+' > num_images_range')
+    existing_n=[r for r in manufacturer if r['condition_key']=='num_images_range']
+    if manufacturer and supplements and not any(r['status']!='stated' and not absence_marker(r) for r in existing_n):
+        manufacturer=[r for r in manufacturer if not absence_marker(r)]+supplements
     endpoint_sources={item['source']['source_id'] for item in manifest['sources']
                       if item['spec']['parser']=='image25_openrouter_endpoints'
                       and item['spec']['source_key']==f"image25_openrouter_{query['model'].rsplit('-',1)[1]}_endpoints"}
@@ -270,7 +301,7 @@ def compare_run(run_dir, request):
                 if row['condition_key'] in {'quality','size','num_images','api_surface'} and row['status']=='stated':
                     selected=query[row['condition_key']]
                     if str(_value(row))!=str(selected):reasons.append('mismatch:price.'+row['condition_key'])
-        failed=['failed_api_document:'+s['source_key'] for s in model_sources.values() if s['route'] in {'openai',p['route']} and (s['source_key'].startswith('image25_')) and (s['fetch_status']!='ok' or s['parse_status']!='ok')]
+        failed=['failed_api_document:'+s['source_key'] for s in model_sources.values() if s['route'] in {'openai',p['route']} and source_specs[s['source_id']]['parser'] in CONTRACT_PARSERS and (s['fetch_status']!='ok' or s['parse_status']!='ok')]
         req_status,req_reasons,refs=_request_support(query,{'manufacturer':manufacturer,'channel':channel},sources,meter,failed,
                                                      processing_price_basis if p['route']=='openai' else None)
         if processing_price_basis and p['route']=='openai':
@@ -298,7 +329,7 @@ def compare_run(run_dir, request):
               request_condition_status=req_status,overall_status=_status(combined),reason_codes=combined,
               price_reason_codes=sorted(set(reasons)),request_reason_codes=req_reasons,
               snapshot_identity=snapshot,snapshot_match='unverified',channel_version_hint=hint[1] if hint else None,
-              pricing_version_id=(re.search(r'pricing_version_id=([^;]+);',p['locator'])[1] if p['route']=='openrouter' and re.search(r'pricing_version_id=([^;]+);',p['locator']) else None),account_eligibility='unknown',actual_request_cost='unknown',
+              pricing_version_id=(re.search(r'pricing_version_id=([^;]+);',p['locator'])[1] if p['route']=='openrouter' and re.search(r'pricing_version_id=([^;]+);',p['locator']) else None),account_eligibility='unknown',actual_request_cost='unknown',actual_cost_impact='not_evaluated',
               comparison_basis=COMPARISON_BASIS,actual_request_cost_status='verification_required',
               request_cost_reason_codes=sorted(set(cost_reasons)),
               evidence=evidence,field_evidence=field_evidence,conditions=relevant))
@@ -333,7 +364,7 @@ def compare_run(run_dir, request):
         pairs.append(pair)
     return dict(schema_version=1,comparison_basis=COMPARISON_BASIS,run_id=manifest['run_id'],input_run=str(run_dir.resolve()),request=query,
                 rate_scope='named_model_public_unit_rate',snapshot_match='unverified unless both claims explicitly pin identity',
-                candidates=candidates,pairs=pairs,excluded=excluded,
+                candidates=candidates,pairs=pairs,excluded=excluded,documentary_profiles=documentary_profiles,
                 limitations=['No account eligibility, execution, billing, output-quality equivalence or cost-per-image claim.'])
 
 

@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from scripts.market_collection.core import SourceSpec
 from scripts.market_collection.sources import source_specs
-from . import google, openai, anthropic, openrouter, vercel, aws_bedrock, azure_foundry, fal, byteplus, google_vertex, azure_databricks, ideogram, image25_api
+from . import google, openai, anthropic, openrouter, vercel, aws_bedrock, azure_foundry, fal, byteplus, google_vertex, azure_databricks, ideogram, image25_api, image25_supplement
 
 SUPPLIERS = {
     "google_direct": google, "openai_direct": openai, "openai": openai,
@@ -22,6 +22,8 @@ def parse_source(spec: SourceSpec, body: bytes, source_id: str) -> tuple[list[di
         raise TypeError("source body must be bytes")
     if spec.modality == "image" and not source_id:
         raise ValueError("unregistered image source or invalid body/source ID")
+    if spec.parser in image25_supplement.PARSERS:
+        return image25_supplement.parse_source(spec, body, source_id)
     if spec.parser in image25_api.PARSERS:
         return image25_api.parse_source(spec, body, source_id)
     module = SUPPLIERS.get(spec.route)

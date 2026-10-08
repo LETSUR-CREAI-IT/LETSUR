@@ -149,5 +149,5 @@ def test_old_registry_specs_byte_equal_to_baseline():
     current=[asdict(s) for s in source_specs() if s.model_id!='ideogram-4.5' and not s.source_key.startswith('image25_')]
     assert current==old and len(old)==97
     validate_registry(source_specs())
-    assert len(source_specs())==113
+    assert len(source_specs())==125
     assert len({(s.model_id,s.route) for s in source_specs()})==97

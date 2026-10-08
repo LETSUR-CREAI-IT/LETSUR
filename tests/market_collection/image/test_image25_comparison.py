@@ -196,7 +196,7 @@ def test_preserved_currency_mismatch_and_condition_link_tamper(tmp_path):
     with pytest.raises(CollectionError,match='condition reference'):compare_run(p,QUERY)
 
 def test_failed_api_document_remains_critical(tmp_path):
-    specs=[SourceSpec('image25_manufacturer_api','image',MODEL,'openai','model-conditions','https://example.org/doc','synthetic'),SourceSpec('direct','image',MODEL,'openai','text-to-image','https://example.org/direct','synthetic'),SourceSpec('channel','image',MODEL,'fal','text-to-image','https://example.org/channel','synthetic')]
+    specs=[SourceSpec('image25_manufacturer_api','image',MODEL,'openai','model-conditions','https://example.org/doc','image25_openai_guide'),SourceSpec('direct','image',MODEL,'openai','text-to-image','https://example.org/direct','synthetic'),SourceSpec('channel','image',MODEL,'fal','text-to-image','https://example.org/channel','synthetic')]
     class FailedDocument(Synthetic):
         def parse_source(self,s,b,i):
             if s.task=='model-conditions':raise ValueError('synthetic missing exact contract')

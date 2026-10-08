@@ -30,11 +30,16 @@ jobs:
       - name: Collect market data
         run: python3 -B -m scripts.market_collection.core live --output-root data/market_collection
 
+      - name: Generate image reviews
+        if: always()
+        run: python3 -B -m scripts.market_collection.image_reviews --root data/market_collection
+
       - name: Summarize collection
         if: always()
         run: |
           python3 - <<'PY'
           import csv
+          import hashlib
           import json
           import os
           from pathlib import Path
@@ -76,6 +81,28 @@ jobs:
               except (OSError, UnicodeError, json.JSONDecodeError, csv.Error, TypeError, ValueError):
                   invalid_runs += 1
 
+          review_root = Path("data/market_collection/image_reviews")
+          review_count = 0
+          incomplete_reviews = 0
+          invalid_reviews = 0
+          for run_dir in run_dirs:
+              for model in ("gpt-image-2.5-sunburst", "gpt-image-2.5-flare"):
+                  output = review_root / run_dir.name / model
+                  try:
+                      report = json.loads((output / "report_manifest.json").read_text(encoding="utf-8"))
+                      if (report.get("run_id") != run_dir.name or report.get("query", {}).get("model") != model
+                              or report.get("input_run_relative") != "runs/" + run_dir.name
+                              or report.get("status") not in {"complete", "incomplete"}):
+                          raise ValueError
+                      for filename in ("comparison.json", "comparisons.csv", "summary.md"):
+                          sha = hashlib.sha256((output / filename).read_bytes()).hexdigest()
+                          if sha != report.get("output_files", {}).get(filename):
+                              raise ValueError
+                      review_count += 1
+                      incomplete_reviews += report["status"] == "incomplete"
+                  except (OSError, UnicodeError, json.JSONDecodeError, TypeError, ValueError):
+                      invalid_reviews += 1
+
           summary = [
               "## Market collection",
               "",
@@ -84,13 +111,16 @@ jobs:
               f"Prices: {totals['prices']}",
               f"Conditions: {totals['conditions']}",
               f"Invalid or missing runs: {invalid_runs}",
+              f"Image reviews: {review_count}/{len(run_dirs) * 2}",
+              f"Incomplete image reviews: {incomplete_reviews}",
+              f"Invalid or missing image reviews: {invalid_reviews}",
               "Failed source keys: " + (", ".join(sorted(failed_source_keys)) if failed_source_keys else "none"),
               "",
           ]
           with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as stream:
               stream.write("\n".join(summary))
 
-          if not run_dirs or invalid_runs or failed_source_keys:
+          if not run_dirs or invalid_runs or failed_source_keys or incomplete_reviews or invalid_reviews:
               raise SystemExit(1)
           PY
 
