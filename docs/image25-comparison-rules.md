@@ -26,7 +26,7 @@
 
 추가 API 조건 문서는 `model_id`와 공급 경로, `profile_scope`를 기준으로 묶는다. `manufacturer_model`은 제조사 모델 profile, `channel_model`과 `channel_task`는 공급 경로의 모델·작업 profile이다. 채널 가격 후보는 제조사와 해당 공급 경로의 조건을 함께 만족해야 한다. OpenAI Direct에는 제조사 조건이 직접 적용된다. 모델 ID가 맞지 않거나 필요한 profile이 없으면 비교 가능하다고 추정하지 않는다.
 
-비교 출력의 필드 근거는 조건별 `source_id`, `condition_set_id`, key, 원문 locator, SHA-256, URL 및 조회시각을 보존한다. 사람이 후보를 검토할 때는 표시 금액만 보지 말고 이 근거를 원문과 대조한다.
+비교 출력의 필드 근거는 조건별 `source_id`, `condition_set_id`, key, 원문 locator, SHA-256, URL 및 조회시각을 보존한다. `documentary_profiles`는 가격 행에 붙지 않은 참고 문서도 scope와 조회·파싱 상태, 원문 조건과 근거로 보여준다. 사람이 후보를 검토할 때는 표시 금액만 보지 말고 이 근거를 원문과 대조한다.
 
 ## 가격과 기능의 판정
 
@@ -37,6 +37,8 @@
 - 이미지당 요금이 문서화되지 않았다면 token 단가를 이미지 한 장 가격으로 계산하지 않는다. 비교 모듈은 정규화된 token 단가만 델타로 표시할 수 있다.
 - OpenAI Direct에서 cached input 가격은 Responses API의 `image_generation` 도구에 적용되며 Direct Images API에는 적용되지 않는다. 프록시 채널의 cache 가격 적용은 그 채널 문서에 별도 근거가 있어야 한다. OpenAI Direct의 제한이나 가격을 proxy에 옮겨 적용하지 않는다.
 - snapshot은 정확한 SKU 고정 근거가 있을 때만 기록한다. 기본 모델 snapshot은 특정 요청 SKU를 고정하지 않는다. 날짜가 포함된 OpenRouter URL은 `channel_version_hint`, 가격 locator의 UUID는 `pricing_version_id`로 별도 보존한다. 둘 다 immutable snapshot이나 계정 적용 요금을 증명하지 않는다.
+- 정규 단가와 원문 단위·meter는 함께 읽는다. Azure Retail의 `retailPrice`, `Consumption`, `Global (Gl)`, `1M tokens`는 조회 scope와 원문 meter 표기다. 이를 `unitPrice`, 다른 지역, 계정 배포 또는 실제 사용 가능성으로 바꾸지 않는다.
+- 공급자의 문서 설명도 종류를 구분한다. UI 선택값, 일반 API 안내와 공급자 가격 주장은 exact endpoint의 API 계약이나 실제 청구 증거가 아니다.
 
 가격 상태와 요청 지원 상태는 별도 평가한다.
 
@@ -72,6 +74,24 @@ Flare를 보려면 `--model gpt-image-2.5-flare`로 바꾼다. `comparison.json`
 
 이 비교는 공개 문서와 보존 run을 읽는다. 새 수집, 인증·유료 생성, 청구, 원격 Actions 실행, 계정 자격, 출력 품질, ranking, Impact, Confidence, UI나 알림은 수행하거나 증명하지 않는다.
 
+## 2026-10-08 추가 문서와 자동 검토
+
+현재 registry에는 두 모델 각각 OpenAI generate reference, Azure 이미지 생성 how-to, Azure region reference, OpenRouter 이미지 생성 guide, Vercel 모델 페이지, fal guide가 추가됐다. 총 12개 condition-only SourceSpec이며 세 수집 CSV schema는 유지된다. 이 문서들은 가격 관측을 만들지 않는다.
+
+**OpenAI generate reference — `manufacturer_supplement`.** Exact GPT Image 2.5 model ID의 `n=1..10`만 보충한다. 기존 guide의 “문서에 없음” placeholder만 대체하며, 명시적 unknown/conflict/unsupported는 덮지 않는다.
+
+**Azure image how-to — `channel_model`.** Exact model column에서 품질, 크기 제약, 장수, 입출력 modality, 편집 작업과 Images surface 계약을 읽는다. 처리 방식, Standard/Batch 과금, 지역 배포, 계정 자격과 snapshot은 unknown이다.
+
+**Azure region reference — `reference`.** 정확한 모델 행의 존재만 기록하며 계정 배포 자격을 증명하지 않는다.
+
+**OpenRouter image guide — `generic_api_reference`.** Size alias와 명시 크기 의미, endpoint capability 조회 방식을 설명한다. Exact endpoint의 1024×1024 지원을 확인하지 못하면 크기는 unknown이다.
+
+**Vercel model page — `channel_ui`.** 화면에 보이는 품질·크기·장수 선택지를 `official_ui_choices`로 보존한다. SDK/API 계약으로 승격하지 않는다.
+
+**fal guide — `reference` / `supplier_claim`.** 두 variant가 같은 quality/size 조합에서 같은 가격이라는 주장을 보존한다. 모든 조합의 가격이 같다는 뜻도, 새 가격 행도 아니다. `sync_mode`는 반환·요청 이력 보관 의미이며 과금 단위가 아니다.
+
+비교기는 정확한 API 계약 실패를 해당 지원 판정에 연결하고, 참고 자료 실패는 원문 상태와 함께 보고서에 남긴다. 과거 raw를 새 현재 관측으로 대체하지 않는다. 보고서 `status=complete`는 입력 회차에 수집 실패 source가 없고 후보가 존재한다는 뜻이다. 모든 모델 쌍이 comparable하다는 뜻도, 계정 적용 요금이나 실제 요청 비용을 확인했다는 뜻도 아니다. 결과 출력·실패 처리는 [비교 보고서 자동화](image-docs-automation.md)에 정리돼 있다.
+
 ## 2026-10-06 비용 범위 필드
 
 결과·후보·비교쌍의 `comparison_basis=public_token_unit_rate`는 공개 USD/token 단가를 비교한다는 뜻이다. comparable 쌍에 단가 차이가 출력되면 `displayed_unit_rate_delta_basis`도 같은 기준을 가리킨다. 이 차이는 표시된 공개 단가의 차이이며, 실제 요청 비용이나 이미지당 비용이 아니다.
@@ -94,6 +114,14 @@ registry의 두 새 사양은 [Sunburst endpoint](https://openrouter.ai/api/v1/i
 
 ## 2026-10-08 전체 registry 비교 확인
 
-2026-10-08 독립 로컬 QA는 전체 113-source live run(454 price, 1,905 condition)을 만든 뒤 이 보존 자료에서 Sunburst와 Flare를 각각 다시 비교했다. 모델별 12개 후보 중 1개는 `comparable`, 10개는 `verification_required`, 1개는 `not_comparable`이었다. 각 모델의 52개 cross-route pair 중 42개는 `verification_required`, 10개는 `not_comparable`이며 cross-route comparable pair는 0개다. Direct Standard image-output 공개 단가 후보가 comparable인 범위는 공개 단가와 선택한 요청 조건의 비교다. 실제 요청 비용과 계정 eligibility는 모두 unknown이며 이미지당 가격으로 환산하지 않는다.
+2026-10-08 113-source live run(454 price, 1,905 condition)은 이전 registry 범위의 역사적 결과다. 이후 추가된 12개 문서를 포함한 최종 범위의 독립 QA와 Actions artifact 확인은 아래 release record에 기록한다.
 
-이 QA의 385개 테스트와 live run은 로컬 공개 GET·CLI 범위만 확인했다. 상세 산출물은 `ai-log/20261008/automation-release-qa/` 아래의 **로컬 전용 작업 증거**이며 clone에서 접근 가능한 공개 파일이나 GitHub artifact로 간주하지 않는다. 이후 PR #2 merge 후 `develop` 수동 Actions run과 artifact 검사가 성공했다. 새 cron firing은 **NOT_RUN**, 실제 BytePlus retry recovery는 **NOT_OBSERVED**, 유료 생성·계정 적용·실제 청구는 **NOT_RUN**이다. 원격 실행 세부 정보는 [수집 운영 기록](market-collection.md#2026-10-08-원격-반영-및-artifact-확인)에 정리했다.
+초기 385-test 및 PR #2 관련 기록은 해당 당시 범위의 역사 자료다. 새 범위의 independent QA report는 438개 테스트와 final fingerprint 재계산, final parser replay, CLI refusal/partial paths, 기존 113-source compatibility를 PASS로 기록했다. 실제 UI 연결, cron firing, 유료 생성, 계정 자격과 billing은 **NOT_RUN**이다. QA report와 release receipt는 `ai-log/`의 로컬 전용 evidence라 public clone 또는 GitHub artifact에 포함된다고 가정하지 않는다.
+
+### 2026-10-08 PR #4 release receipts
+
+[PR #4](https://github.com/LETSUR-CREAI-IT/LETSUR/pull/4)는 2026-10-08 10:45:04 UTC에 merge됐으며 `develop` merge SHA는 `57f1aaaf52a87630cebe0ceb3864c2b9b728dc90`이다. [Feature branch run 37765065107](https://github.com/LETSUR-CREAI-IT/LETSUR/actions/runs/37765065107)과 [merge 후 develop run 37765612736](https://github.com/LETSUR-CREAI-IT/LETSUR/actions/runs/37765612736)은 모두 success였다. 두 artifact 감사에서 125 source, 454 price, 1,987 condition, fetch/parse 성공, raw 125개 hash와 source/condition joins PASS, 137 files를 확인했다. 각 artifact의 보충 source 12개는 가격 행 0개다.
+
+두 모델 모두 report `status=complete`, 12 candidates, 52 cross-route pairs를 냈다. 각 모델의 쌍은 42 `verification_required`, 10 `not_comparable`, comparable pair 0개이며 `documentary_profiles`는 11개다. 보고서마다 `comparison.json`, `comparisons.csv`, `summary.md`, `report_manifest.json` 네 파일이 있다. `complete`는 수집 실패와 후보 부재가 없음을 나타내며 모든 경로가 comparable하다는 뜻은 아니다. 실제 요청 비용은 unknown, 비용 영향은 미평가이고 UI·계정 적용·paid billing은 **NOT_RUN**이다.
+
+독립 QA는 final fingerprint `a0de529941f6fa8689a5c798b1eabb1c742e9068a3394fefa162a8a5b3afa023`이 99개 source/test/workflow path의 실행 전후와 일치하는지 확인했다. 125개 원문을 최종 parser로 replay했으며 원래 관측 시각을 보존했다. 정상·partial workflow 경로와 137-file archive 복원, retained 113-source compatibility도 PASS다. QA report는 로컬 `ai-log/20261008/image-docs-auto-v1/03-qa/independent/qa-report.md`에 있다. 기본 Actions run ID는 `20261008T104559Z-8acccc66418f4e5091fff48b0a7a81ac`이다.

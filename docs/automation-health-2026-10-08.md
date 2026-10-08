@@ -2,7 +2,7 @@
 
 이 문서는 현재 registry, BytePlus 응답 복구와 다음 운영 확인 단계를 요약한다. 가격·조건 수집은 공개 문서의 시점별 관측이다. 수집 결과는 실제 요청 비용, 계정 적용 가능성, 구매 자격이나 청구액을 판정하지 않는다.
 
-## 현재 확인된 로컬 결과
+## 앞선 113-source 로컬 결과 (PR #2 단계 기록)
 
 - Registry: 113개 출처 사양(LLM 73, 이미지 27, 영상 13), 97개 모델/경로 조합, 25개 정규 모델 ID.
 - 2026-10-08 전체 registry public GET: 113/113 HTTP 200, fetch 및 parse 성공; 454 price, 1,905 condition.
@@ -39,3 +39,17 @@
 ## 근거 위치
 
 세부 QA와 구현 기록은 `ai-log/20261008/automation-release-qa/` 및 `ai-log/20261008/automation-health-repair/` 아래에 보존돼 있다. 이 경로들은 로컬 전용 작업 증거이며, 공개 저장소 clone에 포함된 파일이나 GitHub artifact가 아니다. 외부 공유 시 이 로컬 경로만으로 독자가 증거 파일을 열 수 있다고 가정하지 않는다.
+
+## 2026-10-08 GPT Image 2.5 문서 보고서 자동화 release result
+
+현재 작업 tree registry에는 125개 SourceSpec(LLM 73, 이미지 39, 영상 13), 97개 모델/경로 조합, 25개 정규 모델 ID가 있다. 새 12개 보충 사양은 두 GPT Image 2.5 모델에 공개 문서 6종씩 연결하며, 가격 행 대신 조건·참고 자료만 기록한다. 기존 세 CSV schema는 유지한다.
+
+독립 QA는 438개 테스트를 통과시키고 최종 source fingerprint `a0de529941f6fa8689a5c798b1eabb1c742e9068a3394fefa162a8a5b3afa023`가 99개 source/test/workflow 경로의 실행 전후에 일치함을 확인했다. public GET 원문 125개를 최종 parser로 replay해 가격 454개, 조건 1,987개, raw/source/condition joins와 원래 조회 시각 보존을 확인했다. 최초 live snapshot은 parser 변경 전 결과라 mismatch로 취급했고 final parser replay를 사용했다. CLI 성공·거부·partial 경로, 기존 113-source compatibility, workflow normal/partial 경로와 137-file archive 복원도 PASS다. 보고서는 `ai-log/20261008/image-docs-auto-v1/03-qa/independent/qa-report.md`에 있다.
+
+PR #4는 2026-10-08 10:45:04 UTC에 `develop`으로 merge됐다. merge SHA는 `57f1aaaf52a87630cebe0ceb3864c2b9b728dc90`이다. [Feature manual run 37765065107](https://github.com/LETSUR-CREAI-IT/LETSUR/actions/runs/37765065107)은 feature SHA `cb6fee6e35d3976dda25a0af074dee97b00a0122`에서 success였고 [develop manual run 37765612736](https://github.com/LETSUR-CREAI-IT/LETSUR/actions/runs/37765612736)도 merge SHA에서 success였다.
+
+양쪽 artifact 감사에서 각각 125 source, 454 price, 1,987 condition, 전 source fetch/parse 성공, raw 125개 hash와 source/condition joins PASS, 137 files를 확인했다. 보충 사양 12개에는 가격 행이 없다. Sunburst와 Flare는 각각 report `complete`, 12 candidates, 52 cross-route pairs(42 `verification_required`, 10 `not_comparable`, comparable 0), 11 documentary profiles 및 JSON/CSV/summary/manifest 네 파일을 포함한다. develop 수집 run은 `20261008T104559Z-8acccc66418f4e5091fff48b0a7a81ac`다.
+
+release receipt와 feature/develop artifact 감사 JSON은 `ai-log/20261008/image-docs-auto-v1/04-release/`의 로컬 증거다. 이들은 공개 저장소 clone이나 artifact에 포함되지 않는다. 새 cron firing, UI 연결, 유료 생성, 계정 자격과 실제 billing은 **NOT_RUN**이다.
+
+새 workflow는 수집 step 다음 `always()` 조건으로 각 검증된 run에 대한 Sunburst/Flare 비교 보고서를 생성한다. summary는 run별 두 보고서의 존재와 출력 SHA를 확인하고, source 실패·보고서 누락·incomplete 상태면 job을 실패시킨다. 기존 하루 4회 cron과 artifact 90일 보관 설정은 유지된다. 운영·출력 계약은 [이미지 문서 자동 보고서 안내](image-docs-automation.md)를 참고한다.
