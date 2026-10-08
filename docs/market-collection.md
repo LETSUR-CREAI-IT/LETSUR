@@ -7,10 +7,10 @@
 | 유형 | 기준 모델 | 경로 | 출처 사양 수 |
 |---|---|---|---:|
 | LLM | 18개 모델 ID (아래 경로별 범위 참조) | Google/OpenAI/Anthropic Direct, OpenRouter, Vercel AI Gateway, AWS Bedrock, Azure Foundry, Google Vertex, Azure Databricks | 73 |
-| 이미지 | GPT Image 2.5 Sunburst, GPT Image 2.5 Flare, Ideogram 4.5 | OpenAI Direct, fal, OpenRouter, Vercel AI Gateway, Azure Foundry retail API, Ideogram Direct | 25 |
+| 이미지 | GPT Image 2.5 Sunburst, GPT Image 2.5 Flare, Ideogram 4.5 | OpenAI Direct, fal, OpenRouter, Vercel AI Gateway, Azure Foundry retail API, Ideogram Direct | 39 |
 | 영상 | Seedance 2.5, Veo 3.1 Standard/Fast/Lite | Google Direct, fal, Vercel AI Gateway, BytePlus ModelArk | 13 |
 
-2026-10-06 현재 registry에는 총 111개 `SourceSpec`(출처 사양), 97개 모델/경로 조합, 25개 정규 모델 ID가 있다: LLM 73개 사양/18개 모델, 이미지 25개/3개 모델, 영상 13개/4개 모델이다. 사양 수는 서로 다른 URL 수가 아니다. 같은 공개 문서를 모델마다 별도 사양으로 읽을 수 있다. 기존 83개, 97개, 103개 단계의 수치와 검증 결과는 각 날짜·범위의 기록으로 유지하며 현재 registry 수치로 소급해 바꾸지 않는다. Ideogram 4.5 추가는 6개 사양/3개 URL/2개 경로다. GPT Image 2.5의 API 조건 문서는 Sunburst와 Flare 각각 OpenAI guide, fal API schema, OpenRouter catalog, Vercel announcement를 등록해 8개 사양/5개 URL을 이룬다. 이 8개 사양은 새 가격 행을 만들지 않는다. LLM ID는 `gemini-3.8-flash`; `gpt-6-astra`, `gpt-6-sol`, `gpt-6.1-sol`, `gpt-6-luna`, `gpt-5.6-sol`, `gpt-5.6-terra`, `gpt-5.6-luna`; `claude-fable-5-1`, `claude-opus-5-5`, `claude-sonnet-5-5`, `claude-haiku-4-5`, `claude-sonnet-5`; `deepseek-v4-pro`, `deepseek-v4.1-flash`, `glm-5.2`, `glm-5.3-flash`, `kimi-k3`다. 이미지 모델은 `gpt-image-2.5-sunburst`, `gpt-image-2.5-flare`, `ideogram-4.5`; 영상은 `seedance-2.5`, `veo-3.1-standard`, `veo-3.1-fast`, `veo-3.1-lite`다. 공급된 CSV의 서로 다른 `model_name` 11개는 모두 현재 registry에 대응하지만, 해당 CSV의 과거 가격은 수집 입력으로 사용하지 않는다. 수집기는 등록된 공개 HTTPS URL을 요청하며 로그인이나 유료 모델 호출은 하지 않는다. 새 범위의 상세 조건은 [수집 범위 검토](collector-coverage-review.md)를 참고한다.
+현재 registry에는 125개 `SourceSpec`(출처 사양), 97개 모델/경로 조합, 25개 정규 모델 ID가 있다: LLM 73개/18개 모델, 이미지 39개/3개 모델, 영상 13개/4개 모델. 사양 수는 URL 수가 아니다. 기존 83·97·103·111·113개 단계의 수치와 검증 결과는 해당 시점의 기록으로 유지한다. GPT Image 2.5의 첫 API 조건 문서 8개에 12개 보충 문서를 더했다. 보충 문서는 두 모델×6종의 문서 유형이며 가격 관측을 만들지 않는다. 이미지 모델은 `gpt-image-2.5-sunburst`, `gpt-image-2.5-flare`, `ideogram-4.5`; 영상은 `seedance-2.5`, `veo-3.1-standard`, `veo-3.1-fast`, `veo-3.1-lite`다. 수집기는 등록된 공개 HTTPS URL을 요청하며 로그인이나 유료 모델 호출은 하지 않는다. 문서별 판단 범위는 [수집 범위 검토](collector-coverage-review.md), 상세 정책은 [비교 규칙](image25-comparison-rules.md)을 참고한다.
 
 ### LLM 경로 범위
 
@@ -67,15 +67,23 @@ python3 -B -m scripts.market_collection.comparison \
 
 비교 명령은 run을 읽기만 하며 `comparison.json`과 `comparisons.csv`를 새 출력 폴더에 쓴다. 출력 폴더가 이미 있거나 입력 run 안에 있으면 거부한다. JSON에는 요청 조건, 후보 단가, 조건별 근거와 확인 사유가 있고 CSV에는 경로 간 쌍 요약이 있다. 명령의 기본 선택값은 위 예시와 같다. 실행 전 기존 수집 이력이 아니라 새 비교 결과 경로를 지정한다.
 
+검증된 수집 회차의 두 GPT Image 2.5 모델을 기본 요청으로 자동 검토하려면 다음 CLI를 쓴다.
+
+```bash
+python3 -B -m scripts.market_collection.image_reviews --root data/market_collection
+```
+
+CLI는 `runs/` 아래 모든 회차를 먼저 검증하고, 새 결과를 `<root>/image_reviews/<run-id>/<model>/`에 만든다. 각 모델 폴더에는 `comparison.json`, `comparisons.csv`, 한국어 `summary.md`, `report_manifest.json`이 있다. manifest는 입력 CSV·manifest와 출력 파일의 SHA-256, 원문 source 근거 및 상대 경로를 기록한다. 빈 root, 손상된 run, 이미 있는 출력은 오류다. 실패 source나 비교 후보 없음은 `incomplete` 보고서와 비정상 종료로 남기며 기존 원문을 대체하지 않는다. 실행 계약과 해석 한계는 [비교 보고서 자동화](image-docs-automation.md)에 있다.
+
 앞선 전체 QA live 회차는 이 워크스테이션에만 있는 추적되지 않는 경로 `data/market_collection/qa_broad_llm_live/runs/20261004T184233Z-d5dcfc3c3396416f87893bd6d15bb8fe/`에 보존되어 있다. 이 회차는 당시 66개 출처 문서 수집의 QA 근거이며 공개 샘플로 게시하지 않았다. 기존 [2026-10-04 첫 성공 snapshot](../samples/market_collection/2026-10-04-first-live/)은 별도 11개 문서·3개 모델의 live 결과다. 2026-10-05 확장 결과는 [83개 출처의 live snapshot](../samples/market_collection/2026-10-05-expanded-live/)과 그 원문을 다시 해석한 [corrected replay](../samples/market_collection/2026-10-05-expanded-replay/)로 저장소에 포함됐다. 두 checked-in bundle은 각 87개 파일이며 원래 보존본에서 byte-for-byte 복사됐다. 로컬 원본 run과 앞선 recovery replay는 그대로 남아 있다.
 
 10월 5일 live CSV에는 당시 출력된 Vercel basis label이 보존되어 있다. 그 원본에는 16개 가격 행의 condition reference와 7개 condition row에 기존 label이 있다. 확장 replay는 supplier-layout 변경 전 교정된 parser를 사용해 83개 출처·348개 가격 관측·731개 조건을 출력하고, 저장된 원문과 원래 fetch/observation 시각을 유지한다. 이 replay는 또 다른 날짜의 관측이나 현재 live 가격 확인이 아니다. 화면 연결을 시작할 때는 [expanded replay CSV](../samples/market_collection/2026-10-05-expanded-replay/README.md)를 사용한다. 상세 snapshot과 CSV 바로가기는 [index](../samples/market_collection/README.md)를 참고한다.
 
 ## GitHub Actions에서 하루 네 번 수집
 
-[Market collection workflow](../.github/workflows/market-collection.yml)는 매일 한국 시간 **03:17·09:17·15:17·21:17**에 전체 수집기를 실행하도록 설정되어 있다. UTC cron은 `17 0,6,12,18 * * *`이다. GitHub 사정에 따라 시작이 늦어지거나 예약 실행이 누락될 수 있으므로 시각과 회차는 Actions 기록으로 확인한다.
+[Market collection workflow](../.github/workflows/market-collection.yml)는 매일 한국 시간 **03:17·09:17·15:17·21:17**에 전체 수집과 GPT Image 2.5 비교 보고서 생성을 실행하도록 설정되어 있다. UTC cron은 `17 0,6,12,18 * * *`이다. GitHub 사정에 따라 시작이 늦어지거나 예약 실행이 누락될 수 있으므로 시각과 회차는 Actions 기록으로 확인한다.
 
-97개 사양 baseline과 Actions workflow는 [PR #1](https://github.com/LETSUR-CREAI-IT/LETSUR/pull/1)로 `develop`에 병합됐다. 2026-10-06에 실행한 [수동 Actions run](https://github.com/LETSUR-CREAI-IT/LETSUR/actions/runs/37330298245)은 성공했고, 당시 baseline에서 97 source, 415 price, 1,192 condition을 만들었다. 이 과거 원격 실행은 이후 Ideogram 4.5, GPT Image 2.5 API 문서, OpenRouter endpoint 및 2026-10-08 BytePlus 복구 변경을 포함하지 않는다. 2026-10-08 PR #2는 [merge SHA `ae89289efae421ed5a87d0ebfea26957163c42b8`](https://github.com/LETSUR-CREAI-IT/LETSUR/commit/ae89289efae421ed5a87d0ebfea26957163c42b8)로 `develop`에 squash merge됐다. PR branch의 [수동 Actions run](https://github.com/LETSUR-CREAI-IT/LETSUR/actions/runs/37739450994)과 merge 후 `develop`의 [수동 Actions run](https://github.com/LETSUR-CREAI-IT/LETSUR/actions/runs/37740052850)은 성공했다. 두 artifact를 내려받아 113 source, 454 price, 1,905 condition, 모든 source fetch/parse 성공, raw 113개 hash와 CSV source join을 확인했다. 새 코드의 예약 cron firing은 **NOT_RUN**이며 live BytePlus retry recovery는 **NOT_OBSERVED**다.
+97개 사양 baseline과 Actions workflow는 [PR #1](https://github.com/LETSUR-CREAI-IT/LETSUR/pull/1)로 `develop`에 병합됐다. 과거 run의 97 source/415 price/1,192 condition 및 PR #2의 113 source/454 price/1,905 condition 원격 artifact 검증은 각 시점의 기록이다. PR #4에서 현재 125-source registry와 비교 보고서가 merge됐으며 feature/`develop` manual run과 artifact 검사가 성공했다. 최신 receipt는 아래에 정리한다.
 
 ### 수동 실행과 결과 확인
 
@@ -114,7 +122,7 @@ PR #1의 97-source baseline은 별도 시점에 실제 원격 수동 실행이 �
 
 ## 2026-10-08 현재 registry와 BytePlus 복구 검증
 
-현재 registry는 113개 SourceSpec(LLM 73, 이미지 27, 영상 13), 97개 모델/경로 조합, 25개 정규 모델 ID다. 2026-10-08 로컬 live QA는 113개 등록 출처 사양을 조회해 전부 HTTP 200/fetch ok/parse ok로 기록했고, 454 price와 1,905 condition을 만들었다. 전체 수집 테스트 385개도 통과했다. 이 QA 자체는 로컬 공개 문서 GET과 회귀 검사였으며, 뒤이어 수행한 원격 운영 확인은 아래에 별도로 기록한다.
+이 시점의 registry는 113개 SourceSpec(LLM 73, 이미지 27, 영상 13), 97개 모델/경로 조합, 25개 정규 모델 ID였다. 2026-10-08 해당 범위의 로컬 live QA는 113개 사양, 454 price와 1,905 condition을 만들었다. 이는 뒤에 추가한 12개 이미지 문서 사양을 포함하지 않는 과거 수치다.
 
 BytePlus ModelArk의 두 등록 출처(`byteplus_seedance_25_t2v`, `byteplus_seedance_promotion_rules`)는 HTTP 200 응답이더라도 문서 대신 빈 SSR shell을 반환한 경우에만 같은 URL을 최대 세 번 요청한다. 재시도 대기는 1초, 2초이며, 응답별 원문·조회시각·URL·HTTP 상태·SHA-256은 manifest의 선택 항목 `fetch_attempts`와 별도 raw 파일에 남는다. 최종 선택 응답으로만 기존 parser를 실행한다. 재시도 이력은 manifest만 확장하며 `sources.csv`, `price_observations.csv`, `conditions.csv`의 열은 바꾸지 않는다. 다른 공급자나 비-200 응답은 이 shell 복구 재시도 대상이 아니다. 시도가 소진되면 그 출처는 실패로 보존되고 가격 행을 만들지 않는다.
 
@@ -126,9 +134,17 @@ BytePlus ModelArk의 두 등록 출처(`byteplus_seedance_25_t2v`, `byteplus_see
 
 ### 2026-10-08 원격 반영 및 artifact 확인
 
-[PR #2](https://github.com/LETSUR-CREAI-IT/LETSUR/pull/2)는 2026-10-08 06:52:13 UTC에 squash merge됐으며 `develop` merge SHA는 [`ae89289efae421ed5a87d0ebfea26957163c42b8`](https://github.com/LETSUR-CREAI-IT/LETSUR/commit/ae89289efae421ed5a87d0ebfea26957163c42b8)다. 변경 commit [`3728b3622133f2e724ab26582bc1b70e85d0b9be`](https://github.com/LETSUR-CREAI-IT/LETSUR/commit/3728b3622133f2e724ab26582bc1b70e85d0b9be)의 [수동 run 37739450994](https://github.com/LETSUR-CREAI-IT/LETSUR/actions/runs/37739450994)과 merge 후 `develop`의 [수동 run 37740052850](https://github.com/LETSUR-CREAI-IT/LETSUR/actions/runs/37740052850)이 모두 success였다. 두 artifact를 실제 다운로드해 각각 113 source, 454 price, 1,905 condition, 모든 source의 fetch/parse 성공, raw 113개 SHA-256과 CSV source join을 확인했다. `develop` artifact run ID는 `20261008T065241Z-08e4ee5ce7b94bfaa453446a07697a56`다.
+[PR #2](https://github.com/LETSUR-CREAI-IT/LETSUR/pull/2)는 2026-10-08 06:52:13 UTC에 squash merge됐으며 `develop` merge SHA는 [`ae89289efae421ed5a87d0ebfea26957163c42b8`](https://github.com/LETSUR-CREAI-IT/LETSUR/commit/ae89289efae421ed5a87d0ebfea26957163c42b8)다. 당시 변경 commit의 [수동 run 37739450994](https://github.com/LETSUR-CREAI-IT/LETSUR/actions/runs/37739450994)과 merge 후 `develop`의 [수동 run 37740052850](https://github.com/LETSUR-CREAI-IT/LETSUR/actions/runs/37740052850)이 success였다. 두 artifact를 내려받아 당시 113 source, 454 price, 1,905 condition, 모든 source fetch/parse 성공, raw hash와 CSV source join을 확인했다. 이 결과는 PR #2 당시 코드의 기록이다.
 
-Artifact 다운로드와 내용 대조는 이 환경의 `/tmp/letsur-actions-release-20261008/feature-audit.json` 및 `develop-audit.json`에 기록된 **로컬 감사 결과**다. 이 경로들은 저장소나 GitHub artifact의 일부가 아니다. 실행 artifact는 각 GitHub Actions run 페이지에서 받을 수 있다. 이번 코드의 cron 예약 firing은 아직 **NOT_RUN**이며, 두 실제 BytePlus 요청 모두 첫 응답이 완전해 live retry recovery는 **NOT_OBSERVED**다. 유료 이미지 생성, 계정 적용 자격과 실제 billing도 **NOT_RUN**이다.
+Artifact 다운로드와 내용 대조는 해당 시점의 로컬 감사 결과다. 이 경로들은 저장소나 GitHub artifact의 일부가 아니다. 실행 artifact는 각 GitHub Actions run 페이지에서 받을 수 있다. PR #2 당시 두 BytePlus 요청 모두 첫 응답이 완전해 live retry recovery는 **NOT_OBSERVED**였다.
+
+### 2026-10-08 PR #4 이미지 문서 보고서 자동화
+
+[PR #4](https://github.com/LETSUR-CREAI-IT/LETSUR/pull/4)는 2026-10-08 10:45:04 UTC에 merge됐고 `develop` SHA는 `57f1aaaf52a87630cebe0ceb3864c2b9b728dc90`이다. [Feature branch manual run 37765065107](https://github.com/LETSUR-CREAI-IT/LETSUR/actions/runs/37765065107)은 commit `cb6fee6e35d3976dda25a0af074dee97b00a0122`에서 success였다. Merge 후 [develop manual run 37765612736](https://github.com/LETSUR-CREAI-IT/LETSUR/actions/runs/37765612736)도 같은 merge SHA에서 success였다.
+
+두 다운로드 artifact 감사에서 각각 125 source, 454 price, 1,987 condition이 있었고 전체 fetch/parse, raw 125개 hash, source/condition joins가 통과했다. 보충 사양 12개는 가격 행 0개였고 archive는 137개 파일을 담았다. 각 모델 보고서는 `complete`, 후보 12개와 cross-route pair 52개(42 `verification_required`, 10 `not_comparable`, comparable pair 0개), `documentary_profiles` 11개, JSON/CSV/summary/manifest 네 파일을 포함했다. `develop` 수집 run ID는 `20261008T104559Z-8acccc66418f4e5091fff48b0a7a81ac`이다.
+
+독립 QA는 438개 테스트, final source fingerprint `a0de529941f6fa8689a5c798b1eabb1c742e9068a3394fefa162a8a5b3afa023`, 원래 공개 관측 시각을 보존한 125-source final-parser replay, partial-run 동작, retained 113-source compatibility와 137-file archive hash 복원을 PASS로 기록했다. 세부 QA와 release receipts는 `ai-log/20261008/image-docs-auto-v1/` 아래 로컬 증거이며 clone이나 artifact에는 포함되지 않는다. 새 cron firing, UI 연결, 유료 생성, 계정 적용과 실제 billing은 **NOT_RUN**이다.
 
 ## CSV를 화면에 연결할 때
 

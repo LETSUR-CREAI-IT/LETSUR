@@ -55,6 +55,28 @@ fal text-to-image는 Low/Medium/High 3개, edit endpoint는 Very Low/Low/Medium/
 
 2026-10-05 독립 QA 및 통합 QA 보고서, 원문, CSV, archive는 `ai-log/20261005/collector-gaps-v2/`에 보존된 로컬 작업 기록이다. PR #1의 remote run은 별도 GitHub Actions 결과로 검증됐다. 2026-10-06 Ideogram 4.5 독립·통합 QA 보고서와 원문도 로컬 `ai-log/20261006/ideogram45-v2/` 기록이다. 로컬 evidence를 GitHub에 올라간 artifact로 표현하지 않는다.
 
+## 2026-10-08 GPT Image 2.5 문서 보충 사양
+
+현재 registry는 LLM 73, 이미지 39, 영상 13으로 총 125개 SourceSpec이다. 2026-10-07의 113개 registry 및 당시 GET·QA 수치는 해당 단계 기록으로 유지한다. 아래 12개는 두 모델에 같은 6종 문서를 연결한 condition-only 사양이다. 새 가격 행을 만들지 않으며 CSV schema도 바꾸지 않는다.
+
+### API 계약 문서
+
+| 문서 유형 (모델별 1개) | scope와 추출 계약 | 한계 |
+|---|---|---|
+| [OpenAI generate reference](https://developers.openai.com/api/reference/resources/images/methods/generate) | `manufacturer_supplement`. exact model이 `non_streaming` generate schema에 있을 때 n 범위를 읽는다. `n=1..10`은 guide의 “문서에 없음” placeholder만 보충한다. | 명시적 unknown/conflicted/unsupported, 다른 모델 범위나 다른 조건은 덮지 않는다. |
+| [Azure 이미지 생성 how-to](https://learn.microsoft.com/en-us/azure/foundry/openai/how-to/dall-e) | `channel_model`. exact-model 열에서 품질, 공동 크기 제약, 장수, modality, editing, Images surface 및 availability 행을 추출한다. | Standard/Batch 처리·과금, 계정 자격, 지역 배포 자격과 snapshot은 unknown으로 둔다. |
+
+### 참고 문서와 UI 자료
+
+| 문서 유형 (모델별 1개) | scope와 추출 계약 | 한계 |
+|---|---|---|
+| [Azure region availability](https://learn.microsoft.com/en-us/azure/foundry/foundry-models/concepts/models-sold-directly-by-azure-region-availability) | `reference`. exact model row의 존재만 기록한다. | 표의 행은 account eligibility를 뜻하지 않는다. |
+| [OpenRouter image generation guide](https://openrouter.ai/docs/guides/overview/multimodal/image-generation) | `generic_api_reference`. size alias, 명시 픽셀 크기의 우선성, endpoint capability 표기의 의미를 기록한다. | 가이드는 exact endpoint의 크기 지원을 보증하지 않는다. endpoint에 1024×1024가 없으면 unknown이다. |
+| [Vercel Sunburst](https://vercel.com/ai-gateway/models/gpt-image-2.5-sunburst) / [Flare](https://vercel.com/ai-gateway/models/gpt-image-2.5-flare) | `channel_ui` / `official_ui_choices`. visible quality·size·image-count select를 저장한다. | 화면 선택지는 SDK/API 계약이 아니다. |
+| [fal pricing guide](https://fal.ai/learn/tools/how-to-use-gpt-image-2-5) | `reference` / `supplier_claim`. 동일 quality/size 조합 간 variant 가격 동등 주장을 저장한다. | 조합별 가격이 전부 같다는 뜻이 아니다. per-image 문구와 task token-rate의 billing 관계는 미확인이고 새 가격 관측이 아니다. |
+
+문서 구조나 exact contract가 바뀌면 parser는 source를 parse error로 드러내며 보존된 옛 raw를 현재 자료로 대체하지 않는다. 실패·판정 scope와 출력 경계는 [GPT Image 2.5 비교 규칙](image25-comparison-rules.md) 및 [자동 보고서 안내](image-docs-automation.md)에 정리했다.
+
 ## 2026-10-06 GPT Image 2.5 API 조건 문서와 비교
 
 Sunburst와 Flare 각각에 공개 API 조건 문서 4종을 연결해 현재 registry는 111개 사양이 됐다. 이 8개 사양은 [OpenAI 이미지 생성 가이드](https://developers.openai.com/api/docs/guides/image-generation.md), 모델별 [fal Sunburst API](https://fal.ai/models/openai/gpt-image-2.5/sunburst/text-to-image/api) 및 [fal Flare API](https://fal.ai/models/openai/gpt-image-2.5/flare/text-to-image/api), [OpenRouter 이미지 모델 catalog](https://openrouter.ai/api/v1/images/models), [Vercel 공개 안내](https://vercel.com/changelog/gpt-image-2-5-flare-and-sunburst-now-available-on-ai-gateway)를 읽는다. 문서 8개는 서로 다른 URL 8개가 아니라 5개 URL이다. 각 페이지·schema에 있는 모델 식별, 입력·출력, 품질·크기·처리, 기본값과 기능 범위만 조건으로 기록한다. 이 조건 문서는 가격 행을 만들지 않는다.
@@ -71,15 +93,17 @@ Sunburst와 Flare 각각에 공개 API 조건 문서 4종을 연결해 현재 re
 
 2026-10-06에 기록한 기존 core HTTP 503 manifest 누락은 당시 상태 기록이다. 2026-10-08에 실패 source의 manifest append/mapping이 보정되어, 현행 확인에서 HTTP 503은 source CSV와 manifest에 함께 남고 해당 BytePlus retry 동작 없이 parser는 실행되지 않았다. 앞선 문장은 그 시점의 limitation을 보존하며, 2026-10-08 현황과 합쳐 읽지 않는다.
 
-## 2026-10-08 전체 registry와 수집 복구 확인
+## 2026-10-08 이전 113-source registry와 수집 복구 기록 (PR #2 단계)
 
-현행 registry는 113개 사양(LLM 73, 이미지 27, 영상 13)이다. 독립 QA의 전체 public GET은 113 source 모두 HTTP 200/fetch ok/parse ok로 기록했고 454개 가격 관측과 1,905개 조건을 만들었다. 385개 수집 테스트도 통과했다. 이 결과는 로컬 QA의 조회 시점 결과이며, 가격·조건 문서의 해석 성공이 계정 자격, 실제 비용 또는 청구 확인을 뜻하지 않는다.
+당시 registry는 113개 사양(LLM 73, 이미지 27, 영상 13)이었다. 독립 QA의 전체 public GET은 113 source 모두 HTTP 200/fetch ok/parse ok로 기록했고 454개 가격 관측과 1,905개 조건을 만들었다. 385개 수집 테스트도 통과했다. 이 결과는 그 시점의 로컬 QA이며 현재 125-source registry로 해석하지 않는다. 가격·조건 문서의 해석 성공이 계정 자격, 실제 비용 또는 청구 확인을 뜻하지 않는다.
 
 BytePlus의 과거 최신 Actions run 37735843718은 당시 97개 source 중 96개가 healthy였고 414 price, 1,190 condition을 만들었다. BytePlus 가격 출처는 HTTP 200이었지만 완전한 문서가 아닌 SSR shell을 돌려주어 파싱에 실패했다. 2026-10-08 보정은 두 등록 BytePlus 문서 사양의 명시적 shell 응답만 대상으로 같은 URL에 최대 3회(최초 요청 포함) 요청하고 1초·2초 대기한다. 각 응답 원문과 attempt metadata는 manifest의 `fetch_attempts`와 별도 raw 파일에 기록한다. 비-200과 다른 공급자는 이 재시도를 사용하지 않으며 기존 세 CSV schema는 유지된다.
 
 복구 성공·재시도 소진·재시도 후 network error는 보존 artifact 원문을 활용한 오프라인 회귀 시나리오에서 확인됐다. 실제 BytePlus 공개 GET은 두 문서가 첫 응답부터 완전했기 때문에 재시도로 회복되는 live 사례는 관찰되지 않았다. 이후 PR branch와 `develop`에서 실행한 원격 Actions 및 artifact 검사는 통과했지만, retry가 실제로 발생한 source는 없었다. 새 예약 cron firing은 **NOT_RUN**이다.
 
 상세 수치는 `ai-log/20261008/automation-release-qa/qa-report.md`와 `qa-summary.json`, 구현 범위는 `ai-log/20261008/automation-health-repair/implementation-report.md`에 있다. 이 파일들은 **로컬 전용 작업 증거**로 공개 저장소 clone에 포함된 자료나 GitHub artifact가 아니다. 작업 시점의 운영 요약은 [automation health note](automation-health-2026-10-08.md)를 참고한다.
+
+이후 [PR #4](https://github.com/LETSUR-CREAI-IT/LETSUR/pull/4)에서 추가 문서 12개를 포함한 125-source 변경을 merge했고 feature 및 `develop` manual Actions run과 artifact 검사를 통과했다. 각 artifact는 125 source, 454 price, 1,987 condition 및 두 모델의 complete 비교 보고서를 보존했다. 이 receipt와 independent QA의 상세는 [automation health note](automation-health-2026-10-08.md)에 정리했다. 새 schedule firing, UI 연결, 유료 생성, 계정 eligibility와 실제 billing은 **NOT_RUN**이다.
 
 ## 2026-10-06 Direct 처리 근거 보정
 
