@@ -59,10 +59,17 @@ fal text-to-image는 Low/Medium/High 3개, edit endpoint는 Very Low/Low/Medium/
 
 현재 registry는 LLM 73, 이미지 39, 영상 13으로 총 125개 SourceSpec이다. 2026-10-07의 113개 registry 및 당시 GET·QA 수치는 해당 단계 기록으로 유지한다. 아래 12개는 두 모델에 같은 6종 문서를 연결한 condition-only 사양이다. 새 가격 행을 만들지 않으며 CSV schema도 바꾸지 않는다.
 
+### API 계약 문서
+
 | 문서 유형 (모델별 1개) | scope와 추출 계약 | 한계 |
 |---|---|---|
 | [OpenAI generate reference](https://developers.openai.com/api/reference/resources/images/methods/generate) | `manufacturer_supplement`. exact model이 `non_streaming` generate schema에 있을 때 n 범위를 읽는다. `n=1..10`은 guide의 “문서에 없음” placeholder만 보충한다. | 명시적 unknown/conflicted/unsupported, 다른 모델 범위나 다른 조건은 덮지 않는다. |
 | [Azure 이미지 생성 how-to](https://learn.microsoft.com/en-us/azure/foundry/openai/how-to/dall-e) | `channel_model`. exact-model 열에서 품질, 공동 크기 제약, 장수, modality, editing, Images surface 및 availability 행을 추출한다. | Standard/Batch 처리·과금, 계정 자격, 지역 배포 자격과 snapshot은 unknown으로 둔다. |
+
+### 참고 문서와 UI 자료
+
+| 문서 유형 (모델별 1개) | scope와 추출 계약 | 한계 |
+|---|---|---|
 | [Azure region availability](https://learn.microsoft.com/en-us/azure/foundry/foundry-models/concepts/models-sold-directly-by-azure-region-availability) | `reference`. exact model row의 존재만 기록한다. | 표의 행은 account eligibility를 뜻하지 않는다. |
 | [OpenRouter image generation guide](https://openrouter.ai/docs/guides/overview/multimodal/image-generation) | `generic_api_reference`. size alias, 명시 픽셀 크기의 우선성, endpoint capability 표기의 의미를 기록한다. | 가이드는 exact endpoint의 크기 지원을 보증하지 않는다. endpoint에 1024×1024가 없으면 unknown이다. |
 | [Vercel Sunburst](https://vercel.com/ai-gateway/models/gpt-image-2.5-sunburst) / [Flare](https://vercel.com/ai-gateway/models/gpt-image-2.5-flare) | `channel_ui` / `official_ui_choices`. visible quality·size·image-count select를 저장한다. | 화면 선택지는 SDK/API 계약이 아니다. |
