@@ -142,7 +142,7 @@ def video_source_specs() -> list[SourceSpec]:
 
 
 def source_specs() -> list[SourceSpec]:
-    specs = llm_source_specs() + image_source_specs() + video_source_specs() + image25_api_source_specs() + image25_openrouter_endpoint_source_specs()
+    specs = llm_source_specs() + image_source_specs() + video_source_specs() + image25_api_source_specs() + image25_openrouter_endpoint_source_specs() + image25_supplement_source_specs()
     for spec in specs:
         if MODEL_MODALITIES.get(spec.model_id) != spec.modality:
             raise CollectionError(f"source model/modality mismatch: {spec.source_key}")
@@ -168,3 +168,20 @@ def image25_openrouter_endpoint_source_specs() -> list[SourceSpec]:
                        "openrouter", "text-to-image",
                        f"https://openrouter.ai/api/v1/images/models/openai/{model}/endpoints",
                        "image25_openrouter_endpoints") for model in (SUNBURST_MODEL, FLARE_MODEL)]
+
+
+def image25_supplement_source_specs() -> list[SourceSpec]:
+    specs = []
+    for model in (SUNBURST_MODEL, FLARE_MODEL):
+        variant = model.rsplit('-', 1)[1]
+        for kind, route, url in (
+            ('openai_generate', 'openai', 'https://developers.openai.com/api/reference/resources/images/methods/generate'),
+            ('azure_howto', 'azure_foundry', 'https://learn.microsoft.com/en-us/azure/foundry/openai/how-to/dall-e'),
+            ('azure_regions', 'azure_foundry', 'https://learn.microsoft.com/en-us/azure/foundry/foundry-models/concepts/models-sold-directly-by-azure-region-availability'),
+            ('openrouter_guide', 'openrouter', 'https://openrouter.ai/docs/guides/overview/multimodal/image-generation'),
+            ('vercel_ui', 'vercel', f'https://vercel.com/ai-gateway/models/gpt-image-2.5-{variant}'),
+            ('fal_guide', 'fal', 'https://fal.ai/learn/tools/how-to-use-gpt-image-2-5'),
+        ):
+            specs.append(SourceSpec(f'image25_{kind}_{variant}_doc', 'image', model, route,
+                                    'model-conditions', url, 'image25_'+kind))
+    return specs

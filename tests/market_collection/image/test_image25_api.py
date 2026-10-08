@@ -65,7 +65,7 @@ def test_old_ordered_registry_preserved():
     # Immutable complete 103-spec fixture captured before this extension.
     old=json.loads((F/'baseline103.json').read_text())
     assert [asdict(s) for s in source_specs()[:103]]==old
-    assert len(source_specs())==113
+    assert len(source_specs())==125
 
 def test_guide_excludes_neighbor_model_and_code_only_claims():
     b=(F/'openai.md').read_bytes()

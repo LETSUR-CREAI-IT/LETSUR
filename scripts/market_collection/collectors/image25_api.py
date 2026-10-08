@@ -129,6 +129,10 @@ def _fal(spec, text, add):
     for key, value in props.items():
         add(key+'_schema',value,loc+'.components.schemas.'+name+'.properties.'+key)
     add('required_inputs',required,loc+'.components.schemas.'+name+'.required')
+    sync = props.get('sync_mode', {})
+    if (sync.get('type') == 'boolean' and sync.get('description') == "If `True`, the media will be returned as a data URI and the output data won't be available in the request history."):
+        add('sync_mode_meaning','data URI output; result not retained in request history',loc+'.components.schemas.'+name+'.properties.sync_mode.description')
+
     # Referenced component is preserved, not promoted over the scoped joint rules.
     for sub in props['image_size'].get('anyOf',[]):
         if '$ref' in sub:
