@@ -1,0 +1,22 @@
+[
+  {
+    "variant": "sunburst",
+    "request_url": "https://openrouter.ai/api/v1/images/models/openai/gpt-image-2.5-sunburst/endpoints",
+    "final_url": "https://openrouter.ai/api/v1/images/models/openai/gpt-image-2.5-sunburst/endpoints",
+    "observed_at_utc": "2026-10-06T08:17:18.714258+00:00",
+    "http_status": 200,
+    "raw_path": "ai-log/20261006/image25-openrouter-endpoints-inputs-v1/sunburst.json",
+    "raw_sha256": "e9478c8079b4b45640257ebf018411816fb455e7874d8e4a11b377374768b3ee",
+    "error": ""
+  },
+  {
+    "variant": "flare",
+    "request_url": "https://openrouter.ai/api/v1/images/models/openai/gpt-image-2.5-flare/endpoints",
+    "final_url": "https://openrouter.ai/api/v1/images/models/openai/gpt-image-2.5-flare/endpoints",
+    "observed_at_utc": "2026-10-06T08:17:18.714566+00:00",
+    "http_status": 200,
+    "raw_path": "ai-log/20261006/image25-openrouter-endpoints-inputs-v1/flare.json",
+    "raw_sha256": "df320c557e638013d24a7fe0221505e1d7645398a50add0fbee2eb5899d62423",
+    "error": ""
+  }
+]

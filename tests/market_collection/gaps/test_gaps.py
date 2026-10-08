@@ -46,10 +46,10 @@ def test_existing_specs_preserved_in_each_modality_order():
     current = {s.source_key: asdict(s) for s in source_specs()}
     assert [current[s['source_key']] for s in old] == old
     for modality in ('llm', 'image', 'video'):
-        assert [asdict(s) for s in source_specs() if s.modality == modality and s.parser not in NEW_PARSERS] == [s for s in old if s['modality'] == modality]
+        assert [asdict(s) for s in source_specs() if s.modality == modality and s.parser not in NEW_PARSERS and s.model_id != "ideogram-4.5" and not s.source_key.startswith("image25_")] == [s for s in old if s['modality'] == modality]
     assert len(NEW) == 14
-    assert len(source_specs()) == 97
-    assert len({(s.model_id, s.route) for s in source_specs()}) == 95
+    assert len(source_specs()) == 113
+    assert len({(s.model_id, s.route) for s in source_specs()}) == 97
     assert not any(s.route == 'openrouter' and s.modality == 'video' for s in source_specs())
     assert sum(s.route == 'fal' and s.model_id == 'veo-3.1-lite' for s in source_specs()) == 1
 

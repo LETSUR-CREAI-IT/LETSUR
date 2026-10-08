@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from scripts.market_collection.core import SourceSpec, CollectionError
-from scripts.market_collection.models import (GOOGLE_LLM_MODEL, ASTRA_MODEL, FABLE_MODEL, STANDARD_LLM_MODELS, BROKER_CATALOG_MODELS, _AWS_OPENAI, _AWS_ANTHROPIC, _AZURE_MODELS, SUNBURST_MODEL, FLARE_MODEL, SEEDANCE_MODEL, MODEL_MODALITIES, VEO_MODELS, VEO_VERCEL_IDS)
+from scripts.market_collection.models import (GOOGLE_LLM_MODEL, ASTRA_MODEL, FABLE_MODEL, STANDARD_LLM_MODELS, BROKER_CATALOG_MODELS, _AWS_OPENAI, _AWS_ANTHROPIC, _AZURE_MODELS, SUNBURST_MODEL, FLARE_MODEL, SEEDANCE_MODEL, MODEL_MODALITIES, IDEOGRAM_MODEL, VEO_MODELS, VEO_VERCEL_IDS)
 
 def _targets() -> dict[str, tuple[str, str, str, str, str]]:
     targets = {
@@ -96,7 +96,7 @@ def image_source_specs() -> list[SourceSpec]:
         ("openrouter_sunburst", "openrouter", "https://openrouter.ai/openai/gpt-image-2.5-sunburst-20260908", "openrouter"),
         ("vercel_sunburst", "vercel", "https://vercel.com/ai-gateway/models/gpt-image-2.5-sunburst", "vercel"),
     )
-    return [SourceSpec(key, "image", SUNBURST_MODEL, route, "text-to-image", url, parser) for key, route, url, parser in sources] + flare_source_specs() + [
+    return [SourceSpec(key, "image", SUNBURST_MODEL, route, "text-to-image", url, parser) for key, route, url, parser in sources] + flare_source_specs() + ideogram_source_specs() + [
         SourceSpec("azure_" + model.split("-")[-1], "image", model, "azure_foundry", "text-to-image", _AZURE_IMAGE_PRICING, "azure_image_retail")
         for model in (SUNBURST_MODEL, FLARE_MODEL)
     ]
@@ -111,6 +111,16 @@ def flare_source_specs() -> list[SourceSpec]:
     )
     return [SourceSpec(key, "image", FLARE_MODEL, route, "text-to-image", url, parser)
             for key, route, url, parser in sources]
+
+
+def ideogram_source_specs() -> list[SourceSpec]:
+    specs = []
+    for suffix, task in (("t2i", "text-to-image"), ("edit", "image-edit"), ("precise_edit", "precise-edit")):
+        specs.append(SourceSpec("ideogram_45_" + suffix, "image", IDEOGRAM_MODEL, "ideogram_direct", task,
+                                "https://ideogram.ai/api/usage-pricing/catalog", "ideogram_catalog"))
+        specs.append(SourceSpec("fal_ideogram_45_" + suffix, "image", IDEOGRAM_MODEL, "fal", task,
+                                "https://fal.ai/models/ideogram/v4.5" + ("" if task == "text-to-image" else "/edit"), "ideogram_fal"))
+    return specs
 
 
 def video_source_specs() -> list[SourceSpec]:
@@ -132,8 +142,29 @@ def video_source_specs() -> list[SourceSpec]:
 
 
 def source_specs() -> list[SourceSpec]:
-    specs = llm_source_specs() + image_source_specs() + video_source_specs()
+    specs = llm_source_specs() + image_source_specs() + video_source_specs() + image25_api_source_specs() + image25_openrouter_endpoint_source_specs()
     for spec in specs:
         if MODEL_MODALITIES.get(spec.model_id) != spec.modality:
             raise CollectionError(f"source model/modality mismatch: {spec.source_key}")
     return specs
+
+
+def image25_api_source_specs() -> list[SourceSpec]:
+    specs = []
+    for model in (SUNBURST_MODEL, FLARE_MODEL):
+        variant = model.rsplit('-', 1)[1]
+        for supplier, route, task, url, parser in (
+            ('openai', 'openai', 'model-conditions', 'https://developers.openai.com/api/docs/guides/image-generation.md', 'image25_openai_guide'),
+            ('fal', 'fal', 'text-to-image', f'https://fal.ai/models/openai/gpt-image-2.5/{variant}/text-to-image/api', 'image25_fal_api'),
+            ('openrouter', 'openrouter', 'model-conditions', 'https://openrouter.ai/api/v1/images/models', 'image25_openrouter_api'),
+            ('vercel', 'vercel', 'model-conditions', 'https://vercel.com/changelog/gpt-image-2-5-flare-and-sunburst-now-available-on-ai-gateway', 'image25_vercel_api'),
+        ):
+            specs.append(SourceSpec(f'image25_{supplier}_{variant}_api', 'image', model, route, task, url, parser))
+    return specs
+
+
+def image25_openrouter_endpoint_source_specs() -> list[SourceSpec]:
+    return [SourceSpec(f"image25_openrouter_{model.rsplit('-', 1)[1]}_endpoints", "image", model,
+                       "openrouter", "text-to-image",
+                       f"https://openrouter.ai/api/v1/images/models/openai/{model}/endpoints",
+                       "image25_openrouter_endpoints") for model in (SUNBURST_MODEL, FLARE_MODEL)]

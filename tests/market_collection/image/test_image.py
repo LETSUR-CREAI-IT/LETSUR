@@ -33,10 +33,10 @@ def _parse(key: str, body: bytes | None = None):
 
 def test_fixed_five_pages_four_routes():
     validate_registry(source_specs())
-    assert set(SPECS) == set(FILES) | {"openai_flare", "fal_flare_t2i", "openrouter_flare", "vercel_flare", "azure_sunburst", "azure_flare"}
-    assert {spec.route for spec in SPECS.values()} == {"openai", "fal", "openrouter", "vercel", "azure_foundry"}
-    assert {spec.model_id for spec in SPECS.values()} == {"gpt-image-2.5-sunburst", "gpt-image-2.5-flare"}
-    assert {spec.task for spec in SPECS.values()} == {"text-to-image"}
+    assert {key for key in SPECS if not key.startswith('image25_')} == set(FILES) | {"openai_flare", "fal_flare_t2i", "openrouter_flare", "vercel_flare", "azure_sunburst", "azure_flare", "ideogram_45_t2i", "ideogram_45_edit", "ideogram_45_precise_edit", "fal_ideogram_45_t2i", "fal_ideogram_45_edit", "fal_ideogram_45_precise_edit"}
+    assert {spec.route for spec in SPECS.values()} == {"openai", "fal", "openrouter", "vercel", "azure_foundry", "ideogram_direct"}
+    assert {spec.model_id for spec in SPECS.values()} == {"gpt-image-2.5-sunburst", "gpt-image-2.5-flare", "ideogram-4.5"}
+    assert {spec.task for spec in SPECS.values()} == {"text-to-image", "image-edit", "precise-edit", "model-conditions"}
 
 
 @pytest.mark.parametrize("key,expected", [

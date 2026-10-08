@@ -1,0 +1,31 @@
+{
+  "fal_sunburst_api": {
+    "original": "ai-log/20261006/image25-api-comparison-v1/raw/source-probe/fal_sunburst_api.bin",
+    "sha256": "06b7b137bb9cff41eb63827408fd8890a917ddf1a1d4998a4c0d67073d188408",
+    "kind": "scoped retained endpoint JSON object"
+  },
+  "fal_flare_api": {
+    "original": "ai-log/20261006/image25-api-comparison-v1/raw/source-probe/fal_flare_api.bin",
+    "sha256": "728df4458a9719cbeb1599d1dfe07271c3d16acf171f7047a3acb93a4ab2951a",
+    "kind": "scoped retained endpoint JSON object"
+  },
+  "openrouter": {
+    "original": "ai-log/20261006/image25-api-comparison-v1/raw/source-probe/openrouter_image_models.bin",
+    "sha256": "93552cff32e332709384b83f97fe2112371133df395aba983080e3c4f78ca881",
+    "kind": "scoped retained catalog objects"
+  },
+  "openai": {
+    "original": "ai-log/20261006/image25-api-comparison-v1/raw/source-probe/openai_image_generation_guide.bin",
+    "sha256": "08f203809321275def413f22ec887df59d4e69b7f4ca1ed0a0719febbeea8d20",
+    "kind": "scoped retained prose excerpts; code and earlier models excluded"
+  },
+  "vercel": {
+    "original": "ai-log/20261006/image25-api-comparison-v1/raw/source-probe/vercel_image25_announcement.bin",
+    "sha256": "bbb8873089b027ae5b25008ea78f3619adfce8ff75520d1e0b5ace22f379a7be",
+    "kind": "scoped retained article HTML"
+  },
+  "baseline103": {
+    "original": "ai-log/20261006/image25-api-comparison-v1/raw/baseline/source-specs.json",
+    "kind": "immutable original103 ordered registry before Image2.5 extension"
+  }
+}

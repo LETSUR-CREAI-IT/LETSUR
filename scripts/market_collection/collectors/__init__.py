@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from scripts.market_collection.core import SourceSpec
 from scripts.market_collection.sources import source_specs
-from . import google, openai, anthropic, openrouter, vercel, aws_bedrock, azure_foundry, fal, byteplus, google_vertex, azure_databricks
+from . import google, openai, anthropic, openrouter, vercel, aws_bedrock, azure_foundry, fal, byteplus, google_vertex, azure_databricks, ideogram, image25_api
 
 SUPPLIERS = {
     "google_direct": google, "openai_direct": openai, "openai": openai,
@@ -11,7 +11,7 @@ SUPPLIERS = {
     "vercel_ai_gateway": vercel, "vercel": vercel,
     "aws_bedrock": aws_bedrock, "azure_foundry": azure_foundry,
     "google_vertex": google_vertex, "azure_databricks": azure_databricks,
-    "fal": fal, "BytePlus ModelArk": byteplus,
+    "ideogram_direct": ideogram, "fal": fal, "BytePlus ModelArk": byteplus,
 }
 
 def parse_source(spec: SourceSpec, body: bytes, source_id: str) -> tuple[list[dict], list[dict]]:
@@ -22,6 +22,8 @@ def parse_source(spec: SourceSpec, body: bytes, source_id: str) -> tuple[list[di
         raise TypeError("source body must be bytes")
     if spec.modality == "image" and not source_id:
         raise ValueError("unregistered image source or invalid body/source ID")
+    if spec.parser in image25_api.PARSERS:
+        return image25_api.parse_source(spec, body, source_id)
     module = SUPPLIERS.get(spec.route)
     if module is None:
         raise ValueError("unhandled source route")

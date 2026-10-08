@@ -54,6 +54,8 @@ FLARE_MODEL = "gpt-image-2.5-flare"
 
 FLARE_FAL_MODEL = "openai/gpt-image-2.5/flare/text-to-image"
 
+IDEOGRAM_MODEL = "ideogram-4.5"
+
 SEEDANCE_MODEL = "seedance-2.5"
 
 SEEDANCE_FAL_ID = "bytedance/seedance-2.5/text-to-video"
@@ -69,5 +71,5 @@ MODEL_MODALITIES = {
     **{model: "llm" for model in (GOOGLE_LLM_MODEL, ASTRA_MODEL, FABLE_MODEL)},
     **{model: "llm" for model, _, _ in STANDARD_LLM_MODELS},
     **{model: "llm" for model, *_ in BROKER_CATALOG_MODELS},
-    SUNBURST_MODEL: "image", FLARE_MODEL: "image", SEEDANCE_MODEL: "video",
+    IDEOGRAM_MODEL: "image", SUNBURST_MODEL: "image", FLARE_MODEL: "image", SEEDANCE_MODEL: "video",
 }

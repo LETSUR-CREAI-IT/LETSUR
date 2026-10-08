@@ -1,0 +1,632 @@
+{
+  "snapshot_at": "2026-09-03T15:00:00+00:00",
+  "entries": [
+    {
+      "billing_identifier": "ideogram_4_5_generate",
+      "dimensions": {
+        "reference_images": "INCLUDED",
+        "rendering_speed": "HIGH",
+        "resolution_tier": "1K"
+      },
+      "price": {
+        "amount": "0.22",
+        "currency": "USD"
+      },
+      "credits": "22",
+      "effective_at": "2026-09-28T21:00:00+00:00"
+    },
+    {
+      "billing_identifier": "ideogram_4_5_generate",
+      "dimensions": {
+        "reference_images": "INCLUDED",
+        "rendering_speed": "HIGH",
+        "resolution_tier": "2K"
+      },
+      "price": {
+        "amount": "0.22",
+        "currency": "USD"
+      },
+      "credits": "22",
+      "effective_at": "2026-09-28T21:00:00+00:00"
+    },
+    {
+      "billing_identifier": "ideogram_4_5_generate",
+      "dimensions": {
+        "reference_images": "INCLUDED",
+        "rendering_speed": "LOW",
+        "resolution_tier": "1K"
+      },
+      "price": {
+        "amount": "0.03",
+        "currency": "USD"
+      },
+      "credits": "3",
+      "effective_at": "2026-09-28T21:00:00+00:00"
+    },
+    {
+      "billing_identifier": "ideogram_4_5_generate",
+      "dimensions": {
+        "reference_images": "INCLUDED",
+        "rendering_speed": "LOW",
+        "resolution_tier": "2K"
+      },
+      "price": {
+        "amount": "0.03",
+        "currency": "USD"
+      },
+      "credits": "3",
+      "effective_at": "2026-09-28T21:00:00+00:00"
+    },
+    {
+      "billing_identifier": "ideogram_4_5_generate",
+      "dimensions": {
+        "reference_images": "INCLUDED",
+        "rendering_speed": "MEDIUM",
+        "resolution_tier": "1K"
+      },
+      "price": {
+        "amount": "0.06",
+        "currency": "USD"
+      },
+      "credits": "6",
+      "effective_at": "2026-09-28T21:00:00+00:00"
+    },
+    {
+      "billing_identifier": "ideogram_4_5_generate",
+      "dimensions": {
+        "reference_images": "INCLUDED",
+        "rendering_speed": "MEDIUM",
+        "resolution_tier": "2K"
+      },
+      "price": {
+        "amount": "0.06",
+        "currency": "USD"
+      },
+      "credits": "6",
+      "effective_at": "2026-09-28T21:00:00+00:00"
+    },
+    {
+      "billing_identifier": "ideogram_4_5_generate",
+      "dimensions": {
+        "reference_images": "INCLUDED",
+        "rendering_speed": "VERY_LOW",
+        "resolution_tier": "1K"
+      },
+      "price": {
+        "amount": "0.008",
+        "currency": "USD"
+      },
+      "credits": "0.8",
+      "effective_at": "2026-09-28T21:00:00+00:00"
+    },
+    {
+      "billing_identifier": "ideogram_4_5_generate",
+      "dimensions": {
+        "reference_images": "INCLUDED",
+        "rendering_speed": "VERY_LOW",
+        "resolution_tier": "2K"
+      },
+      "price": {
+        "amount": "0.008",
+        "currency": "USD"
+      },
+      "credits": "0.8",
+      "effective_at": "2026-09-28T21:00:00+00:00"
+    },
+    {
+      "billing_identifier": "ideogram_4_5_generate",
+      "dimensions": {
+        "reference_images": "NONE",
+        "rendering_speed": "HIGH",
+        "resolution_tier": "1K"
+      },
+      "price": {
+        "amount": "0.1",
+        "currency": "USD"
+      },
+      "credits": "10",
+      "effective_at": "2026-09-28T21:00:00+00:00"
+    },
+    {
+      "billing_identifier": "ideogram_4_5_generate",
+      "dimensions": {
+        "reference_images": "NONE",
+        "rendering_speed": "HIGH",
+        "resolution_tier": "2K"
+      },
+      "price": {
+        "amount": "0.1",
+        "currency": "USD"
+      },
+      "credits": "10",
+      "effective_at": "2026-09-28T21:00:00+00:00"
+    },
+    {
+      "billing_identifier": "ideogram_4_5_generate",
+      "dimensions": {
+        "reference_images": "NONE",
+        "rendering_speed": "LOW",
+        "resolution_tier": "1K"
+      },
+      "price": {
+        "amount": "0.03",
+        "currency": "USD"
+      },
+      "credits": "3",
+      "effective_at": "2026-09-28T21:00:00+00:00"
+    },
+    {
+      "billing_identifier": "ideogram_4_5_generate",
+      "dimensions": {
+        "reference_images": "NONE",
+        "rendering_speed": "LOW",
+        "resolution_tier": "2K"
+      },
+      "price": {
+        "amount": "0.03",
+        "currency": "USD"
+      },
+      "credits": "3",
+      "effective_at": "2026-09-28T21:00:00+00:00"
+    },
+    {
+      "billing_identifier": "ideogram_4_5_generate",
+      "dimensions": {
+        "reference_images": "NONE",
+        "rendering_speed": "MEDIUM",
+        "resolution_tier": "1K"
+      },
+      "price": {
+        "amount": "0.06",
+        "currency": "USD"
+      },
+      "credits": "6",
+      "effective_at": "2026-09-28T21:00:00+00:00"
+    },
+    {
+      "billing_identifier": "ideogram_4_5_generate",
+      "dimensions": {
+        "reference_images": "NONE",
+        "rendering_speed": "MEDIUM",
+        "resolution_tier": "2K"
+      },
+      "price": {
+        "amount": "0.06",
+        "currency": "USD"
+      },
+      "credits": "6",
+      "effective_at": "2026-09-28T21:00:00+00:00"
+    },
+    {
+      "billing_identifier": "ideogram_4_5_precise_edit",
+      "dimensions": {
+        "rendering_speed": "HIGH",
+        "resolution_tier": "1K"
+      },
+      "price": {
+        "amount": "0.22",
+        "currency": "USD"
+      },
+      "credits": "22",
+      "effective_at": "2026-09-28T21:00:00+00:00"
+    },
+    {
+      "billing_identifier": "ideogram_4_5_precise_edit",
+      "dimensions": {
+        "rendering_speed": "HIGH",
+        "resolution_tier": "2K"
+      },
+      "price": {
+        "amount": "0.22",
+        "currency": "USD"
+      },
+      "credits": "22",
+      "effective_at": "2026-09-28T21:00:00+00:00"
+    },
+    {
+      "billing_identifier": "ideogram_4_5_precise_edit",
+      "dimensions": {
+        "rendering_speed": "LOW",
+        "resolution_tier": "1K"
+      },
+      "price": {
+        "amount": "0.03",
+        "currency": "USD"
+      },
+      "credits": "3",
+      "effective_at": "2026-09-28T21:00:00+00:00"
+    },
+    {
+      "billing_identifier": "ideogram_4_5_precise_edit",
+      "dimensions": {
+        "rendering_speed": "LOW",
+        "resolution_tier": "2K"
+      },
+      "price": {
+        "amount": "0.03",
+        "currency": "USD"
+      },
+      "credits": "3",
+      "effective_at": "2026-09-28T21:00:00+00:00"
+    },
+    {
+      "billing_identifier": "ideogram_4_5_precise_edit",
+      "dimensions": {
+        "rendering_speed": "MEDIUM",
+        "resolution_tier": "1K"
+      },
+      "price": {
+        "amount": "0.06",
+        "currency": "USD"
+      },
+      "credits": "6",
+      "effective_at": "2026-09-28T21:00:00+00:00"
+    },
+    {
+      "billing_identifier": "ideogram_4_5_precise_edit",
+      "dimensions": {
+        "rendering_speed": "MEDIUM",
+        "resolution_tier": "2K"
+      },
+      "price": {
+        "amount": "0.06",
+        "currency": "USD"
+      },
+      "credits": "6",
+      "effective_at": "2026-09-28T21:00:00+00:00"
+    },
+    {
+      "billing_identifier": "ideogram_4_5_precise_edit",
+      "dimensions": {
+        "rendering_speed": "VERY_LOW",
+        "resolution_tier": "1K"
+      },
+      "price": {
+        "amount": "0.008",
+        "currency": "USD"
+      },
+      "credits": "0.8",
+      "effective_at": "2026-09-28T21:00:00+00:00"
+    },
+    {
+      "billing_identifier": "ideogram_4_5_precise_edit",
+      "dimensions": {
+        "rendering_speed": "VERY_LOW",
+        "resolution_tier": "2K"
+      },
+      "price": {
+        "amount": "0.008",
+        "currency": "USD"
+      },
+      "credits": "0.8",
+      "effective_at": "2026-09-28T21:00:00+00:00"
+    }
+  ],
+  "public_pricing": {
+    "pricing_unit": "usd_micros",
+    "sections": [
+      {
+        "id": "image_generation",
+        "title": "Image generation",
+        "description": "Billed per generated image. Generate, remix, edit, reframe and replace-background endpoints share the model rate.",
+        "groups": [
+          {
+            "id": "ideogram_4_5",
+            "title": "Ideogram 4.5",
+            "description": "Billed per generated image, by rendering speed and output size. Generate has its own rates when the request includes source images (image to image). Precise Edit edits a source image at its own size.",
+            "offerings": [
+              {
+                "id": "ideogram_4_5_generate_low_1k",
+                "label": "Ideogram 4.5 Generate Low 1K",
+                "endpoint": {
+                  "method": "POST",
+                  "path": "/v2/image/generate/ideogram-4-5"
+                },
+                "display_type": "unit_price",
+                "price": {
+                  "amount": 30000,
+                  "credits": "3",
+                  "qualifier": "exact"
+                }
+              },
+              {
+                "id": "ideogram_4_5_generate_low_2k",
+                "label": "Ideogram 4.5 Generate Low 2K",
+                "endpoint": {
+                  "method": "POST",
+                  "path": "/v2/image/generate/ideogram-4-5"
+                },
+                "display_type": "unit_price",
+                "price": {
+                  "amount": 30000,
+                  "credits": "3",
+                  "qualifier": "exact"
+                }
+              },
+              {
+                "id": "ideogram_4_5_generate_medium_1k",
+                "label": "Ideogram 4.5 Generate Medium 1K",
+                "endpoint": {
+                  "method": "POST",
+                  "path": "/v2/image/generate/ideogram-4-5"
+                },
+                "display_type": "unit_price",
+                "price": {
+                  "amount": 60000,
+                  "credits": "6",
+                  "qualifier": "exact"
+                }
+              },
+              {
+                "id": "ideogram_4_5_generate_medium_2k",
+                "label": "Ideogram 4.5 Generate Medium 2K",
+                "endpoint": {
+                  "method": "POST",
+                  "path": "/v2/image/generate/ideogram-4-5"
+                },
+                "display_type": "unit_price",
+                "price": {
+                  "amount": 60000,
+                  "credits": "6",
+                  "qualifier": "exact"
+                }
+              },
+              {
+                "id": "ideogram_4_5_generate_high_1k",
+                "label": "Ideogram 4.5 Generate High 1K",
+                "endpoint": {
+                  "method": "POST",
+                  "path": "/v2/image/generate/ideogram-4-5"
+                },
+                "display_type": "unit_price",
+                "price": {
+                  "amount": 100000,
+                  "credits": "10",
+                  "qualifier": "exact"
+                }
+              },
+              {
+                "id": "ideogram_4_5_generate_high_2k",
+                "label": "Ideogram 4.5 Generate High 2K",
+                "endpoint": {
+                  "method": "POST",
+                  "path": "/v2/image/generate/ideogram-4-5"
+                },
+                "display_type": "unit_price",
+                "price": {
+                  "amount": 100000,
+                  "credits": "10",
+                  "qualifier": "exact"
+                }
+              },
+              {
+                "id": "ideogram_4_5_generate_very_low_1k_with_references",
+                "label": "Ideogram 4.5 Generate Very Low 1K with source images",
+                "endpoint": {
+                  "method": "POST",
+                  "path": "/v2/image/generate/ideogram-4-5"
+                },
+                "display_type": "unit_price",
+                "price": {
+                  "amount": 8000,
+                  "credits": "0.8",
+                  "qualifier": "exact"
+                }
+              },
+              {
+                "id": "ideogram_4_5_generate_very_low_2k_with_references",
+                "label": "Ideogram 4.5 Generate Very Low 2K with source images",
+                "endpoint": {
+                  "method": "POST",
+                  "path": "/v2/image/generate/ideogram-4-5"
+                },
+                "display_type": "unit_price",
+                "price": {
+                  "amount": 8000,
+                  "credits": "0.8",
+                  "qualifier": "exact"
+                }
+              },
+              {
+                "id": "ideogram_4_5_generate_low_1k_with_references",
+                "label": "Ideogram 4.5 Generate Low 1K with source images",
+                "endpoint": {
+                  "method": "POST",
+                  "path": "/v2/image/generate/ideogram-4-5"
+                },
+                "display_type": "unit_price",
+                "price": {
+                  "amount": 30000,
+                  "credits": "3",
+                  "qualifier": "exact"
+                }
+              },
+              {
+                "id": "ideogram_4_5_generate_low_2k_with_references",
+                "label": "Ideogram 4.5 Generate Low 2K with source images",
+                "endpoint": {
+                  "method": "POST",
+                  "path": "/v2/image/generate/ideogram-4-5"
+                },
+                "display_type": "unit_price",
+                "price": {
+                  "amount": 30000,
+                  "credits": "3",
+                  "qualifier": "exact"
+                }
+              },
+              {
+                "id": "ideogram_4_5_generate_medium_1k_with_references",
+                "label": "Ideogram 4.5 Generate Medium 1K with source images",
+                "endpoint": {
+                  "method": "POST",
+                  "path": "/v2/image/generate/ideogram-4-5"
+                },
+                "display_type": "unit_price",
+                "price": {
+                  "amount": 60000,
+                  "credits": "6",
+                  "qualifier": "exact"
+                }
+              },
+              {
+                "id": "ideogram_4_5_generate_medium_2k_with_references",
+                "label": "Ideogram 4.5 Generate Medium 2K with source images",
+                "endpoint": {
+                  "method": "POST",
+                  "path": "/v2/image/generate/ideogram-4-5"
+                },
+                "display_type": "unit_price",
+                "price": {
+                  "amount": 60000,
+                  "credits": "6",
+                  "qualifier": "exact"
+                }
+              },
+              {
+                "id": "ideogram_4_5_generate_high_1k_with_references",
+                "label": "Ideogram 4.5 Generate High 1K with source images",
+                "endpoint": {
+                  "method": "POST",
+                  "path": "/v2/image/generate/ideogram-4-5"
+                },
+                "display_type": "unit_price",
+                "price": {
+                  "amount": 220000,
+                  "credits": "22",
+                  "qualifier": "exact"
+                }
+              },
+              {
+                "id": "ideogram_4_5_generate_high_2k_with_references",
+                "label": "Ideogram 4.5 Generate High 2K with source images",
+                "endpoint": {
+                  "method": "POST",
+                  "path": "/v2/image/generate/ideogram-4-5"
+                },
+                "display_type": "unit_price",
+                "price": {
+                  "amount": 220000,
+                  "credits": "22",
+                  "qualifier": "exact"
+                }
+              },
+              {
+                "id": "ideogram_4_5_precise_edit_very_low_1k",
+                "label": "Ideogram 4.5 Precise Edit Very Low 1K",
+                "endpoint": {
+                  "method": "POST",
+                  "path": "/v2/image/precise-edit/ideogram-4-5"
+                },
+                "display_type": "unit_price",
+                "price": {
+                  "amount": 8000,
+                  "credits": "0.8",
+                  "qualifier": "exact"
+                }
+              },
+              {
+                "id": "ideogram_4_5_precise_edit_very_low_2k",
+                "label": "Ideogram 4.5 Precise Edit Very Low 2K",
+                "endpoint": {
+                  "method": "POST",
+                  "path": "/v2/image/precise-edit/ideogram-4-5"
+                },
+                "display_type": "unit_price",
+                "price": {
+                  "amount": 8000,
+                  "credits": "0.8",
+                  "qualifier": "exact"
+                }
+              },
+              {
+                "id": "ideogram_4_5_precise_edit_low_1k",
+                "label": "Ideogram 4.5 Precise Edit Low 1K",
+                "endpoint": {
+                  "method": "POST",
+                  "path": "/v2/image/precise-edit/ideogram-4-5"
+                },
+                "display_type": "unit_price",
+                "price": {
+                  "amount": 30000,
+                  "credits": "3",
+                  "qualifier": "exact"
+                }
+              },
+              {
+                "id": "ideogram_4_5_precise_edit_low_2k",
+                "label": "Ideogram 4.5 Precise Edit Low 2K",
+                "endpoint": {
+                  "method": "POST",
+                  "path": "/v2/image/precise-edit/ideogram-4-5"
+                },
+                "display_type": "unit_price",
+                "price": {
+                  "amount": 30000,
+                  "credits": "3",
+                  "qualifier": "exact"
+                }
+              },
+              {
+                "id": "ideogram_4_5_precise_edit_medium_1k",
+                "label": "Ideogram 4.5 Precise Edit Medium 1K",
+                "endpoint": {
+                  "method": "POST",
+                  "path": "/v2/image/precise-edit/ideogram-4-5"
+                },
+                "display_type": "unit_price",
+                "price": {
+                  "amount": 60000,
+                  "credits": "6",
+                  "qualifier": "exact"
+                }
+              },
+              {
+                "id": "ideogram_4_5_precise_edit_medium_2k",
+                "label": "Ideogram 4.5 Precise Edit Medium 2K",
+                "endpoint": {
+                  "method": "POST",
+                  "path": "/v2/image/precise-edit/ideogram-4-5"
+                },
+                "display_type": "unit_price",
+                "price": {
+                  "amount": 60000,
+                  "credits": "6",
+                  "qualifier": "exact"
+                }
+              },
+              {
+                "id": "ideogram_4_5_precise_edit_high_1k",
+                "label": "Ideogram 4.5 Precise Edit High 1K",
+                "endpoint": {
+                  "method": "POST",
+                  "path": "/v2/image/precise-edit/ideogram-4-5"
+                },
+                "display_type": "unit_price",
+                "price": {
+                  "amount": 220000,
+                  "credits": "22",
+                  "qualifier": "exact"
+                }
+              },
+              {
+                "id": "ideogram_4_5_precise_edit_high_2k",
+                "label": "Ideogram 4.5 Precise Edit High 2K",
+                "endpoint": {
+                  "method": "POST",
+                  "path": "/v2/image/precise-edit/ideogram-4-5"
+                },
+                "display_type": "unit_price",
+                "price": {
+                  "amount": 220000,
+                  "credits": "22",
+                  "qualifier": "exact"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

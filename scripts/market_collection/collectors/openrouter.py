@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import html
+import hashlib
 import json
 import re
 from datetime import datetime
@@ -217,10 +218,136 @@ def _flare_openrouter(spec: SourceSpec, body: str) -> tuple[list[dict], list[dic
     return prices, []
 
 
+
+def _endpoint_literal(value):
+    # Preserve JSON number precision in the literal evidence without float conversion.
+    if isinstance(value, Decimal):
+        return str(value)
+    if isinstance(value, list):
+        return '[' + ','.join(_endpoint_literal(v) for v in value) + ']'
+    if isinstance(value, dict):
+        return '{' + ','.join(json.dumps(k) + ':' + _endpoint_literal(v) for k, v in value.items()) + '}'
+    return json.dumps(value, ensure_ascii=False)
+
+
+def _image25_endpoints(spec, body):
+    from .image25_api import condition, ESSENTIAL, _enum, _range
+    def unique_fields(pairs):
+        value = {}
+        for key, item in pairs:
+            if key in value:
+                raise ValueError('duplicate endpoint JSON field: ' + key)
+            value[key] = item
+        return value
+    data = json.loads(body, parse_float=Decimal, parse_constant=Decimal, object_pairs_hook=unique_fields)
+    if not isinstance(data, dict) or data.get('id') != 'openai/' + spec.model_id:
+        raise ValueError('OpenRouter exact endpoint root model absent')
+    endpoints = data.get('endpoints')
+    if not isinstance(endpoints, list):
+        raise ValueError('OpenRouter endpoint list absent')
+    prices, rows, identities = [], [], set()
+    if not endpoints:
+        rows.append(condition(spec.source_key, 'endpoint_availability', 'unavailable', 'endpoints=[]'))
+    for index, endpoint in enumerate(endpoints):
+        loc = f'endpoints[{index}]'
+        if not isinstance(endpoint, dict) or any(not isinstance(endpoint.get(k), str) or not endpoint[k].strip()
+                                                for k in ('provider_name', 'provider_slug')):
+            raise ValueError('invalid endpoint provider identity')
+        if 'provider_tag' not in endpoint or (endpoint['provider_tag'] is not None and
+                (not isinstance(endpoint['provider_tag'], str) or not endpoint['provider_tag'].strip())):
+            raise ValueError('invalid endpoint provider tag')
+        identity = (endpoint['provider_slug'], endpoint['provider_tag'])
+        if identity in identities:
+            raise ValueError('duplicate endpoint provider identity')
+        identities.add(identity)
+        identity_key = hashlib.sha256(json.dumps(identity, separators=(',', ':')).encode()).hexdigest()
+        profile = f'{spec.source_key}_endpoint_{identity_key}'
+        def add(key, value, pointer, status='stated'):
+            rows.append(condition(profile, key, value, pointer, status))
+        add('profile_scope', 'channel_endpoint', loc)
+        add('model_id', spec.model_id, 'id=' + data['id'])
+        for key in ('provider_name', 'provider_slug', 'provider_tag'):
+            add(key, endpoint[key], loc + '.' + key, 'unknown' if endpoint[key] is None else 'stated')
+        if endpoint['provider_tag'] is None:
+            add('provider_pin', 'Provider tag null; endpoint cannot be pinned by tag', loc + '.provider_tag', 'unknown')
+        parameters = endpoint.get('supported_parameters')
+        if not isinstance(parameters, dict):
+            raise ValueError('invalid endpoint supported parameters')
+        for key, descriptor in parameters.items():
+            if not isinstance(key, str) or not key or not isinstance(descriptor, dict) or descriptor.get('type') not in {'enum', 'range', 'boolean'}:
+                raise ValueError('invalid endpoint capability descriptor')
+            if descriptor['type'] == 'enum':
+                _enum(descriptor.get('values'))
+            elif descriptor['type'] == 'range':
+                _range(descriptor)
+            add(key + '_capability', descriptor, loc + '.supported_parameters.' + key)
+            if key == 'quality' and descriptor['type'] == 'enum':
+                add('quality_options', descriptor['values'], loc + '.supported_parameters.quality.values')
+            if key == 'n' and descriptor['type'] == 'range':
+                add('num_images_range', _range(descriptor), loc + '.supported_parameters.n')
+        add('supported_parameters', parameters, loc + '.supported_parameters')
+        passthrough = endpoint.get('allowed_passthrough_parameters')
+        if not isinstance(passthrough, list) or any(not isinstance(k, str) or not k for k in passthrough) or len(set(passthrough)) != len(passthrough):
+            raise ValueError('invalid endpoint passthrough allowlist')
+        if type(endpoint.get('supports_streaming')) is not bool:
+            raise ValueError('invalid endpoint streaming capability')
+        for key in ('allowed_passthrough_parameters', 'supports_streaming'):
+            add(key, endpoint[key], loc + '.' + key)
+        add('api_surface', ['images'], 'source URL=' + spec.url + ' (dedicated Image API endpoint records)')
+        add('collection_task_context', spec.task, 'registered SourceSpec.task; not endpoint task support')
+        present = {r['condition_key'] for r in rows if r['condition_set_id'] == profile}
+        for key in ESSENTIAL:
+            if key not in present:
+                add(key, 'Not documented in this endpoint record; requires verification', loc + ' > absent ' + key, 'unknown')
+        rates = endpoint.get('pricing')
+        if not isinstance(rates, list):
+            raise ValueError('invalid endpoint pricing list')
+        rate_keys = set()
+        for rate_index, rate in enumerate(rates):
+            pointer = f'{loc}.pricing[{rate_index}]'
+            if not isinstance(rate, dict) or any(not isinstance(rate.get(k), str) or not rate[k] for k in ('billable', 'unit')):
+                raise ValueError('invalid typed rate identity')
+            variant = rate.get('variant')
+            if variant is not None and (not isinstance(variant, str) or not variant):
+                raise ValueError('invalid typed rate variant')
+            identity = (rate['billable'], rate['unit'], variant)
+            if identity in rate_keys:
+                raise ValueError('duplicate endpoint typed rate')
+            rate_keys.add(identity)
+            cost = rate.get('cost_usd')
+            if type(cost) not in (int, Decimal) or not Decimal(cost).is_finite() or cost < 0:
+                raise ValueError('invalid endpoint cost_usd')
+            literal = _endpoint_literal(rate)
+            group = f'{profile}_rate_{rate_index}'
+            def rate_add(key, value, status='stated'):
+                rows.append(condition(group, key, value, pointer + '.' + key + ': ' + literal, status))
+            rate_add('endpoint_profile_id', profile)
+            rate_add('billable', rate['billable'])
+            rate_add('unit', rate['unit'])
+            rate_add('pricing_line', literal)
+            if 'variant' in rate:
+                rate_add('variant', variant)
+                rate_add('variant_applicability', 'Concrete variant selection mapping not documented', 'unknown')
+            labels = {'input_text': 'Text Input', 'input_image': 'Image Input', 'output_image': 'Image Output'}
+            unknown = []
+            if rate['billable'] not in labels:
+                unknown.append('unknown billable: ' + rate['billable'])
+            if rate['unit'] not in {'token', 'image', 'request'}:
+                unknown.append('unknown unit: ' + rate['unit'])
+            amount = format(Decimal(cost), 'f') if not unknown else ''
+            row = dict.fromkeys(ADAPTER_PRICE_FIELDS, '')
+            row.update(provider_model_id=data['id'], upstream_provider=endpoint['provider_name'], task=spec.task,
+                       billing_item=labels.get(rate['billable'], rate['billable']), price_kind='published_rate',
+                       amount=amount, currency='USD' if amount else '', unit='1 ' + rate['unit'] if amount else '',
+                       condition_set_id=group, locator=pointer + ': ' + literal, evidence_status='direct',
+                       unknown_reason='; '.join(unknown))
+            prices.append(row)
+    return prices, rows
+
 def parse_source(spec: SourceSpec, body: bytes, source_id: str) -> tuple[list[dict], list[dict]]:
     decoded = body.decode("utf-8", errors="replace" if spec.modality == "llm" else "strict")
     if spec.modality == "image":
-        return {"openrouter": _sun_openrouter, "flare_openrouter": _flare_openrouter}[spec.parser](spec, decoded)
+        return {"openrouter": _sun_openrouter, "flare_openrouter": _flare_openrouter, "image25_openrouter_endpoints": _image25_endpoints}[spec.parser](spec, decoded)
     if spec.parser == "openrouter":
         reader = GeminiPricingScopeReader(); reader.feed(decoded); reader.close()
         return _broker(reader, spec.parser)

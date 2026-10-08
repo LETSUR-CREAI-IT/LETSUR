@@ -1,0 +1,14 @@
+{
+  "sunburst": {
+    "raw_path": "ai-log/20261006/image25-api-comparison-v2/02-development/public-image25-final/runs/20261006T061601Z-9517e8608bb64122bc104494c963acaf/raw/20261006T061601Z-9517e8608bb64122bc104494c963acaf-s002.bin",
+    "raw_sha256": "3caae35ba1b502d1fb179d9ab3e8a1f4fbb01a6746b55feb0ce370a843c06827",
+    "excerpt_sha256": "79ba18155ddc14574e4b15aa27a982c5c39bc06b958010296e2d426aa9ca3d74",
+    "method": "Exact contentData key/object and first exact modelUrl pricing object substrings from JSON-decoded original Flight arguments; joined by newline only. Also exact first rendered token-pricing p element from original HTML appended."
+  },
+  "flare": {
+    "raw_path": "ai-log/20261006/image25-api-comparison-v2/02-development/public-image25-final/runs/20261006T061601Z-9517e8608bb64122bc104494c963acaf/raw/20261006T061601Z-9517e8608bb64122bc104494c963acaf-s007.bin",
+    "raw_sha256": "a2a88859053dc7eb3ea63ae792fcfa22b5009f6bae2e08cfcfa4e1baf42b59d4",
+    "excerpt_sha256": "3ac8df52868aa1148b2b6459b9bbf513ea633233b77c84203bf21c307aa30a9f",
+    "method": "Exact contentData key/object and first exact modelUrl pricing object substrings from JSON-decoded original Flight arguments; joined by newline only."
+  }
+}

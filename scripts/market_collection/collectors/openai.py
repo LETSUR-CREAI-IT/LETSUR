@@ -146,7 +146,32 @@ def _flare_openai(spec: SourceSpec, body: str) -> tuple[list[dict], list[dict]]:
 def parse_source(spec: SourceSpec, body: bytes, source_id: str) -> tuple[list[dict], list[dict]]:
     decoded = body.decode("utf-8", errors="replace" if spec.modality == "llm" else "strict")
     if spec.modality == "image":
-        return {"openai": _sun_openai, "flare_openai": _flare_openai}[spec.parser](spec, decoded)
+        prices, conditions = {"openai": _sun_openai, "flare_openai": _flare_openai}[spec.parser](spec, decoded)
+        conditions.extend(_image25_identity(spec, decoded))
+        return prices, conditions
     from scripts.market_collection.sources import _targets
     title = _targets()[spec.model_id][0]
     return _openai_model(decoded, spec.model_id, title, spec.parser)
+
+
+def _image25_identity(spec, body):
+    """Unattached exact model identity claims; default snapshots do not pin requests."""
+    from .image25_api import condition
+    if f'Model ID: `{spec.model_id}`' not in body:
+        raise ValueError('exact image model identity absent')
+    group = 'image25_identity_' + spec.source_key
+    rows = [condition(group, 'profile_scope', 'manufacturer_identity', f'Model ID: `{spec.model_id}`'),
+            condition(group, 'model_id', spec.model_id, f'Model ID: `{spec.model_id}`')]
+    snapshot = re.search(r'^- (Default|Current) snapshot: `([^`]+)`$', body, re.M)
+    if snapshot:
+        rows.append(condition(group, 'model_default_snapshot', snapshot[2], snapshot[0]))
+    rows.append(condition(group, 'model_snapshot', 'Named SKU default is not an explicitly pinned request identity', 'Model details > snapshot', 'unknown'))
+    output = re.search(r'^- Output modalities: (.+)$', body, re.M)
+    if output:
+        rows.append(condition(group, 'output_modalities', [x.strip() for x in output[1].split(',')], output[0]))
+    endpoints = re.search(r'^## Endpoints\s*(.*?)(?=\n## |\Z)', body, re.S|re.M)
+    if endpoints:
+        entries = re.findall(r'^\| ([^|]+) \| `([^`]+)` \| (Supported|Not supported) \|$', endpoints[1], re.M)
+        if entries:
+            rows.append(condition(group, 'model_endpoint_claims', [dict(name=n,route=r,support=v) for n,r,v in entries], 'Endpoints > exact model endpoint table'))
+    return rows
