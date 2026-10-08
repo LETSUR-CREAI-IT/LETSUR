@@ -47,7 +47,7 @@ fal text-to-image는 Low/Medium/High 3개, edit endpoint는 Very Low/Low/Medium/
 
 독립 lane QA는 실제 공개 GET 6회 모두 HTTP 200/fetch ok/parse ok를 확인해 33개 가격과 447개 조건을 생성했다. raw bytes/SHA-256, replay 의미값, history의 live-only 입력, 14개 mutation 실행(실패 11, 유효한 zero 2, schema conflict 보존 1)을 점검했다. integration QA는 190개 테스트를 통과했고 기존 Actions summary/pack 스크립트를 로컬 임시 작업 폴더에서 실행했다. 성공 archive 10개 파일(Manifest, CSV 3개, raw 6개)은 복원 후 byte/hash가 일치했다. 혼합 실패 archive 6개 파일은 실패 종료를 나타내면서 실패 원문과 성공 자료 4개 가격을 보존했다. Integration은 lane에서 이미 검증한 GET의 정확한 source hash를 재사용했으므로 새 GET 실행은 아니다. 근거는 [lane QA report](../ai-log/20261006/ideogram45-v2/03-qa/lane/qa-report.json), [integration QA report](../ai-log/20261006/ideogram45-v2/03-qa/integration/qa-report.json), [개발 보고서](../ai-log/20261006/ideogram45-v2/02-development/report.md)다.
 
-2026-10-05의 97-source baseline은 이후 [PR #1](https://github.com/LETSUR-CREAI-IT/LETSUR/pull/1)로 `develop`에 병합되고 [실제 수동 Actions run](https://github.com/LETSUR-CREAI-IT/LETSUR/actions/runs/37330298245)에서 성공했다(97 source/415 price/1,192 condition). 이는 Ideogram 4.5 추가 전 결과다. 현재 4.5 버전의 remote Actions 실행/upload와 새로운 원격 GET은 **NOT_RUN**이며 예약 cron의 실제 firing도 확인하지 않았다. 인증/유료 이미지 생성, 실제 청구 역시 **NOT_RUN**이다. 이 문서의 2026-10-06 QA 증거와 원문은 `ai-log/`의 로컬 파일이다.
+2026-10-05의 97-source baseline은 이후 [PR #1](https://github.com/LETSUR-CREAI-IT/LETSUR/pull/1)로 `develop`에 병합되고 [실제 수동 Actions run](https://github.com/LETSUR-CREAI-IT/LETSUR/actions/runs/37330298245)에서 성공했다(97 source/415 price/1,192 condition). 이는 Ideogram 4.5 추가 전 결과다. 2026-10-06 기록 당시 Ideogram 4.5 버전의 remote Actions 실행/upload와 새로운 원격 GET은 **NOT_RUN**이었고 예약 cron의 실제 firing도 확인하지 않았다. 인증/유료 이미지 생성, 실제 청구 역시 **NOT_RUN**이었다. 이 문서의 2026-10-06 QA 증거와 원문은 `ai-log/`의 로컬 파일이다.
 
 ## 다음 확인
 
@@ -67,7 +67,7 @@ Sunburst와 Flare 각각에 공개 API 조건 문서 4종을 연결해 현재 re
 
 독립 lane QA는 248개 전체 테스트와 931개 field-reference 연결 점검을 보고했다. integration QA도 248개 테스트를 통과했고, 19-source retained live 자료·CSV를 변경하지 않은 workflow summary/pack 경로에 넣고 복원한 23개 파일의 바이트와 SHA를 대조했다. 테스트 증거에는 **합성 synthetic positive**로 comparable 경로가 동작하는 별도 예시가 있지만, 실제 공급자 자료의 비교 결과가 아니다. 따라서 공개 자료에서 실제로 비교 가능한 경로가 있거나 같은 비용·품질·순위·절감 효과가 확인됐다는 결론은 내리지 않는다.
 
-원본 103개 사양의 실제 조회 근거는 하나의 103-source live 회차가 아니다. 앞 단계의 97-source run(415 prices/1,192 conditions)과 Ideogram 6-source run(33/447)을 서로 독립적으로 replay했다. 현재 비교용 19-source 조회도 별도 실제 run이다. 기존 97-source 원격 Actions 실행의 2026-10-06 성공 사실은 보존되지만, 2026-10-06 당시 111-spec registry의 Actions 실행과 이번 113-spec registry의 원격 실행 모두 별도로 확인되지 않았다. 새 remote run, push·merge, artifact 업로드와 예약 firing은 **NOT_RUN**이다. 인증·유료 이미지 생성과 청구, 계정 eligibility, 이미지별 실제 비용, 품질 동등성, 순위, 절감액, UI·알림도 확인하지 않았다.
+원본 103개 사양의 실제 조회 근거는 하나의 103-source live 회차가 아니다. 앞 단계의 97-source run(415 prices/1,192 conditions)과 Ideogram 6-source run(33/447)을 서로 독립적으로 replay했다. 당시 비교용 19-source 조회도 별도 실제 run이다. 이 문서의 이전 기록 시점에는 기존 97-source 원격 Actions 실행만 확인됐고, 111·113-source registry 버전의 원격 반영과 실행은 확인되지 않았었다. 이후 2026-10-08 PR #2가 [`ae89289efae421ed5a87d0ebfea26957163c42b8`](https://github.com/LETSUR-CREAI-IT/LETSUR/commit/ae89289efae421ed5a87d0ebfea26957163c42b8)로 `develop`에 merge됐고, PR branch 및 merge 후 `develop`의 수동 Actions run과 artifact 검사가 성공했다. 실행별 수치는 [운영 기록](market-collection.md#2026-10-08-원격-반영-및-artifact-확인)에 있다. 새 schedule firing은 아직 **NOT_RUN**이다. 인증·유료 이미지 생성과 청구, 계정 eligibility, 이미지별 실제 비용, 품질 동등성, 순위, 절감액, UI·알림도 확인하지 않았다.
 
 2026-10-06에 기록한 기존 core HTTP 503 manifest 누락은 당시 상태 기록이다. 2026-10-08에 실패 source의 manifest append/mapping이 보정되어, 현행 확인에서 HTTP 503은 source CSV와 manifest에 함께 남고 해당 BytePlus retry 동작 없이 parser는 실행되지 않았다. 앞선 문장은 그 시점의 limitation을 보존하며, 2026-10-08 현황과 합쳐 읽지 않는다.
 
@@ -77,7 +77,7 @@ Sunburst와 Flare 각각에 공개 API 조건 문서 4종을 연결해 현재 re
 
 BytePlus의 과거 최신 Actions run 37735843718은 당시 97개 source 중 96개가 healthy였고 414 price, 1,190 condition을 만들었다. BytePlus 가격 출처는 HTTP 200이었지만 완전한 문서가 아닌 SSR shell을 돌려주어 파싱에 실패했다. 2026-10-08 보정은 두 등록 BytePlus 문서 사양의 명시적 shell 응답만 대상으로 같은 URL에 최대 3회(최초 요청 포함) 요청하고 1초·2초 대기한다. 각 응답 원문과 attempt metadata는 manifest의 `fetch_attempts`와 별도 raw 파일에 기록한다. 비-200과 다른 공급자는 이 재시도를 사용하지 않으며 기존 세 CSV schema는 유지된다.
 
-복구 성공·재시도 소진·재시도 후 network error는 보존 artifact 원문을 활용한 오프라인 회귀 시나리오에서 확인됐다. 실제 BytePlus 공개 GET은 두 문서가 첫 응답부터 완전했기 때문에 재시도로 회복되는 live 사례는 관찰되지 않았다. 2026-10-08 원격 Actions 실행, artifact 업로드, 예약 cron firing은 **NOT_RUN**이다.
+복구 성공·재시도 소진·재시도 후 network error는 보존 artifact 원문을 활용한 오프라인 회귀 시나리오에서 확인됐다. 실제 BytePlus 공개 GET은 두 문서가 첫 응답부터 완전했기 때문에 재시도로 회복되는 live 사례는 관찰되지 않았다. 이후 PR branch와 `develop`에서 실행한 원격 Actions 및 artifact 검사는 통과했지만, retry가 실제로 발생한 source는 없었다. 새 예약 cron firing은 **NOT_RUN**이다.
 
 상세 수치는 `ai-log/20261008/automation-release-qa/qa-report.md`와 `qa-summary.json`, 구현 범위는 `ai-log/20261008/automation-health-repair/implementation-report.md`에 있다. 이 파일들은 **로컬 전용 작업 증거**로 공개 저장소 clone에 포함된 자료나 GitHub artifact가 아니다. 작업 시점의 운영 요약은 [automation health note](automation-health-2026-10-08.md)를 참고한다.
 
