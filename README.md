@@ -40,8 +40,11 @@ tests/market_collection/     수집기 모듈 회귀 테스트와 저장 HTML/Ma
 docs/market-collection.md    실행, 데이터 연결, 출처 확장, 검증 경계 안내
 docs/image-docs-automation.md  이미지 문서 비교 보고서와 Actions 흐름 안내
 samples/market_collection/   날짜·모드별 보존 snapshot과 CSV 안내 index
+samples/dashboard/v13/       오프라인 웹 시안 입력(내장된 가상·공개 관측 데이터), 렌더링 검토 화면 출력과 안내. 브라우저 외 패키지 의존성 없음
 ai-log/                     작업별 계획·개발·QA 기록. collector-gaps-v2 자료는 현재 로컬 전용
 ```
+
+저장된 HTML 시안과 화면 캡처, 작성 당시 확인 로그는 [웹 v13 시안 안내](samples/dashboard/v13/README.md)에서 열 수 있다.
 
 현재 임시 CLI의 내부 구성은 다음과 같다.
 
