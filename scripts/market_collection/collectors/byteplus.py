@@ -13,6 +13,11 @@ from scripts.market_collection.core import ADAPTER_CONDITION_FIELDS, ADAPTER_PRI
 from scripts.market_collection.models import BYTEPLUS_ID
 
 
+def is_unrendered_template(body: bytes) -> bool:
+    """Recognize the empty SSR template retained in failed public responses."""
+    return bool(re.search(rb'<div\s+id=["\']root["\']\s*>\s*<!--<\?- html \?>-->\s*</div>', body)) and b"<!--<?- SSRDataScript ?>-->" in body
+
+
 def _page(body: bytes) -> str:
     page = html.unescape(body.decode("utf-8", "replace"))
     # BytePlus embeds its document markdown in escaped page state. Decode only
@@ -79,5 +84,7 @@ def _video_campaign(page: str, source_id: str) -> tuple[list[dict], list[dict]]:
 
 
 def parse_source(spec: SourceSpec, body: bytes, source_id: str) -> tuple[list[dict], list[dict]]:
+    if is_unrendered_template(body):
+        raise ValueError("BytePlus unrendered SSR template: document body unavailable")
     return {"byteplus_pricing": _video_byteplus,
             "byteplus_campaign": _video_campaign}[spec.parser](_page(body), source_id)

@@ -1,0 +1,28 @@
+[
+  {
+    "fixture": "fal.json",
+    "source_url": "https://fal.ai/models/ideogram/v4.5",
+    "raw_path": "ai-log/20261006/ideogram45/raw/source-probe/fal.html",
+    "raw_sha256": "cc90f6c9133d1ba96573c973513869925af2e94dc8cfb567e94a4bda36cb12a2",
+    "transform": "Next Flight JSON decode; exact primary endpoint container; retained model identity/pricing/description and scoped OpenAPI unchanged"
+  },
+  {
+    "fixture": "fal-edit.json",
+    "source_url": "https://fal.ai/models/ideogram/v4.5/edit",
+    "raw_path": "ai-log/20261006/ideogram45/raw/source-probe/fal-edit.html",
+    "raw_sha256": "d6c30d23b243e91b9f06deccda107499e41ab853e582006410fc788bdbcc4ddf",
+    "transform": "Next Flight JSON decode; exact primary endpoint container; retained model identity/pricing/description and scoped OpenAPI unchanged"
+  },
+  {
+    "fixture": "catalog.json",
+    "source_url": "https://ideogram.ai/api/usage-pricing/catalog",
+    "raw_path": "ai-log/20261006/ideogram45/raw/source-probe/ideogram-catalog.json",
+    "raw_sha256": "1f19457cfe2e1a7ed5999fb771ef16e527cbc984892cd1521ece593c8c5da206",
+    "transform": "JSON subset: two exact billing identifiers and image_generation/ideogram_4_5 public group; snapshot_at literal retained"
+  },
+  {
+    "fixture": "baseline-specs.json",
+    "source": "git efa09e8:scripts/market_collection/sources.py",
+    "transform": "Evaluate source_specs; serialize dataclasses without changes; 97 specs"
+  }
+]

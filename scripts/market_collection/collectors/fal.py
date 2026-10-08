@@ -12,6 +12,7 @@ from html.parser import HTMLParser
 from scripts.market_collection.core import ADAPTER_CONDITION_FIELDS, ADAPTER_PRICE_FIELDS, SourceSpec
 from scripts.market_collection.models import SUNBURST_MODEL, SUNBURST_FAL_MODEL, FLARE_MODEL, FLARE_FAL_MODEL, SEEDANCE_FAL_ID
 from .common import _number, _plain
+from .video_common import flight_payloads
 
 
 def _sun_price(spec: SourceSpec, label: str, amount: str, unit: str, locator: str,
@@ -37,9 +38,100 @@ _SUN_FAL_RATES = re.compile(
 )
 
 
+def _fal_task_reference(body: str, model: str) -> list[dict]:
+    """Keep the optional technical table separate from billable token rates."""
+    path = "/models/" + model
+    group = model.rsplit("/", 2)[1] + "_fal_task_reference"
+    locator = f'contentData[path={path},slot=main,type=markdown]'
+    decoder = json.JSONDecoder()
+    records = []
+    # Read original Flight strings before HTML/plain-text or quote unescaping.
+    for payload in flight_payloads(body):
+        for match in re.finditer(r'"contentData"\s*:\s*', payload):
+            try:
+                record, _ = decoder.raw_decode(payload, match.end())
+            except ValueError:
+                continue
+            if (isinstance(record, dict) and record.get("path") == path
+                    and record.get("slot") == "main" and record.get("type") == "markdown"):
+                records.append(record)
+
+    def unknown(reason: str, status: str = "unknown") -> list[dict]:
+        return [_sun_condition(group, "reference_status", status, locator, status=status),
+                _sun_condition(group, "reference_unknown_reason", reason, locator, status=status)]
+
+    if not records:
+        return unknown("exact main markdown contentData absent or undecodable")
+    if len(records) != 1:
+        return unknown("duplicate exact main markdown contentData; no record selected", "conflicted")
+    record = records[0]
+    try:
+        content = record["content"]
+        if not isinstance(content, str):
+            raise ValueError("reference content is not markdown text")
+        lines = content.splitlines()
+        headers = [i for i, line in enumerate(lines) if re.match(r'^\s*\|\s*Size\s*\|', line)]
+        if len(headers) != 1:
+            raise ValueError("reference Size table absent or duplicate")
+        start = headers[0]
+
+        def columns(line: str) -> list[str]:
+            if not line.strip().startswith("|") or not line.strip().endswith("|"):
+                raise ValueError("reference row lacks pipe boundaries")
+            return [cell.strip() for cell in line.strip()[1:-1].split("|")]
+
+        qualities = columns(lines[start])[1:]
+        if len(qualities) != 5 or any(not q for q in qualities) or len(set(qualities)) != 5:
+            raise ValueError("reference requires five unique nonempty quality columns")
+        separators = columns(lines[start + 1])
+        if len(separators) != 6 or any(not re.fullmatch(r':?-{3,}:?', s) for s in separators):
+            raise ValueError("reference separator width or syntax invalid")
+        cells, sizes = [], []
+        end = start + 2
+        while end < len(lines) and lines[end].strip().startswith("|"):
+            row = columns(lines[end])
+            if len(row) != 6:
+                raise ValueError("reference row width differs from header")
+            size = row[0]
+            dimensions = re.fullmatch(r'(\d+)×(\d+)', size)
+            if not dimensions or size in sizes or any(int(n) <= 0 for n in dimensions.groups()):
+                raise ValueError("reference size invalid or duplicate")
+            sizes.append(size)
+            for quality, raw in zip(qualities, row[1:]):
+                if not re.fullmatch(r'\$\d+(?:\.\d+)?', raw):
+                    raise ValueError("reference cell is not a nonnegative finite dollar decimal")
+                numeric = raw[1:]
+                number = Decimal(numeric)
+                if not number.is_finite() or number < 0:
+                    raise ValueError("reference cell must be finite and nonnegative")
+                cells.append(dict(size=size, width=int(dimensions[1]), height=int(dimensions[2]),
+                                  quality=quality, raw_amount=raw, numeric_text=numeric,
+                                  locator=f'{locator}.content:line={end + 1};size={size};quality={quality};cell={raw}'))
+            end += 1
+        if len(sizes) != 6 or len(cells) != 30:
+            raise ValueError("reference requires a complete six-size thirty-cell matrix")
+        caption = "The following table shows the pricing of ChatGPT Images 2.5 from a technical standpoint."
+        if caption not in lines[:start]:
+            raise ValueError("technical reference caption absent")
+        matrix = dict(currency_symbol="$", qualities=qualities, sizes=sizes, cells=cells)
+    except (KeyError, IndexError, ValueError) as exc:
+        return unknown(f"malformed reference: {exc}")
+    encode = lambda value: json.dumps(value, ensure_ascii=False, separators=(",", ":"))
+    return [
+        _sun_condition(group, "reference_status", "recorded", locator),
+        _sun_condition(group, "reference_model", model, locator),
+        _sun_condition(group, "reference_matrix", encode(matrix), locator),
+        _sun_condition(group, "reference_content_metadata", encode({k: v for k, v in record.items() if k != "content"}), locator),
+        _sun_condition(group, "reference_caption", caption, locator + ".content"),
+        _sun_condition(group, "reference_context", content, locator + ".content"),
+        _sun_condition(group, "reference_billing_scope", "table does not establish billing unit, quantity, token usage or fixed final bill", locator, status="unknown"),
+    ]
+
+
 def _sun_fal_task(spec: SourceSpec, body: str) -> tuple[list[dict], list[dict]]:
     if SUNBURST_FAL_MODEL not in body or "GPT Image 2.5 Sunburst" not in body:
         raise ValueError("fal exact task model absent")
+    reference = _fal_task_reference(body, SUNBURST_FAL_MODEL)
     visible = _plain(body)
     match = _SUN_FAL_RATES.search(visible)
     if not match:
@@ -58,7 +150,7 @@ def _sun_fal_task(spec: SourceSpec, body: str) -> tuple[list[dict], list[dict]]:
     if quality:
         conditions.append(_sun_condition(group, "quality_price_applicability", "unverified by token rate",
                                      f"fal task Pricing | {quality.group(0)}", status="unknown"))
-    return prices, conditions
+    return prices, conditions + reference
 
 
 def _fal_overview(spec: SourceSpec, body: str) -> tuple[list[dict], list[dict]]:
@@ -104,6 +196,7 @@ _FLARE_FAL_RATES = re.compile(
 def _flare_fal_task(spec: SourceSpec, body: str) -> tuple[list[dict], list[dict]]:
     if FLARE_FAL_MODEL not in body or "GPT Image 2.5 Flare" not in body:
         raise ValueError("fal exact Flare task model absent")
+    reference = _fal_task_reference(body, FLARE_FAL_MODEL)
     decoded = body.replace('\\"', '"')
     scoped = re.search(r'"modelUrl":"https://fal.run/' + re.escape(FLARE_FAL_MODEL) +
                        r'".{0,700}?"pricingInfoOverride":"(.*?)","machineType"', decoded, re.S)
@@ -126,7 +219,7 @@ def _flare_fal_task(spec: SourceSpec, body: str) -> tuple[list[dict], list[dict]
     if quality:
         conditions.append(_flare_condition(group, "quality_price_applicability", "unverified by token rate",
                                      f"fal Flare task Pricing | {quality.group(0)}", status="unknown"))
-    return prices, conditions
+    return prices, conditions + reference
 
 
 def _page(body: bytes) -> str:
@@ -201,6 +294,9 @@ def _video_fal(page: str, source_id: str) -> tuple[list[dict], list[dict]]:
 
 
 def parse_source(spec: SourceSpec, body: bytes, source_id: str) -> tuple[list[dict], list[dict]]:
+    if spec.parser == "ideogram_fal":
+        from . import ideogram_fal
+        return ideogram_fal.parse_source(spec, body, source_id)
     if spec.modality == "image":
         decoded = body.decode("utf-8")
         return {"fal_task": _sun_fal_task, "fal_overview": _fal_overview,

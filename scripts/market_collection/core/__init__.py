@@ -8,6 +8,7 @@ import importlib
 import json
 import re
 import socket
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -248,6 +249,19 @@ def _finish(run_dir: Path, manifest: dict, sources: list[dict], prices: list[dic
     return run_dir
 
 
+def _byteplus_docs_source(spec: SourceSpec) -> bool:
+    return (spec.modality == "video" and spec.route == "BytePlus ModelArk"
+            and urllib.parse.urlsplit(spec.url).hostname == "docs.byteplus.com"
+            and (spec.source_key, spec.parser) in {
+                ("byteplus_seedance_25_t2v", "byteplus_pricing"),
+                ("byteplus_seedance_promotion_rules", "byteplus_campaign"),
+            })
+
+
+def _fetch_attempt(source: dict) -> dict:
+    return {key: source[key] for key in ("requested_url", "effective_url", "fetched_at_utc", "http_status", "fetch_status", "raw_path", "raw_sha256", "body_bytes", "error")}
+
+
 def live(output_root: Path | str, disable_source: tuple[str, ...] = (), *, specs: list[SourceSpec] | None = None, adapters: dict[str, object] | None = None, fetcher: Callable[[SourceSpec], tuple[bytes, str, int]] = fetch) -> Path:
     if specs is None or adapters is None:
         specs, adapters = registry()
@@ -266,17 +280,45 @@ def live(output_root: Path | str, disable_source: tuple[str, ...] = (), *, specs
         source_id = f"{run_id}-s{index:03d}"
         source = _record_source(run_id, source_id, spec, _utc_now())
         sources.append(source)
+        fetch_attempts: list[dict] = []
         try:
-            body, effective_url, status = fetcher(spec)
-            if not isinstance(body, bytes) or len(body) > MAX_BODY_BYTES:
-                raise CollectionError("invalid or oversized response body")
-            if _validate_url(effective_url) != _validate_url(spec.url):
-                raise CollectionError("effective URL changed host")
-            source.update(effective_url=effective_url, http_status=str(status), fetch_status="ok" if status == 200 else "http_error", body_bytes=str(len(body)))
+            for attempt in range(1, 4):
+                if attempt > 1:
+                    time.sleep(attempt - 1)
+                    # A failed retry must never select the earlier shell as current.
+                    source.update(_record_source(run_id, source_id, spec, _utc_now()))
+                try:
+                    body, effective_url, status = fetcher(spec)
+                except Exception as exc:
+                    if fetch_attempts:
+                        source.update(fetched_at_utc=_utc_now(), fetch_status="error", error=f"{type(exc).__name__}: {exc}")
+                        fetch_attempts.append(_fetch_attempt(source))
+                    raise
+                if not isinstance(body, bytes) or len(body) > MAX_BODY_BYTES:
+                    raise CollectionError("invalid or oversized response body")
+                if _validate_url(effective_url) != _validate_url(spec.url):
+                    raise CollectionError("effective URL changed host")
+                source.update(effective_url=effective_url, http_status=str(status), fetch_status="ok" if status == 200 else "http_error", body_bytes=str(len(body)))
+                incomplete = False
+                if _byteplus_docs_source(spec):
+                    from scripts.market_collection.collectors.byteplus import is_unrendered_template
+                    source["fetched_at_utc"] = _utc_now()
+                    incomplete = status == 200 and is_unrendered_template(body)
+                if incomplete or fetch_attempts:
+                    attempt_path = f"raw/{source_id}-attempt{attempt:02d}.bin"
+                    _write_bytes(run_dir / attempt_path, body)
+                    source.update(raw_path=attempt_path, raw_sha256=hashlib.sha256(body).hexdigest())
+                    fetch_attempts.append(_fetch_attempt(source))
+                if not incomplete or attempt == 3:
+                    break
             raw_path = f"raw/{source_id}.bin"
             _write_bytes(run_dir / raw_path, body)
             source.update(raw_path=raw_path, raw_sha256=hashlib.sha256(body).hexdigest())
             if status != 200:
+                entry = {"spec": asdict(spec), "source": dict(source)}
+                if fetch_attempts:
+                    entry["fetch_attempts"] = fetch_attempts
+                manifest["sources"].append(entry)
                 continue
             parsed = adapters[spec.modality].parse_source(spec, body, source_id)
             if not isinstance(parsed, tuple) or len(parsed) != 2:
@@ -292,7 +334,10 @@ def live(output_root: Path | str, disable_source: tuple[str, ...] = (), *, specs
                 source["fetch_status"] = "error"
             else:
                 source["parse_status"] = "error"
-        manifest["sources"].append({"spec": asdict(spec), "source": dict(source)})
+        entry = {"spec": asdict(spec), "source": dict(source)}
+        if fetch_attempts:
+            entry["fetch_attempts"] = fetch_attempts
+        manifest["sources"].append(entry)
     return _finish(run_dir, manifest, sources, prices, conditions)
 
 
@@ -320,6 +365,28 @@ def _validated_run(run_dir: Path) -> tuple[dict, list[dict], list[dict], list[di
                 raise CollectionError(f"raw integrity failure: {source['source_id']}")
         elif source["raw_sha256"] or source["body_bytes"]:
             raise CollectionError("missing raw reference")
+    for item in manifest["sources"]:
+        if "fetch_attempts" not in item:
+            continue
+        attempts = item["fetch_attempts"]
+        if not isinstance(attempts, list) or not 1 <= len(attempts) <= 3:
+            raise CollectionError("invalid fetch attempts")
+        for attempt in attempts:
+            if not isinstance(attempt, dict) or set(attempt) != set(_fetch_attempt(item["source"])):
+                raise CollectionError("invalid fetch attempt fields")
+            if not all(isinstance(value, str) for value in attempt.values()):
+                raise CollectionError("invalid fetch attempt values")
+            if attempt["requested_url"] != item["source"]["requested_url"]:
+                raise CollectionError("fetch attempt source URL mismatch")
+            if attempt["raw_path"]:
+                raw_path = (run_dir / attempt["raw_path"]).resolve()
+                if not raw_path.is_relative_to(run_dir.resolve()):
+                    raise CollectionError("retry raw path leaves run directory")
+                body = raw_path.read_bytes()
+                if len(body) != int(attempt["body_bytes"]) or hashlib.sha256(body).hexdigest() != attempt["raw_sha256"]:
+                    raise CollectionError("retry raw integrity failure")
+            elif attempt["raw_sha256"] or attempt["body_bytes"]:
+                raise CollectionError("missing retry raw reference")
     condition_refs = {(row["source_id"], row["condition_set_id"]) for row in conditions}
     for row in prices:
         if row["run_id"] != manifest["run_id"] or row["source_id"] not in ids:
