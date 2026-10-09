@@ -41,10 +41,11 @@ docs/market-collection.md    실행, 데이터 연결, 출처 확장, 검증 경
 docs/image-docs-automation.md  이미지 문서 비교 보고서와 Actions 흐름 안내
 samples/market_collection/   날짜·모드별 보존 snapshot과 CSV 안내 index
 samples/dashboard/v13/       오프라인 웹 시안 입력(내장된 가상·공개 관측 데이터), 렌더링 검토 화면 출력과 안내. 브라우저 외 패키지 의존성 없음
+samples/dashboard/v13-external-clues/  (기범 추가) v13 복사본에 외부 단서 화면·GPT-5.6 Sol 사건 카드를 더한 시안. 입력은 내장된 공개 출처 단서, 출력은 렌더링 검토 화면. 브라우저 외 의존성 없음
 ai-log/                     작업별 계획·개발·QA 기록. collector-gaps-v2 자료는 현재 로컬 전용
 ```
 
-저장된 HTML 시안과 화면 캡처, 작성 당시 확인 로그는 [웹 v13 시안 안내](samples/dashboard/v13/README.md)에서 열 수 있다.
+저장된 HTML 시안과 화면 캡처, 작성 당시 확인 로그는 [웹 v13 시안 안내](samples/dashboard/v13/README.md)에서 열 수 있다. 외부 단서를 추가한 별도 시안은 [v13 + 외부 단서 안내](samples/dashboard/v13-external-clues/README.md)에 있다(아래 2026-10-09 기록 참고).
 
 현재 임시 CLI의 내부 구성은 다음과 같다.
 
@@ -83,3 +84,18 @@ CLI는 Python 표준 라이브러리로 실행한다. 테스트에는 `pytest`�
 UTC cron `17 0,6,12,18 * * *`의 한국 시간 설정은 **03:17·09:17·15:17·21:17**이다. 예약 동작에는 기본 브랜치 반영이 필요하며, GitHub가 시작을 늦추거나 예약을 누락할 수 있다. 작업 브랜치에서의 수정이나 로컬 통과만으로 원격 Actions 갱신 또는 실제 예약 firing을 확인한 것은 아니다. Actions에서 수동 실행과 결과 다운로드도 가능하다.
 
 입력은 공개 출처 registry, 출력은 CSV·manifest·원문과 GPT Image 2.5 두 모델의 비교 보고서가 들어 있는 `market-collection.tar.xz`다. 수집 직후 `image_reviews`가 validated run을 읽어 보고서를 만들며, 별도 API key나 유료 모델 호출은 하지 않는다. Artifact 보관 설정은 90일이다. PR #4의 feature와 `develop` 수동 run 및 artifact 검사는 성공했다. cron firing은 별도 상태라 **NOT_RUN**으로 남는다. 보고서 형식과 판정 범위는 [비교 보고서 자동화](docs/image-docs-automation.md)를 참고한다.
+
+## 2026-10-09 외부 단서 시안 추가 (작성: 기범)
+
+> 이 절과 아래 경로의 파일은 **기범(GitHub `chunbaepak`)** 이 추가했다. 위의 수집기·Actions·v13 원본은 박건 님 작업이며 이번 변경에서 수정하지 않았다.
+
+```text
+samples/dashboard/v13-external-clues/
+├── letsur-dashboard-v13-external-clues.html   v13 복사본 + '외부 단서' 메뉴 + GPT-5.6 Sol 사건 카드
+└── README.md                                  추가한 화면, 원본 대비 바뀐 줄, 데이터 경계, 변경 기록
+```
+
+- 목적: 1차 중간보고 피드백에 맞춰 공급사·주요 채널 밖의 할인·인상 단서를 사건 카드 하나(GPT-5.6 Sol)에 처음부터 끝까지 연결해 보인다. 외부 단서는 "왜 바뀌었나"와 "곧 무엇이 바뀌나"만 보충하고 가격 변화를 확정하지 않는다.
+- 입력: HTML에 내장한 공개 출처 단서(2026-10-06 수동 조사). 렛서 제공 샘플 값은 넣지 않았다.
+- 출력·의존성: 브라우저에서 여는 오프라인 시안. 수집기, `src/`, Actions와 연결되지 않는다. 외부 단서 자동 수집은 아직 구현하지 않았다.
+- 원본 보존: `samples/dashboard/v13/`는 그대로이며 원본 HTML SHA256은 `54a00ecf07937b445290965566853d56e435a91f51d65d43f2ffa729f03f2e02`이다. HTML 안의 추가 코드는 `[외부 단서 추가 · 기범]` 주석으로 표시했다.
