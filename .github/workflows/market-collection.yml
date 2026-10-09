@@ -124,6 +124,19 @@ jobs:
               raise SystemExit(1)
           PY
 
+      # External signals (added by 기범/chunbaepak): leads from public notices, blogs and
+      # trackers, written under data/market_collection/signals/. Kept out of the price
+      # CSVs and allowed to fail without changing the collection result above.
+      - name: Collect external signals
+        if: always()
+        continue-on-error: true
+        run: python3 -B -m scripts.market_collection.signals live --root data/market_collection
+
+      - name: Summarize external signals
+        if: always()
+        continue-on-error: true
+        run: python3 -B -m scripts.market_collection.signals summary --root data/market_collection >> "$GITHUB_STEP_SUMMARY"
+
       - name: Pack collection data
         if: always()
         run: |

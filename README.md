@@ -39,6 +39,7 @@ scripts/market_collection/   임시 CLI 구현. 공개 URL과 replay 원문을 �
 tests/market_collection/     수집기 모듈 회귀 테스트와 저장 HTML/Markdown fixture
 docs/market-collection.md    실행, 데이터 연결, 출처 확장, 검증 경계 안내
 docs/image-docs-automation.md  이미지 문서 비교 보고서와 Actions 흐름 안내
+docs/external-signals.md     (기범 추가) 외부 단서 수집 실행·출력·출처·한계 안내
 samples/market_collection/   날짜·모드별 보존 snapshot과 CSV 안내 index
 samples/dashboard/v13/       오프라인 웹 시안 입력(내장된 가상·공개 관측 데이터), 렌더링 검토 화면 출력과 안내. 브라우저 외 패키지 의존성 없음
 ai-log/                     작업별 계획·개발·QA 기록. collector-gaps-v2 자료는 현재 로컬 전용
@@ -65,7 +66,8 @@ scripts/market_collection/
 ├── adapters/{llm,image,video}/__init__.py
 │                              기존 modality API를 잇는 얇은 facade
 ├── comparison.py              보존 run의 GPT Image 2.5 단가·조건 비교 CLI
-└── core/                      fetch, 원문·CSV 저장, replay/history와 CLI
+├── core/                      fetch, 원문·CSV 저장, replay/history와 CLI
+└── signals/                   (기범 추가) 외부 단서 수집. 아래 2026-10-09 절 참고
 ```
 
 CLI는 Python 표준 라이브러리로 실행한다. 테스트에는 `pytest`가 필요하다. 출처별 parser fixture와 회귀 검사는 `tests/market_collection/` 아래에 있고, Ideogram 4.5와 GPT Image 2.5 API 문서의 원문 fixture·provenance도 이 트리에서 관리한다. 실행·데이터 형식·출처 추가 절차와 보존 범위는 [수집기 안내](docs/market-collection.md)를 참고한다. GPT Image 2.5의 공개 단가 비교 기준은 [비교 규칙](docs/image25-comparison-rules.md), 출처별 조건과 확인하지 못한 항목은 [수집 범위 검토](docs/collector-coverage-review.md)에 정리했다. 날짜·모드별 결과와 CSV 바로가기는 [보존 snapshot index](samples/market_collection/README.md)에서 확인한다.
@@ -73,6 +75,28 @@ CLI는 Python 표준 라이브러리로 실행한다. 테스트에는 `pytest`�
 현재 최종 registry는 125개 출처 사양(LLM 73, 이미지 39, 영상 13), 97개 모델/경로 조합, 25개 정규 모델 ID다. 사양 수는 서로 다른 공개 URL 수가 아니다. 이전 97·103·111·113-source 수치는 해당 단계 기록이다. 2026-10-08 [PR #4](https://github.com/LETSUR-CREAI-IT/LETSUR/pull/4)가 `develop`에 merge됐고, feature 및 기본 브랜치 manual Actions run과 artifact 검사가 성공했다. 최종 registry 수집과 두 모델 비교 보고서의 확인 내용은 [운영 기록](docs/automation-health-2026-10-08.md), 규칙은 [비교 보고서 자동화](docs/image-docs-automation.md)에 정리했다. 예약 cron firing은 **NOT_RUN**이며 UI 연결·유료 생성·계정 적용·실제 billing은 확인하지 않았다. 수집기 경로는 임시 도구이며 현재 `src/` 구조에 통합하기로 한 결정이 아니다.
 
 문서에서 인용하는 `ai-log/` 경로는 별도 표기가 없는 한 로컬 전용 작업 증거를 가리킨다. 이 파일들이 공개 저장소 clone이나 GitHub artifact에 포함된다고 보장하지 않는다.
+
+## 2026-10-09 외부 단서 수집 추가 (작성: 기범)
+
+> 이 절과 아래 경로는 **기범(GitHub `chunbaepak`)** 이 추가했다. 박건 님의 수집기 본체(`core/`, `sources.py`, `collectors/`, `adapters/`, `comparison.py`, `image_reviews.py`)와 기존 테스트는 수정하지 않았다. 워크플로에는 외부 단서 단계 두 개만 덧붙였다.
+
+```text
+scripts/market_collection/signals/
+├── __init__.py      live·replay·history·summary. 출처를 받아 원문을 보존하고 signals.csv를 씀
+├── __main__.py      CLI (python3 -B -m scripts.market_collection.signals ...)
+├── registry.py      외부 단서 출처 목록: 채널·공급사 공지, 개발자 블로그, 가격 추적 사이트, OpenRouter endpoints API
+├── parsers.py       Atom·RSS 피드와 OpenRouter endpoints JSON 해석
+└── matching.py      모델 별칭(models.py·sources.py에서 생성), 할인·인상·종료 표현, 원문 인용과 날짜 표현 추출
+tests/market_collection/signals/   단위·회귀 테스트와 합성 fixture
+docs/external-signals.md           실행 방법, 출력 칸, 출처, 한계
+```
+
+- 목적: 가격표 밖의 공지·블로그·가격 추적 사이트에서 "왜 바뀌었나"와 "곧 무엇이 바뀌나"의 단서를 자동으로 모은다. 외부 단서는 가격 변화를 확정하지 않는다.
+- 입력: 공개 피드·API(로그인 없음). 출처는 `signals/registry.py`의 고정 목록이다.
+- 출력: `data/market_collection/signals/runs/<run_id>/`의 `manifest.json`, `signal_sources.csv`, `signals.csv`, `raw/`. **가격 CSV(`runs/`)와 이미지 보고서에는 쓰지 않는다.** 여러 회차는 `history`로 합친다.
+- 의존: 수집기 `core`의 URL 검사·redirect 규칙과 CSV·JSON 저장 함수, `models.py`·`sources.py`의 모델 이름. 본문 상한은 Vercel 전체 피드(약 3.7MB) 때문에 16MiB로 따로 둔다.
+- Actions: `Collect external signals`, `Summarize external signals` 단계를 가격 수집 요약 뒤에 추가했다. 두 단계는 `continue-on-error`라 외부 출처 실패가 기존 수집 판정을 바꾸지 않는다. 결과는 같은 artifact에 들어간다.
+- 검증: 단서 모듈 테스트 12개 통과. 기존 테스트는 변경 전후 결과가 같다(로컬 Python 3.9 기준. 3.10 이상 문법을 쓰는 기존 이미지 테스트 등 4건은 변경 전에도 3.9에서 실패). 2026-10-09 실제 출처 22곳 live 실행 성공, 단서 47건.
 
 ## 하루 네 번 자동 수집 설정
 
