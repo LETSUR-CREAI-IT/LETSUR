@@ -79,9 +79,9 @@ CLI는 `runs/` 아래 모든 회차를 먼저 검증하고, 새 결과를 `<root
 
 10월 5일 live CSV에는 당시 출력된 Vercel basis label이 보존되어 있다. 그 원본에는 16개 가격 행의 condition reference와 7개 condition row에 기존 label이 있다. 확장 replay는 supplier-layout 변경 전 교정된 parser를 사용해 83개 출처·348개 가격 관측·731개 조건을 출력하고, 저장된 원문과 원래 fetch/observation 시각을 유지한다. 이 replay는 또 다른 날짜의 관측이나 현재 live 가격 확인이 아니다. 화면 연결을 시작할 때는 [expanded replay CSV](../samples/market_collection/2026-10-05-expanded-replay/README.md)를 사용한다. 상세 snapshot과 CSV 바로가기는 [index](../samples/market_collection/README.md)를 참고한다.
 
-## GitHub Actions에서 하루 네 번 수집
+## GitHub Actions에서 하루 한 번 수집
 
-[Market collection workflow](../.github/workflows/market-collection.yml)는 매일 한국 시간 **03:17·09:17·15:17·21:17**에 전체 수집과 GPT Image 2.5 비교 보고서 생성을 실행하도록 설정되어 있다. UTC cron은 `17 0,6,12,18 * * *`이다. GitHub 사정에 따라 시작이 늦어지거나 예약 실행이 누락될 수 있으므로 시각과 회차는 Actions 기록으로 확인한다.
+[Market collection workflow](../.github/workflows/market-collection.yml)는 매일 한국 시간 **09:17**에 전체 수집과 GPT Image 2.5 비교 보고서 생성을 실행하도록 설정되어 있다. UTC cron은 `17 0 * * *`이다. GitHub 사정에 따라 시작이 늦어지거나 예약 실행이 누락될 수 있으므로 시각과 회차는 Actions 기록으로 확인한다. 실제 예약 firing은 아직 확인하지 않았다. 변경 경위는 [수집 일정 변경 기록](collection-schedule-changelog.md)에 있다.
 
 97개 사양 baseline과 Actions workflow는 [PR #1](https://github.com/LETSUR-CREAI-IT/LETSUR/pull/1)로 `develop`에 병합됐다. 과거 run의 97 source/415 price/1,192 condition 및 PR #2의 113 source/454 price/1,905 condition 원격 artifact 검증은 각 시점의 기록이다. PR #4에서 현재 125-source registry와 비교 보고서가 merge됐으며 feature/`develop` manual run과 artifact 검사가 성공했다. 최신 receipt는 아래에 정리한다.
 
@@ -128,7 +128,9 @@ BytePlus ModelArk의 두 등록 출처(`byteplus_seedance_25_t2v`, `byteplus_see
 
 테스트에는 이전 GitHub artifact에서 보존한 shell과 정상 문서를 이용한 오프라인 recovery 시나리오가 포함된다. 독립 검증은 성공 복구, 재시도 소진, 재시도 중 네트워크 오류, 이전 회차 offline replay 및 비-200/다른 공급자의 재시도 제외를 확인했다. 실제 공개 GET은 BytePlus 두 문서가 모두 첫 응답부터 완전한 본문을 반환해 재시도 recovery를 관찰하지 못했다. 따라서 로컬 회귀는 분기 동작을 확인하지만 GitHub runner에서 복구를 입증하지 않는다.
 
-운영자는 변경을 기본 브랜치에 반영한 뒤 **Actions → Market collection → Run workflow**에서 해당 기본 브랜치를 골라 수동 실행하고, Summary의 source/price/condition 및 실패 키, 업로드된 artifact를 확인한다. 2026-10-08 변경의 PR branch 수동 실행과 merge 후 `develop` 수동 실행 및 두 artifact 검사는 위 run 링크에서 통과했다. 이후 cron 예약 firing은 별도로 Actions 기록에서 확인해야 한다. workflow의 cron 설정은 UTC `17 0,6,12,18 * * *`(한국 시간 설정 03:17·09:17·15:17·21:17)이며, 실행 시각은 지연되거나 누락될 수 있다. 이 변경으로 추가된 예약 실행은 아직 **NOT_RUN**이다.
+운영자는 변경을 기본 브랜치에 반영한 뒤 **Actions → Market collection → Run workflow**에서 해당 기본 브랜치를 골라 수동 실행하고, Summary의 source/price/condition 및 실패 키, 업로드된 artifact를 확인한다. 2026-10-08 변경의 PR branch 수동 실행과 merge 후 `develop` 수동 실행 및 두 artifact 검사는 위 run 링크에서 통과했다. 이후 cron 예약 firing은 별도로 Actions 기록에서 확인해야 한다. 2026-10-08 당시 workflow 설정은 UTC `17 0,6,12,18 * * *`(한국 시간 설정 03:17·09:17·15:17·21:17)였고, 그 변경으로 추가된 예약 실행은 당시 **NOT_RUN**이었다.
+
+현재 workflow 설정(2026-10-09 변경)은 UTC `17 0 * * *`이며 한국 시간으로 **매일 09:17**이다. GitHub가 예약 시작을 늦추거나 누락할 수 있고, 실제 예약 firing은 아직 확인하지 않았다. Actions에서 수동 실행도 가능하다. [수집 일정 변경 기록](collection-schedule-changelog.md)을 참고한다.
 
 이 날짜의 수집·복구 QA 상세 파일은 `ai-log/20261008/automation-release-qa/`와 `ai-log/20261008/automation-health-repair/`에 있는 **로컬 전용 작업 증거**다. 이 경로는 공개 저장소 clone에 포함된 파일이나 GitHub artifact를 가리키지 않는다. 과거 QA와 artifact 검사는 [automation health note](automation-health-2026-10-08.md)에 정리했다.
 

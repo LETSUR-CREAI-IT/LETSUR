@@ -100,13 +100,13 @@ docs/external-signals.md           실행 방법, 출력 칸, 출처, 한계
 - Actions: `Collect external signals`, `Summarize external signals` 단계를 가격 수집 요약 뒤에 추가했다. 두 단계는 `continue-on-error`라 외부 출처 실패가 기존 수집 판정을 바꾸지 않는다. 결과는 같은 artifact에 들어간다.
 - 검증: 단서 모듈 테스트 12개 통과. 기존 테스트는 변경 전후 결과가 같다(로컬 Python 3.9 기준. 3.10 이상 문법을 쓰는 기존 이미지 테스트 등 4건은 변경 전에도 3.9에서 실패). 2026-10-09 실제 출처 22곳 live 실행 성공, 단서 47건.
 
-## 하루 네 번 자동 수집 설정
+## 하루 한 번 자동 수집 설정
 
 ```text
 .github/workflows/market-collection.yml   GitHub Actions 예약·수동 실행. 수집·이미지 비교 보고서를 XZ artifact로 보관
 ```
 
-UTC cron `17 0,6,12,18 * * *`의 한국 시간 설정은 **03:17·09:17·15:17·21:17**이다. 예약 동작에는 기본 브랜치 반영이 필요하며, GitHub가 시작을 늦추거나 예약을 누락할 수 있다. 작업 브랜치에서의 수정이나 로컬 통과만으로 원격 Actions 갱신 또는 실제 예약 firing을 확인한 것은 아니다. Actions에서 수동 실행과 결과 다운로드도 가능하다.
+현재 workflow 설정은 UTC `17 0 * * *`이며 한국 시간으로 **매일 09:17**이다. 예약 동작에는 기본 브랜치 반영이 필요하며, GitHub가 시작을 늦추거나 예약을 누락할 수 있다. 이 변경의 실제 예약 firing은 아직 확인하지 않았다. Actions에서 수동 실행과 결과 다운로드도 가능하다. 2026-10-09 변경 내용은 [수집 일정 변경 기록](docs/collection-schedule-changelog.md)에 있다.
 
 입력은 공개 출처 registry, 출력은 CSV·manifest·원문과 GPT Image 2.5 두 모델의 비교 보고서가 들어 있는 `market-collection.tar.xz`다. 수집 직후 `image_reviews`가 validated run을 읽어 보고서를 만들며, 별도 API key나 유료 모델 호출은 하지 않는다. Artifact 보관 설정은 90일이다. PR #4의 feature와 `develop` 수동 run 및 artifact 검사는 성공했다. cron firing은 별도 상태라 **NOT_RUN**으로 남는다. 보고서 형식과 판정 범위는 [비교 보고서 자동화](docs/image-docs-automation.md)를 참고한다.
 
