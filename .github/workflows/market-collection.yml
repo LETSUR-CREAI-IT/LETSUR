@@ -2,7 +2,7 @@ name: Market collection
 
 on:
   schedule:
-    - cron: '17 0,6,12,18 * * *'
+    - cron: '17 0 * * *'
   workflow_dispatch:
 
 permissions:
