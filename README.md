@@ -43,10 +43,11 @@ docs/external-signals.md     (기범 추가) 외부 단서 수집 실행·출력
 samples/market_collection/   날짜·모드별 보존 snapshot과 CSV 안내 index
 samples/dashboard/v13/       오프라인 웹 시안 입력(내장된 가상·공개 관측 데이터), 렌더링 검토 화면 출력과 안내. 브라우저 외 패키지 의존성 없음
 samples/dashboard/v13-external-clues/  (기범 추가) v13 복사본에 외부 단서 화면·GPT-5.6 Sol 사건 카드를 더한 시안. 입력은 내장된 공개 출처 단서, 출력은 렌더링 검토 화면. 브라우저 외 의존성 없음
+samples/dashboard/v14/       (기범 추가) 담당자 중심으로 다시 배치한 시안(2×2 · 일정 캘린더 · 단가 변동 · D-day 목록 · 한 문장 상세). 입력은 내장된 v13 시연 데이터와 공개 출처 사례, 출력은 렌더링 검토 화면. 브라우저 외 의존성 없음
 ai-log/                     작업별 계획·개발·QA 기록. collector-gaps-v2 자료는 현재 로컬 전용
 ```
 
-저장된 HTML 시안과 화면 캡처, 작성 당시 확인 로그는 [웹 v13 시안 안내](samples/dashboard/v13/README.md)에서 열 수 있다. 외부 단서를 추가한 별도 시안은 [v13 + 외부 단서 안내](samples/dashboard/v13-external-clues/README.md)에 있다(아래 2026-10-09 기록 참고).
+저장된 HTML 시안과 화면 캡처, 작성 당시 확인 로그는 [웹 v13 시안 안내](samples/dashboard/v13/README.md)에서 열 수 있다. 외부 단서를 추가한 별도 시안은 [v13 + 외부 단서 안내](samples/dashboard/v13-external-clues/README.md)에 있다(아래 2026-10-09 기록 참고). 담당자 중심으로 다시 배치한 v14 시안은 [웹 v14 시안 안내](samples/dashboard/v14/README.md)에 있다(작성: 기범).
 
 현재 임시 CLI의 내부 구성은 다음과 같다.
 
@@ -123,3 +124,11 @@ samples/dashboard/v13-external-clues/
 - 입력: HTML에 내장한 공개 출처 단서(2026-10-06 수동 조사). 렛서 제공 샘플 값은 넣지 않았다.
 - 출력·의존성: 브라우저에서 여는 오프라인 시안. 수집기, `src/`, Actions와 연결되지 않는다. 외부 단서 자동 수집은 아직 구현하지 않았다.
 - 원본 보존: `samples/dashboard/v13/`는 그대로이며 원본 HTML SHA256은 `54a00ecf07937b445290965566853d56e435a91f51d65d43f2ffa729f03f2e02`이다. HTML 안의 추가 코드는 `[외부 단서 추가 · 기범]` 주석으로 표시했다.
+
+## 2026-10-09 웹 v14 시안 추가 (작성: 기범)
+
+> 이 절과 `samples/dashboard/v14/`는 **기범(GitHub `chunbaepak`)** 이 추가했다. v13(박건)과 v13-external-clues 폴더는 수정하지 않았다.
+
+- 목적: 담당자가 "무엇을, 언제까지, 왜" 처리할지 먼저 보이게 화면을 다시 배치했다. 2×2(영향도 × 신뢰도)는 유지하고 일정 캘린더, 단가 변동, 모델별 현황 차트를 더했다. 상세는 핵심 한 문장과 다음 할 일을 맨 위에 둔다.
+- 입력: v13 시연 데이터 14건과 GPT-5.6 Sol 실제 사례 3건(공개 출처 값만). 출력: 브라우저에서 여는 오프라인 시안. 수집기·`signals`·Actions와 연결되지 않는다.
+- 자세한 구성과 데이터 경계는 [웹 v14 시안 안내](samples/dashboard/v14/README.md)에 있다.
