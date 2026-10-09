@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xml:lang="en-us" xmlns="http://www.w3.org/2005/Atom"><title>Synthetic developer blog</title><id>https://example.org/blog</id><updated>2026-09-22T09:00:00+00:00</updated>
+<entry><title>Notes on GPT-5.6 pricing</title><link href="https://example.org/blog/2026/Sep/22/notes/" rel="alternate"/><published>2026-09-22T09:00:00+00:00</published><updated>2026-09-22T09:00:00+00:00</updated><id>https://example.org/blog/2026/Sep/22/notes/</id><summary type="html">&lt;p&gt;GPT-5.6 has a scheduled 25% price increase for November.&lt;/p&gt;</summary></entry>
+</feed>

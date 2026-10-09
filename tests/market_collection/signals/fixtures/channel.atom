@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>Synthetic channel changelog</title>
+  <id>https://example.org/atom</id>
+  <updated>2026-08-21T00:00:00.000Z</updated>
+  <entry>
+    <id>https://example.org/changelog/sol-discount</id>
+    <title>GPT-5.6 Sol is 50% off on AI Gateway for the next month</title>
+    <link href="https://example.org/changelog/sol-discount"/>
+    <updated>2026-08-17T00:00:00.000Z</updated>
+    <content type="xhtml"><div xmlns="http://www.w3.org/1999/xhtml"><p>GPT-5.6 Sol , the flagship of the GPT-5.6 series, is 50% off on AI Gateway through September 18.</p><p>BYOK requests bill at your own rate.</p></div></content>
+  </entry>
+  <entry>
+    <id>https://example.org/changelog/sol-lower</id>
+    <title>GPT-5.6 Sol is now 50% off a lower price</title>
+    <link href="https://example.org/changelog/sol-lower"/>
+    <updated>2026-08-21T00:00:00.000Z</updated>
+    <content type="html">&lt;p&gt;OpenAI lowered list pricing for GPT-5.6 Sol.&lt;/p&gt;</content>
+  </entry>
+  <entry>
+    <id>https://example.org/changelog/old</id>
+    <title>Unrelated deployment update</title>
+    <link href="https://example.org/changelog/old"/>
+    <updated>2016-10-25T13:00:00.000Z</updated>
+    <content type="html">&lt;p&gt;Faster builds.&lt;/p&gt;</content>
+  </entry>
+</feed>

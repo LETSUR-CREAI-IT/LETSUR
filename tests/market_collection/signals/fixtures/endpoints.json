@@ -1,0 +1,4 @@
+{"data": {"id": "openai/gpt-5.6-sol", "name": "OpenAI: GPT-5.6 Sol", "endpoints": [
+  {"provider_name": "OpenAI", "tag": "openai/flex", "pricing": {"prompt": "0.000001", "completion": "0.000005", "discount": 0.5}},
+  {"provider_name": "OpenAI", "tag": "openai", "pricing": {"prompt": "0.000002", "completion": "0.00001", "discount": 0.5}},
+  {"provider_name": "Azure", "tag": "azure", "pricing": {"prompt": "0.000004", "completion": "0.00002", "discount": 0}}]}}
