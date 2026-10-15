@@ -82,7 +82,12 @@ def workflow_script(name):
     # Run the actual step body; assertions concern artifacts/status, not YAML spelling.
     workflow=Path('.github/workflows/market-collection.yml').read_text()
     step=workflow.split('      - name: '+name+'\n',1)[1].split('      - name:',1)[0]
-    return '\n'.join(line[10:] for line in step.split('        run: |\n',1)[1].splitlines())+'\n'
+    lines = []
+    for line in step.split('        run: |\n',1)[1].splitlines():
+        if line.strip() and not line.startswith(' ' * 10):
+            break
+        lines.append(line[10:])
+    return '\n'.join(lines)+'\n'
 
 
 def workflow_summary(tmp_path):

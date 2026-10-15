@@ -1,0 +1,62 @@
+[
+  {
+    "fixture": "last-success-gpt_6_astra.html",
+    "source": "/tmp/letsur-health-20261015/last-success-bedrock_gpt_6_astra.html",
+    "source_sha256": "9190206f5ebc9376033bccfba1b7aaeda5402b6ef3549159f9f68978b40c4367",
+    "extraction": "Semantic HTML projection of exact h1, Pricing prose, Standard Commercial table headings/cells, and Programmatic Access table cells via existing _Page; HTML attributes and other sections omitted."
+  },
+  {
+    "fixture": "latest-gpt_6_astra.html",
+    "source": "/tmp/letsur-health-20261015/latest-bedrock_gpt_6_astra.html",
+    "source_sha256": "5534164478e2128a3f8686f19e3476b28d5d21a446b8ca5665a91e6fa7d51a9c",
+    "extraction": "Semantic HTML projection of exact h1, Pricing prose, Standard Commercial table headings/cells, and Programmatic Access table cells via existing _Page; HTML attributes and other sections omitted."
+  },
+  {
+    "fixture": "last-success-gpt_5_6_sol.html",
+    "source": "/tmp/letsur-health-20261015/last-success-bedrock_gpt_5_6_sol.html",
+    "source_sha256": "cacb932614240321551337e155c9e4656597b5352fde4139a48bd812a63cebdf",
+    "extraction": "Semantic HTML projection of exact h1, Pricing prose, Standard Commercial table headings/cells, and Programmatic Access table cells via existing _Page; HTML attributes and other sections omitted."
+  },
+  {
+    "fixture": "latest-gpt_5_6_sol.html",
+    "source": "/tmp/letsur-health-20261015/latest-bedrock_gpt_5_6_sol.html",
+    "source_sha256": "78f005ee71651bb9d7a98632a2b9f524bb5b98716e097e46e8309895b08a834c",
+    "extraction": "Semantic HTML projection of exact h1, Pricing prose, Standard Commercial table headings/cells, and Programmatic Access table cells via existing _Page; HTML attributes and other sections omitted."
+  },
+  {
+    "fixture": "last-success-gpt_5_6_terra.html",
+    "source": "/tmp/letsur-health-20261015/last-success-bedrock_gpt_5_6_terra.html",
+    "source_sha256": "3ccbe808564072d8d52193dba8cf7562f4de2fb8e5010c75d9fcb2684b7758ea",
+    "extraction": "Semantic HTML projection of exact h1, Pricing prose, Standard Commercial table headings/cells, and Programmatic Access table cells via existing _Page; HTML attributes and other sections omitted."
+  },
+  {
+    "fixture": "latest-gpt_5_6_terra.html",
+    "source": "/tmp/letsur-health-20261015/latest-bedrock_gpt_5_6_terra.html",
+    "source_sha256": "c7c7c2fdf0006433c2a4a64ad7bd75eb853df184e81d76e1df3d08d5776eb144",
+    "extraction": "Semantic HTML projection of exact h1, Pricing prose, Standard Commercial table headings/cells, and Programmatic Access table cells via existing _Page; HTML attributes and other sections omitted."
+  },
+  {
+    "fixture": "last-success-gpt_5_6_luna.html",
+    "source": "/tmp/letsur-health-20261015/last-success-bedrock_gpt_5_6_luna.html",
+    "source_sha256": "56d0de8e2d91eae659b0390865b1a14478804365e92d4c34b16f51a1b4b4778d",
+    "extraction": "Semantic HTML projection of exact h1, Pricing prose, Standard Commercial table headings/cells, and Programmatic Access table cells via existing _Page; HTML attributes and other sections omitted."
+  },
+  {
+    "fixture": "latest-gpt_5_6_luna.html",
+    "source": "/tmp/letsur-health-20261015/latest-bedrock_gpt_5_6_luna.html",
+    "source_sha256": "1ede61f2557ef529891e29c9b6ae919a09e6d439f7b35086f8ec32f10132a132",
+    "extraction": "Semantic HTML projection of exact h1, Pricing prose, Standard Commercial table headings/cells, and Programmatic Access table cells via existing _Page; HTML attributes and other sections omitted."
+  },
+  {
+    "fixture": "last-success-gpt_6_1_sol.html",
+    "source": "/tmp/letsur-health-20261015/last-success-bedrock_gpt_6_1_sol.html",
+    "source_sha256": "a95ef91cfc27b99a56bdf2500f0fe276aa32771e16468521686006067544a6b4",
+    "extraction": "Semantic HTML projection of exact h1, Pricing prose, Standard Commercial table headings/cells, and Programmatic Access table cells via existing _Page; HTML attributes and other sections omitted."
+  },
+  {
+    "fixture": "latest-gpt_6_1_sol.html",
+    "source": "/tmp/letsur-health-20261015/latest-bedrock_gpt_6_1_sol.html",
+    "source_sha256": "6a18439da56fb56cef7e66a60f4d800d9f9312f421dddcb79eee6d9c7d594bed",
+    "extraction": "Semantic HTML projection of exact h1, Pricing prose, Standard Commercial table headings/cells, and Programmatic Access table cells via existing _Page; HTML attributes and other sections omitted."
+  }
+]

@@ -189,6 +189,32 @@ def _vercel(spec, root, add):
     add('exact_model_sdk_contract','UI choices do not establish SDK/API parameter contract','article#overview > visible select options','unknown')
 
 
+def is_unrendered_fal_guide(body: bytes) -> bool:
+    """Recognize the retained Next.js shell without exposing hidden content."""
+    root = _HTML(body.decode('utf-8')).root
+    articles = []
+
+    def visit(node, streamed=False):
+        if not isinstance(node, _Node) or node.tag in {'script', 'style', 'template'}:
+            return
+        streamed = streamed or (node.tag == 'div' and 'hidden' in node.attrs
+                                and re.fullmatch(r'S:\d+', node.attrs.get('id', '')) is not None)
+        if node.tag == 'article':
+            articles.append((node, streamed))
+        for child in node.children:
+            visit(child, streamed)
+
+    visit(root)
+    if len(articles) != 1 or list(root.nodes('article')):
+        return False
+    article, streamed = articles[0]
+    children = [child for child in article.children if isinstance(child, _Node) or child.strip()]
+    return (streamed and 'learn-article-prose' in article.attrs.get('class', '').split()
+            and len(children) == 1 and isinstance(children[0], _Node)
+            and children[0].tag == 'template' and not children[0].children
+            and re.fullmatch(r'P:\d+', children[0].attrs.get('id', '')) is not None)
+
+
 def _fal(spec, root, add):
     article = _one(root.nodes('article'), 'fal learn article')
     text = _section(article,'How much does GPT Image 2.5 cost on fal?')

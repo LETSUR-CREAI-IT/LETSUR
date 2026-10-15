@@ -1,6 +1,7 @@
 """Cloud cards are evidence-scoped; these fixtures exercise semantic cells."""
 
 import unittest
+from pathlib import Path
 
 from scripts.market_collection.adapters import llm
 from scripts.market_collection.sources import cloud_source_specs
@@ -76,14 +77,53 @@ class CloudAdapterTests(unittest.TestCase):
 
     def test_aws_changed_header_unit_and_identity_fail_closed(self):
         valid = aws_openai_card()
-        for bad in (valid.replace("Input — 30m cache write".encode(), b"Input - maybe cache write"),
-                    valid.replace(b"USD per 1 million tokens", b"USD per 1 thousand tokens"),
+        with self.assertRaisesRegex(ValueError, "scoped Standard Commercial pricing"):
+            self.parse("gpt-6-astra", "aws_bedrock", valid.replace("Input — 30m cache write".encode(), b"Input - maybe cache write"))
+        for bad in (valid.replace(b"USD per 1 million tokens", b"USD per 1 thousand tokens"),
                     valid.replace(b"<h1>GPT-6 Astra</h1>", b"<h1>GPT-6 Sol</h1>"),
                     valid.replace(b"openai.gpt-6-astra", b"openai.gpt-6-sol")):
             with self.subTest(body=bad[:80]):
                 self.assertEqual(self.parse("gpt-6-astra", "aws_bedrock", bad), ([], []))
         missing_cell = valid.replace(b"<td>$13.75</td>", b"<td>Contact sales</td>")
         self.assertEqual(len(self.parse("gpt-6-astra", "aws_bedrock", missing_cell)[0]), 16)
+
+    def test_aws_retained_30_minute_header_preserves_rates_units_and_conditions(self):
+        fixtures = Path(__file__).parent / "fixtures" / "bedrock"
+        def facts(rows):
+            return [{k: v for k, v in row.items() if k != "locator"} for row in rows]
+        for model in ("gpt-6-astra", "gpt-5.6-sol", "gpt-5.6-terra", "gpt-5.6-luna"):
+            with self.subTest(model=model):
+                filename = model.replace("-", "_").replace(".", "_")
+                old = self.parse(model, "aws_bedrock", (fixtures / f"last-success-{filename}.html").read_bytes())
+                latest = self.parse(model, "aws_bedrock", (fixtures / f"latest-{filename}.html").read_bytes())
+                self.assertEqual(len(old[0]), 16)
+                self.assertEqual(facts(old[0]), facts(latest[0]))
+                self.assertEqual(facts(old[1]), facts(latest[1]))
+                self.assertEqual({p["unit"] for p in latest[0]}, {"1M tokens"})
+                self.assertEqual({c["value"] for c in latest[1] if c["condition_key"] == "cache_write_ttl"}, {"30m"})
+
+    def test_aws_retained_gpt_6_1_exact_inference_option_aliases(self):
+        fixtures = Path(__file__).parent / "fixtures" / "bedrock"
+        expected = {"Regional (bedrock-mantle in US East (N. Virginia))",
+                    "US CRIS (bedrock-runtime)", "Global CRIS (bedrock-runtime)"}
+        parsed = []
+        for run in ("last-success", "latest"):
+            body = (fixtures / f"{run}-gpt_6_1_sol.html").read_bytes()
+            prices, conditions = self.parse("gpt-6.1-sol", "aws_bedrock", body)
+            self.assertEqual(len(prices), 24)
+            self.assertEqual({p["unit"] for p in prices}, {"1M tokens"})
+            self.assertEqual({c["value"] for c in conditions if c["condition_key"] == "inference_option"}, expected)
+            parsed.append((prices, conditions))
+        self.assertEqual(parsed[0], parsed[1])
+        for option in expected:
+            body = body.replace(option.encode(), b"Unrecognized region or endpoint")
+        with self.assertRaisesRegex(ValueError, "scoped Standard Commercial pricing"):
+            self.parse("gpt-6.1-sol", "aws_bedrock", body)
+
+    def test_aws_scoped_tables_without_any_parseable_price_raise(self):
+        body = aws_openai_card().replace(b"<td>$", b"<td>Contact sales ")
+        with self.assertRaisesRegex(ValueError, "scoped Standard Commercial pricing"):
+            self.parse("gpt-6-astra", "aws_bedrock", body)
 
     def test_aws_anthropic_unknown_and_haiku_version(self):
         prices, conditions = self.parse("claude-opus-5-5", "aws_bedrock", aws_anthropic_card())

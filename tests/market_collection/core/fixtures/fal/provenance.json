@@ -1,0 +1,68 @@
+[
+  {
+    "fixture": "last-success-standard.json",
+    "source": "/tmp/letsur-health-20261015/last-success-fal_veo_3_1_standard.html",
+    "source_sha256": "99f19c07340875e97cd0c6095a0fcd17689582182bd695539dcc5c8568eed8f5",
+    "extraction": "Exact primary endpointId/modelData.endpointId and five model fields from decoded Flight object; all values unchanged."
+  },
+  {
+    "fixture": "last-success-fast.json",
+    "source": "/tmp/letsur-health-20261015/last-success-fal_veo_3_1_fast.html",
+    "source_sha256": "408451a9acae4999e05c481ea2caaa183f212889b6bddd831c7c35908b437a1b",
+    "extraction": "Exact primary endpointId/modelData.endpointId and five model fields from decoded Flight object; all values unchanged."
+  },
+  {
+    "fixture": "last-success-lite.json",
+    "source": "/tmp/letsur-health-20261015/last-success-fal_veo_3_1_lite.html",
+    "source_sha256": "054611b8619826c1908dc5a4daee8def652355619ecc338be31160b74fd184d3",
+    "extraction": "Exact primary endpointId/modelData.endpointId and five model fields from decoded Flight object; all values unchanged."
+  },
+  {
+    "fixture": "previous-failure-standard.json",
+    "source": "/tmp/letsur-health-20261015/previous-failure-fal_veo_3_1_standard.html",
+    "source_sha256": "9d045c0159e242a689313f5d204b07a0f2509eb6dadbceae2ac815c2ff44f504",
+    "extraction": "Exact primary endpointId/modelData.endpointId and five model fields from decoded Flight object; all values unchanged."
+  },
+  {
+    "fixture": "previous-failure-fast.json",
+    "source": "/tmp/letsur-health-20261015/previous-failure-fal_veo_3_1_fast.html",
+    "source_sha256": "9d85565c2e8ec66429e6aee0f7f4714040c2027a8fe1c0b5857c2b7478783c05",
+    "extraction": "Exact primary endpointId/modelData.endpointId and five model fields from decoded Flight object; all values unchanged."
+  },
+  {
+    "fixture": "previous-failure-lite.json",
+    "source": "/tmp/letsur-health-20261015/previous-failure-fal_veo_3_1_lite.html",
+    "source_sha256": "543bd191cee6c547a110a4fd269ecb85e38cf69d4927b026d8e416f2cec416de",
+    "extraction": "Exact primary endpointId/modelData.endpointId and five model fields from decoded Flight object; all values unchanged."
+  },
+  {
+    "fixture": "latest-standard.json",
+    "source": "/tmp/letsur-health-20261015/latest-fal_veo_3_1_standard.html",
+    "source_sha256": "3c73ca189be4685a6480db9483428fe0e93bf5b81c2f3ae99f081458a703287e",
+    "extraction": "Exact primary endpointId/modelData.endpointId and five model fields from decoded Flight object; all values unchanged."
+  },
+  {
+    "fixture": "latest-fast.json",
+    "source": "/tmp/letsur-health-20261015/latest-fal_veo_3_1_fast.html",
+    "source_sha256": "843442cb449c47fa99b9334a2cdbda1bb759b5ffa1645cf0752ab3244d196fb5",
+    "extraction": "Exact primary endpointId/modelData.endpointId and five model fields from decoded Flight object; all values unchanged."
+  },
+  {
+    "fixture": "latest-lite.json",
+    "source": "/tmp/letsur-health-20261015/latest-fal_veo_3_1_lite.html",
+    "source_sha256": "e95497c026b5663976a1df3260cec1884038b5e0e243e54d973c0e99d6b78847",
+    "extraction": "Exact primary endpointId/modelData.endpointId and five model fields from decoded Flight object; all values unchanged."
+  },
+  {
+    "fixture": "previous-failure-guide.html",
+    "source": "/tmp/letsur-health-20261015/previous-failure-fal-guide.html",
+    "source_sha256": "e1bc69a63d7050ff0713627eda682f4c993d51d50b213b62b5691e5a0886e44a",
+    "extraction": "Exact article HTML; failed article retains its exact hidden Next.js S:2 ancestor opening tag. Other page content omitted."
+  },
+  {
+    "fixture": "latest-guide.html",
+    "source": "/tmp/letsur-health-20261015/latest-fal-guide.html",
+    "source_sha256": "2e40f71e25d4521a71eef9ab951e61d1032c024ad0f2c78a2d7d06f90afbb306",
+    "extraction": "Exact article opening tag and exact pricing heading plus its first supplier-claim paragraph; other visible article sections omitted."
+  }
+]
