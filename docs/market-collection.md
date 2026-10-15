@@ -92,7 +92,7 @@ CLI는 `runs/` 아래 모든 회차를 먼저 검증하고, 새 결과를 `<root
 3. **Artifacts**의 `market-collection-<GitHub 실행 ID>-<재실행 번호>`를 내려받는다.
 4. 다운로드한 ZIP 안의 `market-collection.tar.xz`를 다시 풀면 `market_collection/runs/<수집 회차 ID>/`에 CSV 세 개, manifest, 원문이 있다.
 
-일부 출처의 조회나 해석이 실패하면 작업을 실패로 표시한다. 수집기가 남긴 다른 출처의 자료와 실패 기록은 압축·업로드 단계에서 함께 보존한다. 자료 디렉터리가 없으면 압축도 실패한다. 작업 시간 초과나 runner 중단 등에서는 업로드까지 완료되지 않을 수 있으므로 artifact가 실제로 있는지 확인한다. 자동 재수집, 가격 보정, 담당자 알림은 이 workflow에 없다.
+일부 출처의 조회나 해석이 실패하면 작업을 실패로 표시한다. 수집기가 남긴 다른 출처의 자료와 실패 기록은 압축·업로드 단계에서 함께 보존한다. 자료 디렉터리가 없으면 압축도 실패한다. 작업 시간 초과나 runner 중단 등에서는 업로드까지 완료되지 않을 수 있으므로 artifact가 실제로 있는지 확인한다. 알려진 BytePlus 빈 문서와 fal 이미지 안내 문서의 미완성 응답에는 아래의 제한된 재시도를 적용한다. 전체 회차 자동 재실행, 가격 보정, 담당자 알림은 이 workflow에 없다.
 
 ### 여러 회차 합치기
 
@@ -120,7 +120,19 @@ GitHub 공식 안내를 2026-10-05 확인했을 때 Free 조직의 Actions artif
 
 PR #1의 97-source baseline은 별도 시점에 실제 원격 수동 실행이 성공했다. 2026-10-06 Ideogram 4.5 통합 QA는 190개 테스트와 기존 Actions summary/pack 스크립트를 로컬 격리 작업 폴더에서 실행했다. 통합 QA는 성공 archive 10개 파일(Manifest, CSV 3개, raw 6개)을 XZ 복원 후 원본과 대조했고, 혼합 실패 archive는 6개 파일로 실패 raw와 성공 자료를 보존했다. 이 실행은 lane에서 이미 확인된 공개 GET 결과와 원문 hash를 재사용했다. 통합 QA에서 새 네트워크 GET이나 GitHub Actions dispatch를 하지 않았다. 따라서 2026-10-06 당시 Ideogram 4.5 버전의 GitHub runner 수집·artifact 업로드·예약 실행은 **NOT_RUN**이었다. paid/authenticated generation과 실제 billing도 당시 **NOT_RUN**이었다. 이 기록은 [2026-10-06 통합 QA 보고서](../ai-log/20261006/ideogram45-v2/03-qa/integration/qa-report.json)와 [lane QA 보고서](../ai-log/20261006/ideogram45-v2/03-qa/lane/qa-report.json)에 있다.
 
-## 2026-10-08 현재 registry와 BytePlus 복구 검증
+## 수집 오류 수정 및 검증 기록
+
+### 2026-10-15 수집 오류 수정
+
+같은 코드로 실행된 [10월 13일 정상 회차](https://github.com/LETSUR-CREAI-IT/LETSUR/actions/runs/38359155724)와 [10월 14일](https://github.com/LETSUR-CREAI-IT/LETSUR/actions/runs/38514402781)·[15일 실패 회차](https://github.com/LETSUR-CREAI-IT/LETSUR/actions/runs/38683495217)의 보존 원문을 대조했다.
+
+- fal Veo 3.1 Standard/Fast/Lite: 모델 상태가 `public`에서 `unlisted`로 바뀌었다. 정확한 모델 ID·endpoint·가격 문구가 일치하면 두 상태의 공개 문서 가격을 수집한다. `model_status`를 조건에 기록하며, `unlisted`의 실제 호출 및 계정 이용 가능성은 `invocation_availability`, `status=unknown`으로 남긴다. `private`·누락·알 수 없는 상태는 계속 오류다. 대조한 세 모델의 해상도·오디오별 단가는 이전 회차와 같았다.
+- fal GPT Image 2.5 안내 문서: 14일 응답은 숨겨진 Next.js 스트리밍 영역에 빈 article/template만 있었고, 15일에는 정상 본문이 왔다. 등록된 두 출처의 정확한 URL에서 이 미완성 형태가 확인될 때만 최대 세 번 요청한다. 재시도 대기는 1초·2초다. 각 응답 원문과 SHA-256·조회시각·URL을 보존하며, 최종 응답도 불완전하면 실패로 남긴다. 완성된 문서의 내용 변경이나 일반 파싱 오류에는 재시도하지 않는다.
+- AWS Bedrock: 캐시 쓰기 표제의 `30m`이 `30-minute`로 바뀌어 GPT-6 Astra와 GPT-5.6 Sol/Terra/Luna의 가격 64행이 누락됐다. 두 표기를 같은 30분 보존기간으로 해석하고 과금 단위는 `1M tokens`로 유지한다. 대상 Standard/Commercial 가격표를 찾았는데 가격 행을 추출하지 못하면 오류를 기록한다. 이 검사에서 추가로 드러난 GPT-6.1 Sol의 공급 방식 표기 세 개도 원문 그대로 지원하며, 계정 적용 가능성이나 지역 간 동등성을 추정하지 않는다.
+
+과거 실패 회차의 원문과 CSV는 수정하지 않는다. 재해석 결과는 별도 replay 회차이며 새 관측 시점으로 취급하지 않는다. 하루 1회 예약 설정과 artifact 90일 보관은 유지한다.
+
+### 2026-10-08 검증 기록
 
 이 시점의 registry는 113개 SourceSpec(LLM 73, 이미지 27, 영상 13), 97개 모델/경로 조합, 25개 정규 모델 ID였다. 2026-10-08 해당 범위의 로컬 live QA는 113개 사양, 454 price와 1,905 condition을 만들었다. 이는 뒤에 추가한 12개 이미지 문서 사양을 포함하지 않는 과거 수치다.
 

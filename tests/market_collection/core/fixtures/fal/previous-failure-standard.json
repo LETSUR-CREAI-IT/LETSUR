@@ -1,0 +1,13 @@
+{
+  "endpointId": "fal-ai/veo3.1",
+  "modelData": {
+    "endpointId": "fal-ai/veo3.1"
+  },
+  "model": {
+    "id": "fal-ai/veo3.1",
+    "modelUrl": "https://fal.run/fal-ai/veo3.1",
+    "category": "text-to-video",
+    "status": "unlisted",
+    "pricingInfoOverride": "For every second of video you generate you will be charged **$0.20** without audio or **$0.40** with audio for 720p or 1080p. At 4k, you will be charged **$0.40** per second without audio, or **$0.60** with. For example, a **5 second video** at **1080p** with **audio on** will cost **$2.00**."
+  }
+}

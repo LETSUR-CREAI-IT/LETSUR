@@ -55,22 +55,27 @@ def _bedrock_openai(page: _Page, model: str, title: str) -> tuple[list[dict], li
         return [], []
     prices: list[dict] = []
     conditions: list[dict] = []
+    scoped_table = False
     for section, heading, table in page.tables:
         if section != "Pricing":
             continue
         match = re.fullmatch(r"(?:Standard — )?Commercial Regions(?: — |, )(short|long) context \(([^)]+)\)", heading)
         if not match:
             continue
+        scoped_table = True
         if not table or not table[0]:
             continue
         headers = [value for _, value in table[0]]
         header_items = {"Input": "input", "Input — cache read": "cache_read", "Output": "output",
-                        "Input — cache write": "cache_write", "Input — 30m cache write": "cache_write"}
+                        "Input — cache write": "cache_write", "Input — 30m cache write": "cache_write",
+                        "Input — 30-minute cache write": "cache_write"}
         if headers[0] != "Inference option" or not {"Input", "Input — cache read", "Output"} <= set(headers) or len(headers) != 5 or len(set(headers)) != 5 or not set(headers[1:]) <= set(header_items):
             continue
         for row in _table_rows(table, set(headers)):
             option = row["Inference option"]
-            if not option or not re.fullmatch(r"(?:In-Region|Mantle in-Region|US Geo CRIS|Global CRIS|Regional \(Mantle in IAD\))", option):
+            if not option or (not re.fullmatch(r"(?:In-Region|Mantle in-Region|US Geo CRIS|Global CRIS|Regional \(Mantle in IAD\))", option)
+                              and option not in {"Regional (bedrock-mantle in US East (N. Virginia))",
+                                                 "US CRIS (bedrock-runtime)", "Global CRIS (bedrock-runtime)"}):
                 continue
             group_id = f"cloud_{model.replace('.', '_').replace('-', '_')}_{match.group(1)}_{re.sub('[^a-z0-9]+', '_', option.lower()).strip('_')}"
             locator = f"{title} > Pricing > {heading} > {option} (USD per 1 million tokens, Standard)"
@@ -90,11 +95,13 @@ def _bedrock_openai(page: _Page, model: str, title: str) -> tuple[list[dict], li
                                    _cloud_condition(set_id, "region_group", "Commercial Regions", cell_locator),
                                    _cloud_condition(set_id, "context_band", match.group(2), cell_locator),
                                    _cloud_condition(set_id, "inference_option", option, cell_locator)))
-                if header == "Input — 30m cache write":
+                if header in {"Input — 30m cache write", "Input — 30-minute cache write"}:
                     conditions.append(_cloud_condition(set_id, "cache_write_ttl", "30m", cell_locator))
                 if item in ("cache_write", "cache_read") and "Explicit prompt caching is not supported" in pricing_text:
                     conditions.append(_cloud_condition(set_id, "explicit_prompt_caching", "not supported", cell_locator))
                 prices.append(_cloud_price(provider_id, "OpenAI", item, amount, set_id, cell_locator))
+    if scoped_table and not prices:
+        raise ValueError("AWS scoped Standard Commercial pricing tables contain no parseable prices")
     return prices, conditions
 
 

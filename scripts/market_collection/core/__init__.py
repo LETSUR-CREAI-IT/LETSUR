@@ -258,6 +258,13 @@ def _byteplus_docs_source(spec: SourceSpec) -> bool:
             })
 
 
+def _fal_guide_source(spec: SourceSpec) -> bool:
+    return (spec.modality == "image" and spec.route == "fal"
+            and spec.parser == "image25_fal_guide"
+            and spec.source_key in {"image25_fal_guide_sunburst_doc", "image25_fal_guide_flare_doc"}
+            and spec.url == "https://fal.ai/learn/tools/how-to-use-gpt-image-2-5")
+
+
 def _fetch_attempt(source: dict) -> dict:
     return {key: source[key] for key in ("requested_url", "effective_url", "fetched_at_utc", "http_status", "fetch_status", "raw_path", "raw_sha256", "body_bytes", "error")}
 
@@ -304,6 +311,10 @@ def live(output_root: Path | str, disable_source: tuple[str, ...] = (), *, specs
                     from scripts.market_collection.collectors.byteplus import is_unrendered_template
                     source["fetched_at_utc"] = _utc_now()
                     incomplete = status == 200 and is_unrendered_template(body)
+                elif _fal_guide_source(spec):
+                    from scripts.market_collection.collectors.image25_supplement import is_unrendered_fal_guide
+                    source["fetched_at_utc"] = _utc_now()
+                    incomplete = status == 200 and is_unrendered_fal_guide(body)
                 if incomplete or fetch_attempts:
                     attempt_path = f"raw/{source_id}-attempt{attempt:02d}.bin"
                     _write_bytes(run_dir / attempt_path, body)

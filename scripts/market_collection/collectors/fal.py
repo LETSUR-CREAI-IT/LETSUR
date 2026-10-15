@@ -315,7 +315,7 @@ def _veo_metadata(spec, body):
     if len(roots) != 1:
         raise ValueError("fal exact primary endpoint container absent or duplicate")
     model = roots[0].get("model", {})
-    if model.get("modelUrl") != "https://fal.run/" + endpoint or model.get("id") != endpoint or "pricingInfoOverride" not in model or model.get("category") != "text-to-video" or model.get("status") != "public":
+    if model.get("modelUrl") != "https://fal.run/" + endpoint or model.get("id") != endpoint or "pricingInfoOverride" not in model or model.get("category") != "text-to-video" or model.get("status") not in {"public", "unlisted"}:
         raise ValueError("fal exact modelUrl pricing object absent")
     pricing = model["pricingInfoOverride"].replace("**", "")
     if variant == "lite":
@@ -332,4 +332,11 @@ def _veo_metadata(spec, body):
         locator = f"modelUrl=https://fal.run/{endpoint}; pricingInfoOverride: {match[0]}"
         prices.append(price(spec, endpoint, "Google", match[index], "1 second", group, locator))
         own_conditions.extend(conditions(group, locator, resolution=resolution, audio=audio, input_video="none"))
+        status_locator = f"modelUrl=https://fal.run/{endpoint}; model.status={model['status']}"
+        own_conditions.extend(conditions(group, status_locator, model_status=model["status"]))
+        if model["status"] == "unlisted":
+            availability = conditions(group, status_locator,
+                                      invocation_availability="Invocation and account availability not verified; price is quoted on the public GET page")
+            availability[0]["status"] = "unknown"
+            own_conditions.extend(availability)
     return prices, own_conditions
