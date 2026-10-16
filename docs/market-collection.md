@@ -91,6 +91,7 @@ CLI는 `runs/` 아래 모든 회차를 먼저 검증하고, 새 결과를 `<root
 2. 완료된 실행을 열어 Summary의 회차·출처·가격 관측·조건 수와 실패 출처 키를 확인한다.
 3. **Artifacts**의 `market-collection-<GitHub 실행 ID>-<재실행 번호>`를 내려받는다.
 4. 다운로드한 ZIP 안의 `market-collection.tar.xz`를 다시 풀면 `market_collection/runs/<수집 회차 ID>/`에 CSV 세 개, manifest, 원문이 있다.
+5. 같은 아카이브의 `market_collection/events/`에는 `Build events` 단계가 만든 이벤트(`events.json`, `state.json`, `report.json`, `continuity.json`)가 있다. 구조와 한계는 [이벤트 문서](events.md)를 참고한다.
 
 일부 출처의 조회나 해석이 실패하면 작업을 실패로 표시한다. 수집기가 남긴 다른 출처의 자료와 실패 기록은 압축·업로드 단계에서 함께 보존한다. 자료 디렉터리가 없으면 압축도 실패한다. 작업 시간 초과나 runner 중단 등에서는 업로드까지 완료되지 않을 수 있으므로 artifact가 실제로 있는지 확인한다. 알려진 BytePlus 빈 문서와 fal 이미지 안내 문서의 미완성 응답에는 아래의 제한된 재시도를 적용한다. 전체 회차 자동 재실행, 가격 보정, 담당자 알림은 이 workflow에 없다.
 
