@@ -10,7 +10,7 @@
 | 이미지 | GPT Image 2.5 Sunburst, GPT Image 2.5 Flare, Ideogram 4.5 | OpenAI Direct, fal, OpenRouter, Vercel AI Gateway, Azure Foundry retail API, Ideogram Direct | 39 |
 | 영상 | Seedance 2.5, Veo 3.1 Standard/Fast/Lite | Google Direct, fal, Vercel AI Gateway, BytePlus ModelArk | 13 |
 
-현재 registry에는 125개 `SourceSpec`(출처 사양), 97개 모델/경로 조합, 25개 정규 모델 ID가 있다: LLM 73개/18개 모델, 이미지 39개/3개 모델, 영상 13개/4개 모델. 사양 수는 URL 수가 아니다. 기존 83·97·103·111·113개 단계의 수치와 검증 결과는 해당 시점의 기록으로 유지한다. GPT Image 2.5의 첫 API 조건 문서 8개에 12개 보충 문서를 더했다. 보충 문서는 두 모델×6종의 문서 유형이며 가격 관측을 만들지 않는다. 이미지 모델은 `gpt-image-2.5-sunburst`, `gpt-image-2.5-flare`, `ideogram-4.5`; 영상은 `seedance-2.5`, `veo-3.1-standard`, `veo-3.1-fast`, `veo-3.1-lite`다. 수집기는 등록된 공개 HTTPS URL을 요청하며 로그인이나 유료 모델 호출은 하지 않는다. 문서별 판단 범위는 [수집 범위 검토](collector-coverage-review.md), 상세 정책은 [비교 규칙](image25-comparison-rules.md)을 참고한다.
+현재 registry에는 161개 `SourceSpec`(출처 사양, 2026-10-17에 OpenRouter·Vercel LLM endpoint API 36개 추가; 가격 행 478→2,037, 상세는 [events.md](events.md)), 97개 모델/경로 조합, 25개 정규 모델 ID가 있다: LLM 109개/18개 모델, 이미지 39개/3개 모델, 영상 13개/4개 모델. 사양 수는 URL 수가 아니다. 기존 83·97·103·111·113개 단계의 수치와 검증 결과는 해당 시점의 기록으로 유지한다. GPT Image 2.5의 첫 API 조건 문서 8개에 12개 보충 문서를 더했다. 보충 문서는 두 모델×6종의 문서 유형이며 가격 관측을 만들지 않는다. 이미지 모델은 `gpt-image-2.5-sunburst`, `gpt-image-2.5-flare`, `ideogram-4.5`; 영상은 `seedance-2.5`, `veo-3.1-standard`, `veo-3.1-fast`, `veo-3.1-lite`다. 수집기는 등록된 공개 HTTPS URL을 요청하며 로그인이나 유료 모델 호출은 하지 않는다. 문서별 판단 범위는 [수집 범위 검토](collector-coverage-review.md), 상세 정책은 [비교 규칙](image25-comparison-rules.md)을 참고한다.
 
 ### LLM 경로 범위
 

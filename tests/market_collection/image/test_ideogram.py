@@ -146,8 +146,8 @@ def test_fal_zero_and_edit_schema_failures():
 
 def test_old_registry_specs_byte_equal_to_baseline():
     old=json.loads((FIXTURES / 'baseline-specs.json').read_text())
-    current=[asdict(s) for s in source_specs() if s.model_id!='ideogram-4.5' and not s.source_key.startswith('image25_')]
+    current=[asdict(s) for s in source_specs() if s.model_id!='ideogram-4.5' and not s.source_key.startswith('image25_') and not s.parser.endswith('endpoints_llm')]
     assert current==old and len(old)==97
     validate_registry(source_specs())
-    assert len(source_specs())==125
+    assert len(source_specs())==161
     assert len({(s.model_id,s.route) for s in source_specs()})==97

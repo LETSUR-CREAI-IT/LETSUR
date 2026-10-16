@@ -348,6 +348,9 @@ def parse_source(spec: SourceSpec, body: bytes, source_id: str) -> tuple[list[di
     decoded = body.decode("utf-8", errors="replace" if spec.modality == "llm" else "strict")
     if spec.modality == "image":
         return {"openrouter": _sun_openrouter, "flare_openrouter": _flare_openrouter, "image25_openrouter_endpoints": _image25_endpoints}[spec.parser](spec, decoded)
+    if spec.parser == "openrouter_endpoints_llm":
+        from .llm_endpoints import parse_openrouter
+        return parse_openrouter(spec, body)
     if spec.parser == "openrouter":
         reader = GeminiPricingScopeReader(); reader.feed(decoded); reader.close()
         return _broker(reader, spec.parser)

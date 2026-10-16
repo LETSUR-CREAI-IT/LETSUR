@@ -7,8 +7,8 @@ core run과 signals run을 그대로 읽어 7종 이벤트와 상세페이지용
 2026-10-16 registry·live run 38864687828 기준(`python -m scripts.market_collection.events catalog`). 숫자는 단위가 다르다.
 
 - 정규 모델 ID 25개(LLM 18, 이미지 3, 영상 4).
-- core SourceSpec 125개: 모델 하나에 하나씩 연결된 수집 단위이며 모두 가격 출처는 아니다. 역할은 pricing 84, docs 14, catalog_listing 13, api 13, notice 1. live run에서 가격 행을 낸 것은 105개이고, 가격 행이 없는 20개는 모두 GPT Image 2.5 보충 문서·API 계약 출처(조건·계약 확인용)다.
-- signals 출처 22개: 공지/블로그/tracker feed 4개 + 모델별 OpenRouter endpoints API 18개(가격 CSV가 아니라 `pricing.discount`·`expiration_date`를 읽는 신호 입력). catalog의 모델×출처 연결 143개 = core 125 + endpoint 18이며 feed 4개는 모델에 매핑되지 않아 제외된다.
+- core SourceSpec 161개(기존 125 + LLM 게이트웨이 endpoint 36, 아래 '비교 불가 진단과 endpoint 조건 보충'): 모델 하나에 하나씩 연결된 수집 단위이며 모두 가격 출처는 아니다. 역할은 pricing 84, api 49, docs 14, catalog_listing 13, notice 1. live run에서 가격 행을 낸 것은 105개이고, 가격 행이 없는 20개는 모두 GPT Image 2.5 보충 문서·API 계약 출처(조건·계약 확인용)다.
+- signals 출처 22개: 공지/블로그/tracker feed 4개 + 모델별 OpenRouter endpoints API 18개(가격 CSV가 아니라 `pricing.discount`·`expiration_date`를 읽는 신호 입력). catalog의 모델×출처 연결은 2026-10-17 `events catalog` CLI 재계산으로 179개 = core SourceSpec 161 + signals endpoint 18이며 feed 4개는 모델에 매핑되지 않아 제외된다(이전 기록: 2026-10-16 시점 core 125 기준 143개 = 125 + 18).
 - 가격 행 478개(run 1건), 서로 다른 URL 수와 무관하다.
 
 모델군별 읽는 경로(가격 = core 가격 행, 보충 = 조건·계약 확인):
@@ -29,6 +29,26 @@ core run과 signals run을 그대로 읽어 7종 이벤트와 상세페이지용
 - 판정: `confirmed`(공식 근거가 조건·권한 범위에 맞고 충돌 없음), `candidate`(비공식이거나 검증 못 한 부분이 있음), `conflicted`(등록 출처 값이 서로 다름).
 - 이벤트는 `events.json`에 7종 공통 필드로 담기고, 상세 화면 전달 대상은 아래 "이벤트 상세 필드"다. 현재 공급사 순위·추천, confidence 점수, impact 자동 계산, 알림, UI, Slack은 없다.
 - 자동 지원 한계: 조건을 알 수 없는 행(예: OpenRouter·Vercel LLM, fal, Ideogram direct, Azure Foundry)은 비교 불가로 남고, 위 표 밖 문형은 후보/gap이다. X/Threads 자동 수집은 없다. 실제 live로 확인된 유형과 합성 fixture 검증은 "실제 자동 검출 범위"에서 구분한다.
+
+## 비교 불가 진단과 endpoint 조건 보충 (2026-10-17, 로컬 검증·미배포)
+
+진단 단위는 가격 관측 행(source×모델×route×upstream×과금 항목×조건 세트)이며 모델·출처 수와 다르다. `source_id + condition_set_id` join은 보존된 run에서 전 행 성립을 확인했다.
+
+- 기준(run 38865668258 보존 artifact): 가격 행 478 = 비교 가능 295 / `condition_unknown` 140 / `price_missing` 43. `condition_unknown` 중 OpenRouter·Vercel LLM 대표(headline) 가격 72행은 "어느 upstream이 서빙하는지"가 문서에 없어 upstream 비어 있음이 원인이었다(원인: 게이트웨이가 per-upstream 정보를 모델 페이지에 싣지 않음 = 미수집).
+- 보충: 두 게이트웨이의 공개 endpoint API(OpenRouter `/api/v1/models/{id}/endpoints`, Vercel `/v1/models/{id}/endpoints`)를 18개 모델×2 route = 36 source로 추가(`collectors/llm_endpoints.py`). upstream·tier·context·할인·override(OpenRouter 문서가 정의한 범위)만 stated로 읽고, 문서가 정의하지 않은 항목은 unknown으로 둔다: `input_cache_write` TTL(211행, OpenRouter 문서는 TTL이 여럿인 공급자에서 이 값을 기본 5분 요율이라고만 설명하므로 endpoint별 TTL이 확정되지 않은 것이고, Vercel 문서는 TTL을 말하지 않는다), Vercel `inference_regions`(195)·`service_tiers`(62)·`peak_pricing`(9)의 적용 범위. `quantization`은 고정 정밀도 값(int4…fp32)일 때만 stated이고, OpenRouter의 `"unknown"`·null·누락·그 밖의 값은 "공급자가 밝히지 않음"이므로 `unknown`+사유로 기록한다(2026-10-17 정정: 처음에는 `"unknown"` 문자열을 stated로 읽어 비교 가능 행을 부풀렸다). Vercel의 null도 같다. `endpoint_discount`는 원문 값을 조건으로 기록하고 실효가를 계산하지 않는다. 0이면 "할인 없음"이라는 원문 정보로 stated, 0이 아니거나 필드가 없으면 상위 prompt/completion이 할인 전인지 후인지 문서가 정하지 않으므로 `discount_application` unknown으로 그 행만 비교 불가다(Vercel도 동일). `endpoint.status`는 양쪽 API에서 읽어 0(문서의 active 광고 상태이며 렛서 계정의 호출 가능을 증명하지 않는다)만 stated이고, 다른 숫자는 원문 그대로 unknown, 필드 부재도 unknown, OpenRouter enum 밖 값은 parse 실패다. 대표 행은 그대로 남으며 endpoint 행과 series가 섞이지 않는다(upstream·endpoint tag 포함).
+- 결과(정정 반영 최종값, 같은 보존 raw를 현재 파서로 재파싱): 전체 가격 행 2,037 = 비교 가능 566 / `condition_unknown` 1,428 / `price_missing` 43. 이 중 엔진 대상(`published_rate`+`announced_future_rate`)은 2,028행(562 / 1,426 / 40)이고 나머지 9행은 `disputed_claim` 등 엔진 비대상이다. 이전 보고의 1,187(endpoint)·652·357과 정정 전 1,482 / 512 / 43은 철회한다.
+  - 기존 125 source 474행은 295 / 136 / 43이다. run3 보존 raw를 현재 파서로 다시 파싱하면 478행 295 / 140 / 43으로 파서 효과는 0이고, 4행 감소는 관측 시각 변화(OpenRouter deepseek 두 provider 페이지의 live 변경)다.
+  - 신규 endpoint 36 source는 1,563행(283 upstream endpoint) 중 271행 비교 가능(78 endpoint, 모델 18개 중 5개; OpenRouter 213·Vercel 58), 1,292행 unknown. 한 행이 여러 사유를 가질 수 있으며 사유별: quantization 1,188·cache_write_ttl 211·region 적용 195·service_tier 121·tier 적용 62·할인 적용 109·endpoint_status 28·peak 9. 신규 source는 2026-10-16 15:32Z 관측이며 run3과 같은 시각이 아니다.
+  - 비교 가능한 5개 모델(모델 × route × endpoint 수 / 비교 가능 가격 행): `deepseek-v4-pro` 9개 endpoint / 30행(OpenRouter 24·Vercel 6), `deepseek-v4.1-flash` 13 / 39(33·6), `glm-5.2` 18 / 71(57·14), `glm-5.3-flash` 21 / 72(51·21), `kimi-k3` 17 / 59(48·11). 이 5개의 endpoint 수는 (OpenRouter+Vercel) 상호 겹치지 않는 route별 endpoint를 더한 값이며 78이다.
+  - 나머지 등록 13개 모델(Claude 5종, `gemini-3.8-flash`, GPT 7종)은 endpoint 가격 행을 계속 수집하지만 quantization 미보고 등 조건 부족으로 모두 비교 불가로 남는다(비교 가능 0행). 이는 "실제 호출 가능·원가·절감액"을 뜻하지 않으며 조건이 문서로 확정된 행만 비교 가능하다는 뜻이다.
+  - 이 271행은 새 비교 대상이지 기존 unknown이 풀린 것이 아니다(대표 가격 72행의 upstream 미확인은 그대로).
+  - 엔진 단위: 같은 입력으로 events 빌드 시 신규 endpoint는 첫 관측 baseline 271(series)이고 price_change는 0이다. not_comparable 항목은 run3 단독 178(원문 보고서의 누적 run 설명과 달리 측정으로는 `disputed_claim` 5행이 엔진 대상 밖이어서 행 단위 183과 5 차이: 174 published + 4 future = 178) → 신규 반영 1,470(기존 178 + endpoint 1,292).
+- 남은 공백: 캐시 쓰기 TTL(문서 미정의), Vercel region/tier/peak 적용 범위(문서 미정의), `price_missing` 43(미공개), 직접 공급자 쪽 미확인 조건은 이 변경으로 바뀐 것이 없다. 이 항목들은 가정하지 않고 `unknown`으로 남긴다. 신규 endpoint source는 가격 변화 이벤트 규칙을 바꾸지 않았고 새 series의 첫 관측은 변경으로 세지 않는다.
+- 원인군별 남은 비교 불가(행, 2026-10-17 점검): Ideogram direct 22(카탈로그 `snapshot_at`이 `effective_at`보다 앞서 적용 관계 미확정, 문서 기본값은 generate에만 있음), fal Ideogram 8(설명과 schema enum 충돌 보존), fal Sunburst/Flare 품질 12(schema 기본값 high, 토큰 단가의 품질 독립 여부 미확인), Azure 이미지 10(배포 자격 미확인), fal Veo 16(`status: unlisted` 의미 미정의), Bedrock Anthropic 8(공개 가격 JSON은 모델·단위·tier 없이 불투명한 rateCode만 담고 의미는 가격 페이지 마크업에만 있다. 게다가 JSON 본문이 `Accept-Encoding: identity` 요청에도 gzip 바이트로 오므로 안전한 압축 해제와 두 문서 join 설계가 필요해 이번에는 등록하지 않았다), Databricks 2(DBU 단위, $/DBU 미확정), Azure LLM 16(공개 retail 미터는 있으나 코드 약어 의미 미정의, Claude 8행은 미터 없음), Google cache_storage 8(USD/토큰·시간 단위가 `UNIT_SCALE`에 없음, 가격 부재가 아님). 제조사 조건을 게이트웨이로 옮기지 않았고 추정 기본값은 넣지 않았다.
+- 코드 검수 시점 차이: Fable의 최종 사본 검수(APPROVE)는 이 항목 직전 사본 기준이고, 그가 비차단으로 지적한 Vercel `vertexAnthropic`이 provider 이름 완전 일치 때문에 non-tier `standard`로 단정되는 문제를 게시 전에 접두 일치(openai·azure·google·vertex·spacexai·xai 계열)로 좁혀 unknown 처리했다. 이 1건은 Fable 재검수를 거치지 않았고 targeted+전체 pytest와 같은 보존 raw 재파싱(비교 가능 271행 불변)으로만 확인했다. 문서가 비지원이라고 명시한 공급자의 `standard` stated는 유지한다.
+- 문의 시 필요한 정보 목록(발송하지 않음): Ideogram — 카탈로그 `snapshot_at`과 `effective_at`의 관계, edit 계열 기본값. fal — Sunburst/Flare 토큰 단가의 quality 독립 여부, Veo `status: unlisted` 의미. Databricks — $/DBU(plan·region별), Gemini 3.8 Flash 가격 위치. Azure — GPT 미터 코드(ShortCo/LongCo, Std/Flex/PP, Gl/DZ 등) 의미와 배포 자격.
+- parser fingerprint 영향(수정하지 않음): `parser_fingerprint()`는 `collectors/` 전체 파일을 해시한다. 일일 workflow는 이전 raw 없이 state만 쓰므로, 무관한 collector 파일을 바꾸면 다음 run의 실제 가격 변화가 `confirmed`가 아니라 `candidate`(`parser_fingerprint_mismatch`)가 된다. fixture 재현: 코드 변경 없음 → confirmed, `fal.py`에 주석만 추가 → candidate. 이 변경(`llm_endpoints.py` 추가)도 배포 직후 첫 run에 같은 영향을 주므로 그 run 날짜를 기록해 둔다. 최소안은 fingerprint를 해당 spec의 parser 모듈과 core로 한정하는 것이며 승인 전이라 구현하지 않았다.
+- 아직 하지 않은 것: 원격 workflow 실행, 알림·Impact·추천. LETSUR 계약가·사용량·실비용은 계속 unknown이다.
 
 ## 확정 원칙 (팀 정본 §1–3, 사용자 결정 2026-10-15)
 
