@@ -4,19 +4,30 @@ core run과 signals run을 그대로 읽어 7종 이벤트와 상세페이지용
 
 ## 수집 범위와 전체 흐름
 
-2026-10-16 registry 기준(`python -m scripts.market_collection.events catalog`). 숫자의 단위가 서로 다르다: 정규 모델 25개, 모델×출처 연결 143개(catalog 기준, 같은 출처가 여러 모델에 걸리면 중복), 가격 SourceSpec 125개(LLM 73, 이미지 39, 영상 13), signals 출처 22개(공지 feed 4 + OpenRouter endpoint API 18). 서로 다른 URL 수나 가격 행 수가 아니다.
+2026-10-16 registry·live run 38864687828 기준(`python -m scripts.market_collection.events catalog`). 숫자는 단위가 다르다.
 
-| 구분 | 정규 모델 ID (제조사) | 공급 경로 | 읽는 정보 |
+- 정규 모델 ID 25개(LLM 18, 이미지 3, 영상 4).
+- core SourceSpec 125개: 모델 하나에 하나씩 연결된 수집 단위이며 모두 가격 출처는 아니다. 역할은 pricing 84, docs 14, catalog_listing 13, api 13, notice 1. live run에서 가격 행을 낸 것은 105개이고, 가격 행이 없는 20개는 모두 GPT Image 2.5 보충 문서·API 계약 출처(조건·계약 확인용)다.
+- signals 출처 22개: 공지/블로그/tracker feed 4개 + 모델별 OpenRouter endpoints API 18개(가격 CSV가 아니라 `pricing.discount`·`expiration_date`를 읽는 신호 입력). catalog의 모델×출처 연결 143개 = core 125 + endpoint 18이며 feed 4개는 모델에 매핑되지 않아 제외된다.
+- 가격 행 478개(run 1건), 서로 다른 URL 수와 무관하다.
+
+모델군별 읽는 경로(가격 = core 가격 행, 보충 = 조건·계약 확인):
+
+| 모델군 | 정규 모델 ID | 가격을 읽는 경로 | 비고 |
 |---|---|---|---|
-| LLM 18 | `gemini-3.8-flash`(Google), `gpt-6-astra`·`gpt-6-sol`·`gpt-6.1-sol`·`gpt-6-luna`·`gpt-5.6-sol`·`gpt-5.6-terra`·`gpt-5.6-luna`(OpenAI), `claude-fable-5-1`·`claude-opus-5-5`·`claude-sonnet-5-5`·`claude-haiku-4-5`(Anthropic) | 제조사 직접, AWS Bedrock, Azure Foundry, OpenRouter, Vercel AI Gateway (Gemini는 Vertex·Azure Databricks 포함, Bedrock/Azure 없음) | 공식 가격 페이지 HTML/Markdown, OpenRouter·Vercel 모델 페이지, 클라우드 가격표 |
-| LLM (목록만) | `claude-sonnet-5`(Anthropic), `deepseek-v4-pro`·`deepseek-v4.1-flash`(DeepSeek), `glm-5.2`·`glm-5.3-flash`(Z.ai), `kimi-k3`(Moonshot AI) | OpenRouter, Vercel AI Gateway (`claude-sonnet-5`는 Anthropic 직접 포함) | 카탈로그 등재 여부(`catalog_listing`)만. 가격 수집 없음 |
-| 이미지 3 | `gpt-image-2.5-sunburst`·`gpt-image-2.5-flare`(OpenAI), `ideogram-4.5`(Ideogram) | OpenAI, Azure Foundry, fal, OpenRouter, Vercel / Ideogram 직접, fal | 가격 HTML·JSON API, 공식 문서(가이드·생성 API·Azure how-to·리전), Azure retail 가격 API |
-| 영상 4 | `seedance-2.5`(ByteDance), `veo-3.1-standard`·`veo-3.1-fast`·`veo-3.1-lite`(Google) | BytePlus ModelArk, fal, Vercel AI Gateway / Google 직접 | 가격 페이지, BytePlus 캠페인 공지 |
+| Gemini LLM 1 | `gemini-3.8-flash` | Google 직접, Vertex, Azure Databricks, OpenRouter, Vercel | Bedrock·Azure Foundry 없음 |
+| OpenAI LLM 7 | `gpt-6-astra`, `gpt-6-sol`, `gpt-6.1-sol`, `gpt-6-luna`, `gpt-5.6-sol`, `gpt-5.6-terra`, `gpt-5.6-luna` | OpenAI 직접, AWS Bedrock, Azure Foundry, OpenRouter, Vercel | |
+| Anthropic LLM 4 | `claude-fable-5-1`, `claude-opus-5-5`, `claude-sonnet-5-5`, `claude-haiku-4-5` | Anthropic 직접, AWS Bedrock, Azure Foundry, OpenRouter, Vercel | 명시 cache 배율 각주는 Fable 5.1·Opus 5.5만 추출 |
+| 카탈로그 목록형 LLM 6 | `claude-sonnet-5`(Anthropic 직접·OpenRouter·Vercel), `deepseek-v4-pro`, `deepseek-v4.1-flash`, `glm-5.2`, `glm-5.3-flash`, `kimi-k3`(OpenRouter·Vercel) | 각 경로 카탈로그/모델 페이지 | 가격 행은 있으나(input·output 중심, Sonnet 5는 cache 포함) 조건이 `model_page_rate` 수준이라 직접 비교 불가인 경우가 많음. 제조사 직접 가격표(DeepSeek·Z.ai·Moonshot)는 없음 |
+| 이미지 | `gpt-image-2.5-sunburst`, `gpt-image-2.5-flare`(OpenAI) | OpenAI·fal·OpenRouter·Vercel 가격 페이지, Azure Foundry retail 가격 API, OpenRouter endpoints | 보충: OpenAI 가이드·generate API, Azure how-to·리전, fal·OpenRouter·Vercel 문서/API(가격 행 없음) |
+| | `ideogram-4.5`(Ideogram) | Ideogram 직접 API 카탈로그(t2i, edit, precise-edit), fal 가격 | |
+| 영상 | `seedance-2.5`(ByteDance) | BytePlus ModelArk 가격 + 캠페인 공지, fal, Vercel | |
+| | `veo-3.1-standard`, `veo-3.1-fast`, `veo-3.1-lite`(Google) | Google 직접, fal, Vercel | |
 
 - 가격 경로: 각 출처 parser가 가격·조건 행(CSV 3종)과 원문 raw를 run으로 저장한다. 엔진은 같은 조건끼리만 이전 관측과 비교한다(위 "신뢰 판단").
-- 공지 경로(signals): OpenAI news RSS, Vercel changelog Atom, Simon Willison blog Atom(비공식), modelpricewatch feed(비공식 tracker), 그리고 모델별 OpenRouter endpoints JSON API(`pricing.discount`, `expiration_date`)를 읽는다. 문장에서 모델 하나가 특정되고 지원 문형일 때만 claim이 되고, 아니면 candidate와 gap이다.
-- 판정: `confirmed`(공식 근거가 조건·권한 범위에 맞고 충돌 없음), `candidate`(비공식이거나 검증 못 한 부분이 있음), `conflicted`(등록 출처 값이 서로 다름). 숫자만 같은 모델 이름은 근거가 아니다.
-- 이벤트는 `events.json` 한 파일에 7종 공통 필드로 담기고, 상세 화면에는 위 "이벤트 상세 필드"가 그대로 전달 대상이다. 현재 공급사 순위·추천, confidence 점수, impact 자동 계산, 알림, UI, Slack은 없다.
+- 공지 경로(signals): OpenAI news RSS, Vercel changelog Atom, Simon Willison blog Atom(비공식), modelpricewatch feed(비공식 tracker), 모델별 OpenRouter endpoints API를 읽는다. 문장에서 모델 하나가 특정되고 지원 문형일 때만 typed claim이 되고, 아니면 candidate와 gap이다.
+- 판정: `confirmed`(공식 근거가 조건·권한 범위에 맞고 충돌 없음), `candidate`(비공식이거나 검증 못 한 부분이 있음), `conflicted`(등록 출처 값이 서로 다름).
+- 이벤트는 `events.json`에 7종 공통 필드로 담기고, 상세 화면 전달 대상은 아래 "이벤트 상세 필드"다. 현재 공급사 순위·추천, confidence 점수, impact 자동 계산, 알림, UI, Slack은 없다.
 - 자동 지원 한계: 조건을 알 수 없는 행(예: OpenRouter·Vercel LLM, fal, Ideogram direct, Azure Foundry)은 비교 불가로 남고, 위 표 밖 문형은 후보/gap이다. X/Threads 자동 수집은 없다. 실제 live로 확인된 유형과 합성 fixture 검증은 "실제 자동 검출 범위"에서 구분한다.
 
 ## 확정 원칙 (팀 정본 §1–3, 사용자 결정 2026-10-15)
@@ -141,3 +152,7 @@ python -m scripts.market_collection.events legacy --event <case>/event.json ... 
   - 2차 [run 38864889128](https://github.com/LETSUR-CREAI-IT/LETSUR/actions/runs/38864889128): 1차 run artifact의 state(processed_runs 2, 1,318,322 bytes)를 받아 `continued`(unprocessed 없음)로 이어받았고 processed_runs 4, 이벤트 79건 동일, 신규 0, revised 0, 중복 event_id 0.
 - 두 run 모두 overall `failure`다. 원인은 이벤트 단계가 아니라 기존 수집 문제로, `image25_openai_generate_sunburst_doc`·`image25_openai_generate_flare_doc`의 parse 오류(`n prose/schema constraints disagree`: OpenAI 이미지 문서의 `n` 설명 문장과 schema 제약이 일치하지 않음)이다. 의도된 충돌 검사라 한쪽을 임의로 채택하지 않았고, 문장과 schema 중 어느 쪽이 맞는지 판단은 사용자 확인이 필요하다. 이 실패에도 `Build events`는 success여서 다음 run이 state를 이어받는다.
 - 실제 live run에서 확인된 이벤트 유형은 scheduled_change·limited_discount·(candidate) price_change뿐이다. 나머지는 합성 fixture 검증이다. 건너뛴 run의 raw backfill, 알림, UI는 없다.
+- 첫 수동 run의 `broken`은 최초 이력 누락 표시이며, 2차 `continued`가 그 누락을 소급 복구한 것은 아니다. 건너뛴 run 38851787389의 raw는 이벤트 chain에 들어가지 않았다.
+- 첫 run의 79건은 변화 이벤트가 아니라 한 번의 관측에서 읽힌 기존 공지·예정 단가다(첫 관측 273건은 baseline이며 이벤트가 아님). 확정 23(scheduled_change 18, limited_discount 5), candidate 56, conflicted 0이다.
+- 매일 09:17 KST(UTC 00:17) 설정은 GitHub 예약 시작 시각이며 정시 실행을 보장하지 않는다(지연·누락 가능). 예약 실행에서의 확인은 아직 없다.
+- `image25_openai_generate_*_doc` parse 오류의 원인: OpenAI generate 문서의 `n` 문장("Must be between 1 and 10")과 schema 제약(minimum 1, maximum 10)은 10-15·10-16 모두 같지만, 10-16 페이지에서 제약 요소의 CSS class가 `stldocs-property-constraint`에서 해시 접미사가 붙은 이름으로 바뀌어 parser의 정확 일치가 제약을 읽지 못한다. 내용 충돌이 아니라 markup 변경이며 수정 전까지 그 두 출처는 실패로 남는다.
