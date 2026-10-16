@@ -160,3 +160,23 @@ def test_hidden_contract_descendants_cannot_supply_visible_scope(kind,wrapper):
     close_tag=b'</template>' if wrapper=='template' else b'</div>'
     b=b.replace(target,open_tag+target+close_tag,1)
     with pytest.raises(ValueError):parse(kind,body=b)
+
+
+def _openai_with_constraint_class(cls):
+    b = (F/'openai_image_generate.html').read_bytes()
+    return b.replace(b'class="stldocs-property-constraint"', b'class="'+cls.encode()+b'"')
+
+
+def test_openai_n_constraint_accepts_extra_class_tokens():
+    f = parse('openai_generate', body=_openai_with_constraint_class('stldocs-property-constraint _constraint_1yfc0_93'))
+    assert val(f,'num_images_range') == {'min':1,'max':10}
+
+
+@pytest.mark.parametrize('cls', ['x-stldocs-property-constraint', 'stldocs-property-constraint-name', 'stldocs-property-constraints'])
+def test_openai_n_constraint_rejects_similar_class_names(cls):
+    with pytest.raises(ValueError): parse('openai_generate', body=_openai_with_constraint_class(cls))
+
+
+def test_openai_n_constraint_conflict_still_fails_with_extra_class_tokens():
+    b = _openai_with_constraint_class('stldocs-property-constraint _constraint_1yfc0_93')
+    with pytest.raises(ValueError): parse('openai_generate', body=b.replace(b'Must be between 1 and 10.', b'Must be between 1 and 8.'))
