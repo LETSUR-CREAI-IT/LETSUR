@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
   group: market-collection-${{ github.ref }}
@@ -136,6 +137,14 @@ jobs:
         if: always()
         continue-on-error: true
         run: python3 -B -m scripts.market_collection.signals summary --root data/market_collection >> "$GITHUB_STEP_SUMMARY"
+
+      # Events (all_verified): continues state.json from the latest successful run of this
+      # workflow on the same branch and writes data/market_collection/events/ (packed below).
+      - name: Build events
+        if: always()
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python3 -B -m scripts.market_collection.events_daily --root data/market_collection
 
       - name: Pack collection data
         if: always()
