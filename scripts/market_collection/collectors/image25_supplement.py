@@ -85,7 +85,7 @@ def _openai(spec, root, add):
     count = _range(dict(zip(('min','max'), map(int, match.groups()))))
     constraints = {}
     for node in n.nodes('div'):
-        if node.attrs.get('class') == 'stldocs-property-constraint':
+        if 'stldocs-property-constraint' in (node.attrs.get('class') or '').split():
             spans = [x.text() for x in node.nodes('span')]
             if len(spans) != 2 or spans[0] in constraints:
                 raise ValueError('malformed n constraint')
