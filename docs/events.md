@@ -1,6 +1,6 @@
 # 수집 → 이벤트 (scripts/market_collection/events)
 
-core run과 signals run을 그대로 읽어 7종 이벤트와 상세페이지용 데이터를 만든다. 입력 run·raw는 수정하지 않고 네트워크도 쓰지 않는다. 일일 workflow 연결(`Build events` 단계 → `events_daily.py`, 아래 "일일 workflow 연속성")은 이 PR로 `develop`에 반영하며, 실제 원격 실행 결과는 아래 "배포·원격 검증 상태"에 기록한다. 알림 발송·빈도 조절, UI는 이번 범위가 아니다(알림이 과다하면 추후 조정).
+core run과 signals run을 그대로 읽어 7종 이벤트와 상세페이지용 데이터를 만든다. 입력 run·raw는 수정하지 않고 네트워크도 쓰지 않는다. 일일 workflow 연결(`Build events` 단계 → `events_daily.py`, 아래 "일일 workflow 연속성")은 PR #12로 `develop`에 반영됐고, 실제 원격 수동 실행 결과는 아래 "배포·원격 검증 상태"에 기록한다. 알림 발송·빈도 조절, UI는 이번 범위가 아니다(알림이 과다하면 추후 조정).
 
 ## 수집 범위와 전체 흐름
 
@@ -132,3 +132,12 @@ python -m scripts.market_collection.events legacy --event <case>/event.json ... 
 - API 권한·네트워크 오류, JSON 손상, 아카이브 무결성 오류, report가 ok가 아닌 state(`previous_report_invalid`), events 단계가 성공했는데 state가 없는 경우(`previous_state_missing`)는 단계를 실패시킨다. 더 오래된 state나 baseline으로 우회하지 않는다.
 - 건너뛴 run의 원본 raw는 그 run의 artifact에 보존되어 있다. 이를 이벤트 chain에 자동으로 다시 넣는 raw backfill은 이번 범위 밖이다.
 - cron과 artifact 보존 기간은 유지했고, 이전 artifact 조회를 위해 토큰 권한에 `actions: read`를 추가했다.
+
+## 배포·원격 검증 상태 (2026-10-16)
+
+- 반영: [PR #12](https://github.com/LETSUR-CREAI-IT/LETSUR/pull/12)를 `develop`에 merge(`202fcdb`). 전체 관련 테스트 564 passed(`test_graph_history.py` 제외).
+- 수동 실행(`workflow_dispatch`, develop)이며 예약(cron) 실행 성공이 아니다. 다음 예약 firing은 NOT_RUN이다.
+  - 1차 [run 38864687828](https://github.com/LETSUR-CREAI-IT/LETSUR/actions/runs/38864687828): core 125 source 중 123 ok, signals 22 source 실패 0, `Build events` success, artifact 업로드 확인. 이전 성공 run(38694120184)의 artifact에 events가 없어 `previous_artifact_without_events`로 bootstrap했다. 같은 날 구버전 예약 run(38851787389, 실패)에 `Build events` 단계가 없어 `unprocessed_runs`에 남았고, 그래서 `continuity`는 `baseline`이 아니라 `broken`으로 기록됐다. 이는 설계대로의 보수적 표시이며 최초 1회에만 해당한다. 이벤트 79건(scheduled_change confirmed 18, limited_discount confirmed 5·candidate 31, price_change candidate 11, unclassified candidate 14), not_comparable 178, gaps 2.
+  - 2차 [run 38864889128](https://github.com/LETSUR-CREAI-IT/LETSUR/actions/runs/38864889128): 1차 run artifact의 state(processed_runs 2, 1,318,322 bytes)를 받아 `continued`(unprocessed 없음)로 이어받았고 processed_runs 4, 이벤트 79건 동일, 신규 0, revised 0, 중복 event_id 0.
+- 두 run 모두 overall `failure`다. 원인은 이벤트 단계가 아니라 기존 수집 문제로, `image25_openai_generate_sunburst_doc`·`image25_openai_generate_flare_doc`의 parse 오류(`n prose/schema constraints disagree`: OpenAI 이미지 문서의 `n` 설명 문장과 schema 제약이 일치하지 않음)이다. 의도된 충돌 검사라 한쪽을 임의로 채택하지 않았고, 문장과 schema 중 어느 쪽이 맞는지 판단은 사용자 확인이 필요하다. 이 실패에도 `Build events`는 success여서 다음 run이 state를 이어받는다.
+- 실제 live run에서 확인된 이벤트 유형은 scheduled_change·limited_discount·(candidate) price_change뿐이다. 나머지는 합성 fixture 검증이다. 건너뛴 run의 raw backfill, 알림, UI는 없다.
