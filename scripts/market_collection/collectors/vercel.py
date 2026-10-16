@@ -173,6 +173,9 @@ def parse_source(spec: SourceSpec, body: bytes, source_id: str) -> tuple[list[di
         return _video_metadata(spec, decoded)
     if spec.modality == "image":
         return {"vercel": _sun_vercel, "flare_vercel": _flare_vercel}[spec.parser](spec, decoded)
+    if spec.parser == "vercel_endpoints_llm":
+        from .llm_endpoints import parse_vercel
+        return parse_vercel(spec, body)
     if spec.parser == "vercel":
         reader = GeminiPricingScopeReader(); reader.feed(decoded); reader.close()
         return _broker(reader, spec.parser)
