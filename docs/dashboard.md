@@ -1,6 +1,6 @@
 # 이벤트 → 대시보드 (scripts/market_collection/dashboard)
 
-이벤트 엔진 출력(`data/market_collection/events/events.json`)을 팀 대시보드 페이지 한 장(`index.html`)으로 만든다. 같은 폴더의 `report.json`·`continuity.json`·`state.json`은 있으면 상태 배너, 수집 run 목록, 단가 추이에 쓴다. 입력은 수정하지 않고 네트워크도 쓰지 않으며, 결과는 외부 파일 없이 file://로 열린다. 화면은 박건 결정(2026-10-20, "이 형태로 만들어")에 따라 `렛서_대시보드_사용자뷰_1011.html`의 형태를 그대로 쓴다(v14 카드 형태는 쓰지 않는다). 일일 workflow가 페이지를 만들어 Cloudflare Pages에 올리고, Cloudflare Access로 팀원에게만 연다. 알림은 이번 범위가 아니다.
+이벤트 엔진 출력(`data/market_collection/events/events.json`)을 팀 대시보드 페이지 한 장(`index.html`)으로 만든다. 같은 폴더의 `report.json`·`continuity.json`·`state.json`은 있으면 상태 배너, 수집 run 목록, 단가 추이에 쓴다. 입력은 수정하지 않고 네트워크도 쓰지 않으며, 결과는 외부 파일 없이 file://로 열린다. 화면은 박건 결정(2026-10-20, "이 형태로 만들어")에 따라 `렛서_대시보드_사용자뷰_1011.html`의 형태를 쓴다(v14 카드 형태는 쓰지 않는다). 왼쪽 변화 목록 박스에는 높이 제한을 더했다(2026-10-21 박건 요청, 아래 "목록 박스 높이"). 일일 workflow가 페이지를 만들어 Cloudflare Pages에 올리고, Cloudflare Access로 팀원에게만 연다. 알림은 이번 범위가 아니다.
 
 ## 실행
 
@@ -16,17 +16,31 @@ python3 -B -m scripts.market_collection.dashboard --root data/market_collection 
 ## 템플릿
 
 - 원본: 박건 로컬 `~/Downloads/렛서_대시보드_사용자뷰_1011.html`(842,066 bytes, 1,297줄(`wc -l`), 수정 시각 2026-10-11 14:47:50 +0900, SHA256 `c5fb81114159390ea47eacc691bb8c581c0d21729bb97b7c347dae664e97f3f1`). 원본은 수정하지 않았다.
-- 사본: `scripts/market_collection/dashboard/template.html`(705,851 bytes, 1,074줄, SHA256 `eeb7c0dc498be91de41fe464decdf6670ed61eb573a84729c9db6813c58807a1`). 아래 줄 번호는 사본 기준이다.
+- 사본: `scripts/market_collection/dashboard/template.html`(706,459 bytes, 1,078줄, SHA256 `c9d3839aa310c1da79478fd2cde8b75361b9e6ab1963f1e9e3efa8cecc90b1c1`). 아래 줄 번호는 사본 기준이다.
   - 데이터 자리표시자 7개: `TODAY`(503, `?base=` 처리는 원본 그대로), `SRC`(504), `ID`(505), `EVENTS`(511), `MODELS`(512), `TREND`(813), `COLLECTED`(815).
   - 지운 것: 원본 샘플 이벤트 5건과 그 SRC·ID·MODELS, 샘플 단가 추이와 `Object.assign(TREND, …)`, 원본 COLLECTED.
   - 더한 것: 상태 배너 CSS 4줄(455~458)과 자리 `<!--STATUS-->`(470), 데이터 출처 주석(500~502, 814). 원본 주석 506~510은 남겼다.
-  - JS 보강("없는 필드 허용"만)
+  - JS 보강(없는 필드 허용)
     - 568: 목록 요약 줄이 미확인·상충 값(`{unk}`, `{con}`)도 읽도록 `val()`을 거친다.
     - 784, 982: 엔진이 만들지 않는 `head` 대신 `sum`을 쓴다(982는 escape).
     - 818: 처음 보여 줄 추이 모델을 고정값 대신 `TREND`의 첫 모델로 한다.
     - 849: 그릴 모델이 없으면 "단가 추이: 그릴 수 있는 관측 단가가 없습니다."를 보인다.
     - 880~881: 고른 조건에 그 측정값이 없으면 안내 문구를 보이고, 최댓값이 0이어도 축을 그린다.
+  - 목록 박스 높이 제한(2026-10-21): CSS 158(`.list`, `#queue`), JS 1033~1036(`showSel()`), 1041(`select()`에서 호출), 1076(첫 화면에서 호출). 아래 "목록 박스 높이".
 - 원본이 바뀌면 다시 복사해 같은 자리에 같은 패치를 넣는다. build.py는 `/*DATA:이름*/`과 `<!--STATUS-->`만 바꾸고, 테스트는 페이지에 자리표시자가 남지 않았는지 확인한다.
+
+### 목록 박스 높이
+
+2026-10-21 박건 요청. 실제 누적 데이터(10-21 run, 이벤트 253건)로 만들면 카드가 61장이라 1024×768 창에서 목록이 3,755px까지 길어지고, 오른쪽 상세(약 1,430px)는 위에 붙은 채 아래가 비었다.
+
+- 값: `.list`를 세로 flex로 두고 `max-height: max(480px, 72vh)`를 준다. 머리(`.lhead`, "전체 변화 · 급한 순")는 박스 위에 남고 `#queue`만 `overflow-y: auto`로 스크롤한다(`min-height: 0`이 있어야 flex 항목이 줄어든다).
+- 72vh: 박스 위에서 휠을 굴리면 목록이 먼저 스크롤되므로, 창의 약 28%를 박스 밖에 남겨 페이지를 스크롤할 자리로 둔다. 1024×768 창에서 박스는 553px이고 카드 약 7장이 보인다.
+- 480px: 창 높이가 약 667px(480 ÷ 0.72)보다 낮을 때 적용돼 카드 약 6장을 남긴다.
+- 1열 화면(940px 이하)에도 같은 값이 걸린다. 카드가 적어 내용이 박스보다 짧으면 높이는 이전과 같고 스크롤도 없다.
+- 포커스 테두리: 스크롤 영역은 밖으로 나간 그림을 자르므로 `#queue`를 좌우·아래로 4px 넓히고(음수 margin) 같은 만큼 padding을 줬다. 카드 위치는 그대로이고 키보드 포커스 테두리(`outline` 2px, `outline-offset` 2px)가 잘리지 않는다.
+- 선택 카드 보이기(`showSel()`): 기존 `scrollIntoView`는 상세(`#detail`)만 창 위로 올리고 목록은 움직이지 않아, 박스만 두면 칩으로 고른 카드가 박스 밖에 가려질 수 있다. 카드에 `scrollIntoView`를 쓰면 창까지 움직여 상세 이동과 겹치므로, 선택 카드가 박스 밖에 있을 때 `#queue`의 scrollTop만 바꿔 박스 가운데쯤 보인다.
+  - 캘린더·일정 칩으로 고를 때, 1열 화면에서 목록 카드를 누를 때, 주소의 `#카드id`로 열 때 맞춘다. 창은 기존대로 상세로 이동한다.
+  - 2열 화면에서 목록 카드를 누르면 목록 위치와 창은 그대로다.
 
 ## 매핑 (events.json → 페이지 데이터)
 
@@ -117,7 +131,7 @@ python3 -B -m scripts.market_collection.dashboard --root data/market_collection 
 - `is_demo`
   - true: 그 파일로 정한 카드(`use`, `other`, `none`)에 `relDemo: true`를 넣고 `relShort` 끝에 " (가정)"을 붙인다. 템플릿은 제안 근거 끝에 "(렛서 관계는 시연용 가정)"을, 상세 "현재 사용 경로"에 가정 태그를 붙인다. 영향 줄 "제공·사용"은 태그 없이 `relShort`만 보여서 " (가정)"을 문구에 넣었다(1011 원본 표기와 같다).
   - false: 둘 다 붙이지 않는다. 레코드가 없는 카드(`unk`)는 is_demo와 상관없이 `relDemo: false`다.
-- 제안·다음 할 일은 템플릿 규칙이 `relKey`로 계산하고, 템플릿은 바꾸지 않았다. 예: `other`인 단가 인상 예정 카드는 "기존 조건 유지 검토", "현재 경로 유지 · Google · google_direct 새 단가는 비교용으로 기록"이다. `unk` 카드는 사용 중으로 가정하되 "확인 후 "와 "먼저 렛서 사용 경로 확인"이 붙는다.
+- 제안·다음 할 일은 템플릿 규칙이 `relKey`로 계산하고, 이 규칙은 바꾸지 않았다. 예: `other`인 단가 인상 예정 카드는 "기존 조건 유지 검토", "현재 경로 유지 · Google · google_direct 새 단가는 비교용으로 기록"이다. `unk` 카드는 사용 중으로 가정하되 "확인 후 "와 "먼저 렛서 사용 경로 확인"이 붙는다.
 - 모델별 사용 경로(`MODELS[model].use`)는 카드 경로와 상관없이 모델 단위로 같은 파일에서 채운다(2026-10-21 박건 요청). 카드에 나온 모델만 다룬다.
 - 이 값은 지금 화면에 나오지 않는다. 이 값을 보일 템플릿의 "모델별 현황" 표(`renderModels()`, 998행)는 정의만 있고 호출되지 않으며, 표를 넣을 `id="models"` 요소도 없다. 1011 원본도 같다(1221행에 정의, 호출 없음). 아래 규칙은 페이지 데이터 기준이다.
 
@@ -133,7 +147,7 @@ python3 -B -m scripts.market_collection.dashboard --root data/market_collection 
 - 1011 원본 `MODELS` 예시("제공 중 · Vercel 경로 (가정)", "미도입 (가정)")와 달리 "제공 중 · "을 붙이지 않고 경로를 카드와 같은 표기로 쓴다.
 - 옵션이 없거나 파일을 쓸 수 없으면 어느 모델에도 `use`를 넣지 않는다(옵션이 생기기 전과 같은 결과).
 - 파일을 쓸 수 없으면 페이지는 그대로 만들고, 경고 배너에 파일 이름과 사유를 적고, 모든 카드를 `unk`로 둔다(exit 0). 시연 파일 문제로 일일 페이지가 멈추지 않게 하려는 것이다. 사유: 파일 없음, JSON으로 읽을 수 없음, `is_demo`가 true·false가 아님, `records`가 목록이 아님, 레코드에 `model_id`(빈 문자열 제외)나 `route_id` 키가 없음, `route_id`·`endpoint_id`가 빈 문자열이거나 문자열·null이 아님.
-- 템플릿 501행 데이터 출처 주석("렛서 사용 경로는 엔진 letsur_usage가 unknown이라 relKey "unk".")은 이 옵션 전 설명이다. 템플릿은 바꾸지 않았다.
+- 템플릿 501행 데이터 출처 주석("렛서 사용 경로는 엔진 letsur_usage가 unknown이라 relKey "unk".")은 이 옵션 전 설명이고, 고치지 않고 두었다.
 - 시연 파일 `samples/market_collection/demo_internal_routes.json`: LETSUR-events `deliverables/event-json-handoff-20261009/demo_internal_routes.json`을 2026-10-21에 바이트 그대로 복사했다(617 bytes, SHA256 `f27733b9a9c01edb54a6b34b3b6ca4aadc4e785056bf2da1632fa3b212c51f0a`). `is_demo: true`와 `purpose`는 원본 그대로다. 실제 렛서 경로가 아니라 시연용 가정이다.
   - 레코드 4개: gemini-3.8-flash · vercel_ai_gateway, claude-sonnet-5-5 · anthropic_direct, veo-3.1-standard · fal(endpoint fal-ai/veo3.1), gpt-6.1-sol · null(미도입).
 - 실제 연동: 실제 렛서 사용 경로가 생기면 workflow `Build dashboard` 단계에서 `--internal-routes`를 빼거나(모든 카드가 "사용 경로 확인 필요"로 돌아간다), 같은 형식의 실제 경로 파일(`is_demo: false`)로 바꾼다. 시연 파일은 그때 지우면 된다.
@@ -243,7 +257,7 @@ python3 -B -m scripts.market_collection.dashboard --root data/market_collection 
 
 ## 검증 상태 (2026-10-21)
 
-- `python3 -B -s -m pytest -q -p no:cacheprovider tests`: 666 passed(develop 612 + `tests/market_collection/test_dashboard.py` 54).
+- `python3 -B -s -m pytest -q -p no:cacheprovider tests`: 666 passed(develop 612 + `tests/market_collection/test_dashboard.py` 54). 목록 박스 높이 제한 뒤 다시 실행해도 같다.
 - 문법 확인(Python 3.12): dashboard 모듈 3개와 테스트 파일.
 - workflow: PyYAML 6.0.1로 파싱, 기존 1~174행이 develop 969e2da와 같음(추가 40줄, 삭제 0줄). 확인 단계 셸은 secrets 유무 4조합에서 모두 exit 0이고, 둘 다 있을 때만 `enabled=true`.
 - 로컬 빌드: `samples/market_collection`의 3개 run으로 만든 events(이벤트 12건, 모두 gemini-3.8-flash · google_direct · scheduled_change · confirmed)로 카드 1장("12개 항목 단가 1/1부터 인상 예정"), 바뀐 내용 12행(Batch/Flex/Priority/Standard × 입력/출력/캐시 읽기), 추이 4탭. 같은 입력에 `--internal-routes samples/market_collection/demo_internal_routes.json`을 주면 이 카드의 렛서 관계가 `other`, "모델 제공 중 · Vercel · vercel_ai_gateway 경로로 사용 (가정)", `relDemo` true가 되고, `MODELS`의 gemini-3.8-flash에 `use` "Vercel · vercel_ai_gateway 경로로 사용 (가정)"이 들어간다.
@@ -254,5 +268,11 @@ python3 -B -m scripts.market_collection.dashboard --root data/market_collection 
   - file://: 로컬 headless Chrome 155로 정상 화면을 file://로 열어 스크립트가 실행되고 같은 화면이 그려지는 것을 확인했다. 콘솔 메시지 0건.
   - 시연 경로: 위 로컬 빌드에 `--internal-routes`로 시연 파일을 준 페이지를 headless Chrome 156(file://)과 내장 브라우저(localhost 정적 서버)로 열었다. 인상 카드의 현재 사용 경로에 가정 태그와 위 문구가, 제안 근거에 "다른 경로 사용"과 "(렛서 관계는 시연용 가정)"이 나오고, "먼저 렛서 사용 경로 확인"과 "확인 후 "는 나오지 않는다. 두 브라우저 모두 콘솔 메시지 0건이고, 내장 브라우저의 요청은 페이지 문서 1건뿐이다.
   - 모델별 사용 경로(2026-10-21): 위 시연 경로 페이지를 headless Chrome 156(file://)과 내장 브라우저(localhost 정적 서버)로 다시 열었다. `MODELS` 데이터에는 위 `use`가 있지만 "모델별 현황" 표는 그려지지 않는다(`id="models"` 요소 없음, 보이는 글에 "모델별 현황" 0건, `main`의 섹션은 "일정과 단가"와 "변화 목록과 상세" 둘). "경로로 사용" 문구는 카드의 현재 사용 경로와 렛서에 주는 영향 두 곳에만 나오고 둘 다 카드 `relShort`다. 두 브라우저 모두 콘솔 메시지 0건, 내장 브라우저 요청은 localhost뿐이다.
+  - 목록 박스 높이(2026-10-21): 10-21 run artifact의 실제 누적 데이터(이벤트 253건)에 시연 경로 파일을 주어 만든 페이지(카드 61장)를 내장 브라우저(localhost 정적 서버)로 열었다. 입력 폴더는 읽기만 했다.
+    - 높이: 1024×768에서 박스 553px(바꾸기 전 목록 3,755px), 1024×600에서 480px(카드 6장), 900×768(1열)에서 553px, 모바일 프리셋(375×812, 1열)에서 585px이고 모두 `#queue`만 스크롤된다. 목록을 스크롤해도 머리와 창은 그대로이고, 스크롤 전 묶음 제목·카드 위치는 바꾸기 전 CSS와 같다.
+    - 선택 카드: 캘린더 칩으로 목록 아래쪽 카드(61장 중 48번째)를 고르면 박스가 그 카드까지 스크롤된다. 캘린더 칩 2개와 일정 칩 2개를 목록 맨 위·맨 아래에서 시작해 누른 8가지 모두 선택 카드가 박스 안에 보였고, 상세가 창 위로 오는 것은 캘린더 칩과 일정 칩에서 각각 확인했다. 2열에서 목록 카드를 누르면 목록 위치와 창이 그대로고, 1열에서 누르면(실제 마우스 클릭) 상세로 이동하며 선택 카드는 박스 안에 남는다. 주소에 `#카드id`(56번째 카드)를 붙여 열면 처음부터 그 카드가 박스 안에 보인다.
+    - Tab으로 옮긴 포커스 테두리가 박스 안에 다 보인다(4px 여유를 빼면 좌우 4px씩 잘린다).
+    - 카드 1장인 위 로컬 빌드는 박스 높이(151px)와 카드 위치가 바꾸기 전 CSS와 같고 스크롤이 없다.
+    - 콘솔 오류 0건. 내장 브라우저 창이 숨겨진 동안에는 부드러운 스크롤이 진행되지 않아, 창 이동은 화면을 그리게 한 상태(캡처 직후, 실제 클릭)에서 확인했다.
   - 캡처는 저장소에 넣지 않았다.
-- NOT_RUN: actionlint(미설치), 실제 Actions 실행, Cloudflare Pages 배포, Access 설정.
+- NOT_RUN: actionlint(미설치), 실제 Actions 실행, Cloudflare Pages 배포, Access 설정, 목록 박스의 실제 휴대폰·Safari·Firefox 확인(내장 브라우저만 확인).

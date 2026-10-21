@@ -155,7 +155,7 @@ a{color:var(--ink)}
 /* ---- 2. 작업 영역 ---- */
 .work{display:grid;grid-template-columns:minmax(0,380px) minmax(0,1fr);gap:16px;align-items:start}
 @media (max-width:940px){.work{grid-template-columns:minmax(0,1fr)}}
-.list{padding:10px 10px 12px}
+.list{padding:10px 10px 12px;display:flex;flex-direction:column;max-height:max(480px,72vh)} #queue{min-height:0;overflow-y:auto;margin:0 -4px -4px;padding:0 4px 4px}
 .lhead{display:flex;align-items:baseline;justify-content:space-between;padding:4px 6px 8px}
 .lhead h2{margin:0;font-size:15px;font-weight:700;color:var(--ink)}
 .lhead span{font-size:12px;color:var(--muted)}
@@ -1030,11 +1030,15 @@ function showTip(t, x, y){ tip.textContent = ""; const b = document.createElemen
 document.addEventListener("pointermove", ev => { const t = ev.target.closest && ev.target.closest("[data-t1]"); if (t) showTip(t, ev.clientX, ev.clientY); else tip.hidden = true; });
 document.addEventListener("focusin", ev => { const t = ev.target.closest && ev.target.closest("[data-t1]"); if (t) { const r = t.getBoundingClientRect(); showTip(t, r.left, r.bottom); } else tip.hidden = true; });
 const REDUCE = matchMedia("(prefers-reduced-motion: reduce)").matches;
+// 목록 박스(#queue) 안에서만 스크롤해 선택 카드를 보인다. 창 스크롤은 그대로 두고 #detail 이동에 맡긴다.
+function showSel(){ const q = document.getElementById("queue"), r = q.querySelector("[aria-current=true]"); if (!r) return;
+  const a = q.getBoundingClientRect(), b = r.getBoundingClientRect();
+  if (b.top < a.top || b.bottom > a.bottom) q.scrollTop += b.top - a.top - (q.clientHeight - b.height) / 2; }
 function select(id, scroll){ const e = EVENTS.find(x => x.id === id); if (!e) return;
   state.sel = id; try { history.replaceState(null, "", "#" + id); } catch (err) {}
   if (e.eff) calMonth = monthOf(e.eff);
   renderCalendar(); renderQueue(); renderDetail();
-  if (scroll) document.getElementById("detail").scrollIntoView({behavior: REDUCE ? "auto" : "smooth", block: "start"}); }
+  if (scroll) { showSel(); document.getElementById("detail").scrollIntoView({behavior: REDUCE ? "auto" : "smooth", block: "start"}); } }
 document.addEventListener("click", ev => {
   const md_ = ev.target.closest("[data-model]"); if (md_) { trendModel = md_.dataset.model; trendMeasure = 0; trendTier = "Standard"; renderPrice(); return; }
   const tt = ev.target.closest("[data-tier]"); if (tt) { trendTier = tt.dataset.tier; renderPrice(); return; }
@@ -1069,6 +1073,6 @@ function renderCollected(){
     ${src ? `<details class="tv"><summary>수집 출처 ${Object.keys(M.src).length}개 경로</summary><ul class="srcl">${src}</ul></details>` : ""}`;
 }
 document.addEventListener("change", ev => { if (ev.target && ev.target.id === "collsel") { collModel = ev.target.value; renderCollected(); } });
-renderMeta(); renderCalendar(); renderPrice(); renderQueue(); renderDetail();
+renderMeta(); renderCalendar(); renderPrice(); renderQueue(); renderDetail(); showSel();
 let rzT; window.addEventListener("resize", () => { clearTimeout(rzT); rzT = setTimeout(renderPrice, 150); });
 </script>
