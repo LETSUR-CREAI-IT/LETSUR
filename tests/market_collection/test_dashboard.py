@@ -361,11 +361,31 @@ def test_internal_routes_decide_the_letsur_relation(tmp_path: Path, records: lis
     assert (code, data["STATUS"], (card["relKey"], card["relShort"], card["relDemo"])) == (0, "", relation)
 
 
+@pytest.mark.parametrize(("records", "use"), [
+    (None, {}),  # no --internal-routes: no use
+    ([_record("google_direct")], {"use": "Google · google_direct 경로로 사용 (가정)"}),
+    ([_record("vercel_ai_gateway"), _record("openrouter")], {"use": "Vercel · vercel_ai_gateway, OpenRouter · openrouter 경로로 사용 (가정)"}),
+    ([_record("vercel_ai_gateway", endpoint_id="ep-2")], {"use": "Vercel · vercel_ai_gateway 경로로 사용 · endpoint ep-2 (가정)"}),
+    ([_record("google_direct", endpoint_id="ep-1"), _record("vercel_ai_gateway", endpoint_id="ep-2")],
+     {"use": "Google · google_direct, Vercel · vercel_ai_gateway 경로로 사용 · endpoint ep-1 · endpoint ep-2 (가정)"}),
+    ([_record(None, endpoint_id=None)], {"use": "미도입 (가정)"}),
+    ([_record("vercel_ai_gateway"), _record(None, endpoint_id="ep-1")], {"use": "Vercel · vercel_ai_gateway 경로로 사용 (가정)"}),
+    ([_record("google_direct", model_id="claude-sonnet-5-5")], {}),  # no record for this model: no use, as on the card
+])
+def test_internal_routes_fill_the_models_table(tmp_path: Path, records: list | None, use: dict) -> None:
+    """MODELS gets every route the file gives the model, whatever the card's route (google_direct here)."""
+    _write(tmp_path, [_scheduled("e1", "input", "0.75", "1.50", "0.75")])
+    args = _routes(tmp_path, {"is_demo": True, "purpose": "test", "records": records}) if records is not None else None
+    code, _, data = _build(tmp_path, args=args)
+    assert (code, data["STATUS"], data["MODELS"]) == (0, "", {"gemini-3.8-flash": {"prov": "Google", "kind": "LLM", **use}})
+
+
 def test_routes_that_are_not_a_demo_are_not_marked_as_assumed(tmp_path: Path) -> None:
     _write(tmp_path, [_scheduled("e1", "input", "0.75", "1.50", "0.75")])
     _, _, data = _build(tmp_path, args=_routes(tmp_path, {"is_demo": False, "records": [_record("vercel_ai_gateway")]}))
     [card] = data["EVENTS"]
     assert (card["relKey"], card["relShort"], card["relDemo"]) == ("other", "모델 제공 중 · Vercel · vercel_ai_gateway 경로로 사용", False)
+    assert data["MODELS"]["gemini-3.8-flash"]["use"] == "Vercel · vercel_ai_gateway 경로로 사용"
 
 
 def test_committed_demo_routes(tmp_path: Path) -> None:
@@ -374,6 +394,7 @@ def test_committed_demo_routes(tmp_path: Path) -> None:
     _, _, data = _build(tmp_path, args=["--internal-routes", str(DEMO_ROUTES)])
     [card] = data["EVENTS"]
     assert (card["relKey"], card["relShort"], card["relDemo"]) == ("other", "모델 제공 중 · Vercel · vercel_ai_gateway 경로로 사용 (가정)", True)
+    assert data["MODELS"] == {"gemini-3.8-flash": {"prov": "Google", "kind": "LLM", "use": "Vercel · vercel_ai_gateway 경로로 사용 (가정)"}}
 
 
 @pytest.mark.parametrize(("doc", "reason"), [
@@ -392,6 +413,7 @@ def test_unusable_routes_file_still_writes_the_page(tmp_path: Path, doc, reason:
     code, _, data = _build(tmp_path, args=_routes(tmp_path, doc))
     [card] = data["EVENTS"]
     assert (code, card["relKey"], card["relShort"], card["relDemo"]) == (0, "unk", "사용 경로 확인 필요", False)
+    assert data["MODELS"] == {"gemini-3.8-flash": {"prov": "Google", "kind": "LLM"}}
     assert data["STATUS"] == f'<div class="gen-status warn"><b>렛서 사용 경로 파일을 쓰지 못했습니다</b> · {reason} · 모든 카드를 사용 경로 확인 필요로 두었습니다</div>'
 
 

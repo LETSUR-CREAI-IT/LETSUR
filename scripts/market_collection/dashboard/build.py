@@ -8,10 +8,12 @@ state.json next to it, and writes <output>/index.html: template.html (a copy of 
 사용자뷰 1011 page) with its data slots filled. The page needs no network and opens
 from file://. Only facts the engine wrote are shown: judgement fields the engine does
 not make (headline, risk, suggestion text) stay empty, and the template's own rules
-compute the rest. LETSUR's route for each card comes only from --internal-routes, a
-file of the routes LETSUR uses per model; without it, or when the file cannot be used,
-every card says the route is unconfirmed. Cards decided by a file with is_demo true are
-marked as assumed. When events.json is missing or unreadable, or the build or the
+compute the rest. LETSUR's route for each card, and for each model in MODELS, comes only
+from --internal-routes, a file of the routes LETSUR uses per model; without it, or when
+the file cannot be used, every card says the route is unconfirmed and no model gets one.
+Cards and models decided by a file with is_demo true are marked as assumed. MODELS is
+page data only for now: the template reads it in renderModels(), which nothing calls.
+When events.json is missing or unreadable, or the build or the
 continuity step failed, a page is still written and says today's build failed, so
 yesterday's page never stays up as if it were current. Mapping rules: docs/dashboard.md.
 """
@@ -224,6 +226,18 @@ def relation(rep: dict, routes: dict | None) -> dict:
     else:
         key, short = "none", "미도입"
     return {"relKey": key, "relShort": short + (" (가정)" if routes["is_demo"] else ""), "relDemo": routes["is_demo"]}
+
+
+def model_use(model_id: str, routes: dict | None) -> dict:
+    """MODELS[model].use from the --internal-routes file: every route LETSUR uses for the model, whatever the card's
+    route, in relation()'s words. A model with no record gets no use, left to the template's default."""
+    records = [record for record in (routes or {}).get("records", []) if record["model_id"] == model_id]
+    if not records:
+        return {}
+    used = list(dict.fromkeys(record["route_id"] for record in records if record["route_id"]))
+    endpoints = dict.fromkeys(record["endpoint_id"] for record in records if record["route_id"] and record.get("endpoint_id"))
+    use = " · ".join([f"{', '.join(map(route_label, used))} 경로로 사용", *(f"endpoint {endpoint}" for endpoint in endpoints)]) if used else "미도입"
+    return {"use": use + (" (가정)" if routes["is_demo"] else "")}
 
 
 def undecided_release(event: dict) -> bool:
@@ -806,8 +820,9 @@ def collected(report: dict | None) -> dict:
     return {"runs": sorted(runs)}
 
 
-def models(cards: list[dict]) -> dict:
-    return {mid: {"prov": maker(mid) if maker(mid) != "unknown" else "", "kind": KIND_KO.get(MODEL_MODALITIES.get(mid), "")}
+def models(cards: list[dict], routes: dict | None) -> dict:
+    return {mid: {"prov": maker(mid) if maker(mid) != "unknown" else "", "kind": KIND_KO.get(MODEL_MODALITIES.get(mid), ""),
+                  **model_use(mid, routes)}
             for mid in dict.fromkeys(card["mid"] for card in cards if card["mid"])}
 
 
@@ -903,7 +918,7 @@ def collect(root: Path, today: str, routes: dict | None) -> tuple[dict, str]:
     sources = Sources()
     cards = [build_card(cid, groups[cid], sources, routes) for cid in order]
     data = {"TODAY": today, "SRC": sources.entries(), "ID": {cid: [e.get("event_id") for e in groups[cid]] for cid in order},
-            "EVENTS": cards, "MODELS": models(cards), "TREND": trend(cards, groups, state, doc.get("gaps") or []),
+            "EVENTS": cards, "MODELS": models(cards, routes), "TREND": trend(cards, groups, state, doc.get("gaps") or []),
             "COLLECTED": collected(report)}
     return data, warning(continuity)
 

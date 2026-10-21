@@ -9,7 +9,7 @@ python3 -B -m scripts.market_collection.dashboard --root data/market_collection 
 ```
 
 - `--output`은 아직 없는 경로여야 한다(있으면 아무것도 쓰지 않고 exit 2). 결과는 `<output>/index.html` 한 파일이다.
-- `--internal-routes <파일>`(선택): 렛서가 모델마다 쓰는 공급 경로 파일. 주면 카드의 렛서 관계를 이 파일로 정하고, 빼면 모든 카드가 "사용 경로 확인 필요"다(아래 "렛서 관계"). workflow는 시연용 가정 파일 `samples/market_collection/demo_internal_routes.json`을 넘긴다.
+- `--internal-routes <파일>`(선택): 렛서가 모델마다 쓰는 공급 경로 파일. 주면 카드의 렛서 관계와 모델별 사용 경로(`MODELS`의 `use`, 지금 화면에는 나오지 않음)를 이 파일로 정하고, 빼면 모든 카드가 "사용 경로 확인 필요"다(아래 "렛서 관계"). workflow는 시연용 가정 파일 `samples/market_collection/demo_internal_routes.json`을 넘긴다.
 - 종료 코드: 0 정상(입력 문제로 실패 화면을 쓴 경우, 경로 파일을 쓰지 못해 경고를 붙인 경우 포함), 1 예기치 못한 오류(이때도 실패 화면은 쓴다), 2 출력 경로가 이미 있음.
 - 기준일(D-day, 캘린더의 오늘)은 생성 시점의 KST 날짜다. 주소 뒤에 `?base=2026-10-12`를 붙이면 그 날짜로 바꿔 볼 수 있다(원본 템플릿 기능).
 
@@ -118,6 +118,20 @@ python3 -B -m scripts.market_collection.dashboard --root data/market_collection 
   - true: 그 파일로 정한 카드(`use`, `other`, `none`)에 `relDemo: true`를 넣고 `relShort` 끝에 " (가정)"을 붙인다. 템플릿은 제안 근거 끝에 "(렛서 관계는 시연용 가정)"을, 상세 "현재 사용 경로"에 가정 태그를 붙인다. 영향 줄 "제공·사용"은 태그 없이 `relShort`만 보여서 " (가정)"을 문구에 넣었다(1011 원본 표기와 같다).
   - false: 둘 다 붙이지 않는다. 레코드가 없는 카드(`unk`)는 is_demo와 상관없이 `relDemo: false`다.
 - 제안·다음 할 일은 템플릿 규칙이 `relKey`로 계산하고, 템플릿은 바꾸지 않았다. 예: `other`인 단가 인상 예정 카드는 "기존 조건 유지 검토", "현재 경로 유지 · Google · google_direct 새 단가는 비교용으로 기록"이다. `unk` 카드는 사용 중으로 가정하되 "확인 후 "와 "먼저 렛서 사용 경로 확인"이 붙는다.
+- 모델별 사용 경로(`MODELS[model].use`)는 카드 경로와 상관없이 모델 단위로 같은 파일에서 채운다(2026-10-21 박건 요청). 카드에 나온 모델만 다룬다.
+- 이 값은 지금 화면에 나오지 않는다. 이 값을 보일 템플릿의 "모델별 현황" 표(`renderModels()`, 998행)는 정의만 있고 호출되지 않으며, 표를 넣을 `id="models"` 요소도 없다. 1011 원본도 같다(1221행에 정의, 호출 없음). 아래 규칙은 페이지 데이터 기준이다.
+
+| 그 모델의 레코드 | use |
+|---|---|
+| null이 아닌 `route_id`가 있음 | <쓰는 경로> 경로로 사용 |
+| `route_id`가 모두 null | 미도입 |
+| 레코드 없음 | 넣지 않음(표를 그리면 템플릿 기본값 "사용 경로 미확인") |
+
+- `use`의 쓰는 경로는 카드 `other`와 같은 표기(게시자 · route_id)를 ", "로 잇는다. 카드 `other` 문구에서 "모델 제공 중 · "만 뺀 꼴이다. 예: "Vercel · vercel_ai_gateway 경로로 사용".
+- `use`의 endpoint: 경로가 있는 레코드의 `endpoint_id`를 " · endpoint <id>"로 뒤에 붙인다(예: "fal · fal 경로로 사용 · endpoint fal-ai/veo3.1"). 경로가 여럿이면 endpoint가 어느 경로의 것인지는 문구에 나오지 않는다.
+- `use`의 is_demo: true면 끝에 " (가정)"을 붙이고 false면 붙이지 않는다. 시연 파일로는 gemini-3.8-flash가 "Vercel · vercel_ai_gateway 경로로 사용 (가정)"이다.
+- 1011 원본 `MODELS` 예시("제공 중 · Vercel 경로 (가정)", "미도입 (가정)")와 달리 "제공 중 · "을 붙이지 않고 경로를 카드와 같은 표기로 쓴다.
+- 옵션이 없거나 파일을 쓸 수 없으면 어느 모델에도 `use`를 넣지 않는다(옵션이 생기기 전과 같은 결과).
 - 파일을 쓸 수 없으면 페이지는 그대로 만들고, 경고 배너에 파일 이름과 사유를 적고, 모든 카드를 `unk`로 둔다(exit 0). 시연 파일 문제로 일일 페이지가 멈추지 않게 하려는 것이다. 사유: 파일 없음, JSON으로 읽을 수 없음, `is_demo`가 true·false가 아님, `records`가 목록이 아님, 레코드에 `model_id`(빈 문자열 제외)나 `route_id` 키가 없음, `route_id`·`endpoint_id`가 빈 문자열이거나 문자열·null이 아님.
 - 템플릿 501행 데이터 출처 주석("렛서 사용 경로는 엔진 letsur_usage가 unknown이라 relKey "unk".")은 이 옵션 전 설명이다. 템플릿은 바꾸지 않았다.
 - 시연 파일 `samples/market_collection/demo_internal_routes.json`: LETSUR-events `deliverables/event-json-handoff-20261009/demo_internal_routes.json`을 2026-10-21에 바이트 그대로 복사했다(617 bytes, SHA256 `f27733b9a9c01edb54a6b34b3b6ca4aadc4e785056bf2da1632fa3b212c51f0a`). `is_demo: true`와 `purpose`는 원본 그대로다. 실제 렛서 경로가 아니라 시연용 가정이다.
@@ -132,7 +146,7 @@ python3 -B -m scripts.market_collection.dashboard --root data/market_collection 
 
 ### MODELS, COLLECTED
 
-- `MODELS`: 카드에 나온 모델마다 제조사(`catalog.maker()`, 모르면 빈칸)와 종류(`MODEL_MODALITIES`: LLM, 영상, 이미지). 사용 경로(`use`)는 경로 파일이 있어도 채우지 않아 모델 표에는 "사용 경로 미확인"으로 나온다.
+- `MODELS`: 카드에 나온 모델마다 제조사(`catalog.maker()`, 모르면 빈칸)와 종류(`MODEL_MODALITIES`: LLM, 영상, 이미지). 사용 경로(`use`)는 `--internal-routes` 파일에 그 모델의 레코드가 있을 때만 채운다(위 "렛서 관계"). 템플릿은 `MODELS`를 호출되지 않는 `renderModels()`에서만 읽어서 `MODELS`는 지금 화면에 나오지 않는다.
 - `COLLECTED.runs`: `report.json` `processed_runs`의 [run 시작 시각(KST, run id에서 읽음), run id], 오래된 순. 템플릿은 상단 요약의 수집 횟수와 기간에 쓴다. 원본의 "수집 데이터 전체" 표(`COLLECTED.models`)는 페이지를 열 때 호출되지 않는 코드라 채우지 않는다.
 
 ### 단가 추이
@@ -190,7 +204,9 @@ python3 -B -m scripts.market_collection.dashboard --root data/market_collection 
 - 선 이름·항목 이름은 build.py와 템플릿이 모두 escape해서 `&<>"`가 든 이름은 엔티티 그대로 보일 수 있다(지금 이름에는 없다).
 - 행 상태 기호(✓ ? !)는 화면에 나오지 않는다. 템플릿은 행 상태를 대표 행 고르기에만 쓴다.
 - 상단 "기준일 … (고정)"은 생성일이다.
-- 경로 파일에 레코드가 없는 모델의 카드(옵션이 없으면 모든 카드)는 렛서 관계가 미확인이라 "먼저 렛서 사용 경로 확인"이 나온다. 모델 표의 사용 경로는 늘 "사용 경로 미확인"이다.
+- 경로 파일에 레코드가 없는 모델의 카드(옵션이 없으면 모든 카드)는 렛서 관계가 미확인이라 "먼저 렛서 사용 경로 확인"이 나온다.
+- "모델별 현황" 표는 화면에 나오지 않는다(1011 원본과 같다). `renderModels()`가 호출되지 않고 `id="models"` 요소도 없어서 `MODELS`(제조사, 종류, 사용 경로)는 페이지 데이터에만 있다. 레이아웃 주석(6행)의 "아래는 참고(모델별 현황 · 수집 추이)"와 `.models` CSS(313~316행)는 원본에서 남은 것이다. 표를 보이려면 템플릿을 바꿔야 한다.
+  - 표를 그리게 되면 머리의 "렛서 사용 여부는 시연용 가정"은 템플릿 고정 문구라 옵션이 없거나 is_demo가 false여도 나온다.
 - `t7` null 카드는 "수집 확인 필요 · 이벤트 아님 · 실제 변화인지 재조회 전", 제공일 없는 출시 카드는 "출시일 미확인 · 가격 미게시"로 나온다.
 - 원가 칩
   - 현재가가 없는 예정 변경 후보는 "원가 변화 없음"이 된다(템플릿은 예정 값 칸만 미확인 여부를 본다).
@@ -227,15 +243,16 @@ python3 -B -m scripts.market_collection.dashboard --root data/market_collection 
 
 ## 검증 상태 (2026-10-21)
 
-- `python3 -B -s -m pytest -q -p no:cacheprovider tests`: 658 passed(develop 612 + `tests/market_collection/test_dashboard.py` 46).
+- `python3 -B -s -m pytest -q -p no:cacheprovider tests`: 666 passed(develop 612 + `tests/market_collection/test_dashboard.py` 54).
 - 문법 확인(Python 3.12): dashboard 모듈 3개와 테스트 파일.
 - workflow: PyYAML 6.0.1로 파싱, 기존 1~174행이 develop 969e2da와 같음(추가 40줄, 삭제 0줄). 확인 단계 셸은 secrets 유무 4조합에서 모두 exit 0이고, 둘 다 있을 때만 `enabled=true`.
-- 로컬 빌드: `samples/market_collection`의 3개 run으로 만든 events(이벤트 12건, 모두 gemini-3.8-flash · google_direct · scheduled_change · confirmed)로 카드 1장("12개 항목 단가 1/1부터 인상 예정"), 바뀐 내용 12행(Batch/Flex/Priority/Standard × 입력/출력/캐시 읽기), 추이 4탭. 같은 입력에 `--internal-routes samples/market_collection/demo_internal_routes.json`을 주면 이 카드의 렛서 관계가 `other`, "모델 제공 중 · Vercel · vercel_ai_gateway 경로로 사용 (가정)", `relDemo` true가 된다.
-- 옵션 없이 만든 페이지는 c6419a8 생성기가 만든 페이지와 바이트 단위로 같다(정상·경고·실패 입력 3개).
+- 로컬 빌드: `samples/market_collection`의 3개 run으로 만든 events(이벤트 12건, 모두 gemini-3.8-flash · google_direct · scheduled_change · confirmed)로 카드 1장("12개 항목 단가 1/1부터 인상 예정"), 바뀐 내용 12행(Batch/Flex/Priority/Standard × 입력/출력/캐시 읽기), 추이 4탭. 같은 입력에 `--internal-routes samples/market_collection/demo_internal_routes.json`을 주면 이 카드의 렛서 관계가 `other`, "모델 제공 중 · Vercel · vercel_ai_gateway 경로로 사용 (가정)", `relDemo` true가 되고, `MODELS`의 gemini-3.8-flash에 `use` "Vercel · vercel_ai_gateway 경로로 사용 (가정)"이 들어간다.
+- 옵션 없이 만든 페이지는 c6419a8, 4580240 생성기가 만든 페이지와 바이트 단위로 같다(정상·경고·실패 입력 3개). 시연 파일을 준 페이지는 4580240 생성기 결과와 `MODELS` 한 줄만 다르고, 없는 경로 파일을 준 페이지는 옵션 없는 페이지와 경고 배너 한 줄만 다르다.
 - 브라우저 확인
   - 화면 3개: 위 로컬 빌드의 정상 화면, 경고 화면(`continued_with_gaps`, 처리하지 못한 run 2개), 실패 화면(`events.json` 없음, continuity `failed`, report `rejected`). 경고·실패 입력은 합성했다.
   - 내장 브라우저가 scratchpad의 file:// 주소를 열지 못해 같은 파일을 localhost 정적 서버로 열었다. 캘린더 월 이동, 일정 칩에서 상세로 이동, 단가 추이 탭·측정·기간 전환과 표 보기, 바뀐 내용·출처 펼치기, `?base=2026-12-20`(D-12)을 조작했다. 콘솔 오류 0건, 외부 요청 0건(요청은 페이지 문서와 브라우저 자동 favicon 요청뿐).
   - file://: 로컬 headless Chrome 155로 정상 화면을 file://로 열어 스크립트가 실행되고 같은 화면이 그려지는 것을 확인했다. 콘솔 메시지 0건.
   - 시연 경로: 위 로컬 빌드에 `--internal-routes`로 시연 파일을 준 페이지를 headless Chrome 156(file://)과 내장 브라우저(localhost 정적 서버)로 열었다. 인상 카드의 현재 사용 경로에 가정 태그와 위 문구가, 제안 근거에 "다른 경로 사용"과 "(렛서 관계는 시연용 가정)"이 나오고, "먼저 렛서 사용 경로 확인"과 "확인 후 "는 나오지 않는다. 두 브라우저 모두 콘솔 메시지 0건이고, 내장 브라우저의 요청은 페이지 문서 1건뿐이다.
+  - 모델별 사용 경로(2026-10-21): 위 시연 경로 페이지를 headless Chrome 156(file://)과 내장 브라우저(localhost 정적 서버)로 다시 열었다. `MODELS` 데이터에는 위 `use`가 있지만 "모델별 현황" 표는 그려지지 않는다(`id="models"` 요소 없음, 보이는 글에 "모델별 현황" 0건, `main`의 섹션은 "일정과 단가"와 "변화 목록과 상세" 둘). "경로로 사용" 문구는 카드의 현재 사용 경로와 렛서에 주는 영향 두 곳에만 나오고 둘 다 카드 `relShort`다. 두 브라우저 모두 콘솔 메시지 0건, 내장 브라우저 요청은 localhost뿐이다.
   - 캡처는 저장소에 넣지 않았다.
 - NOT_RUN: actionlint(미설치), 실제 Actions 실행, Cloudflare Pages 배포, Access 설정.
