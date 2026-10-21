@@ -25,6 +25,7 @@ GOOGLE = "google_gemini_38_flash"
 URL = "https://ai.google.dev/gemini-api/docs/pricing"
 REPORT = {"status": "ok", "processed_runs": [RUN1, RUN2]}
 SLOTS = ("SRC", "ID", "EVENTS", "MODELS", "TREND", "COLLECTED")
+DEMO_ROUTES = Path(__file__).resolve().parents[2] / "samples/market_collection/demo_internal_routes.json"
 
 
 def _side(amount: str, run_id: str, observation_id: str, observed_at: str, **extra: str) -> dict:
@@ -96,9 +97,17 @@ def _write(tmp_path: Path, events: list[dict], gaps: list | None = None, **files
     _files(tmp_path, events={"schema_version": 1, "policy": "all_verified", "events": events, "gaps": gaps or []}, **files)
 
 
-def _build(tmp_path: Path, now: datetime = NOW) -> tuple[int, str, dict]:
+def _routes(tmp_path: Path, doc) -> list[str]:
+    """--internal-routes for <tmp>/routes.json; a str is written as is, None writes nothing."""
+    path = tmp_path / "routes.json"
+    if doc is not None:
+        path.write_text(doc if isinstance(doc, str) else json.dumps(doc), encoding="utf-8")
+    return ["--internal-routes", str(path)]
+
+
+def _build(tmp_path: Path, now: datetime = NOW, args: list[str] | None = None) -> tuple[int, str, dict]:
     out = tmp_path / "site"
-    code = build.main(["--root", str(tmp_path / "root"), "--output", str(out)], now=now)
+    code = build.main(["--root", str(tmp_path / "root"), "--output", str(out), *(args or [])], now=now)
     page = (out / "index.html").read_text(encoding="utf-8")
     assert "/*DATA:" not in page and "<!--STATUS-->" not in page
     data = {name: json.loads(re.search(rf"^const {name} = (.*);$", page, re.M).group(1)) for name in SLOTS}
@@ -330,6 +339,62 @@ def test_continuity_warning_keeps_the_cards(tmp_path: Path, continuity: dict, ba
     assert (code, data["STATUS"], len(data["EVENTS"])) == (0, banner, 1)
 
 
+def _record(route_id: str | None, model_id: str = "gemini-3.8-flash", **fields) -> dict:
+    return {"model_id": model_id, "route_id": route_id, **fields}
+
+
+@pytest.mark.parametrize(("records", "relation"), [
+    (None, ("unk", "사용 경로 확인 필요", False)),  # no --internal-routes
+    ([_record("google_direct")], ("use", "이 경로로 사용 중 (가정)", True)),
+    ([_record("google_direct", endpoint_id="ep-1"), _record("vercel_ai_gateway", endpoint_id="ep-2")],
+     ("use", "이 경로로 사용 중 · endpoint ep-1 (가정)", True)),
+    ([_record("vercel_ai_gateway", endpoint_id=None), _record("openrouter")],
+     ("other", "모델 제공 중 · Vercel · vercel_ai_gateway, OpenRouter · openrouter 경로로 사용 (가정)", True)),
+    ([_record(None, endpoint_id=None)], ("none", "미도입 (가정)", True)),
+    ([_record("google_direct", model_id="claude-sonnet-5-5")], ("unk", "사용 경로 확인 필요", False)),  # no record is not "not used"
+])
+def test_internal_routes_decide_the_letsur_relation(tmp_path: Path, records: list | None, relation: tuple) -> None:
+    _write(tmp_path, [_scheduled("e1", "input", "0.75", "1.50", "0.75")])
+    args = _routes(tmp_path, {"is_demo": True, "purpose": "test", "records": records}) if records is not None else None
+    code, _, data = _build(tmp_path, args=args)
+    [card] = data["EVENTS"]
+    assert (code, data["STATUS"], (card["relKey"], card["relShort"], card["relDemo"])) == (0, "", relation)
+
+
+def test_routes_that_are_not_a_demo_are_not_marked_as_assumed(tmp_path: Path) -> None:
+    _write(tmp_path, [_scheduled("e1", "input", "0.75", "1.50", "0.75")])
+    _, _, data = _build(tmp_path, args=_routes(tmp_path, {"is_demo": False, "records": [_record("vercel_ai_gateway")]}))
+    [card] = data["EVENTS"]
+    assert (card["relKey"], card["relShort"], card["relDemo"]) == ("other", "모델 제공 중 · Vercel · vercel_ai_gateway 경로로 사용", False)
+
+
+def test_committed_demo_routes(tmp_path: Path) -> None:
+    """The file the workflow passes: the demo assumes LETSUR takes Gemini 3.8 Flash through Vercel."""
+    _write(tmp_path, [_scheduled("e1", "input", "0.75", "1.50", "0.75")])
+    _, _, data = _build(tmp_path, args=["--internal-routes", str(DEMO_ROUTES)])
+    [card] = data["EVENTS"]
+    assert (card["relKey"], card["relShort"], card["relDemo"]) == ("other", "모델 제공 중 · Vercel · vercel_ai_gateway 경로로 사용 (가정)", True)
+
+
+@pytest.mark.parametrize(("doc", "reason"), [
+    (None, "routes.json 없음"),
+    ("{", "routes.json을 읽을 수 없음"),
+    ({"records": [_record("google_direct")]}, "routes.json 형식이 다름 (is_demo가 true·false가 아님)"),
+    ({"is_demo": True, "records": {}}, "routes.json 형식이 다름 (records 목록 없음)"),
+    ({"is_demo": True, "records": [{"route_id": "google_direct"}]}, "routes.json 형식이 다름 (records 1번째 model_id 없음)"),
+    ({"is_demo": True, "records": [{"model_id": "gemini-3.8-flash"}]}, "routes.json 형식이 다름 (records 1번째 route_id 없음)"),
+    ({"is_demo": True, "records": [_record("google_direct"), _record("", model_id="gpt-6.1-sol")]},
+     "routes.json 형식이 다름 (records 2번째 route_id가 문자열이나 null이 아님)"),
+    ({"is_demo": True, "records": [_record(None, endpoint_id=3)]}, "routes.json 형식이 다름 (records 1번째 endpoint_id가 문자열이나 null이 아님)"),
+])
+def test_unusable_routes_file_still_writes_the_page(tmp_path: Path, doc, reason: str) -> None:
+    _write(tmp_path, [_scheduled("e1", "input", "0.75", "1.50", "0.75")])
+    code, _, data = _build(tmp_path, args=_routes(tmp_path, doc))
+    [card] = data["EVENTS"]
+    assert (code, card["relKey"], card["relShort"], card["relDemo"]) == (0, "unk", "사용 경로 확인 필요", False)
+    assert data["STATUS"] == f'<div class="gen-status warn"><b>렛서 사용 경로 파일을 쓰지 못했습니다</b> · {reason} · 모든 카드를 사용 경로 확인 필요로 두었습니다</div>'
+
+
 def test_existing_output_is_left_alone(tmp_path: Path) -> None:
     _write(tmp_path, [])
     out = tmp_path / "site"
@@ -340,7 +405,7 @@ def test_existing_output_is_left_alone(tmp_path: Path) -> None:
 
 
 def test_unexpected_error_still_writes_a_failure_page(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    def broken(root: Path, today: str) -> None:
+    def broken(root: Path, today: str, routes: dict | None) -> None:
         raise RuntimeError("boom")
 
     monkeypatch.setattr(build, "collect", broken)

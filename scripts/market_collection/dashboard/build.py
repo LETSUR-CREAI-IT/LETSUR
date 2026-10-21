@@ -1,14 +1,18 @@
 """Fill the dashboard template with the events engine output.
 
     python -m scripts.market_collection.dashboard --root data/market_collection --output dashboard-site
+        [--internal-routes samples/market_collection/demo_internal_routes.json]
 
 Reads <root>/events/events.json and, when present, report.json, continuity.json and
 state.json next to it, and writes <output>/index.html: template.html (a copy of the
 사용자뷰 1011 page) with its data slots filled. The page needs no network and opens
 from file://. Only facts the engine wrote are shown: judgement fields the engine does
-not make (headline, risk, LETSUR usage, suggestion text) stay empty, and the template's
-own rules compute the rest. When events.json is missing or unreadable, or the build or
-the continuity step failed, a page is still written and says today's build failed, so
+not make (headline, risk, suggestion text) stay empty, and the template's own rules
+compute the rest. LETSUR's route for each card comes only from --internal-routes, a
+file of the routes LETSUR uses per model; without it, or when the file cannot be used,
+every card says the route is unconfirmed. Cards decided by a file with is_demo true are
+marked as assumed. When events.json is missing or unreadable, or the build or the
+continuity step failed, a page is still written and says today's build failed, so
 yesterday's page never stays up as if it were current. Mapping rules: docs/dashboard.md.
 """
 
@@ -201,6 +205,25 @@ def card_key(event: dict) -> list:
 
 def representative(members: list[dict]) -> dict:
     return next((event for event in members if event.get("group_role") == "representative"), members[0])
+
+
+def relation(rep: dict, routes: dict | None) -> dict:
+    """relKey, relShort and relDemo for the card's model and route from the --internal-routes file.
+
+    A model with no record stays unconfirmed: no record does not mean LETSUR does not use it.
+    endpoint_id only adds detail when the route matches."""
+    records = [record for record in (routes or {}).get("records", []) if record["model_id"] == rep.get("model_id")]
+    if not records:
+        return {"relKey": "unk", "relShort": "사용 경로 확인 필요", "relDemo": False}
+    route, used = rep.get("route") or "", list(dict.fromkeys(record["route_id"] for record in records if record["route_id"]))
+    if route in used:
+        endpoints = dict.fromkeys(record["endpoint_id"] for record in records if record["route_id"] == route and record.get("endpoint_id"))
+        key, short = "use", " · ".join(["이 경로로 사용 중", *(f"endpoint {endpoint}" for endpoint in endpoints)])
+    elif used:
+        key, short = "other", f"모델 제공 중 · {', '.join(map(route_label, used))} 경로로 사용"
+    else:
+        key, short = "none", "미도입"
+    return {"relKey": key, "relShort": short + (" (가정)" if routes["is_demo"] else ""), "relDemo": routes["is_demo"]}
 
 
 def undecided_release(event: dict) -> bool:
@@ -550,7 +573,7 @@ def compare_line(members, rep, ch, t7) -> list[list[str]]:
     return line
 
 
-def build_card(card_id: str, members: list[dict], sources: Sources) -> dict:
+def build_card(card_id: str, members: list[dict], sources: Sources, routes: dict | None) -> dict:
     """One EVENTS entry; members share model, route, type, subtags and date (or a group_key)."""
     rep = representative(members)
     q1 = undecided_release(rep)
@@ -587,7 +610,7 @@ def build_card(card_id: str, members: list[dict], sources: Sources) -> dict:
                           for e in members for side in (part(e, "before"), part(e, "after")) if side.get("currency"))
     card = {"id": card_id, "t7": t7, "m": rep.get("model_id") or "모델 표기 없음", "mid": rep.get("model_id") or "", "ch": ch,
             "unit": " · ".join(f"{c} / {u}" if u else c for c, u in pairs), "sum": summary_text(t7, members, eff, sub, q1, remove, added),
-            "relKey": "unk", "relShort": "사용 경로 확인 필요", "relDemo": False, "act": "pending", "real": True,
+            **relation(rep, routes), "act": "pending", "real": True,
             "chgHead": table_head(t7, members), "chg": [row["row"] for row in rows], "cond": compare_line(members, rep, ch, t7), "ev": ev}
     phrase = next((part(e, "dates")["end_phrase"] for e in members if part(e, "dates").get("end_phrase")), None) if t7 == "한시 할인" else None
     for key, value in (("effLabel", label if t7 else ""), ("sub", sub), ("flag", flag_text(members)), ("eff", eff), ("effQual", qual),
@@ -804,6 +827,39 @@ def warning(continuity: dict | None) -> str:
     return ""
 
 
+def internal_routes(path: Path) -> tuple[dict | None, str]:
+    """The --internal-routes file, or None and a warning banner when it cannot be used. The page is still written
+    with every card unconfirmed, so a bad file never stops the daily page."""
+    doc = read_json(path)
+    if not path.exists():
+        problem = f"{path.name} 없음"
+    elif doc is None:
+        problem = f"{path.name}을 읽을 수 없음"
+    elif not isinstance(doc.get("is_demo"), bool):
+        problem = f"{path.name} 형식이 다름 (is_demo가 true·false가 아님)"
+    elif not isinstance(doc.get("records"), list):
+        problem = f"{path.name} 형식이 다름 (records 목록 없음)"
+    else:
+        problem = next((f"{path.name} 형식이 다름 (records {number}번째 {reason})"
+                        for number, reason in enumerate(map(record_problem, doc["records"]), 1) if reason), "")
+    if problem:
+        return None, banner("warn", "렛서 사용 경로 파일을 쓰지 못했습니다", f"{problem} · 모든 카드를 사용 경로 확인 필요로 두었습니다")
+    return doc, ""
+
+
+def record_problem(record) -> str:
+    """Why one --internal-routes record cannot be used, or "". route_id must be there (null: the model is not
+    offered); endpoint_id may be left out."""
+    if not isinstance(record, dict) or not isinstance(record.get("model_id"), str) or not record["model_id"]:
+        return "model_id 없음"
+    if "route_id" not in record:
+        return "route_id 없음"
+    for key in ("route_id", "endpoint_id"):
+        if record.get(key) is not None and not (isinstance(record[key], str) and record[key]):
+            return f"{key}가 문자열이나 null이 아님"
+    return ""
+
+
 def empty(today: str, runs: dict) -> dict:
     return {"TODAY": today, "SRC": {}, "ID": {}, "EVENTS": [], "MODELS": {}, "TREND": {}, "COLLECTED": runs}
 
@@ -812,7 +868,7 @@ def render(template: str, data: dict, status: str) -> str:
     return SLOT.sub(lambda m: status if m.group(0) == "<!--STATUS-->" else js(data[m.group(1)]), template)
 
 
-def collect(root: Path, today: str) -> tuple[dict, str]:
+def collect(root: Path, today: str, routes: dict | None) -> tuple[dict, str]:
     """Page data and the status banner for <root>/events."""
     folder = root / "events"
     doc, report, continuity, state = (read_json(folder / f"{name}.json") for name in ("events", "report", "continuity", "state"))
@@ -845,7 +901,7 @@ def collect(root: Path, today: str) -> tuple[dict, str]:
 
     order = sorted(groups, key=order_key)
     sources = Sources()
-    cards = [build_card(cid, groups[cid], sources) for cid in order]
+    cards = [build_card(cid, groups[cid], sources, routes) for cid in order]
     data = {"TODAY": today, "SRC": sources.entries(), "ID": {cid: [e.get("event_id") for e in groups[cid]] for cid in order},
             "EVENTS": cards, "MODELS": models(cards), "TREND": trend(cards, groups, state, doc.get("gaps") or []),
             "COLLECTED": collected(report)}
@@ -857,6 +913,7 @@ def main(argv: list[str] | None = None, now: datetime | None = None) -> int:
                                      description="Write the dashboard page from the events engine output.")
     parser.add_argument("--root", default="data/market_collection")
     parser.add_argument("--output", required=True)
+    parser.add_argument("--internal-routes")
     args = parser.parse_args(argv)
     root, out = Path(args.root), Path(args.output)
     if out.exists():
@@ -866,8 +923,9 @@ def main(argv: list[str] | None = None, now: datetime | None = None) -> int:
     template = TEMPLATE.read_text(encoding="utf-8")
     code, cards = 0, 0
     try:
-        data, status = collect(root, today)
-        page, cards = render(template, data, status), len(data["EVENTS"])
+        routes, note = internal_routes(Path(args.internal_routes)) if args.internal_routes else (None, "")
+        data, status = collect(root, today, routes)
+        page, cards = render(template, data, status + note), len(data["EVENTS"])
     except Exception as error:  # the page must still say today's build failed
         traceback.print_exc()
         page, code = render(template, empty(today, {"runs": []}), banner("fail", "오늘 생성 실패", f"대시보드 생성 중 오류: {type(error).__name__}")), 1

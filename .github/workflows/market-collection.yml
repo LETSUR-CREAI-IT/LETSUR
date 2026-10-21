@@ -177,9 +177,11 @@ jobs:
       # Built even when an earlier step failed, so the page says today's build failed instead
       # of yesterday's page staying up as if current. Deployed to Cloudflare Pages only when
       # both secrets are set; otherwise the deploy is skipped and the run does not fail for it.
+      # LETSUR's route per model comes from the committed demo assumptions (is_demo, so the page
+      # marks them as assumed); drop --internal-routes or replace the file when real routes exist.
       - name: Build dashboard
         if: always()
-        run: python3 -B -m scripts.market_collection.dashboard --root data/market_collection --output dashboard-site
+        run: python3 -B -m scripts.market_collection.dashboard --root data/market_collection --output dashboard-site --internal-routes samples/market_collection/demo_internal_routes.json
 
       - name: Upload dashboard
         if: always()
