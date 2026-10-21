@@ -205,12 +205,12 @@ python3 -B -m scripts.market_collection.dashboard --root data/market_collection 
 
 ## 운영 체크리스트 (박건)
 
-1~3은 끝났다(2026-10-21 확인).
+1~4는 끝났다(1~3은 2026-10-21, 4는 2026-10-22 확인).
 
 1. 저장소 `LETSUR-CREAI-IT/LETSUR`를 공개로 바꿨다(박건 결정). 공개 저장소의 GitHub Pages는 접근 제한이 없어 대시보드도 로그인 없이 누구나 볼 수 있다.
 2. GitHub Pages를 켰다. 소스는 GitHub Actions(`build_type=workflow`), 주소는 https://letsur-creai-it.github.io/LETSUR/ 이다. 별도 저장소, Cloudflare 토큰, secrets는 필요 없다.
 3. `github-pages` 환경의 배포 허용 브랜치는 `develop`과 `claude/dashboard-events-link-2270e7`(PR #18 확인용 임시 허용) 두 개다.
-4. `workflow_dispatch`로 한 번 실행해 `deploy` 잡 성공과 위 주소의 화면(기준일·카드·배너)을 확인한다. 실행 시간이 timeout 30분 안인지도 본다.
+4. `workflow_dispatch`로 한 번 실행해 확인했다(run 39623449579, 아래 검증 상태). `deploy` 잡이 성공해 위 주소에 페이지가 올라갔고 브라우저에서 열린다. `collect` 잡은 이 변경과 무관한 기존 수집 문제로 실패했다. 실행 시간은 1분 46초로 timeout 30분 안이다.
 5. PR #18(https://github.com/LETSUR-CREAI-IT/LETSUR/pull/18) 머지 뒤 임시 허용을 지운다: `gh api -X DELETE repos/LETSUR-CREAI-IT/LETSUR/environments/github-pages/deployment-branch-policies/<id>`. id는 `gh api repos/LETSUR-CREAI-IT/LETSUR/environments/github-pages/deployment-branch-policies`로 찾는다.
 6. 일일 자동 배포는 머지 뒤 develop의 cron(`17 0 * * *` UTC, 09:17 KST)부터다. 머지 전 develop의 workflow에는 대시보드 단계가 없다.
 
@@ -265,6 +265,10 @@ python3 -B -m scripts.market_collection.dashboard --root data/market_collection 
 - `python3 -B -s -m pytest -q -p no:cacheprovider tests`: 666 passed(develop 612 + `tests/market_collection/test_dashboard.py` 54). 목록 박스 높이 제한 뒤와 GitHub Pages 배포로 바꾼 뒤(2026-10-22)에 다시 실행해도 같다.
 - 문법 확인(Python 3.12): dashboard 모듈 3개와 테스트 파일.
 - workflow(2026-10-22, GitHub Pages 배포): PyYAML 6.0.1로 파싱해 잡 2개(`collect`, `deploy`), `collect` output, 업로드 단계 조건, `deploy` 잡 조건·권한·환경, 액션 5개의 커밋 SHA 고정을 확인했다. develop 969e2da와 비교하면 줄을 더하기만 했다(추가 39줄, 삭제 0줄: `collect` 머리의 output 3줄과 끝의 대시보드 부분).
+- 실제 Actions 실행(2026-10-22, gh와 브라우저로 확인): run 39623449579(`workflow_dispatch`, 브랜치 `claude/dashboard-events-link-2270e7`, head be469a1, 시작 2026-10-21T15:11:37Z = 2026-10-22 00:11 KST, 전체 1분 46초). run 결과는 실패다.
+  - `collect` 잡: 실패. 실패 단계는 `Generate image reviews`(exit 1, `gpt-image-2.5-sunburst`·`gpt-image-2.5-flare` 리뷰 incomplete)와 `Summarize collection`(exit 1)이다. develop의 10/20(run 39372444502)·10/21(run 39546912099) schedule 실행도 같은 두 단계에서 실패했으므로 이 변경과 무관한 기존 수집 문제다. 대시보드 단계는 성공했다: `Build dashboard`가 카드 37장으로 `dashboard-site/index.html`을 썼고 `Upload Pages artifact`가 artifact `github-pages`(500,916 bytes)를 올렸다.
+  - `deploy` 잡: 성공. deployment 7229610047, page_url https://letsur-creai-it.github.io/LETSUR/. 페이지는 HTTP 200(789,921 bytes), 제목 "렛서 변화 대시보드 수정안"이고 브라우저에서 콘솔 오류 없이 그려지며 baseline-run 배너가 보인다.
+  - 수집이 실패해도 페이지가 있으면 배포하는 설계가 실제 run에서 동작했다. `workflow_dispatch` 실행이라 PR #18에는 check가 붙지 않는다.
 - 로컬 빌드: `samples/market_collection`의 3개 run으로 만든 events(이벤트 12건, 모두 gemini-3.8-flash · google_direct · scheduled_change · confirmed)로 카드 1장("12개 항목 단가 1/1부터 인상 예정"), 바뀐 내용 12행(Batch/Flex/Priority/Standard × 입력/출력/캐시 읽기), 추이 4탭. 같은 입력에 `--internal-routes samples/market_collection/demo_internal_routes.json`을 주면 이 카드의 렛서 관계가 `other`, "모델 제공 중 · Vercel · vercel_ai_gateway 경로로 사용 (가정)", `relDemo` true가 되고, `MODELS`의 gemini-3.8-flash에 `use` "Vercel · vercel_ai_gateway 경로로 사용 (가정)"이 들어간다.
 - 옵션 없이 만든 페이지는 c6419a8, 4580240 생성기가 만든 페이지와 바이트 단위로 같다(정상·경고·실패 입력 3개). 시연 파일을 준 페이지는 4580240 생성기 결과와 `MODELS` 한 줄만 다르고, 없는 경로 파일을 준 페이지는 옵션 없는 페이지와 경고 배너 한 줄만 다르다.
 - 브라우저 확인
@@ -280,4 +284,4 @@ python3 -B -m scripts.market_collection.dashboard --root data/market_collection 
     - 카드 1장인 위 로컬 빌드는 박스 높이(151px)와 카드 위치가 바꾸기 전 CSS와 같고 스크롤이 없다.
     - 콘솔 오류 0건. 내장 브라우저 창이 숨겨진 동안에는 부드러운 스크롤이 진행되지 않아, 창 이동은 화면을 그리게 한 상태(캡처 직후, 실제 클릭)에서 확인했다.
   - 캡처는 저장소에 넣지 않았다.
-- NOT_RUN: actionlint(미설치), 실제 Actions 실행(GitHub Pages 배포, 허용하지 않은 브랜치의 배포 실패, 재실행 포함), 목록 박스의 실제 휴대폰·Safari·Firefox 확인(내장 브라우저만 확인).
+- NOT_RUN: actionlint(미설치), Actions에서 허용하지 않은 브랜치의 배포 실패와 재실행 동작, 목록 박스의 실제 휴대폰·Safari·Firefox 확인(내장 브라우저만 확인).
