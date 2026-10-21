@@ -1,6 +1,6 @@
 # 이벤트 → 대시보드 (scripts/market_collection/dashboard)
 
-이벤트 엔진 출력(`data/market_collection/events/events.json`)을 팀 대시보드 페이지 한 장(`index.html`)으로 만든다. 같은 폴더의 `report.json`·`continuity.json`·`state.json`은 있으면 상태 배너, 수집 run 목록, 단가 추이에 쓴다. 입력은 수정하지 않고 네트워크도 쓰지 않으며, 결과는 외부 파일 없이 file://로 열린다. 화면은 박건 결정(2026-10-20, "이 형태로 만들어")에 따라 `렛서_대시보드_사용자뷰_1011.html`의 형태를 쓴다(v14 카드 형태는 쓰지 않는다). 왼쪽 변화 목록 박스에는 높이 제한을 더했다(2026-10-21 박건 요청, 아래 "목록 박스 높이"). 일일 workflow가 페이지를 만들어 Cloudflare Pages에 올리고, Cloudflare Access로 팀원에게만 연다. 알림은 이번 범위가 아니다.
+이벤트 엔진 출력(`data/market_collection/events/events.json`)을 팀 대시보드 페이지 한 장(`index.html`)으로 만든다. 같은 폴더의 `report.json`·`continuity.json`·`state.json`은 있으면 상태 배너, 수집 run 목록, 단가 추이에 쓴다. 입력은 수정하지 않고 네트워크도 쓰지 않으며, 결과는 외부 파일 없이 file://로 열린다. 화면은 박건 결정(2026-10-20, "이 형태로 만들어")에 따라 `렛서_대시보드_사용자뷰_1011.html`의 형태를 쓴다(v14 카드 형태는 쓰지 않는다). 왼쪽 변화 목록 박스에는 높이 제한을 더했다(2026-10-21 박건 요청, 아래 "목록 박스 높이"). 일일 workflow가 페이지를 만들어 GitHub Pages(https://letsur-creai-it.github.io/LETSUR/)에 올린다. 저장소가 공개라 이 페이지도 로그인 없이 누구나 열 수 있다. 알림은 이번 범위가 아니다.
 
 ## 실행
 
@@ -187,27 +187,32 @@ python3 -B -m scripts.market_collection.dashboard --root data/market_collection 
 
 ## workflow (`.github/workflows/market-collection.yml`)
 
-기존 단계·cron·permissions는 그대로 두고 맨 끝에 4단계를 더했다(박건 승인 2026-10-20).
+기존 단계·cron·permissions·concurrency는 그대로 두고 `collect` 잡 끝에 2단계를, 그 뒤에 `deploy` 잡을 더했다(박건 승인 2026-10-20). 배포 대상은 2026-10-22에 Cloudflare Pages에서 같은 저장소의 GitHub Pages로 바꿨다(저장소 공개는 박건 결정).
 
 1. `Build dashboard`(`if: always()`): 위 실행 명령에 `--internal-routes samples/market_collection/demo_internal_routes.json`을 붙인다(2026-10-21 박건 요청). 배포 페이지의 렛서 관계는 시연용 가정이고 "(가정)"으로 표시된다. 앞 단계가 실패해도 실패 화면을 만든다.
-2. `Upload dashboard`(`if: always()`): artifact `dashboard-${{ github.run_id }}-${{ github.run_attempt }}`.
-3. `Check Cloudflare secrets`(`if: always()`): `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`를 env로만 받아 둘 다 있으면 `enabled=true`. 하나라도 없으면 배포를 건너뛰고 step summary에 한 줄 남긴다. run은 이 때문에 실패하지 않는다.
-4. `Deploy dashboard`(`enabled`가 `true`일 때): `cloudflare/wrangler-action` v4.1.3(커밋 `953926a2e2182532811c01a25e53647d93bf07c0`로 고정, 2026-09-24 릴리스)으로 `pages deploy dashboard-site --project-name letsur-dashboard --branch main`.
+2. `Upload Pages artifact`(`if: always()`이고 `dashboard-site/index.html`이 있을 때): `actions/upload-pages-artifact` v5.0.0(커밋 `fc324d3547104276b827a68afc52ff2a11cc49c9`로 고정, 2026-04-10 릴리스)으로 `dashboard-site`를 artifact `github-pages`(1일 보관)로 올린다. 이 단계 결과(`steps.pages.outcome`)가 `collect` 잡 output `dashboard`다.
+3. `deploy` 잡(`needs: collect`, `if: always() && needs.collect.outputs.dashboard == 'success'`): `actions/deploy-pages` v5.0.1(커밋 `368f82528645a54fb793d4d04e342629a3f51346`로 고정, 2026-09-01 릴리스)으로 배포한다. 잡 권한은 `pages: write`, `id-token: write`이고 환경은 `github-pages`(배포 주소를 환경 url로 보인다)다.
 
-- secrets는 `run:` 안에 `${{ }}`로 넣지 않는다.
+- 최상위 permissions(`contents: read`, `actions: read`)는 그대로다. 잡에 permissions를 쓰면 그 잡은 최상위 값 대신 자기 값만 쓰므로 Pages 권한은 `deploy` 잡에만 있다.
+- 수집·요약 단계가 실패해도 페이지가 있으면 배포한다. 페이지가 없으면 업로드 단계와 `deploy` 잡을 건너뛰고 실패를 더하지 않는다.
+- 페이지 파일은 Pages artifact `github-pages`(`artifact.tar`)에 1일 남는다. 같은 파일을 올리던 `Upload dashboard` artifact(`dashboard-<run_id>-<run_attempt>`)는 뺐다.
+- Pages 소스가 GitHub Actions라 Jekyll 처리가 없어 `.nojekyll`은 필요 없다. secrets도 쓰지 않는다.
 - 주의
-  - 어느 브랜치에서 `workflow_dispatch`로 실행해도 `--branch main`이라 production 주소에 배포된다.
-  - secrets가 있는데 배포가 실패하면 그 단계가 실패해 run도 실패한다.
-  - 생성 단계가 exit 1이어도 실패 화면이 업로드·배포된다(run은 실패로 남는다).
-  - wrangler 버전은 action 기본값을 쓴다.
+  - 배포를 허용한 브랜치(아래 체크리스트 3) 어디서 돌려도 같은 주소에 배포되고 마지막 배포가 남는다. 임시 PR 브랜치에서 `workflow_dispatch`로 돌리면 다음 배포 전까지 그 결과가 보인다.
+  - 허용하지 않은 브랜치에서 돌리면 `deploy` 잡이 환경 보호 규칙에 막혀 실패한다(GitHub 환경 규칙, 이 저장소에서 실행해 보지 않음).
+  - 배포가 실패하면 `deploy` 잡이 실패해 run도 실패한다.
+  - 생성 단계가 exit 1이어도 실패 화면이 배포된다(run은 실패로 남는다).
 
 ## 운영 체크리스트 (박건)
 
-1. Cloudflare Pages 프로젝트 `letsur-dashboard`를 만든다(Direct Upload, production branch `main`). 프로젝트가 없으면 배포 단계가 실패한다.
-2. API 토큰(권한 Account · Cloudflare Pages · Edit)과 Account ID를 GitHub secrets `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`로 등록한다.
-3. Zero Trust Access 앱을 만든다(Self-hosted, `letsur-dashboard.pages.dev`). 박건 개인 계정으로 만들고, 허용 정책에 팀원 이메일을 하나씩 넣는다(One-time PIN 로그인).
-4. Access 앱에 `*.letsur-dashboard.pages.dev`도 포함(확인 필요). 배포마다 생기는 `<hash>.letsur-dashboard.pages.dev` 주소도 로그인 없이 열리지 않는지 확인한다.
-5. `workflow_dispatch`로 한 번 실행해 `Deploy dashboard` 단계 성공과 로그인 뒤 화면(기준일·카드·배너)을 확인한다. 실행 시간이 timeout 30분 안인지도 본다.
+1~3은 끝났다(2026-10-21 확인).
+
+1. 저장소 `LETSUR-CREAI-IT/LETSUR`를 공개로 바꿨다(박건 결정). 공개 저장소의 GitHub Pages는 접근 제한이 없어 대시보드도 로그인 없이 누구나 볼 수 있다.
+2. GitHub Pages를 켰다. 소스는 GitHub Actions(`build_type=workflow`), 주소는 https://letsur-creai-it.github.io/LETSUR/ 이다. 별도 저장소, Cloudflare 토큰, secrets는 필요 없다.
+3. `github-pages` 환경의 배포 허용 브랜치는 `develop`과 `claude/dashboard-events-link-2270e7`(PR #18 확인용 임시 허용) 두 개다.
+4. `workflow_dispatch`로 한 번 실행해 `deploy` 잡 성공과 위 주소의 화면(기준일·카드·배너)을 확인한다. 실행 시간이 timeout 30분 안인지도 본다.
+5. PR #18(https://github.com/LETSUR-CREAI-IT/LETSUR/pull/18) 머지 뒤 임시 허용을 지운다: `gh api -X DELETE repos/LETSUR-CREAI-IT/LETSUR/environments/github-pages/deployment-branch-policies/<id>`. id는 `gh api repos/LETSUR-CREAI-IT/LETSUR/environments/github-pages/deployment-branch-policies`로 찾는다.
+6. 일일 자동 배포는 머지 뒤 develop의 cron(`17 0 * * *` UTC, 09:17 KST)부터다. 머지 전 develop의 workflow에는 대시보드 단계가 없다.
 
 ## 한계 (2026-10-21)
 
@@ -257,9 +262,9 @@ python3 -B -m scripts.market_collection.dashboard --root data/market_collection 
 
 ## 검증 상태 (2026-10-21)
 
-- `python3 -B -s -m pytest -q -p no:cacheprovider tests`: 666 passed(develop 612 + `tests/market_collection/test_dashboard.py` 54). 목록 박스 높이 제한 뒤 다시 실행해도 같다.
+- `python3 -B -s -m pytest -q -p no:cacheprovider tests`: 666 passed(develop 612 + `tests/market_collection/test_dashboard.py` 54). 목록 박스 높이 제한 뒤와 GitHub Pages 배포로 바꾼 뒤(2026-10-22)에 다시 실행해도 같다.
 - 문법 확인(Python 3.12): dashboard 모듈 3개와 테스트 파일.
-- workflow: PyYAML 6.0.1로 파싱, 기존 1~174행이 develop 969e2da와 같음(추가 40줄, 삭제 0줄). 확인 단계 셸은 secrets 유무 4조합에서 모두 exit 0이고, 둘 다 있을 때만 `enabled=true`.
+- workflow(2026-10-22, GitHub Pages 배포): PyYAML 6.0.1로 파싱해 잡 2개(`collect`, `deploy`), `collect` output, 업로드 단계 조건, `deploy` 잡 조건·권한·환경, 액션 5개의 커밋 SHA 고정을 확인했다. develop 969e2da와 비교하면 줄을 더하기만 했다(추가 39줄, 삭제 0줄: `collect` 머리의 output 3줄과 끝의 대시보드 부분).
 - 로컬 빌드: `samples/market_collection`의 3개 run으로 만든 events(이벤트 12건, 모두 gemini-3.8-flash · google_direct · scheduled_change · confirmed)로 카드 1장("12개 항목 단가 1/1부터 인상 예정"), 바뀐 내용 12행(Batch/Flex/Priority/Standard × 입력/출력/캐시 읽기), 추이 4탭. 같은 입력에 `--internal-routes samples/market_collection/demo_internal_routes.json`을 주면 이 카드의 렛서 관계가 `other`, "모델 제공 중 · Vercel · vercel_ai_gateway 경로로 사용 (가정)", `relDemo` true가 되고, `MODELS`의 gemini-3.8-flash에 `use` "Vercel · vercel_ai_gateway 경로로 사용 (가정)"이 들어간다.
 - 옵션 없이 만든 페이지는 c6419a8, 4580240 생성기가 만든 페이지와 바이트 단위로 같다(정상·경고·실패 입력 3개). 시연 파일을 준 페이지는 4580240 생성기 결과와 `MODELS` 한 줄만 다르고, 없는 경로 파일을 준 페이지는 옵션 없는 페이지와 경고 배너 한 줄만 다르다.
 - 브라우저 확인
@@ -275,4 +280,4 @@ python3 -B -m scripts.market_collection.dashboard --root data/market_collection 
     - 카드 1장인 위 로컬 빌드는 박스 높이(151px)와 카드 위치가 바꾸기 전 CSS와 같고 스크롤이 없다.
     - 콘솔 오류 0건. 내장 브라우저 창이 숨겨진 동안에는 부드러운 스크롤이 진행되지 않아, 창 이동은 화면을 그리게 한 상태(캡처 직후, 실제 클릭)에서 확인했다.
   - 캡처는 저장소에 넣지 않았다.
-- NOT_RUN: actionlint(미설치), 실제 Actions 실행, Cloudflare Pages 배포, Access 설정, 목록 박스의 실제 휴대폰·Safari·Firefox 확인(내장 브라우저만 확인).
+- NOT_RUN: actionlint(미설치), 실제 Actions 실행(GitHub Pages 배포, 허용하지 않은 브랜치의 배포 실패, 재실행 포함), 목록 박스의 실제 휴대폰·Safari·Firefox 확인(내장 브라우저만 확인).
