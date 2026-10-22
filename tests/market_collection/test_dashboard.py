@@ -473,6 +473,70 @@ def test_trend_leaves_out_suspect_observations_and_claims(tmp_path: Path) -> Non
     assert trend["badge"] == ["변화 2건", ""]
 
 
+OPENROUTER, VERCEL = "openrouter_llm_endpoints_deepseek_v4_pro", "vercel_llm_endpoints_deepseek_v4_pro"
+# What the gateway listings state about the endpoint itself (llm_endpoints.py); none of it is a price condition.
+ALIBABA = {"price_basis": "endpoint_default_conditions", "endpoint_tag": "alibaba/fp8/us-east-1", "context_length": "1000000",
+           "quantization": "fp8", "endpoint_status": "0", "endpoint_discount": "0", "endpoint_model_slug": "deepseek/deepseek-v4-pro-20260423"}
+NOVITA = {"price_basis": "endpoint_default_conditions", "endpoint_tag": "novita/fp4", "context_length": "1048576",
+          "quantization": "fp4", "endpoint_status": "0", "endpoint_discount": "0"}
+DEEPINFRA = {"price_basis": "endpoint_listed_rate", "endpoint_provider": "DeepInfra", "context_length": "1048576",
+             "quantization": "fp8", "endpoint_status": "0"}
+
+
+def _gateway(observation_id: str, route: str, source_key: str, provider: str, amount: str, **conditions: str) -> dict:
+    """A state.json series entry of a gateway endpoint listing; the endpoint states who serves it as conditions."""
+    entry = _stored(observation_id, "input", amount)
+    entry["obs"].update(model_id="deepseek-v4-pro", route=route, source_key=source_key, upstream_provider=provider,
+                        provider_model_id="deepseek/deepseek-v4-pro", conditions={"service_tier": "standard", **conditions}, effective_until="")
+    return entry
+
+
+def _gateway_change(event_id: str, endpoint: dict, before: str, after: str) -> dict:
+    """The input price of one OpenRouter endpoint changed between RUN1 and RUN2."""
+    return _event(event_id, "price_change", model_id="deepseek-v4-pro", route="openrouter", source_key=OPENROUTER, billing_item="input",
+                  conditions={"service_tier": "standard", **endpoint}, before=_side(before, RUN1, f"{event_id}-1", AT1),
+                  after=_side(after, RUN2, f"{event_id}-2", AT2), change={"delta": "-0.10", "pct": "-33.33", "direction": "down", "note": ""},
+                  dates={"observed_before_utc": AT1, "observed_after_utc": AT2, "published": None, "effective_from": None, "note": ""},
+                  evidence_refs=[_ref(OPENROUTER, RUN1, f"{event_id}-1", f"input {before}"), _ref(OPENROUTER, RUN2, f"{event_id}-2", f"input {after}")],
+                  sources=[_source(OPENROUTER, "channel_official")])
+
+
+def test_endpoints_of_one_price_condition_are_lines_of_one_tab(tmp_path: Path) -> None:
+    state = {"series": {"a": _gateway("g1-2", "openrouter", OPENROUTER, "Alibaba", "0.20", **ALIBABA),
+                        "n": _gateway("n-2", "openrouter", OPENROUTER, "Novita", "0.25", **NOVITA),
+                        "d": _gateway("d-2", "vercel_ai_gateway", VERCEL, "DeepInfra", "0.30", **DEEPINFRA)}}
+    _write(tmp_path, [_gateway_change("g1", ALIBABA, "0.30", "0.20")], state=state)
+    trend = _build(tmp_path)[2]["TREND"]["deepseek-v4-pro"]
+    assert "tiers" not in trend
+    assert [(line["name"], [pt[1] for pt in line["pts"]]) for line in trend["series"]] == [
+        ("OpenRouter · openrouter · alibaba/fp8/us-east-1", [[0.3], [0.2]]),
+        ("OpenRouter · openrouter · novita/fp4", [[0.25]]),
+        ("Vercel · vercel_ai_gateway · DeepInfra · fp8", [[0.3]])]
+    assert "연결할 선이 여럿이라" not in trend["note"]
+
+
+def test_a_different_service_tier_still_gets_its_own_tab(tmp_path: Path) -> None:
+    state = {"series": {"a": _gateway("g1-2", "openrouter", OPENROUTER, "Alibaba", "0.20", **ALIBABA),
+                        "n": _gateway("n-2", "openrouter", OPENROUTER, "Novita", "0.25", **NOVITA),
+                        "p": _gateway("p-2", "openrouter", OPENROUTER, "Alibaba", "0.60", service_tier="priority", **ALIBABA)}}
+    _write(tmp_path, [_gateway_change("g1", ALIBABA, "0.30", "0.20")], state=state)
+    tiers = _build(tmp_path)[2]["TREND"]["deepseek-v4-pro"]["tiers"]
+    assert {tab: [line["name"] for line in lines] for tab, lines in tiers.items()} == {
+        "Standard": ["OpenRouter · openrouter · alibaba/fp8/us-east-1", "OpenRouter · openrouter · novita/fp4"],
+        "Priority": ["OpenRouter · openrouter · alibaba/fp8/us-east-1"]}
+
+
+def test_lines_over_the_limit_say_how_many_were_left_out(tmp_path: Path) -> None:
+    endpoints = {f"p{n}": {**NOVITA, "endpoint_tag": f"p{n}/fp8", "quantization": "fp8"} for n in range(8)}
+    state = {"series": {tag: _gateway(f"{tag}-2" if tag != "p7" else "g1-2", "openrouter", OPENROUTER, tag, "0.20", **endpoint)
+                        for tag, endpoint in endpoints.items()}}
+    _write(tmp_path, [_gateway_change("g1", endpoints["p7"], "0.30", "0.20")], state=state)
+    trend = _build(tmp_path)[2]["TREND"]["deepseek-v4-pro"]
+    assert [line["name"] for line in trend["series"]] == [f"OpenRouter · openrouter · p{n}/fp8" for n in (0, 1, 2, 3, 4, 7)]  # the changed endpoint stays
+    assert ("선이 6개를 넘어 뺀 선 2개: Standard: OpenRouter · openrouter · p5/fp8, Standard: OpenRouter · openrouter · p6/fp8."
+            in trend["note"])
+
+
 def test_event_without_optional_fields(tmp_path: Path) -> None:
     event = {"event_id": "b1", "event_type": "limited_discount", "model_id": "seedance-2.5", "route": "fal", "status": "candidate",
              "dates": None, "change": None, "before": None, "after": None, "evidence_refs": None, "sources": None}

@@ -166,12 +166,14 @@ python3 -B -m scripts.market_collection.dashboard --root data/market_collection 
 ### 단가 추이
 
 - 이벤트 카드가 있는 모델만 넣는다(키 `model_id`).
-- 탭은 조건 묶음(비교 조건 + 단위, 예: Standard, Batch), 선은 경로(같은 경로에 출처가 여럿이면 source_key 등으로 구분), 측정은 청구 항목이다.
+- 탭은 가격 조건 묶음(비교 조건 + 단위, 예: Standard, Batch), 선은 경로와 게이트웨이 엔드포인트, 측정은 청구 항목이다.
+  - 게이트웨이(OpenRouter, Vercel) 목록이 적는 엔드포인트 사실(`endpoint_tag`, `endpoint_provider`, `endpoint_model_slug`, `context_length`, `quantization`, `endpoint_status`, `endpoint_discount`, `discount_application`)과 가격 근거 표기(`price_basis`, 모델 페이지 수집기도 낸다)는 가격 조건이 아니라서 탭을 가르지 않고 선을 가른다. `service_tier`나 `prompt_tokens` 같은 실제 가격 조건이나 단위가 다르면 탭이 갈라진다.
+  - 선 이름은 경로 뒤에 엔드포인트 이름(OpenRouter는 태그, Vercel은 제공자)과 양자화를 붙인다(이름에 양자화가 이미 있으면 한 번만). 그래도 같은 이름이 되는 선은 source_key 등으로 구분한다.
 - 점은 실제 관측값과 공지된 예정 단가만 쓴다.
   - 관측: `state.json` `series`의 최신 관측과 이벤트의 이전·이후 관측. run마다 점 하나이고, 그 run에 없는 항목은 앞 값을 잇는다.
   - 예정: `scheduled_change`의 적용일에 예정 값을 점선으로 잇는다. 마지막 관측 뒤이고 그 선에서 관측된 모든 항목에 예정 값이 있을 때만 그리고, 아니면 날짜 메모로 돌린다.
 - 빼는 것: USD가 아닌 값, 엔진 gaps에서 의심된 관측(`parser_artifact`, `csv_raw_mismatch`, `parser_fingerprint_mismatch`), claim. USD가 아닌 값과 의심 관측의 건수는 추이 설명(`note`)에 적는다.
-- 탭마다 선은 6개까지다(템플릿 색 s1~s6). 이벤트가 있는 선을 먼저 남기고 뺀 선 이름은 설명에 적는다.
+- 탭마다 선은 6개까지다(템플릿 색 s1~s6). 이벤트가 있는 선을 먼저 남기고, 뺀 선의 개수와 이름은 설명에 적는다("선이 6개를 넘어 뺀 선 N개: ...").
 - 예정 점을 그리지 않은 선은 마지막 관측의 `effective_until`(하나일 때)까지만 그린다.
 
 ## 실패·경고 표시
@@ -262,7 +264,7 @@ python3 -B -m scripts.market_collection.dashboard --root data/market_collection 
 
 ## 검증 상태 (2026-10-21)
 
-- `python3 -B -s -m pytest -q -p no:cacheprovider tests`: 666 passed(develop 612 + `tests/market_collection/test_dashboard.py` 54). 목록 박스 높이 제한 뒤와 GitHub Pages 배포로 바꾼 뒤(2026-10-22)에 다시 실행해도 같다.
+- `python3 -B -s -m pytest -q -p no:cacheprovider tests`: 669 passed(develop 612 + `tests/market_collection/test_dashboard.py` 57). 단가 추이에서 엔드포인트 사실을 탭 키에서 뺀 뒤(2026-10-22)의 값이고, 그 전의 666 passed에 이 변경의 테스트 3개를 더했다.
 - 문법 확인(Python 3.12): dashboard 모듈 3개와 테스트 파일.
 - workflow(2026-10-22, GitHub Pages 배포): PyYAML 6.0.1로 파싱해 잡 2개(`collect`, `deploy`), `collect` output, 업로드 단계 조건, `deploy` 잡 조건·권한·환경, 액션 5개의 커밋 SHA 고정을 확인했다. develop 969e2da와 비교하면 줄을 더하기만 했다(추가 39줄, 삭제 0줄: `collect` 머리의 output 3줄과 끝의 대시보드 부분).
 - 실제 Actions 실행(2026-10-22, gh와 브라우저로 확인): run 39623449579(`workflow_dispatch`, 브랜치 `claude/dashboard-events-link-2270e7`, head be469a1, 시작 2026-10-21T15:11:37Z = 2026-10-22 00:11 KST, 전체 1분 46초). run 결과는 실패다.
@@ -270,6 +272,9 @@ python3 -B -m scripts.market_collection.dashboard --root data/market_collection 
   - `deploy` 잡: 성공. deployment 7229610047, page_url https://letsur-creai-it.github.io/LETSUR/. 페이지는 HTTP 200(789,921 bytes), 제목 "렛서 변화 대시보드 수정안"이고 브라우저에서 콘솔 오류 없이 그려지며 baseline-run 배너가 보인다.
   - 수집이 실패해도 페이지가 있으면 배포하는 설계가 실제 run에서 동작했다. `workflow_dispatch` 실행이라 PR #18에는 check가 붙지 않는다.
 - 로컬 빌드: `samples/market_collection`의 3개 run으로 만든 events(이벤트 12건, 모두 gemini-3.8-flash · google_direct · scheduled_change · confirmed)로 카드 1장("12개 항목 단가 1/1부터 인상 예정"), 바뀐 내용 12행(Batch/Flex/Priority/Standard × 입력/출력/캐시 읽기), 추이 4탭. 같은 입력에 `--internal-routes samples/market_collection/demo_internal_routes.json`을 주면 이 카드의 렛서 관계가 `other`, "모델 제공 중 · Vercel · vercel_ai_gateway 경로로 사용 (가정)", `relDemo` true가 되고, `MODELS`의 gemini-3.8-flash에 `use` "Vercel · vercel_ai_gateway 경로로 사용 (가정)"이 들어간다.
+- 단가 추이 탭(2026-10-22, 엔드포인트 사실을 탭 키에서 뺌)
+  - 합성 입력: 실제 파서(`parse_openrouter`, `parse_vercel`)와 `condition_view`를 거친 게이트웨이 목록을 실제 CLI로 빌드했다. 모델별 엔드포인트 수는 운영 페이지의 탭 수(deepseek-v4-pro 8, deepseek-v4.1-flash 18, glm-5.2 22, glm-5.3-flash 27, kimi-k3 23)에 맞췄다. 탭 수는 바꾸기 전 8·18·22·27·23, 바꾼 뒤 1·3·3·4·3이다(service_tier마다 하나이고, glm-5.3-flash는 `prompt_tokens` 조건 탭이 하나 더 있다). 탭마다 선은 6개까지만 그리고 뺀 선의 개수와 이름은 설명에 나온다. 운영 데이터가 아니라 운영 탭 수에 맞춘 합성 입력이다.
+  - 실제 샘플: `samples/market_collection` 3개 run으로 엔진을 돌려 만든 `state.json`(추이가 나오는 모델 16개)에서 탭·선 이름이 같은 모델이 15개이고, gpt-image-2.5-flare 하나만 `price_basis`("starting listing quote")로 갈렸던 Vercel 선이 '조건 없음' 탭으로 들어온다(탭 80개 → 79개, 선 83개 그대로). 위 로컬 빌드(추이는 gemini-3.8-flash만 그린다)는 시연 파일을 주든 주지 않든 바꾸기 전 생성기(a3022ea)가 만든 페이지와 바이트 단위로 같다.
 - 옵션 없이 만든 페이지는 c6419a8, 4580240 생성기가 만든 페이지와 바이트 단위로 같다(정상·경고·실패 입력 3개). 시연 파일을 준 페이지는 4580240 생성기 결과와 `MODELS` 한 줄만 다르고, 없는 경로 파일을 준 페이지는 옵션 없는 페이지와 경고 배너 한 줄만 다르다.
 - 브라우저 확인
   - 화면 3개: 위 로컬 빌드의 정상 화면, 경고 화면(`continued_with_gaps`, 처리하지 못한 run 2개), 실패 화면(`events.json` 없음, continuity `failed`, report `rejected`). 경고·실패 입력은 합성했다.
@@ -284,4 +289,4 @@ python3 -B -m scripts.market_collection.dashboard --root data/market_collection 
     - 카드 1장인 위 로컬 빌드는 박스 높이(151px)와 카드 위치가 바꾸기 전 CSS와 같고 스크롤이 없다.
     - 콘솔 오류 0건. 내장 브라우저 창이 숨겨진 동안에는 부드러운 스크롤이 진행되지 않아, 창 이동은 화면을 그리게 한 상태(캡처 직후, 실제 클릭)에서 확인했다.
   - 캡처는 저장소에 넣지 않았다.
-- NOT_RUN: actionlint(미설치), Actions에서 허용하지 않은 브랜치의 배포 실패와 재실행 동작, 목록 박스의 실제 휴대폰·Safari·Firefox 확인(내장 브라우저만 확인).
+- NOT_RUN: actionlint(미설치), Actions에서 허용하지 않은 브랜치의 배포 실패와 재실행 동작, 목록 박스의 실제 휴대폰·Safari·Firefox 확인(내장 브라우저만 확인), 운영 페이지(GitHub Pages)의 단가 추이 탭 수(합쳐진 뒤 workflow 배포로만 볼 수 있다).

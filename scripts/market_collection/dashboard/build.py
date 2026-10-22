@@ -56,6 +56,10 @@ KIND_KO = {"llm": "LLM", "video": "영상", "image": "이미지"}
 TAG = {"manufacturer_official": "sup", "channel_official": "ch"}  # anything else is an external source
 MARK = {"confirmed": "ok", "candidate": "unk", "conflicted": "con"}
 IGNORED = {"rate_period", *MUTABLE_CONDITIONS}  # the rate window and stated multipliers are not what is compared
+# What a gateway listing states about the endpoint serving a price (collectors/llm_endpoints.py), not the condition it is priced
+# under: it tells lines apart, never trend tabs.
+ENDPOINT = {"endpoint_tag", "endpoint_provider", "endpoint_model_slug", "context_length", "quantization", "endpoint_status",
+            "endpoint_discount", "discount_application", "price_basis"}
 SUSPECT_GAPS = ("parser_artifact", "csv_raw_mismatch", "parser_fingerprint_mismatch")
 MAX_LINES = 6  # the template colours six lines (s1~s6)
 
@@ -181,6 +185,18 @@ def route_label(route: str) -> str:
 
 def compared(conditions) -> dict:
     return {key: value for key, value in (conditions or {}).items() if key not in IGNORED}
+
+
+def endpoint(conditions) -> tuple:
+    """The stated endpoint facts of a price; they are part of the trend line's key."""
+    return tuple(sorted((key, str(value)) for key, value in (conditions or {}).items() if key in ENDPOINT))
+
+
+def endpoint_label(facts: tuple) -> str:
+    """The endpoint's name (OpenRouter tag or Vercel provider), plus its quantization unless the name already says it."""
+    stated = dict(facts)
+    name, quantization = stated.get("endpoint_tag") or stated.get("endpoint_provider") or "", stated.get("quantization") or ""
+    return " · ".join(part for part in (name, "" if quantization in name else quantization) if part)
 
 
 def card_date(event: dict) -> str:
@@ -638,7 +654,7 @@ def build_card(card_id: str, members: list[dict], sources: Sources, routes: dict
 
 
 def trend(cards: list[dict], groups: dict[str, list[dict]], state: dict | None, gaps: list) -> dict:
-    """TREND for each model with events: tabs are condition sets, lines are routes, measures are billing items."""
+    """TREND for each model with events: tabs are price condition sets, lines are routes and their gateway endpoints, measures are billing items."""
     series = state.get("series") if isinstance(state, dict) and isinstance(state.get("series"), dict) else None
     suspect = {gap.get("after_observation_id") for gap in gaps if isinstance(gap, dict) and gap.get("kind") in SUSPECT_GAPS} - {None, ""}
     out = {}
@@ -668,7 +684,8 @@ def model_trend(model_id: str, cards: list[dict], groups: dict[str, list[dict]],
         return True
 
     def tab_key(conditions, unit) -> tuple[str, str]:
-        return json.dumps(compared(conditions), sort_keys=True, ensure_ascii=False), unit or ""
+        priced_under = {key: value for key, value in compared(conditions).items() if key not in ENDPOINT}
+        return json.dumps(priced_under, sort_keys=True, ensure_ascii=False), unit or ""
 
     def line(tab, key) -> dict:
         return lines.setdefault(tab, {}).setdefault(key, {"runs": {}, "planned": {}, "event": False})
@@ -679,7 +696,9 @@ def model_trend(model_id: str, cards: list[dict], groups: dict[str, list[dict]],
             continue
         moment, amount = kst(obs.get("observed_at_utc")), number(obs.get("amount"))
         if moment and amount is not None and usable(obs.get("observation_id"), obs.get("currency")):
-            key = tuple(obs.get(name) or "" for name in ("route", "source_key", "upstream_provider", "provider_model_id", "task"))
+            # a line is a route, source and gateway endpoint (what an event names), then upstream, model id and task
+            key = (obs.get("route") or "", obs.get("source_key") or "", endpoint(obs.get("conditions")), obs.get("upstream_provider") or "",
+                   obs.get("provider_model_id") or "", obs.get("task") or "")
             line(tab_key(obs.get("conditions"), obs.get("unit")), key)["runs"].setdefault(obs.get("run_id") or "", []).append(
                 (moment, obs.get("billing_item") or "", float(amount), obs.get("effective_until")))
 
@@ -688,7 +707,7 @@ def model_trend(model_id: str, cards: list[dict], groups: dict[str, list[dict]],
         for event in groups[card["id"]]:
             if not observed(event):
                 continue
-            kind, where = event.get("event_type"), (event.get("route") or "", event.get("source_key") or "")
+            kind, where = event.get("event_type"), (event.get("route") or "", event.get("source_key") or "", endpoint(event.get("conditions")))
             before, after = part(event, "before"), part(event, "after")
             touched.add((tab_key(event.get("conditions"), after.get("unit") or before.get("unit")), where))
             for side in (before,) if kind == "scheduled_change" else (before, after):
@@ -705,13 +724,13 @@ def model_trend(model_id: str, cards: list[dict], groups: dict[str, list[dict]],
                 else:
                     count["currency"] += 1
     for tab, where, run_id, row in loose:
-        found = [key for key in lines.get(tab, {}) if key[:2] == where]
+        found = [key for key in lines.get(tab, {}) if key[:3] == where]
         if len(found) > 1:
             count["ambiguous"] += 1
         else:
             line(tab, found[0] if found else where + ("", "", ""))["runs"].setdefault(run_id, []).append(row)
     for tab, where, slot, item, value in planned:
-        found = [key for key in lines.get(tab, {}) if key[:2] == where]
+        found = [key for key in lines.get(tab, {}) if key[:3] == where]
         if len(found) == 1:
             lines[tab][found[0]]["planned"].setdefault(slot, {})[item] = value
         else:
@@ -721,7 +740,7 @@ def model_trend(model_id: str, cards: list[dict], groups: dict[str, list[dict]],
         return None
     for tab, keyed in lines.items():
         for key, entry in keyed.items():
-            entry["event"] = (tab, key[:2]) in touched
+            entry["event"] = (tab, key[:3]) in touched
 
     names, tabs, dropped = tab_names(list(lines)), {}, []
     for tab in sorted(lines, key=lambda key: names[key]):
@@ -750,7 +769,7 @@ def model_trend(model_id: str, cards: list[dict], groups: dict[str, list[dict]],
         if count[name]:
             facts.append(text.format(n=count[name]))
     if dropped:
-        facts.append(f"선이 {MAX_LINES}개를 넘어 뺀 선: {', '.join(dropped)}.")
+        facts.append(f"선이 {MAX_LINES}개를 넘어 뺀 선 {len(dropped)}개: {', '.join(dropped)}.")
     notes = sorted([card["eff"], f"{card.get('effLabel') or '적용일'} · {card['ch']}", card["id"]]
                    for card in cards if card["id"] in memo and card.get("eff"))
     entry = {"name": model_id, "unit": " · ".join(dict.fromkeys(f"USD / {unit_ko(tab[1])}" if tab[1] else "USD" for tab in tabs)),
@@ -800,11 +819,13 @@ def tab_names(keys) -> dict:
 
 
 def line_names(keys) -> dict:
-    """Route label per line; lines on one route add the first key parts (source, upstream, model id, task) that differ."""
+    """Route label and gateway endpoint per line; lines still alike add the first key parts (source, upstream, model id, task) that differ."""
     names = {}
     for key in keys:
-        same, parts = [other for other in keys if other[0] == key[0]], [route_label(key[0])]
-        for index in range(1, len(key)):
+        who = endpoint_label(key[2])
+        same = [other for other in keys if other[0] == key[0] and endpoint_label(other[2]) == who]
+        parts = [route_label(key[0]), *([who] if who else [])]
+        for index in (1, 3, 4, 5):
             if len(same) == 1:
                 break
             if len({other[index] for other in same}) > 1:
