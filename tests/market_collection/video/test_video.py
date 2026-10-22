@@ -71,6 +71,20 @@ class VideoAdapterTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "token rate or unit missing"):
             self.parse("fal_seedance_25_t2v", FAL.replace(b"per 1000 tokens for 480p", b"per video for 480p"))
 
+    def test_fal_token_rate_accepts_thousands_separator(self):
+        # fal's page now writes "per 1,000 tokens"; the rates and the unit are unchanged.
+        separated = FAL.replace(b"per 1000 tokens", b"per 1,000 tokens")
+        self.assertNotEqual(separated, FAL)
+        prices, conditions = self.parse("fal_seedance_25_t2v", separated)
+        resolution = {c["condition_set_id"]: c["value"] for c in conditions if c["condition_key"] == "resolution"}
+        self.assertEqual({(resolution[p["condition_set_id"]], p["price_kind"], p["amount"], p["unit"]) for p in prices if p["unit"] == "1000 tokens"}, {
+            ("480p/720p", "published_rate", "0.0214", "1000 tokens"),
+            ("1080p", "provider_estimate", "0.0234", "1000 tokens"),
+        })
+        # Only the separator is tolerated: a per-million rate must not be read as per 1000 tokens.
+        with self.assertRaisesRegex(ValueError, "token rate or unit missing"):
+            self.parse("fal_seedance_25_t2v", FAL.replace(b"per 1000 tokens", b"per 1,000,000 tokens"))
+
     def test_byteplus_model_unit_scope_and_formula(self):
         prices, conditions = self.parse("byteplus_seedance_25_t2v", BYTEPLUS)
         self.assertEqual([(p["amount"], p["unit"]) for p in prices], [("10.70", "1M tokens"), ("11.7", "1M tokens")])

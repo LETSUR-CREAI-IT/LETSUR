@@ -245,9 +245,10 @@ def _video_fal(page: str, source_id: str) -> tuple[list[dict], list[dict]]:
     page = page.replace("**$", "$").replace("** per", " per").replace("** /", " /")
     prices: list[dict] = []
     conditions: list[dict] = []
+    # fal writes the unit as "1000 tokens" or "1,000 tokens"; the stored unit stays "1000 tokens".
     for resolution, pattern in (
-        ("480p/720p", r"(?:charged|cost)\s+\$([0-9.]+)\s+per\s+1000\s+tokens\s+(?:at\s+both\s+480p\s+and\s+720p|for\s+480p\s+and\s+720p(?:\s+video)?)"),
-        ("1080p", r"roughly\s+\$([0-9.]+)\s+per\s+1000\s+tokens\s+for\s+1080p"),
+        ("480p/720p", r"(?:charged|cost)\s+\$([0-9.]+)\s+per\s+1,?000\s+tokens\s+(?:at\s+both\s+480p\s+and\s+720p|for\s+480p\s+and\s+720p(?:\s+video)?)"),
+        ("1080p", r"roughly\s+\$([0-9.]+)\s+per\s+1,?000\s+tokens\s+for\s+1080p"),
     ):
         match = re.search(pattern, page, re.I)
         if match:
