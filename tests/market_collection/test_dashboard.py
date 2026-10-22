@@ -274,6 +274,67 @@ def test_undecided_type(tmp_path: Path, candidates: list[str], subtags: list[str
     assert {key: card.get(key) for key in expected} == expected
 
 
+@pytest.mark.parametrize(("event_type", "kind"), [
+    ("price_change", "가격 변경"), ("scheduled_change", "예정 변경"), ("limited_discount", "한시 할인"), ("condition_change", "조건 변경"),
+    ("model_release", "모델 출시"), ("model_end", "제공 종료"), ("route_change", "공급 경로 변경")])
+def test_card_kind_is_its_event_type(tmp_path: Path, event_type: str, kind: str) -> None:
+    _write(tmp_path, [_claim("k1", event_type, "openrouter_endpoints", "Notice.", route="openrouter", dates={"published": "2026-10-03", "note": ""})])
+    [card] = _build(tmp_path)[2]["EVENTS"]
+    assert (card["kind"], card["t7"]) == (kind, kind)
+
+
+@pytest.mark.parametrize(("event_type", "candidates", "t7"), [
+    (None, ["route_change", "model_release"], "공급 경로 변경"),  # shown as a route addition, still undecided
+    (None, ["limited_discount", "price_change"], None),
+    (None, [], None),  # no candidates either: the card still gets a chip to switch it off with
+    ("price_change", ["limited_discount", "price_change"], "가격 변경"),  # decided: a leftover candidate list changes nothing
+])
+def test_undecided_card_kind(tmp_path: Path, event_type: str | None, candidates: list[str], t7: str | None) -> None:
+    event = _claim("u1", event_type, "openrouter_endpoints", "Now available.", route="openrouter", subtags=["add"], type_candidates=candidates,
+                   claim_kind="availability", dates={"maker_first_release_date": None, "route_added_date": "2026-10-12", "note": ""})
+    _write(tmp_path, [event])
+    [card] = _build(tmp_path)[2]["EVENTS"]
+    assert (card["t7"], card["kind"]) == (t7, t7 if event_type else "유형 미정")
+    assert ("유형 미정" in card.get("flag", "")) == (event_type is None and bool(candidates))
+
+
+def test_list_filter_chips_are_the_types_the_builder_emits(tmp_path: Path) -> None:
+    _write(tmp_path, [])
+    page = _build(tmp_path)[1]
+    chips = json.loads(re.search(r"^const T7GROUP = (\{.*\});$", page, re.M).group(1))
+    assert list(chips) == list(build.T7.values())
+
+
+@pytest.mark.parametrize(("event", "cd"), [
+    (_scheduled("s1", "input", "0.75", "1.50", "0.75"), "2027-01-01"),
+    (_claim("d1", "limited_discount", "openrouter_endpoints", "20% off until Oct 31", route="openrouter", claim_kind="discount",
+            change={"discount_pct": "20", "discount_pct_basis": "stated"},
+            dates={"published": "2026-10-03", "end_phrase": "until Oct 31", "end_date": "2026-10-31", "note": ""}), "2026-10-31"),
+    (_claim("a1", "route_change", "openrouter_endpoints", "Now available.", route="openrouter", subtags=["add"], claim_kind="availability",
+            dates={"maker_first_release_date": None, "route_added_date": "2026-10-12", "published": "2026-10-03", "note": ""}), "2026-10-12"),
+    (_claim("p1", "price_change", "openai_news", "Prices go up.", model_id="gpt-6-sol", route="openai_direct", claim_kind="price_increase",
+            dates={"published": "2026-10-03T09:00:00Z", "effective_from": None, "note": ""}), "2026-10-03"),
+    (_observed("o1", "price_change", "1.00", "1.20", change={"delta": "0.20", "pct": "20.00", "direction": "up", "note": ""}), "2026-10-05"),
+    (_claim("n1", "scheduled_change", "vercel_changelog", "Prices change.", route="vercel_ai_gateway", claim_kind="announced_future_rate",
+            dates={"published": None, "effective_from": None, "note": ""}), None),
+])
+def test_card_date_is_the_date_the_card_is_filed_under(tmp_path: Path, event: dict, cd: str | None) -> None:
+    _write(tmp_path, [event])
+    [card] = _build(tmp_path)[2]["EVENTS"]
+    assert card.get("cd") == cd
+
+
+def test_group_card_date_follows_the_representative(tmp_path: Path) -> None:
+    def member(event_id: str, role: str) -> dict:
+        return _event(event_id, "limited_discount", route="openrouter", claim_kind="discount", group_key="gk-1", group_role=role,
+                      change={"discount_pct": "30", "discount_pct_basis": "stated"},
+                      dates={"published": "2026-10-03", "end_date": "2026-10-31", "note": ""})
+
+    _write(tmp_path, [member("g1", "member"), member("g2", "representative")])
+    [card] = _build(tmp_path)[2]["EVENTS"]
+    assert (card["kind"], card["cd"]) == ("한시 할인", "2026-10-31")
+
+
 def test_observed_condition_change(tmp_path: Path) -> None:
     def stated(value: str) -> dict:
         return {"value": value, "unit": "x base input price", "basis": "stated", "locator": f"cache {value}"}

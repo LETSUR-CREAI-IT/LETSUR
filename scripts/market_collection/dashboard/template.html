@@ -159,6 +159,15 @@ a{color:var(--ink)}
 .lhead{display:flex;align-items:baseline;justify-content:space-between;padding:4px 6px 8px}
 .lhead h2{margin:0;font-size:15px;font-weight:700;color:var(--ink)}
 .lhead span{font-size:12px;color:var(--muted)}
+.lfilter{display:flex;flex-direction:column;gap:6px;padding:0 6px 8px} .lfilter:empty{display:none} .lfilter>div{display:flex;flex-wrap:wrap;align-items:center;gap:5px}
+.lfilter .mchip{height:24px;padding:0 9px;gap:5px;font-size:11.5px}
+.lfilter .mchip[aria-pressed="true"]{background:var(--grey-soft);border-color:var(--line-strong);color:var(--ink)}
+.lfilter .mchip[aria-pressed="true"] small{color:var(--muted);opacity:1}
+.lfilter .mchip[aria-pressed="false"]{border-style:dashed;color:var(--muted)}
+.lfilter .mchip[data-past][aria-pressed="false"]{border-style:solid;color:var(--ink)}
+.lfilter .mchip.zero{opacity:.55}
+.lhid{font-size:11.5px;color:var(--muted)}
+.lempty{margin:14px 6px 8px;font-size:13px;color:var(--muted)}
 .grp{margin-top:6px}
 .grp h3{display:flex;align-items:center;gap:7px;margin:8px 6px 4px;font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.02em}
 .grp h3 i{width:8px;height:8px;border-radius:50%}
@@ -487,7 +496,7 @@ td small{display:block;font-size:11.5px;color:var(--muted)}
   </section>
 
   <section class="work" aria-label="변화 목록과 상세">
-    <nav class="card list" aria-label="변화 목록"><div class="lhead"><h2 id="lt">전체 변화</h2><span>급한 순</span></div><div id="queue"></div></nav>
+    <nav class="card list" aria-label="변화 목록"><div class="lhead"><h2 id="lt">전체 변화</h2><span>급한 순</span></div><div class="lfilter" id="lf"></div><div id="queue"></div></nav>
     <article class="card detail" id="detail" aria-live="polite"></article>
   </section>
 
@@ -500,10 +509,12 @@ td small{display:block;font-size:11.5px;color:var(--muted)}
 // ---- 데이터: scripts.market_collection.dashboard가 events.json(+report.json, continuity.json, state.json)에서 채운다 ----
 // 엔진이 만들지 않는 판단 필드(head·key·what·checkFirst·risk·notes·cal 등)는 넣지 않는다. 렛서 사용 경로는 엔진 letsur_usage가 unknown이라 relKey "unk".
 // 기준일: 생성 시점의 KST 날짜. 주소 뒤에 ?base=2026-10-12 처럼 붙이면 바꿀 수 있다.
-const TODAY = (/[?&]base=(\d{4}-\d{2}-\d{2})/.exec(location.search) || [])[1] || /*DATA:TODAY*/;
+const BASE = (/[?&]base=(\d{4}-\d{2}-\d{2})/.exec(location.search) || [])[1];
+const TODAY = BASE || /*DATA:TODAY*/;
 const SRC = /*DATA:SRC*/;
 const ID = /*DATA:ID*/;
 // 필드: t7 7유형 · sub 하위 태그 · relKey use/other/none/unk · relDemo 가정 여부
+// 목록 거르기: kind 유형 칩 키(7유형, 유형을 못 정했으면 "유형 미정") · cd 오늘 이후인지 가르는 날짜(적용일·종료일·경로 추가일, 없으면 발표일·관측일. 날짜가 없으면 키 자체가 없다)
 // 수정안: mid = events.json subject.model_id (그래프 연결 키) · effQual 해석한 날짜 · link 함께 볼 이벤트 [ID, 이유] · risk 다음 할 일에 붙는 주의
 // 수정안: 목록·캘린더 묶음은 type4 대신 7유형에서 한 표(T7GROUP)로 정함
 // key{big,sub} 핵심 변화 문구 고정 · keyAdd 핵심 변화 보조 줄에 덧붙일 말 · chip 원가 칩 고정 · chgHead 바뀐 내용 표 머리글
@@ -550,6 +561,13 @@ const byEv = k => Object.fromEntries(EVENTS.filter(e => e[k] !== undefined).map(
 // 수정안: 상세의 7유형과 목록·캘린더 묶음이 어긋나지 않게 한 표에서 정함 (예: Sonnet 캐시 = 조건 변경)
 const T7GROUP = {"가격 변경":"price", "예정 변경":"price", "한시 할인":"price", "조건 변경":"cond", "모델 출시":"model", "제공 종료":"model", "공급 경로 변경":"model"};
 const typeOf = e => e.t7 === null ? "data" : T7GROUP[e.t7] || "cond";
+// 목록 거르기: 유형 칩(끈 유형은 숨김) + 날짜(기본은 오늘 이후만). 둘은 AND로 겹친다.
+// 기준일은 보는 사람의 오늘(브라우저 시각)이고 ?base= 를 붙였으면 그 날짜다. 칩·토글 상태는 저장하지 않아 새로고침하면 처음(모두 켬, 오늘 이후만)으로 돌아온다.
+const localDay = () => { const n = new Date(); return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, "0")}-${String(n.getDate()).padStart(2, "0")}`; };
+const VIEW_DAY = BASE || localDay();
+const isPast = e => !e.cd || e.cd < VIEW_DAY; // 날짜가 없는 카드는 지난 변화로 센다
+const listOff = new Set();
+let showPast = false;
 // 상세페이지 상단용 7유형 (이벤트유형_분류규칙.md 기준, 10/10 김연우)
 const EV7 = byEv("t7"), EV7SUB = byEv("sub"), EV7FLAG = byEv("flag");
 // 유형별 핵심 변화 표시 (상세_핵심변화_표시규칙.md)
@@ -948,16 +966,35 @@ function drawPrice(M, mi, colors){
 }
 
 // ---- 2. 목록 (변화 종류별) ----
+// 칩과 "지난 변화 보기" 토글은 처음에 한 번만 만들고 그 뒤로는 눌림 상태와 개수만 고친다(누른 버튼의 포커스가 남는다). 칩 개수는 날짜 거르기만 적용한 값이다.
+function renderFilter(){
+  const box = document.getElementById("lf");
+  if (!EVENTS.length) return;
+  if (!box.children.length) {
+    const kinds = [...Object.keys(T7GROUP), ...(EVENTS.some(e => e.kind === "유형 미정") ? ["유형 미정"] : [])];
+    box.innerHTML = `<div>${kinds.map(k => `<button type="button" class="mchip" data-kind="${esc(k)}">${esc(k)} <small class="tn"></small></button>`).join("")}</div>
+      <div><button type="button" class="mchip" data-past>지난 변화 보기</button><span class="lhid"></span></div>`;
+  }
+  const byDay = EVENTS.filter(e => showPast || !isPast(e));
+  box.querySelectorAll("[data-kind]").forEach(b => { const n = byDay.filter(e => e.kind === b.dataset.kind).length;
+    b.setAttribute("aria-pressed", !listOff.has(b.dataset.kind)); b.classList.toggle("zero", !n); b.querySelector("small").textContent = n; });
+  box.querySelector("[data-past]").setAttribute("aria-pressed", showPast);
+  const hid = showPast ? 0 : EVENTS.filter(e => !listOff.has(e.kind) && isPast(e)).length;
+  box.querySelector(".lhid").textContent = hid ? `지난 변화 ${hid}건 숨김` : "";
+}
 function renderQueue(){
-  const list = EVENTS.slice();
-  if (!state.sel || !list.some(e => e.id === state.sel)) state.sel = list.slice().sort((a, b) => ACT[a.act].order - ACT[b.act].order || cmpU(a, b))[0]?.id;
+  const list = EVENTS.filter(e => !listOff.has(e.kind) && (showPast || !isPast(e)));
+  // 선택은 거르기와 무관하다: 주소의 #id나 캘린더에서 고른 카드는 목록에서 숨겨져도 상세에 남는다. 처음 고를 때만 보이는 카드를 먼저 본다.
+  if (!state.sel || !EVENTS.some(e => e.id === state.sel)) state.sel = (list.length ? list : EVENTS).slice().sort((a, b) => ACT[a.act].order - ACT[b.act].order || cmpU(a, b))[0]?.id;
+  renderFilter();
   document.getElementById("lt").textContent = `전체 변화 ${list.length}`;
+  const none = EVENTS.length ? `<p class="lempty">${listOff.size ? "선택한 유형의 " : ""}${showPast ? "" : "오늘 이후 "}변화 0건</p>` : "";
   const groups = Object.keys(TYPE).map(k => [k, list.filter(e => typeOf(e) === k).sort((a, b) => cmpU(a, b) || ACT[a.act].order - ACT[b.act].order)]).filter(([, l]) => l.length);
   document.getElementById("queue").innerHTML = groups.map(([k, l]) => `<section class="grp" aria-label="${TYPE[k].ko}"><h3><i class="ti-${k}"></i>${TYPE[k].ko} ${l.length}</h3><ul class="rows">${l.map(e => `<li>
     <button type="button" class="row${e.done ? " done" : ""}" data-id="${esc(e.id)}" aria-current="${state.sel === e.id}">
       <span class="dl2">${ddHtml(e)}${e.eff ? `<small class="tn">${md(e.eff)}${e.effQual ? ` <b class="qt" title="${esc(e.effQual)}">해석</b>` : ""}</small>` : ""}</span>
       <span class="t"><b>${esc(e.sum)}${e.done ? `<span class="tags"><span class="tg">결정됨</span></span>` : ""}</b><span><span class="qs t7">${esc(EV7[e.id] || "수집 확인")}</span>${esc(e.m)} · ${esc(e.ch)}</span></span>
-    </button></li>`).join("")}</ul></section>`).join("");
+    </button></li>`).join("")}</ul></section>`).join("") || none;
 }
 
 // ---- 상세 ----
@@ -1039,6 +1076,7 @@ function select(id, scroll){ const e = EVENTS.find(x => x.id === id); if (!e) re
   if (e.eff) calMonth = monthOf(e.eff);
   renderCalendar(); renderQueue(); renderDetail();
   if (scroll) { showSel(); document.getElementById("detail").scrollIntoView({behavior: REDUCE ? "auto" : "smooth", block: "start"}); } }
+function refilter(){ renderQueue(); document.getElementById("queue").scrollTop = 0; }
 document.addEventListener("click", ev => {
   const md_ = ev.target.closest("[data-model]"); if (md_) { trendModel = md_.dataset.model; trendMeasure = 0; trendTier = "Standard"; renderPrice(); return; }
   const tt = ev.target.closest("[data-tier]"); if (tt) { trendTier = tt.dataset.tier; renderPrice(); return; }
@@ -1047,6 +1085,8 @@ document.addEventListener("click", ev => {
   const tr = ev.target.closest("[data-trend]"); if (tr) { trendModel = tr.dataset.trend; trendMeasure = 0; trendTier = "Standard"; renderPrice(); document.getElementById("trend").scrollIntoView({behavior: REDUCE ? "auto" : "smooth", block: "start"}); return; }
   const mn = ev.target.closest("[data-mon]");
   if (mn) { if (!mn.disabled) { calMonth = mn.dataset.mon === "today" ? monthOf(TODAY) : addMonth(calMonth, +mn.dataset.mon); renderCalendar(); } return; }
+  const kb = ev.target.closest("[data-kind]"); if (kb) { const k = kb.dataset.kind; listOff.has(k) ? listOff.delete(k) : listOff.add(k); refilter(); return; }
+  const pb = ev.target.closest("[data-past]"); if (pb) { showPast = !showPast; refilter(); return; }
   const r = ev.target.closest("[data-id]"); if (!r) return;
   const inList = !!r.closest("#queue");
   select(r.dataset.id, !inList || matchMedia("(max-width:940px)").matches);
