@@ -1,0 +1,26 @@
+{
+  "is_demo": true,
+  "purpose": "참고 이벤트 시연용 가상 현재 공급 경로. 실제 렛서 내부 공급 경로 연동 전 시뮬레이션.",
+  "records": [
+    {
+      "model_id": "gemini-3.8-flash",
+      "route_id": "vercel_ai_gateway",
+      "endpoint_id": null
+    },
+    {
+      "model_id": "claude-sonnet-5-5",
+      "route_id": "anthropic_direct",
+      "endpoint_id": null
+    },
+    {
+      "model_id": "veo-3.1-standard",
+      "route_id": "fal",
+      "endpoint_id": "fal-ai/veo3.1"
+    },
+    {
+      "model_id": "gpt-6.1-sol",
+      "route_id": null,
+      "endpoint_id": null
+    }
+  ]
+}

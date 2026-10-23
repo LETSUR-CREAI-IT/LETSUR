@@ -9,3 +9,5 @@
 | [2026-10-05 expanded replay](2026-10-05-expanded-replay/README.md) | 2026-10-05 replay 생성 18:41:30 KST; 원본의 source별 관측 시각 유지 | 83 / 21 | 348 | 731 | [sources.csv](2026-10-05-expanded-replay/runs/20261005T094130Z-c19d153082ba463ba3267a24ec584702/sources.csv) · [price_observations.csv](2026-10-05-expanded-replay/runs/20261005T094130Z-c19d153082ba463ba3267a24ec584702/price_observations.csv) · [conditions.csv](2026-10-05-expanded-replay/runs/20261005T094130Z-c19d153082ba463ba3267a24ec584702/conditions.csv) |
 
 2026-10-04 snapshot은 당시 3모델·11출처 범위다. 2026-10-05 expanded 두 bundle은 확장된 21모델 registry 결과다. replay는 live의 보존 원문을 재해석하며 각 source의 원래 관측 시각을 유지한다. 66출처 QA 원본은 여전히 로컬에만 있으며, 10월 4일 snapshot은 그 범위를 대표하지 않는다.
+
+[demo_internal_routes.json](demo_internal_routes.json)은 수집 snapshot이 아니다. 대시보드 생성기가 `--internal-routes`로 읽는 시연용 렛서 사용 경로 가정(`is_demo: true`)이며, 매핑 규칙과 출처는 [대시보드 안내](../../docs/dashboard.md)에 있다.
