@@ -8,6 +8,7 @@ import pytest
 from scripts.market_collection.collectors import parse_source
 from scripts.market_collection.core import _validate_parse, validate_registry
 from scripts.market_collection.sources import source_specs, ideogram_source_specs
+from tests.market_collection.retired_sources import without_retired
 
 FIXTURES = Path(__file__).parent / 'fixtures' / 'ideogram45'
 SPECS = {s.source_key:s for s in ideogram_source_specs()}
@@ -145,9 +146,9 @@ def test_fal_zero_and_edit_schema_failures():
 
 
 def test_old_registry_specs_byte_equal_to_baseline():
-    old=json.loads((FIXTURES / 'baseline-specs.json').read_text())
+    old=without_retired(json.loads((FIXTURES / 'baseline-specs.json').read_text()))
     current=[asdict(s) for s in source_specs() if s.model_id!='ideogram-4.5' and not s.source_key.startswith('image25_') and not s.parser.endswith('endpoints_llm')]
-    assert current==old and len(old)==97
+    assert current==old and len(old)==94
     validate_registry(source_specs())
-    assert len(source_specs())==161
-    assert len({(s.model_id,s.route) for s in source_specs()})==97
+    assert len(source_specs())==158
+    assert len({(s.model_id,s.route) for s in source_specs()})==94

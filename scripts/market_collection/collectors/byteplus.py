@@ -35,34 +35,89 @@ def _video_price(provider: str, kind: str, amount: str, unit: str, group: str, l
     return dict(provider_model_id=provider, model_version="2.5", upstream_provider="ByteDance", task="text-to-video", billing_item="generated_video", price_kind=kind, amount=amount, currency="USD" if amount else "", unit=unit if amount else "", normalized_amount="", normalized_unit="", condition_set_id=group, effective_from="", effective_until="", locator=locator, evidence_status=status, unknown_reason=reason)
 
 
-def _video_byteplus(page: str, source_id: str) -> tuple[list[dict], list[dict]]:
-    # The unit is supplied by the table header, never guessed from cell values.
-    row = re.search(r"\|" + re.escape(BYTEPLUS_ID) + r"\b([^\n]*)", page, re.I)
-    headers = list(re.finditer(r"\|\*\*Model ID\*\*\s*\|\*\*Online inference\*\*[^\n]*?USD\s*/\s*M tokens", page[:row.start()] if row else "", re.I))
-    if not row or not headers or row.start() - headers[-1].start() > 2500:
-        raise ValueError("BytePlus Seedance 2.5 model row or USD/M token unit missing")
+MODEL_ROW_OR_UNIT_MISSING = "BytePlus Seedance 2.5 model row or USD/M token unit missing"
+
+
+def _zones(body: bytes) -> dict:
+    """The pricing document as rich-text zones; the page ships it as JSON inside its router state, not as markdown."""
+    text = body.decode("utf-8", "replace")
+    marker = re.search(r"window\._ROUTER_DATA\s*=\s*", text)
+    if not marker:
+        raise ValueError(MODEL_ROW_OR_UNIT_MISSING)
+    state, _ = json.JSONDecoder().raw_decode(text, marker.end())
+    documents = [page["curDoc"] for page in state["loaderData"].values() if isinstance(page, dict) and "curDoc" in page]
+    return json.loads(documents[0]["Content"])["data"]
+
+
+def _zone_text(zone: dict) -> str:
+    return "".join(op["insert"] for op in zone["ops"] if isinstance(op.get("insert"), str) and op["insert"] != "*")
+
+
+def _ids(zone: dict) -> list[str]:
+    return [op["insert"]["id"] for op in zone["ops"] if isinstance(op.get("insert"), dict)]
+
+
+def _table(zones: dict, host: str) -> list[list[str]]:
+    """Cell text of the table a zone hosts: aceTable names its row and column id zones, a cell is the zone x<row>x<col>."""
+    spec = next((op["attributes"]["aceTable"] for op in zones[host]["ops"] if "aceTable" in op.get("attributes", {})), "")
+    if not spec:
+        return []
+    row_zone, col_zone = spec.split()
+    return [[_zone_text(zones[f"x{row}x{col}"]).strip() for col in _ids(zones[col_zone])] for row in _ids(zones[row_zone])]
+
+
+def _without_video_row(zones: dict) -> tuple[list[str], list[str], list[str]]:
+    """The two header rows and the Seedance 2.5 row of the pricing table in the "Input without video" tab."""
+    for zone in zones.values():
+        for tab in zone["ops"]:
+            attributes = tab.get("attributes", {})
+            if attributes.get("tabContent") and attributes.get("title", "").strip().lower() == "input without video":
+                grid = _table(zones, attributes["zoneId"])
+                for row in grid[2:]:
+                    if row[0].lower() == BYTEPLUS_ID:
+                        return grid[0], grid[1], row
+    raise ValueError(MODEL_ROW_OR_UNIT_MISSING)
+
+
+def _online_rates(groups: list[str], labels: list[str], row: list[str]) -> dict[str, str]:
+    """Online-inference cells of a row by resolution label; a merged group header is blank over the columns it spans."""
+    rates, group = {}, ""
+    for top, label, cell in zip(groups, labels, row):
+        group = top or group
+        if group.lower() == "online inference":
+            rates[label.lower()] = cell
+    return rates
+
+
+def _video_byteplus(body: bytes, source_id: str) -> tuple[list[dict], list[dict]]:
+    try:
+        zones = _zones(body)
+        groups, labels, row = _without_video_row(zones)
+        page = _zone_text(zones["0"])
+    except (KeyError, IndexError, TypeError, ValueError) as exc:
+        raise ValueError(MODEL_ROW_OR_UNIT_MISSING) from exc
+    # The unit is the page's own pricing note, never guessed from cell values.
+    if not re.search(r"Token\s+prices\s+are\s+USD\s+per\s+million\s+tokens", page, re.I):
+        raise ValueError(MODEL_ROW_OR_UNIT_MISSING)
     prices: list[dict] = []
     conditions: list[dict] = []
-    cells = row[1]
-    for resolution, pattern in (
-        ("480p/720p", r"For\s+480p\s+and\s+720p\s+outputs:.*?Input\s+without\s+video:\s*([0-9.]+)"),
-        ("1080p", r"For\s+1080p\s+outputs:.*?Input\s+without\s+video:\s*([0-9.]+)"),
-    ):
-        match = re.search(pattern, cells, re.I | re.S)
+    rates = _online_rates(groups, labels, row)
+    for label, resolution in (("480p and 720p", "480p/720p"), ("1080p", "1080p")):
+        match = re.fullmatch(r"\$\s*([0-9]+(?:\.[0-9]+)?)", rates.get(label, ""))
         if match:
             group = f"{source_id}:byteplus_{resolution.replace('/', '_')}"
-            prices.append(_video_price(BYTEPLUS_ID, "published_rate", match[1], "1M tokens", group, f"Video generation models > Pricing > {BYTEPLUS_ID}: {match[0]}"))
-            conditions.extend([_video_condition(group, "resolution", resolution, "pricing table row"), _video_condition(group, "input_video", "none", "pricing table: Input without video"), _video_condition(group, "inference_mode", "online", "pricing table: Online inference")])
+            prices.append(_video_price(BYTEPLUS_ID, "published_rate", match[1], "1M tokens", group, f"Video generation models > Pricing > Input without video > {BYTEPLUS_ID} > Online inference > {label}: {match[0]}"))
+            conditions.extend([_video_condition(group, "resolution", resolution, f"pricing table column: {label}"), _video_condition(group, "input_video", "none", "pricing table: Input without video"), _video_condition(group, "inference_mode", "online", "pricing table: Online inference")])
     if not prices:
         raise ValueError("BytePlus Seedance 2.5 input-without-video rate missing")
     if prices:
         group = f"{source_id}:byteplus_formula"
-        formula = re.search(r"Estimated token consumption\s*=\s*`([^`]+)`", page, re.I)
+        formula = re.search(r"Estimated token consumption:\s*([^\n]*\S)", page, re.I)
         if formula:
             conditions.append(_video_condition(group, "estimated_token_formula", formula[1], f"pricing formula: {formula[0]}"))
         else:
             conditions.append(_video_condition(group, "estimated_token_formula", "unavailable in this response", "Video generation models > pricing formula", status="unknown"))
-        actual = re.search(r"actual token consumption is subject to the\s*`?usage\.completion_tokens`?", page, re.I)
+        actual = re.search(r"Actual consumption is determined by\s+usage\.completion_tokens", page, re.I)
         if actual:
             conditions.append(_video_condition(group, "actual_usage", "usage.completion_tokens", f"pricing formula: {actual[0]}"))
         # The promotion text and linked rules name 2.0 mini/fast; neither proves
@@ -86,5 +141,6 @@ def _video_campaign(page: str, source_id: str) -> tuple[list[dict], list[dict]]:
 def parse_source(spec: SourceSpec, body: bytes, source_id: str) -> tuple[list[dict], list[dict]]:
     if is_unrendered_template(body):
         raise ValueError("BytePlus unrendered SSR template: document body unavailable")
-    return {"byteplus_pricing": _video_byteplus,
-            "byteplus_campaign": _video_campaign}[spec.parser](_page(body), source_id)
+    if spec.parser == "byteplus_pricing":
+        return _video_byteplus(body, source_id)  # reads the page's own JSON, which _page's unescaping would corrupt
+    return {"byteplus_campaign": _video_campaign}[spec.parser](_page(body), source_id)

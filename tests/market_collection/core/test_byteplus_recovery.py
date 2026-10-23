@@ -11,6 +11,7 @@ import pytest
 
 from scripts.market_collection import core
 from scripts.market_collection.adapters import video
+from tests.market_collection.byteplus_page import BYTEPLUS
 
 
 FIXTURES = Path(__file__).parent / "fixtures" / "byteplus"
@@ -140,10 +141,7 @@ def test_non_byteplus_http_error_preserves_valid_partial_manifest(tmp_path, monk
 
 def test_third_attempt_recovery_and_pricing_source_use_same_bounds(tmp_path, monkeypatch):
     spec = SPECS["byteplus_seedance_25_t2v"]
-    complete = b'''|**Model ID** |**Online inference** (USD / M tokens) |
-|dreamina-seedance-2-5-260628 |For 480p and 720p outputs: Input without video: 10.70 |
-'''
-    run, calls, sleeps = collect(tmp_path, monkeypatch, [(SHELL, 200), (SHELL, 200), (complete, 200)], spec)
+    run, calls, sleeps = collect(tmp_path, monkeypatch, [(SHELL, 200), (SHELL, 200), (BYTEPLUS, 200)], spec)
     source = rows(run / "sources.csv")[0]
     assert source["parse_status"] == "ok"
     assert source["fetched_at_utc"] == "2026-10-08T06:00:03Z"

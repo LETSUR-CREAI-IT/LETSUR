@@ -1,4 +1,4 @@
-"""Retained-source regressions for the 14 explicitly approved additions."""
+"""Retained-source regressions for the explicitly approved additions (Google direct Veo previews retired 2026-10-22)."""
 import json
 from dataclasses import asdict
 from pathlib import Path
@@ -13,13 +13,12 @@ from scripts.market_collection.sources import source_specs
 
 FIXTURES = Path(__file__).parent / "fixtures"
 SPECS = {s.source_key: s for s in source_specs()}
-NEW_PARSERS = {"vertex_gemini", "databricks_gemini", "azure_image_retail", "google_veo", "vercel_video", "fal_veo"}
+NEW_PARSERS = {"vertex_gemini", "databricks_gemini", "azure_image_retail", "vercel_video", "fal_veo"}
 NEW = [s for s in source_specs() if s.parser in NEW_PARSERS]
 FILES = {s.source_key: (
     'azure.json' if s.parser == 'azure_image_retail' else
     'vertex.html' if s.parser == 'vertex_gemini' else
     'databricks.html' if s.parser == 'databricks_gemini' else
-    'google.html' if s.parser == 'google_veo' else
     'fal_' + s.model_id.split('-')[-1] + '.json' if s.parser == 'fal_veo' else
     s.url.split('/')[-1] + '.json') for s in NEW}
 
@@ -47,16 +46,15 @@ def test_existing_specs_preserved_in_each_modality_order():
     assert [current[s['source_key']] for s in old] == old
     for modality in ('llm', 'image', 'video'):
         assert [asdict(s) for s in source_specs() if s.modality == modality and s.parser not in NEW_PARSERS and not s.parser.endswith("endpoints_llm") and s.model_id != "ideogram-4.5" and not s.source_key.startswith("image25_")] == [s for s in old if s['modality'] == modality]
-    assert len(NEW) == 14
-    assert len(source_specs()) == 161
-    assert len({(s.model_id, s.route) for s in source_specs()}) == 97
+    assert len(NEW) == 11
+    assert len(source_specs()) == 158
+    assert len({(s.model_id, s.route) for s in source_specs()}) == 94
     assert not any(s.route == 'openrouter' and s.modality == 'video' for s in source_specs())
     assert sum(s.route == 'fal' and s.model_id == 'veo-3.1-lite' for s in source_specs()) == 1
 
 
 @pytest.mark.parametrize('key,count', [
     ('azure_sunburst',5), ('azure_flare',5), ('vertex_gemini_38_flash',12), ('databricks_gemini_38_flash',2),
-    ('google_veo_3_1_standard',3), ('google_veo_3_1_fast',3), ('google_veo_3_1_lite',2),
     ('vercel_veo_3_1_standard',6), ('vercel_veo_3_1_fast',6), ('vercel_veo_3_1_lite',4),
     ('fal_veo_3_1_standard',6), ('fal_veo_3_1_fast',6), ('fal_veo_3_1_lite',4), ('vercel_seedance_25_t2v',3)])
 def test_retained_additions_contract(key,count):
@@ -121,22 +119,6 @@ def test_databricks_no_price_and_exact_section():
                     (b'databricks-gemini-3-8-flash',b'databricks-gemini-3-8-flash-preview'),
                     (b'global endpoint',b'regional endpoint'),(b'cross geography routing to be enabled',b'local routing')):
         with pytest.raises(ValueError):parse('databricks_gemini_38_flash',body('databricks_gemini_38_flash').replace(old,new))
-
-
-@pytest.mark.parametrize('key,expected', [('google_veo_3_1_standard',['0.40','0.40','0.60']),
-    ('google_veo_3_1_fast',['0.10','0.12','0.30']),('google_veo_3_1_lite',['0.05','0.08'])])
-def test_google_exact_audio_paid_prices(key,expected):
-    prices,conditions=parse(key)
-    assert [p['amount'] for p in prices]==expected
-    assert all(p['unit']=='1 second' for p in prices)
-    assert all(c['value']=='on (default)' for c in conditions if c['condition_key']=='audio')
-
-
-@pytest.mark.parametrize('old,new', [(b'Paid Tier, per second in USD',b'Paid Tier, per minute in USD'),
-    (b'Veo 3.1 Fast video with audio',b'Veo 3.0 Fast video with audio'),
-    (b'veo-3.1-fast-generate-preview',b'veo-3.0-fast-generate-preview'),(b'$0.12 (1080p)',b'Unknown (1080p)')])
-def test_google_wrong_header_identity_price(old,new):
-    with pytest.raises(ValueError):parse('google_veo_3_1_fast',body('google_veo_3_1_fast').replace(old,new))
 
 
 def test_fal_primary_exact_endpoint_not_related_copy():

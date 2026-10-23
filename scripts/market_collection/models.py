@@ -64,7 +64,6 @@ BYTEPLUS_ID = "dreamina-seedance-2-5-260628"
 
 VEO_MODELS = ("veo-3.1-standard", "veo-3.1-fast", "veo-3.1-lite")
 VEO_VERCEL_IDS = ("veo-3.1-generate-001", "veo-3.1-fast-generate-001", "veo-3.1-lite-generate-001")
-VEO_GOOGLE_IDS = ("veo-3.1-generate-preview", "veo-3.1-fast-generate-preview", "veo-3.1-lite-generate-preview")
 
 MODEL_MODALITIES = {
     **{model: "video" for model in VEO_MODELS},
