@@ -47,7 +47,8 @@ core run과 signals run을 그대로 읽어 7종 이벤트와 상세페이지용
 - 원인군별 남은 비교 불가(행, 2026-10-17 점검): Ideogram direct 22(카탈로그 `snapshot_at`이 `effective_at`보다 앞서 적용 관계 미확정, 문서 기본값은 generate에만 있음), fal Ideogram 8(설명과 schema enum 충돌 보존), fal Sunburst/Flare 품질 12(schema 기본값 high, 토큰 단가의 품질 독립 여부 미확인), Azure 이미지 10(배포 자격 미확인), fal Veo 16(`status: unlisted` 의미 미정의), Bedrock Anthropic 8(공개 가격 JSON은 모델·단위·tier 없이 불투명한 rateCode만 담고 의미는 가격 페이지 마크업에만 있다. 게다가 JSON 본문이 `Accept-Encoding: identity` 요청에도 gzip 바이트로 오므로 안전한 압축 해제와 두 문서 join 설계가 필요해 이번에는 등록하지 않았다), Databricks 2(DBU 단위, $/DBU 미확정), Azure LLM 16(공개 retail 미터는 있으나 코드 약어 의미 미정의, Claude 8행은 미터 없음), Google cache_storage 8(USD/토큰·시간 단위가 `UNIT_SCALE`에 없음, 가격 부재가 아님). 제조사 조건을 게이트웨이로 옮기지 않았고 추정 기본값은 넣지 않았다.
 - 코드 검수 시점 차이: Fable의 최종 사본 검수(APPROVE)는 이 항목 직전 사본 기준이고, 그가 비차단으로 지적한 Vercel `vertexAnthropic`이 provider 이름 완전 일치 때문에 non-tier `standard`로 단정되는 문제를 게시 전에 접두 일치(openai·azure·google·vertex·spacexai·xai 계열)로 좁혀 unknown 처리했다. 이 1건은 Fable 재검수를 거치지 않았고 targeted+전체 pytest와 같은 보존 raw 재파싱(비교 가능 271행 불변)으로만 확인했다. 문서가 비지원이라고 명시한 공급자의 `standard` stated는 유지한다.
 - 문의 시 필요한 정보 목록(발송하지 않음): Ideogram — 카탈로그 `snapshot_at`과 `effective_at`의 관계, edit 계열 기본값. fal — Sunburst/Flare 토큰 단가의 quality 독립 여부, Veo `status: unlisted` 의미. Databricks — $/DBU(plan·region별), Gemini 3.8 Flash 가격 위치. Azure — GPT 미터 코드(ShortCo/LongCo, Std/Flex/PP, Gl/DZ 등) 의미와 배포 자격.
-- parser fingerprint 영향(수정하지 않음): `parser_fingerprint()`는 `collectors/` 전체 파일을 해시한다. 일일 workflow는 이전 raw 없이 state만 쓰므로, 무관한 collector 파일을 바꾸면 다음 run의 실제 가격 변화가 `confirmed`가 아니라 `candidate`(`parser_fingerprint_mismatch`)가 된다. fixture 재현: 코드 변경 없음 → confirmed, `fal.py`에 주석만 추가 → candidate. 이 변경(`llm_endpoints.py` 추가)도 배포 직후 첫 run에 같은 영향을 주므로 그 run 날짜를 기록해 둔다. 최소안은 fingerprint를 해당 spec의 parser 모듈과 core로 한정하는 것이며 승인 전이라 구현하지 않았다.
+- parser fingerprint 범위(2026-10-19 수정, 로컬 검증·미배포): 이전 `parser_fingerprint()`는 `collectors/` 전체 파일을 해시해서, 일일 workflow처럼 이전 raw 없이 state만 쓰면 무관한 collector 파일만 바꿔도 다음 run의 실제 가격 변화가 `confirmed` 대신 `candidate`(`parser_fingerprint_mismatch`)가 됐다(fixture 재현: `fal.py`에 주석만 추가 → candidate). 지금은 출처(spec)마다 그 raw를 파싱하는 collector 모듈과 그 모듈이 import하는 collector 모듈(파일 전체), 그리고 이들과 core parse 검증(`_validate_parse`)이 쓰는 core·models·sources 정의(최상위 정의의 소스 줄, 참조하는 이름을 따라감)만 해시한다. 다른 출처의 collector를 고쳐도 그 출처의 fingerprint는 그대로다.
+  - 배포 직후 첫 run에서는 저장된 값이 옛 방식이라 모든 series가 한 번 불일치로 보인다. 그 run에서 값이 바뀐 series만 `candidate`가 되고, 바뀌지 않은 series는 새 값으로 저장만 된다. 그 run 날짜를 기록해 둔다.
 - 아직 하지 않은 것: 원격 workflow 실행, 알림·Impact·추천. LETSUR 계약가·사용량·실비용은 계속 unknown이다.
 
 ## 확정 원칙 (팀 정본 §1–3, 사용자 결정 2026-10-15)
@@ -76,7 +77,7 @@ core run과 signals run을 그대로 읽어 7종 이벤트와 상세페이지용
   - 같은 값이 나오면 parser 산물이고, CSV와 raw가 불일치하면 이벤트를 만들지 않는다.
   - 다시 읽을 수 없으면 `candidate`로 두고 gap을 남긴다.
   - 이전 run 디렉터리를 넘기지 않았으면 state에 저장된 당시 parse 값을 사용하고, 그 사실을 `raw_check`에 표시한다.
-  - state의 series마다 parser 코드 fingerprint(core, collectors, signals parser/matching, events/notices.py 해시)를 저장한다. 이전 raw가 없고 fingerprint가 다르거나 없으면 `parser_fingerprint_mismatch`로 `candidate` + gap이다.
+  - state의 series마다 그 출처의 parser 코드 fingerprint(위 "parser fingerprint 범위": 그 spec의 collector 모듈과 그것이 쓰는 core·models·sources 정의)를 저장한다. 이전 raw가 없고 fingerprint가 다르거나 없으면 `parser_fingerprint_mismatch`로 `candidate` + gap이다.
 - 같은 run에서 등록 출처들의 값이 다르면 `values_by_source`에 출처별로 보존하고 `conflicted`로 표시한다.
 - 비공식 선행 정보는 `candidate`로 둔다. 나중의 공식 가격 변화가 그 글에 적힌 금액과 일치할 때만 같은 `event_id`로 확인한다(revision 증가).
   - 금액 없는 소문이나 다른 경로의 정보는 합치지 않는다.
@@ -105,9 +106,27 @@ python -m scripts.market_collection.events legacy --event <case>/event.json ... 
 - 이벤트 상세 필드는 다음과 같다.
   - 판정·상태: `status`(confirmed/candidate/conflicted), `review_status`, `type_candidates`, `subtags`
   - 값 비교: `before`/`after`, `change.pct`(0→유료이면 null, Decimal로 계산), `unchanged_items`, `comparison`(비교 가능 판정과 근거)
-  - 근거·출처: `dates`(관측·게시·적용 구분), `evidence_refs`(run_id, source_id, observation_id, raw_path, raw_sha256, locator, url), `sources`(authority·scope)
+  - 근거·출처: `dates`(관측·게시·적용 구분, 공지 가격 후보는 `dates.published`에 글 게시 시각), `evidence_refs`(run_id, source_id, observation_id, raw_path, raw_sha256, locator, url), `sources`(authority·scope), `announced_via`(채널 공지가 전한 제조사 정가 변경 카드에만, 아래 "실제 자동 검출 범위")
   - 충돌·미확인: `conflicts`, `gaps`, `next_checks`, `unknown_reason`
   - 원인·영향: `cause`, `cause_detail.supplier_explanation`, `letsur_usage`, `significance`, `impact`
+  - 기간·묶음(`events.json`을 쓸 때 파생, state에 저장하지 않음): `period_state`·`period_end`, `group_key`·`group_role`(아래 "할인 기간과 사건 묶음")
+
+## 할인 기간과 사건 묶음 (2026-10-19, 로컬 검증·미배포)
+
+둘 다 `events.json`을 쓸 때 계산하는 파생값이다. state의 이벤트와 revision은 바뀌지 않으며, 입력이 늘면 값이 달라질 수 있다.
+
+- `period_state`(`active`/`ended`/`unknown`)와 `period_end` `{date, basis, as_of}`: 종료를 밝힌 `limited_discount`(`dates.end_date` 또는 `dates.end_phrase`)에만 붙고 다른 카드는 null이다.
+  - `basis`는 `stated`(연도까지 밝힘) 또는 `derived_from_publication`(연도 없는 종료 문구에 게시 연도를 붙임, 그 날짜가 게시일보다 앞이면 다음 해)이다(사용자 결정 2026-10-19). 게시일이 없거나 달력에 없는 날이면 `date`·`basis`가 null이고 `unknown`이다.
+  - 저장 카드의 `end_date_year` gap("none is inferred")과 `dates.note`는 그대로 남는다. 저장값은 연도를 만들지 않고, 파생 날짜는 `basis`로 구분한다.
+  - `as_of`는 이번 build에 넘긴 run(이미 처리돼 건너뛴 run 포함) 중 가장 늦은 manifest `created_at_utc`의 날짜다. run 없이 `--state`만 주면 null이고 `unknown`이다.
+  - 종료일 당일까지 `active`, `as_of`가 종료일보다 뒤면 `ended`다. 끝난 할인도 `events.json`과 report `event_counts`에 그대로 남고, report `active_event_counts`에서만 빠진다(사용자 결정 2026-10-19).
+- `group_key`·`group_role`(`representative`/`member`): 한 사건을 말하는 카드들을 route와 무관하게 묶는다(사용자 결정 2026-10-19). 카드는 합치지 않으므로 각 카드의 `status`·`sources`·`evidence_refs`는 그대로이고, 집계도 카드 단위다.
+  - 같은 group의 조건: 같은 `model_id`, `event_type`(미분류는 `type_candidates`), `subtags`, 그리고 변화 값. 할인은 할인율·할인가가 같아야 하고 OpenRouter endpoint 할인(`discount_active`)은 할인율과 무관하게 한 값이다. 가격 변경은 방향만 같으면 된다.
+  - 날짜: 종료일(할인의 `period_end.date`, 게시 연도로 파생한 날짜 포함) 또는 시행일(`dates.effective_from`)이 있으면 그 날짜가 같은 카드끼리 묶는다. 없으면 게시일, 없으면 route 추가일·관측일·첫 run 날짜 순으로 카드의 날짜를 정하고, group 첫 카드에서 3일 안이면 같은 group이다. 날짜가 전혀 없으면 혼자 group이다.
+  - 대표는 제조사 공식 출처가 있는 카드, 그다음 이른 날짜, 그다음 `event_id` 순이다.
+  - 공지 가격 후보(price_increase/price_decrease)는 이제 `dates.published`에 글 게시 시각을 저장한다. 이 규칙 전에 저장된 카드는 게시일이 없어 첫 run 날짜로 묶인다.
+  - 한계: 3일 안의 같은 방향 가격 변경은 서로 무관해도 묶인다. 더 이른 카드가 나중에 들어오면 key와 대표가 바뀔 수 있다. 제조사 카드가 없으면 채널·비공식 카드가 대표가 된다.
+- run3 보존 events(80장)에 적용하면 30 group(2장 이상 13개)이고, Sol 50%(2026-09-18 종료) 할인 2장은 한 group, OpenRouter endpoint 할인 32장은 모델별 6 group이다. 반면 게시일 없이 저장된 Sol 가격 인하 후보 3장(2026-08-21 공지 1장, 10월 공지 1장, 가격 추적기 1장)은 모두 첫 run 날짜(2026-10-16)로 한 group이 된다.
 
 ## 실제 자동 검출 범위
 
@@ -127,7 +146,7 @@ python -m scripts.market_collection.events legacy --event <case>/event.json ... 
   - 다르면 `signal_row_mismatch` gap으로 남기고 행을 버린다. raw를 다시 읽을 수 없으면 행은 `candidate`로만 남는다(`signal_raw_unparsable`).
 - 공지 문장 추출(events/notices.py)은 raw 형식별 adapter 하나이며 모델별 코드가 없다.
   - 문장에 등록 모델이 정확히 하나 있을 때만 typed claim을 만든다. 한 문장(또는 제목만 근거인 기사)에 여러 모델·family가 있으면 가격·조건은 `model_attribution` gap과 함께 `candidate`이다.
-  - 인용 표현(according to, reportedly)과 비공식 feed는 typed claim을 만들지 않는다. 날짜는 문장의 "Month D, YYYY"와 feed 게시일만 쓰며 추정하지 않는다.
+  - 인용 표현(according to, reportedly)과 비공식 feed는 typed claim을 만들지 않는다. 날짜는 문장의 "Month D, YYYY"와 feed 게시일만 쓰며 추정하지 않는다. 출력 때 파생하는 할인 `period_end`만 연도 없는 종료 문구에 게시 연도를 붙이고 `basis`로 표시한다(위 "할인 기간과 사건 묶음").
   - 채널은 자기 경로의 add/remove/할인/조건만, 제조사는 출시·전체 종료까지 말할 수 있다(catalog authority).
   - 위 표의 문장 형식 밖(약어 월, 연도 없는 날짜, 다른 조건 키, 미래 가격 공지 문장 등)은 지원하지 않으며 generic 후보 또는 gap으로 남는다.
 - 테스트의 공지 feed는 등록 출처 형식을 흉내 낸 합성 fixture(source-shaped synthetic)이다. 합성 테스트 통과는 7종을 실제 live 수집에서 검출했다는 증명이 아니다.
@@ -135,6 +154,11 @@ python -m scripts.market_collection.events legacy --event <case>/event.json ... 
   - condition_change·model_release·model_end·route_change는 위 표의 명확한 feed 문장 형식과 합성 fixture로만 증명되었다.
   - 원본 5샘플 중 Sonnet 캐시 배율(condition_change)과 fal endpoint 폐기(route_change)는 현재 자동 경로로 재현되지 않고 `legacy` 변환으로만 들어간다. Sonnet 캐시 배율은 등록 원문이 그 모델 셀에 배율을 명시하고 그 값이 run 사이에 바뀔 때에만 core diff로 자동 판정될 수 있다. 2026-10-13·15일 core·signals 4개 run에서 이 옛 사건이 재현된 것은 아니다.
 - signals 행의 route는 catalog가 정한 route가 없을 때만 문장에서 읽는다. 단서는 제조사 자신의 "<Maker> Direct API"(그 모델의 제조사 경로가 하나일 때)와 등록 가격 출처 URL뿐이며, 모델·제조사 이름만으로는 route가 아니다(예: "by Google"). publisher의 authority는 바뀌지 않는다.
+- 채널 공지가 제조사 자신의 정가 변경을 전하는 문장(제조사 이름 + "list pric…" 또는 "Direct API")의 price_increase/price_decrease 후보는 채널 route를 쓰지 않는다(사용자 결정 2026-10-19, 평가서 제안의 `route_attribution` gap 대신 note만 남김). `route`는 빈 값이고 `announced_via`에 `{route: <채널 route>, note: "manufacturer list price change found in a channel notice"}`를 남긴다. 같은 문장의 할인 등 다른 kind는 채널 route 그대로다.
+  - event_id는 예전 채널 route 기준 값을 유지한다. 기존 state의 같은 카드는 배포 후 첫 build 시작 때 같은 event_id로 1회 정정된다(revision +1, history `route cleared: …`, report `revised_events`).
+  - route가 없으므로 제조사 관측 가격 변화에 합쳐지지 않는다(금액·방향까지 같으면 `related` 연결만). 같은 방향·3일 안이면 같은 `group_key`로 묶인다.
+  - 문자열 단서 규칙이라 다른 표현("OpenAI cut prices" 등)은 잡지 못하고 예전처럼 채널 route로 남는다.
+  - run3 보존 state에 적용하면 대상은 `gpt-5.6-sol` 1장(ev_3961c4c41e49bf0c8c79)뿐이고, 다시 build하면 정정 0이다.
 - `--manual` claim의 정체성은 URL + 인용 문장이다. 같은 URL의 다른 문장은 별도 이벤트이고, 같은 입력을 다시 넣으면 새 이벤트·revision이 없다.
 
 ## 명시 정책과 파생 비율 (cache_read_multiplier)

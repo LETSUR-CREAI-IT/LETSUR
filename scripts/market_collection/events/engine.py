@@ -12,13 +12,14 @@ Rules (team taxonomy sections 1-3, user decisions of 2026-10-15):
 from __future__ import annotations
 
 import re
+from datetime import datetime
 from decimal import Decimal
 from pathlib import Path
 
 from . import DEFAULT_POLICY, SCHEMA_VERSION
 from .catalog import Catalog, authority
-from .evidence import (MUTABLE_CONDITIONS, Reparser, comparability, core_observations, digest, parent_semantic, parser_fingerprint,
-                       series_key, signal_claims)
+from .evidence import (MAKER_PRICE_VIA_CHANNEL, MUTABLE_CONDITIONS, Reparser, comparability, core_observations, digest,
+                       maker_list_price, parent_semantic, parser_fingerprint, series_key, signal_claims)
 from .notices import NEGATED
 
 OFFICIAL = ("manufacturer_official", "channel_official")
@@ -30,7 +31,7 @@ MOVE = re.compile(_AMOUNT + r"\s*(?:→|->|\bto\b)\s*" + _AMOUNT, re.I)
 TO_AMOUNT = re.compile(r"\bto\s+" + _AMOUNT, re.I)
 BLENDED = re.compile(r"\bblended\b", re.I)  # a blended rate is not the price of one billing item
 PERCENT_OFF = re.compile(r"(\d{1,3}(?:\.\d+)?)\s?%\s?off", re.I)
-END_PHRASE = re.compile(r"\b(?:through|until)\s+([A-Z][a-z]+\s+\d{1,2}(?:st|nd|rd|th)?(?:,\s*\d{4})?)")
+END_PHRASE = re.compile(r"\b(?:through|until)\s+([A-Z][a-z]+)\s+(\d{1,2})(?:st|nd|rd|th)?(?:,\s*(\d{4}))?")
 # A condition_change of a billing policy needs the policy as stated by the source (a parser condition row with its
 # locator, evidence.MUTABLE_CONDITIONS). The ratio of two observed prices is shown as derived information only: it is not
 # a stated multiplier, so a base-only or cache-only price move stays a price_change.
@@ -55,6 +56,12 @@ def pct(before: str, after: str) -> str | None:
 
 def ref(item: dict) -> dict:
     return {key: item.get(key, "") for key in ("run_id", "source_id", "observation_id", "raw_path", "raw_sha256", "locator", "source_key", "url")}
+
+
+def same_parser(prev: dict) -> bool:
+    """The stored parse of the before raw came from the code that parses its spec now."""
+    current = parser_fingerprint(prev["spec"])
+    return current is not None and prev.get("parser_fingerprint") == current
 
 
 def side(obs: dict) -> dict:
@@ -88,6 +95,7 @@ class Builder:
         self.new_events: list[str] = []
         self.revised: list[str] = []
         self.notes: list[dict] = []
+        self.as_of: str | None = None
 
     # ---- state helpers -------------------------------------------------
     def _put(self, event: dict, reason: str) -> None:
@@ -159,7 +167,8 @@ class Builder:
         return {"obs": {k: v for k, v in obs.items() if k not in ("spec", "semantic")}, "spec": obs["spec"],
                 "semantic": [list(x) for x in obs["semantic"]], "rule_checks": checks or {},
                 "reparsed_amount": None if parsed is None else parsed.get(obs["series"]),
-                "reparsed_policy": None if policies is None else policies.get(obs["series"]), "parser_fingerprint": parser_fingerprint()}
+                "reparsed_policy": None if policies is None else policies.get(obs["series"]),
+                "parser_fingerprint": parser_fingerprint(obs["spec"])}
 
     def _rule_checks(self, obs: dict, run_obs: list[dict]) -> dict:
         """Each stated policy of obs against the observed prices of the same raw. The base item must be one unique row of
@@ -247,7 +256,7 @@ class Builder:
             before_amounts = self.reparser.amounts(before_dir, {**before, "spec": prev["spec"]})
             before_re = None if before_amounts is None else before_amounts.get(before["series"])
             basis = "current_parser_both_raws"
-        elif prev.get("parser_fingerprint") != parser_fingerprint():
+        elif not same_parser(prev):
             return "parser_fingerprint_mismatch"
         else:
             before_re, basis = prev.get("reparsed_amount"), "stored_parse_of_before_raw"
@@ -274,7 +283,7 @@ class Builder:
             b_amount = None if parsed is None else parsed.get(before["series"])
             b_policy = None if policies is None else policies.get(before["series"])
             basis = "current_parser_both_raws"
-        elif prev.get("parser_fingerprint") != parser_fingerprint():
+        elif not same_parser(prev):
             return "parser_fingerprint_mismatch"
         else:
             b_amount, b_policy, basis = prev.get("reparsed_amount"), prev.get("reparsed_policy"), "stored_parse_of_before_raw"
@@ -461,7 +470,9 @@ class Builder:
         if self._attach(claim, event_type):
             return
         anchor = claim.get("anchor") or claim["lineage"]
-        event_id = "ev_" + digest(["claim", claim["model_id"], claim.get("route", ""), event_type or "", anchor])
+        via = claim.get("announced_via")
+        # A card whose channel route was cleared keeps the event_id that route gave it, so a stored card is corrected in place.
+        event_id = "ev_" + digest(["claim", claim["model_id"], via["route"] if via else claim.get("route", ""), event_type or "", anchor])
         event = base_event(event_id, event_type, claim["model_id"], claim.get("route", ""), status)
         event.update(subtags=subtags, type_candidates=extra.get("type_candidates", []), source_key=claim["source_key"],
                      evidence_level=evidence_level(claim["authority"]), evidence_refs=[ref(claim)],
@@ -473,6 +484,8 @@ class Builder:
                      next_checks=extra.get("next_checks", []))
         event["claim_kind"] = claim["kind"]
         event["anchor"] = anchor
+        if via:
+            event["announced_via"] = via
         event["billing_item"] = claim.get("billing_item", "")
         if claim.get("before") or claim.get("after"):
             event["before"], event["after"] = claim.get("before"), claim.get("after")
@@ -534,10 +547,25 @@ class Builder:
         event.update(official)
 
     # ---- driver ---------------------------------------------------------
+    def _clear_channel_routes(self) -> None:
+        """Stored channel cards of a maker's list price move lose the channel route as signal_claims now reads them.
+        Their claims are already seen and never re-read, so they are corrected here once, under the same event_id."""
+        for event in list(self.state["events"].values()):
+            if event.get("anchor") and event.get("claim_kind") in ("price_increase", "price_decrease") and event["route"] \
+                    and "announced_via" not in event and event["sources"][0]["authority"] == "channel_official" \
+                    and maker_list_price(event["sources"][0]["quote"], event["model_id"]):
+                self._put(dict(event, route="", announced_via={"route": event["route"], "note": MAKER_PRICE_VIA_CHANNEL}),
+                          "route cleared: " + MAKER_PRICE_VIA_CHANNEL)
+
     def build(self, runs: list[dict]) -> None:
+        self._clear_channel_routes()
         processed = set(self.state["processed_runs"])
         for run in runs:
             self.run_dirs[run["manifest"]["run_id"]] = run["dir"]
+            # The newest run date, skipped runs included, is the day a discount period is judged against.
+            day = run["manifest"].get("created_at_utc", "")[:10]
+            if re.fullmatch(r"\d{4}-\d{2}-\d{2}", day) and (self.as_of is None or day > self.as_of):
+                self.as_of = day
         for run in runs:
             run_id = run["manifest"]["run_id"]
             if run_id in processed:
@@ -608,6 +636,7 @@ def classify_claim(claim: dict) -> tuple[str | None, list[str], str, list[dict],
                      "next_check": "confirm the price on LETSUR's account"})
         return "limited_discount", [], status, gaps, extra
     if kind in ("price_increase", "price_decrease"):
+        extra["dates"] = {"published": claim.get("published_at_utc") or None}  # the day event_groups joins cards on
         gaps.append({"field": "observed_price", "class": "check_first",
                      "reason": "text mentions a price move; no same-condition observed values yet",
                      "next_check": "wait for or re-run the registered price source"})
@@ -678,16 +707,103 @@ def legacy_authority(model_id: str, route: str) -> tuple[str, list[str]]:
     return level, ["route_price", "route_availability"] + (["model_lifecycle"] if level == "manufacturer_official" else [])
 
 
+def discount_period(event: dict, as_of: str | None) -> tuple[str | None, dict | None]:
+    """(period_state, period_end) of a limited discount that states an end; (None, None) for any other event.
+    An end phrase without a year takes the publication year, or the next year when that day falls before publication.
+    The end day itself still counts as active. Derived at output only, so the stored event and its revision stay as they are."""
+    dates = event["dates"]
+    if event["event_type"] != "limited_discount" or not (dates.get("end_date") or dates.get("end_phrase")):
+        return None, None
+    end, basis = dates.get("end_date"), "stated"
+    if not end:
+        month, day, year = END_PHRASE.search(dates["end_phrase"]).groups()
+        published = (dates.get("published") or "")[:10]
+        basis = "stated" if year else "derived_from_publication"
+        try:
+            found = datetime.strptime(f"{month} {day} {year or published[:4]}", "%B %d %Y").date()
+            if not year and found.isoformat() < published:
+                found = found.replace(year=found.year + 1)
+            end = found.isoformat()
+        except ValueError:  # no publication date to take the year from, or not a calendar day
+            end, basis = None, None
+    state = "unknown" if end is None or as_of is None else ("ended" if as_of > end else "active")
+    return state, {"date": end, "basis": basis, "as_of": as_of}
+
+
+GROUP_WINDOW_DAYS = 3  # user decision 2026-10-19: cards without a stated date join within 3 days of the group's first card
+
+
+def _group_day(event: dict) -> str | None:
+    """The day a card was published, else the day it was first seen: a stated route date, an observation, or its first run."""
+    dates = event["dates"]
+    run_id = event["evidence_refs"][0].get("run_id", "") if event["evidence_refs"] else ""
+    run_day = f"{run_id[:4]}-{run_id[4:6]}-{run_id[6:8]}" if re.match(r"\d{8}T", run_id) else ""
+    for value in [dates.get(key) or "" for key in ("published", "route_added_date", "observed_after_utc", "first_observed_utc")] + [run_day]:
+        try:
+            return datetime.strptime(str(value)[:10], "%Y-%m-%d").date().isoformat()
+        except ValueError:
+            continue
+    return None
+
+
+def event_groups(events: list[dict]) -> dict[str, tuple[str, str]]:
+    """{event_id: (group_key, group_role)}: cards about one occurrence share a key whatever their route (user decision
+    2026-10-19). Same model, type and subtags, and the same stated end (discount) or effective date; without one, a card
+    day within GROUP_WINDOW_DAYS of the group's first card. A discount also needs the same rate, but endpoint discounts join
+    one another whatever their rate; a price change needs the same direction. The maker's own card represents the group,
+    else the earliest card. Derived at output like period_state; never stored, so a key can change when an earlier card arrives."""
+    days = {event["event_id"]: _group_day(event) for event in events}
+    pools: dict[str, tuple[list, object, list[dict]]] = {}
+    for event in events:
+        kind, change = event.get("claim_kind"), event["change"]
+        value: list = []
+        if event["event_type"] == "limited_discount":
+            value = ["endpoint"] if kind == "discount_active" else [change.get("discount_pct"), change.get("discounted_amount")]
+        elif event["event_type"] == "price_change":
+            value = [change.get("direction") or {"price_increase": "up", "price_decrease": "down"}.get(kind)]
+        stated = (event["period_end"] or {}).get("date") if event["event_type"] == "limited_discount" else event["dates"].get("effective_from")
+        signature = [event["model_id"], event["event_type"] or sorted(event["type_candidates"]), sorted(event["subtags"]), value]
+        pools.setdefault(digest(signature + [stated]), (signature, stated, []))[2].append(event)
+    roles: dict[str, tuple[str, str]] = {}
+    for signature, stated, members in pools.values():
+        clusters: list[tuple[list, list[dict]]] = [(["stated", stated], members)] if stated else []
+        if not stated:
+            for event in sorted((e for e in members if days[e["event_id"]]), key=lambda e: (days[e["event_id"]], e["event_id"])):
+                day = days[event["event_id"]]
+                if clusters and (datetime.fromisoformat(day) - datetime.fromisoformat(clusters[-1][0][1])).days <= GROUP_WINDOW_DAYS:
+                    clusters[-1][1].append(event)
+                else:
+                    clusters.append((["seen", day], [event]))
+            clusters += [(["alone", e["event_id"]], [e]) for e in members if not days[e["event_id"]]]
+        for anchor, cards in clusters:
+            key = "grp_" + digest(signature + [anchor])
+            lead = min(cards, key=lambda e: (not any(s.get("authority") == "manufacturer_official" for s in e["sources"]),
+                                             days[e["event_id"]] or "9999-12-31", e["event_id"]))
+            for event in cards:
+                roles[event["event_id"]] = (key, "representative" if event is lead else "member")
+    return roles
+
+
 def output(builder: Builder) -> tuple[dict, dict]:
     state = builder.state
-    events = sorted(state["events"].values(), key=lambda e: e["event_id"])
+    events = []
+    for event in sorted(state["events"].values(), key=lambda e: e["event_id"]):
+        period_state, period_end = discount_period(event, builder.as_of)
+        events.append(dict(event, period_state=period_state, period_end=period_end))
+    roles = event_groups(events)
+    for event in events:  # copies: the stored events and their revisions stay as they are
+        event["group_key"], event["group_role"] = roles[event["event_id"]]
     not_comparable = [{k: v for k, v in item.items() if k != "_key"} for item in state["not_comparable"]]
     events_json = {"schema_version": SCHEMA_VERSION, "policy": state["policy"], "baselines": state["baselines"],
                    "events": events, "not_comparable": not_comparable, "gaps": state["gaps"]}
     counts: dict[str, int] = {}
+    active: dict[str, int] = {}  # ended discounts stay listed and counted above; they are left out here only
     for event in events:
-        counts[f"{event['event_type'] or 'unclassified'}:{event['status']}"] = counts.get(f"{event['event_type'] or 'unclassified'}:{event['status']}", 0) + 1
+        key = f"{event['event_type'] or 'unclassified'}:{event['status']}"
+        counts[key] = counts.get(key, 0) + 1
+        if event["period_state"] != "ended":
+            active[key] = active.get(key, 0) + 1
     report = {"status": "ok", "policy": state["policy"], "processed_runs": state["processed_runs"],
               "new_events": builder.new_events, "revised_events": builder.revised, "event_counts": counts,
-              "notes": builder.notes, "not_comparable": len(not_comparable), "gaps": len(state["gaps"])}
+              "active_event_counts": active, "notes": builder.notes, "not_comparable": len(not_comparable), "gaps": len(state["gaps"])}
     return events_json, report

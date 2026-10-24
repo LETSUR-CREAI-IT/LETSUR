@@ -125,6 +125,6 @@
 원문 본문은 그대로이며 이 부록은 이후 구현·검증 결과만 적는다. 원문의 일반 제안(대표 가격 정책, 할인 기간·연도 파생, group_key, fingerprint 구조, 렛서 입력, 경로 오귀속)은 승인된 정책이 아니고 이번에 구현하지 않았다.
 
 - 수집 보완으로 해결된 것: 대표 가격 72행과 별개로 OpenRouter·Vercel LLM endpoint API 36 source가 upstream별 가격·조건 행을 만든다(근거 있는 조건만 stated, 나머지 unknown). 비교 가능은 5개 모델 78 endpoint 271행이며 상세는 [events.md](events.md)를 따른다.
-- 남은 것: 대표 가격 정책(사용자 답변 없음, 기존 unknown 규칙 유지), 제조사 공식 출처 부재, 할인 수명주기, group_key, fingerprint 범위, 경로 오귀속, 렛서 입력은 모두 그대로다.
+- 남은 것: 대표 가격 정책(사용자 답변 없음, 기존 unknown 규칙 유지), 제조사 공식 출처 부재, 렛서 입력은 모두 그대로다. 할인 수명주기(`period_state`), group_key, fingerprint 범위, 경로 오귀속(`announced_via`)은 2026-10-19 로컬 구현·검증(미배포)했고 규칙은 [events.md](events.md)를 따른다.
 - 후속 검수의 5개 지적(할인 적용 전/후, endpoint status, quantization unknown, cache_write_ttl 사유, 선택 필드 부재 시 전체 실패)은 모두 수정됐고 Fable이 최종 사본을 APPROVE했다(기술 검수이며 사용자 수용이나 배포 허가가 아님). 비차단으로 남겼던 Vercel `vertexAnthropic` tier 문제는 게시 전에 추가로 좁혔고 이 1건은 Fable이 다시 보지 않았다.
 - 사실 정정은 위 메모대로 178과 183의 차이가 `disputed_claim` 5행이라는 것이다.
