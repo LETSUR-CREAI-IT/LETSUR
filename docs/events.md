@@ -7,8 +7,8 @@ core run과 signals run을 그대로 읽어 7종 이벤트와 상세페이지용
 2026-10-16 registry·live run 38864687828 기준(`python -m scripts.market_collection.events catalog`). 숫자는 단위가 다르다.
 
 - 정규 모델 ID 25개(LLM 18, 이미지 3, 영상 4).
-- core SourceSpec 161개(기존 125 + LLM 게이트웨이 endpoint 36, 아래 '비교 불가 진단과 endpoint 조건 보충'): 모델 하나에 하나씩 연결된 수집 단위이며 모두 가격 출처는 아니다. 역할은 pricing 84, api 49, docs 14, catalog_listing 13, notice 1. live run에서 가격 행을 낸 것은 105개이고, 가격 행이 없는 20개는 모두 GPT Image 2.5 보충 문서·API 계약 출처(조건·계약 확인용)다.
-- signals 출처 22개: 공지/블로그/tracker feed 4개 + 모델별 OpenRouter endpoints API 18개(가격 CSV가 아니라 `pricing.discount`·`expiration_date`를 읽는 신호 입력). catalog의 모델×출처 연결은 2026-10-17 `events catalog` CLI 재계산으로 179개 = core SourceSpec 161 + signals endpoint 18이며 feed 4개는 모델에 매핑되지 않아 제외된다(이전 기록: 2026-10-16 시점 core 125 기준 143개 = 125 + 18).
+- core SourceSpec 158개(기존 125 + LLM 게이트웨이 endpoint 36 − 2026-10-22에 퇴역한 Google 직접 Veo 3.1 3, 아래 '비교 불가 진단과 endpoint 조건 보충'): 모델 하나에 하나씩 연결된 수집 단위이며 모두 가격 출처는 아니다. 역할은 pricing 81, api 49, docs 14, catalog_listing 13, notice 1. live run에서 가격 행을 낸 것은 105개이고, 가격 행이 없는 20개는 모두 GPT Image 2.5 보충 문서·API 계약 출처(조건·계약 확인용)다.
+- signals 출처 22개: 공지/블로그/tracker feed 4개 + 모델별 OpenRouter endpoints API 18개(가격 CSV가 아니라 `pricing.discount`·`expiration_date`를 읽는 신호 입력). catalog의 모델×출처 연결은 2026-10-17 `events catalog` CLI 재계산으로 179개 = core SourceSpec 161 + signals endpoint 18이며 feed 4개는 모델에 매핑되지 않아 제외된다(이전 기록: 2026-10-16 시점 core 125 기준 143개 = 125 + 18). 2026-10-22 Google 직접 Veo 3.1 3개 퇴역 뒤 재계산은 176개 = core 158 + signals endpoint 18이다.
 - 가격 행 478개(run 1건), 서로 다른 URL 수와 무관하다.
 
 모델군별 읽는 경로(가격 = core 가격 행, 보충 = 조건·계약 확인):
@@ -22,7 +22,7 @@ core run과 signals run을 그대로 읽어 7종 이벤트와 상세페이지용
 | 이미지 | `gpt-image-2.5-sunburst`, `gpt-image-2.5-flare`(OpenAI) | OpenAI·fal·OpenRouter·Vercel 가격 페이지, Azure Foundry retail 가격 API, OpenRouter endpoints | 보충: OpenAI 가이드·generate API, Azure how-to·리전, fal·OpenRouter·Vercel 문서/API(가격 행 없음) |
 | | `ideogram-4.5`(Ideogram) | Ideogram 직접 API 카탈로그(t2i, edit, precise-edit), fal 가격 | |
 | 영상 | `seedance-2.5`(ByteDance) | BytePlus ModelArk 가격 + 캠페인 공지, fal, Vercel | |
-| | `veo-3.1-standard`, `veo-3.1-fast`, `veo-3.1-lite`(Google) | Google 직접, fal, Vercel | |
+| | `veo-3.1-standard`, `veo-3.1-fast`, `veo-3.1-lite`(Google) | fal, Vercel | Google 직접 경로는 2026-10-22 Gemini API Veo 3.1 preview 종료로 수집에서 뺌 |
 
 - 가격 경로: 각 출처 parser가 가격·조건 행(CSV 3종)과 원문 raw를 run으로 저장한다. 엔진은 같은 조건끼리만 이전 관측과 비교한다(위 "신뢰 판단").
 - 공지 경로(signals): OpenAI news RSS, Vercel changelog Atom, Simon Willison blog Atom(비공식), modelpricewatch feed(비공식 tracker), 모델별 OpenRouter endpoints API를 읽는다. 문장에서 모델 하나가 특정되고 지원 문형일 때만 typed claim이 되고, 아니면 candidate와 gap이다.

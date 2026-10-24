@@ -86,47 +86,5 @@ def _google(reader: GeminiPricingScopeReader) -> tuple[list[dict], list[dict]]:
 
 
 def parse_source(spec: SourceSpec, body: bytes, source_id: str) -> tuple[list[dict], list[dict]]:
-    if spec.modality == "video":
-        return _veo(spec, body.decode("utf-8"))
     page = GeminiPricingScopeReader(); page.feed(body.decode("utf-8", errors="replace")); page.close()
     return _google(page)
-
-
-def _veo(spec, body):
-    from .common import _Page
-    from .video_common import price, conditions
-    from scripts.market_collection.models import VEO_MODELS, VEO_GOOGLE_IDS
-    page = _Page(); page.feed(body); page.close()
-    provider = VEO_GOOGLE_IDS[VEO_MODELS.index(spec.model_id)]
-    # Provider IDs must occur inside the exact h2 model section.
-    sections = re.split(r'<h2\b', body)
-    scoped = [section for section in sections if re.match(r'[^>]*id="veo-3\.1"', section)]
-    if len(scoped) != 1 or provider not in scoped[0]:
-        raise ValueError("Google Veo exact preview identity absent")
-    tables = [rows for section, _, rows in page.tables if section == "Veo 3.1" and rows
-              and rows[0] == [("th", ""), ("th", "Free Tier"), ("th", "Paid Tier, per second in USD")]]
-    if len(tables) != 1:
-        raise ValueError("Google Veo Paid Tier USD/second headers absent or duplicate")
-    label = "Veo 3.1 " + spec.model_id.split("-")[-1].title() + " video with audio price (default)"
-    rows = [row for row in tables[0][1:] if len(row) == 3 and row[0] == ("td", label)]
-    if len(rows) != 1 or any(tag != "td" for tag, _ in rows[0]):
-        raise ValueError("Google Veo exact labeled rate row absent or duplicate")
-    paid = rows[0][2][1]
-    matches = list(re.finditer(r'\$(\d+(?:\.\d+)?) \((720p and 1080p|720p|1080p|4k)\)', paid))
-    remainder = re.sub(r'\$(\d+(?:\.\d+)?) \((720p and 1080p|720p|1080p|4k)\)', '', paid)
-    if not matches or remainder not in ("", "(4k output not supported)"):
-        raise ValueError("Google Veo rate or resolution ambiguous")
-    prices, own_conditions, seen = [], [], set()
-    for match in matches:
-        for resolution in match[2].split(" and "):
-            if resolution in seen:
-                raise ValueError("Google Veo duplicate resolution")
-            seen.add(resolution)
-            group = spec.source_key + "_" + resolution
-            locator = f"Veo 3.1 > {label} > Paid Tier: {match[0]}"
-            prices.append(price(spec, provider, "Google", match[1], "1 second", group, locator))
-            own_conditions.extend(conditions(group, locator, resolution=resolution, audio="on (default)", service_tier="paid", input_video="none"))
-    expected = {"720p", "1080p"} if spec.model_id.endswith("lite") else {"720p", "1080p", "4k"}
-    if seen != expected:
-        raise ValueError("Google Veo resolution set incomplete")
-    return prices, own_conditions

@@ -7,6 +7,7 @@ import pytest
 from scripts.market_collection.collectors import parse_source
 from scripts.market_collection.core import _validate_parse
 from scripts.market_collection.sources import source_specs
+from tests.market_collection.retired_sources import without_retired
 
 F = Path(__file__).parent/'fixtures'/'image25_openrouter_endpoints'
 
@@ -23,9 +24,10 @@ def fields(rows):
 
 def test_registry_is_additive_and_fixture_hashes_match():
     specs=source_specs()
-    assert [asdict(s) for s in specs[:111]] == json.loads((F/'registry111.json').read_text())
-    assert len(specs)==161 and len({s.model_id for s in specs})==25
-    assert len({(s.model_id,s.route) for s in specs})==97
+    old=without_retired(json.loads((F/'registry111.json').read_text()))
+    assert [asdict(s) for s in specs[:len(old)]] == old
+    assert len(specs)==158 and len({s.model_id for s in specs})==25
+    assert len({(s.model_id,s.route) for s in specs})==94
     for p in json.loads((F/'provenance.json').read_text()):
         assert hashlib.sha256((F/(p['variant']+'.json')).read_bytes()).hexdigest()==p['raw_sha256']
 

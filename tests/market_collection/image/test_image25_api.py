@@ -6,6 +6,7 @@ import pytest
 from scripts.market_collection.sources import source_specs
 from scripts.market_collection.collectors import parse_source
 from scripts.market_collection.core import _validate_parse
+from tests.market_collection.retired_sources import without_retired
 
 F=Path(__file__).parent/'fixtures'/'image25_api'
 
@@ -62,10 +63,10 @@ def test_catalog_target_and_descriptor_validation(change):
         with pytest.raises(ValueError):parse('image25_openrouter_sunburst_api',json.dumps(d).encode())
 
 def test_old_ordered_registry_preserved():
-    # Immutable complete 103-spec fixture captured before this extension.
-    old=json.loads((F/'baseline103.json').read_text())
-    assert [asdict(s) for s in source_specs()[:103]]==old
-    assert len(source_specs())==161
+    # Immutable complete 103-spec fixture captured before this extension (minus the retired sources).
+    old=without_retired(json.loads((F/'baseline103.json').read_text()))
+    assert [asdict(s) for s in source_specs()[:len(old)]]==old
+    assert len(source_specs())==158
 
 def test_guide_excludes_neighbor_model_and_code_only_claims():
     b=(F/'openai.md').read_bytes()

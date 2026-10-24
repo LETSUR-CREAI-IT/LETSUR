@@ -7,6 +7,7 @@ import pytest
 from scripts.market_collection.sources import source_specs
 from scripts.market_collection.collectors import parse_source
 from scripts.market_collection.core import _validate_parse
+from tests.market_collection.retired_sources import without_retired
 
 F = Path(__file__).parent / 'fixtures' / 'image25_supplement'
 
@@ -28,10 +29,10 @@ def val(f, key):
 
 
 def test_ordered_registry_append_and_raw_provenance():
-    old = json.loads((F/'registry113.json').read_text())
+    old = without_retired(json.loads((F/'registry113.json').read_text()))
     specs = source_specs()
-    assert len(specs) == 161
-    assert [asdict(s) for s in specs[:113]] == old
+    assert len(specs) == 158
+    assert [asdict(s) for s in specs[:len(old)]] == old
     for p in json.loads((F/'provenance.json').read_text()):
         assert hashlib.sha256((F/p['fixture']).read_bytes()).hexdigest() == p['raw_sha256'] == p['fixture_sha256']
 

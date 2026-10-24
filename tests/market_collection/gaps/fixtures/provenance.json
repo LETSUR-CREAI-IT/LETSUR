@@ -12,12 +12,6 @@
     "method": "Retained semantic table cells / exact direct metadata fields; no prices invented."
   },
   {
-    "fixture": "google.html",
-    "origin": "google_direct.bin",
-    "sha256": "e1b334ec8dc655c0343fcf071aa1718ce1156f855501f667861afa50f15caefa",
-    "method": "Retained semantic table cells / exact direct metadata fields; no prices invented."
-  },
-  {
     "fixture": "databricks.html",
     "origin": "databricks.bin",
     "sha256": "906b2dc3a3eee6674349071e6e89c7fdf9b3e75c21260431e2d2699bed3c1590",

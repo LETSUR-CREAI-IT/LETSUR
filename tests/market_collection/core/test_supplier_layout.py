@@ -12,7 +12,7 @@ from scripts.market_collection.models import MODEL_MODALITIES
 
 def test_registered_model_modality_and_fixed_suppliers():
     specs, adapters = registry()
-    assert len(specs) == 161
+    assert len(specs) == 158
     assert len(MODEL_MODALITIES) == 25
     assert all(MODEL_MODALITIES[spec.model_id] == spec.modality for spec in specs)
     assert {spec.route for spec in specs} == set(SUPPLIERS)
