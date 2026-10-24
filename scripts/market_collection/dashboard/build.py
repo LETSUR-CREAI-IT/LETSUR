@@ -214,6 +214,15 @@ def card_date(event: dict) -> str:
     return ""
 
 
+def last_observed_day(members: list[dict]) -> str:
+    """Newest day (KST) a member of a grouped card was observed, the day its rows show as 관측 M/D; empty for a single event or when none was.
+
+    card_date follows the representative alone, yet cards seen up to GROUP_WINDOW_DAYS after the group's first card join the same card.
+    """
+    moments = filter(None, (kst(part(e, "after").get("observed_at_utc")) for e in members))
+    return max(map(day_of, moments), default="") if len(members) > 1 else ""
+
+
 def card_key(event: dict) -> list:
     if event.get("group_key"):
         return ["group", event["group_key"], event.get("route") or ""]
@@ -644,7 +653,7 @@ def build_card(card_id: str, members: list[dict], sources: Sources, routes: dict
             "chgHead": table_head(t7, members), "chg": [row["row"] for row in rows], "cond": compare_line(members, rep, ch, t7), "ev": ev}
     phrase = next((part(e, "dates")["end_phrase"] for e in members if part(e, "dates").get("end_phrase")), None) if t7 == "한시 할인" else None
     for key, value in (("effLabel", label if t7 else ""), ("sub", sub), ("flag", flag_text(members)), ("eff", eff), ("effQual", qual),
-                       ("effNote", f"원문 “{phrase}”" if phrase and not eff else ""), ("cd", card_date(rep))):
+                       ("effNote", f"원문 “{phrase}”" if phrase and not eff else ""), ("cd", card_date(rep)), ("ld", last_observed_day(members))):
         if value:
             card[key] = value
     rate = next((r for r in map(stated_discount, members) if r is not None), None)

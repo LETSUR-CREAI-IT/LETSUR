@@ -335,6 +335,70 @@ def test_group_card_date_follows_the_representative(tmp_path: Path) -> None:
     assert (card["kind"], card["cd"]) == ("한시 할인", "2026-10-31")
 
 
+def _group_change(event_id: str, observed_at: str, role: str, item: str = "input", **fields) -> dict:
+    """A price change of group gk-1 whose after observation was made at observed_at."""
+    event = _observed(event_id, "price_change", "1.00", "1.20", item=item, group_key="gk-1", group_role=role,
+                      change={"delta": "0.20", "pct": "20.00", "direction": "up", "note": ""}, **fields)
+    event["after"]["observed_at_utc"] = event["dates"]["observed_after_utc"] = observed_at
+    return event
+
+
+def _group_discount(event_id: str, role: str) -> dict:
+    """A limited discount claim of group gk-1: dated by its notice, never observed."""
+    return _event(event_id, "limited_discount", route="openrouter", claim_kind="discount", group_key="gk-1", group_role=role,
+                  change={"discount_pct": "30", "discount_pct_basis": "stated"},
+                  dates={"published": "2026-10-03", "end_date": "2026-10-31", "note": ""})
+
+
+def test_group_card_carries_the_last_observed_day_of_its_members(tmp_path: Path) -> None:
+    """cd stays the representative's day; ld is the newest day a member was observed, in KST like the rows' 관측 M/D."""
+    events = [_group_change("g1", "2026-10-21T03:00:00Z", "representative"),
+              _group_change("g2", "2026-10-23T16:00:00Z", "member", item="output")]  # 10/24 01:00 KST
+    _write(tmp_path, events)
+    [card] = _build(tmp_path)[2]["EVENTS"]
+    assert (card["cd"], card["ld"]) == ("2026-10-21", "2026-10-24")
+    assert [row[4] for row in card["chg"]] == ["관측 10/21", "관측 10/24"]
+
+
+def test_context_rows_do_not_move_the_last_observed_day(tmp_path: Path) -> None:
+    """A grey 그대로 row is stamped with the observation of its own event, and the day the page is built is no observation."""
+    grey = {"billing_item": "output", "conditions": {"service_tier": "standard"}, "amount": "4.00", "observation_id": "g1-3"}
+    events = [_group_change("g1", "2026-10-21T03:00:00Z", "representative", unchanged_items=[grey]),
+              _group_change("g2", "2026-10-22T03:00:00Z", "member", item="cache_read")]
+    _write(tmp_path, events)
+    [card] = _build(tmp_path, now=datetime(2026, 10, 24, 3, 0, tzinfo=timezone.utc))[2]["EVENTS"]  # built on 10/24
+    assert [row[4] for row in card["chg"] if row[1] == row[2]] == ["관측 10/21"]
+    assert (card["cd"], card["ld"]) == ("2026-10-21", "2026-10-22")
+
+
+def test_a_member_nobody_observed_adds_no_day(tmp_path: Path) -> None:
+    claim = _event("g3", "price_change", claim_kind="price_increase", group_key="gk-1", group_role="member",
+                   dates={"published": "2026-10-03", "note": ""})
+    _write(tmp_path, [_group_change("g1", "2026-10-22T03:00:00Z", "representative"), claim])
+    [card] = _build(tmp_path)[2]["EVENTS"]
+    assert (card["cd"], card["ld"]) == ("2026-10-22", "2026-10-22")
+
+
+@pytest.mark.parametrize("events", [
+    [_observed("o1", "price_change", "1.00", "1.20", change={"delta": "0.20", "pct": "20.00", "direction": "up", "note": ""})],
+    [_group_change("g1", "2026-10-24T03:00:00Z", "representative")],
+    [_group_discount("g1", "representative"), _group_discount("g2", "member")],
+], ids=["one event", "group of one event", "group of claims nobody observed"])
+def test_card_without_two_observed_members_has_no_last_observed_day(tmp_path: Path, events: list[dict]) -> None:
+    _write(tmp_path, events)
+    [card] = _build(tmp_path)[2]["EVENTS"]
+    assert "ld" not in card
+
+
+def test_template_files_a_card_as_past_by_its_last_observed_day(tmp_path: Path) -> None:
+    """The test environment has no JS engine, so the rule is read off the built page; the browser check covers how it behaves."""
+    _write(tmp_path, [])
+    page = _build(tmp_path)[1]
+    [rule] = re.findall(r"^const isPast = (.*?);(?: //.*)?$", page, re.M)
+    # past once the later of cd and ld is before the viewed day (ld only on groups); a card with no date at all counts as past
+    assert rule == "e => { const day = [e.cd, e.ld].filter(Boolean).sort().pop(); return !day || day < VIEW_DAY; }"
+
+
 def test_observed_condition_change(tmp_path: Path) -> None:
     def stated(value: str) -> dict:
         return {"value": value, "unit": "x base input price", "basis": "stated", "locator": f"cache {value}"}
