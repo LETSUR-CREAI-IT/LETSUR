@@ -78,6 +78,14 @@ def test_one_entry_keeps_availability_and_discount(tmp_path):
     assert all(e["status"] == "candidate" and any(g["field"] == "model_attribution" for g in e["gaps"]) for e in shared)
 
 
+def test_a_tracker_article_on_glm_5_3_flash_raises_no_event_for_glm_5_3(tmp_path):
+    """glm-5.3 is registered beside glm-5.3-flash: the shorter name inside the longer one is not a mention of it."""
+    run = collect(tmp_path / "data", {"modelpricewatch_news": tracker(
+        {"zhipu-glm-5-3-flash": 48, "together-deepseek-v4-pro": 54, "fireworks-deepseek-v4-pro": 63, "deepseek-v4-pro": 91})})
+    events = ok_build(tmp_path / "out", run)["events"]
+    assert sorted({e["model_id"] for e in events if e["model_id"].startswith("glm")}) == [GLM]
+
+
 def test_shared_entry_url_articles_stay_apart_and_reobservation_is_not_a_revision(tmp_path):
     """Up and down articles on one model page are separate events; a new feed ordinal on the same sentence changes nothing."""
     first_run = collect(tmp_path / "day1", {"modelpricewatch_news": tracker(

@@ -35,11 +35,11 @@ def by_set(conditions):
     return grouped
 
 
-def test_registry_adds_36_distinct_sources_for_18_models_after_existing_ones():
+def test_registry_adds_44_distinct_sources_for_22_models_after_existing_ones():
     specs = llm_endpoint_source_specs()
-    assert len(specs) == 36 and len({s.source_key for s in specs}) == 36
-    assert len({s.model_id for s in specs}) == 18
-    assert source_specs()[-36:] == specs
+    assert len(specs) == 44 and len({s.source_key for s in specs}) == 44
+    assert len({s.model_id for s in specs}) == 22
+    assert source_specs()[-44:] == specs
     assert {s.route for s in specs} == {"openrouter", "vercel_ai_gateway"}
 
 

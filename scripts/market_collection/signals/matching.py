@@ -110,13 +110,11 @@ def sentences(text: str) -> list[str]:
 
 def models_in(sentence: str) -> list[ModelAlias]:
     """Exact model mentions first; a family counts only where no member model is named."""
-    found: list[ModelAlias] = []
-    covered: list[tuple[int, int]] = []
-    for alias in EXACT_ALIASES:
-        spans = [match.span() for match in alias.pattern.finditer(sentence)]
-        if spans:
-            found.append(alias)
-            covered.extend(spans)
+    matches = [(alias, [match.span() for match in alias.pattern.finditer(sentence)]) for alias in EXACT_ALIASES]
+    covered = [span for _, spans in matches for span in spans]
+    # "GLM 5.3" inside "GLM 5.3 Flash" names the longer model only; the shorter one counts where it also stands alone.
+    found = [alias for alias, spans in matches
+             if any(not any(other != span and other[0] <= span[0] and span[1] <= other[1] for other in covered) for span in spans)]
     named = {model for alias in found for model in alias.model_ids}
     for alias in FAMILY_ALIASES:
         # "GPT-5.6 Sol, the flagship of the GPT-5.6 series" is about Sol, not the whole family.

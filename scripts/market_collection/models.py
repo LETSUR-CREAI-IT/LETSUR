@@ -2,6 +2,8 @@
 
 GOOGLE_LLM_MODEL = "gemini-3.8-flash"
 
+GOOGLE_ARGON_MODEL = "gemini-4-argon"
+
 GOOGLE_BROKER_MODEL = "google/gemini-3.8-flash"
 
 ASTRA_MODEL = "gpt-6-astra"
@@ -17,6 +19,7 @@ STANDARD_LLM_MODELS = (
     ("claude-opus-5-5", "Claude Opus 5.5", "claude-opus-5.5"),
     ("claude-sonnet-5-5", "Claude Sonnet 5.5", "claude-sonnet-5.5"),
     ("claude-haiku-4-5", "Claude Haiku 4.5", "claude-haiku-4.5"),
+    ("claude-haiku-5-5", "Claude Haiku 5.5", "claude-haiku-5.5"),
 )
 
 BROKER_CATALOG_MODELS = (
@@ -26,6 +29,9 @@ BROKER_CATALOG_MODELS = (
     ("glm-5.2", "GLM 5.2", "Z.ai: GLM 5.2", "z-ai/glm-5.2", "zai/glm-5.2"),
     ("glm-5.3-flash", "GLM 5.3 Flash", "Z.ai: GLM 5.3 Flash", "z-ai/glm-5.3-flash", "zai/glm-5.3-flash"),
     ("kimi-k3", "Kimi K3", "MoonshotAI: Kimi K3", "moonshotai/kimi-k3", "moonshotai/kimi-k3"),
+    (GOOGLE_ARGON_MODEL, "Gemini 4 Argon", "Google: Gemini 4 Argon", "google/gemini-4-argon", "google/gemini-4-argon"),
+    ("kimi-k3.1-pro", "Kimi K3.1 Pro", "MoonshotAI: Kimi K3.1 Pro", "moonshotai/kimi-k3.1-pro", "moonshotai/kimi-k3.1-pro"),
+    ("glm-5.3", "GLM 5.3", "Z.ai: GLM 5.3", "z-ai/glm-5.3", "zai/glm-5.3"),
 )
 
 _AWS_OPENAI = (
@@ -42,9 +48,14 @@ _AWS_ANTHROPIC = (
     ("claude-opus-5-5", "claude-opus-5-5", "Claude Opus 5.5"),
     ("claude-sonnet-5-5", "claude-sonnet-5-5", "Claude Sonnet 5.5"),
     ("claude-haiku-4-5", "claude-haiku-4-5", "Claude Haiku 4.5"),
+    ("claude-haiku-5-5", "claude-haiku-5-5", "Claude Haiku 5.5"),
 )
 
 _AZURE_MODELS = tuple(model for model, _, _ in _AWS_OPENAI) + ("claude-fable-5-1",) + tuple(model for model, _, _ in _AWS_ANTHROPIC)
+
+# Their sources are listed after the original registry (sources.source_specs) because the retained registry
+# fixtures pin the order of every source collected before them.
+SUCCESSOR_MODELS = (GOOGLE_ARGON_MODEL, "claude-haiku-5-5", "kimi-k3.1-pro", "glm-5.3")
 
 SUNBURST_MODEL = "gpt-image-2.5-sunburst"
 

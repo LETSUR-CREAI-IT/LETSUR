@@ -48,12 +48,12 @@ class CloudAdapterTests(unittest.TestCase):
         _validate_parse(spec, "source-1", *rows)
         return rows
 
-    def test_registry_exact_21(self):
+    def test_registry_exact_23(self):
         specs = cloud_source_specs()
         validate_registry(specs)
-        self.assertEqual(len(specs), 21)
-        self.assertEqual(len({s.source_key for s in specs}), 21)
-        self.assertEqual(len({s.parser for s in specs}), 21)
+        self.assertEqual(len(specs), 23)
+        self.assertEqual(len({s.source_key for s in specs}), 23)
+        self.assertEqual(len({s.parser for s in specs}), 23)
         self.assertEqual({s.route for s in specs}, {"aws_bedrock", "azure_foundry"})
         self.assertTrue(all(s.modality == "llm" and s.task == "text_generation" for s in specs))
         self.assertNotIn("claude-fable-5-1:aws_bedrock", self.specs)

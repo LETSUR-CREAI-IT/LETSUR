@@ -40,12 +40,15 @@ import pytest
 
 from scripts.market_collection import core
 from scripts.market_collection import signals as signal_collector
+from scripts.market_collection.collectors.anthropic import parse_source as anthropic_parse
 from scripts.market_collection.collectors.google import parse_source as google_parse
 from scripts.market_collection.models import GOOGLE_LLM_MODEL, MODEL_MODALITIES
 from scripts.market_collection.signals import SIGNAL_FIELDS, SIGNAL_SOURCE_FIELDS
 from scripts.market_collection.signals.parsers import openrouter_endpoint_signals
 from scripts.market_collection.signals.registry import signal_sources
 from scripts.market_collection.sources import source_specs
+from tests.market_collection.anthropic_page import HIGH as HAIKU_HIGH, LOW as HAIKU_LOW, RATES as HAIKU_RATES, page as haiku_page
+from tests.market_collection.google_page import PAGE as GOOGLE_PAGE
 
 ROOT = Path(__file__).resolve().parents[3]
 GOOGLE = "google_gemini_38_flash"
@@ -352,6 +355,56 @@ def test_official_future_rate_is_scheduled_change(tmp_path):
     assert event["event_type"] == "scheduled_change" and event["status"] == "confirmed"
     assert event["before"]["amount"] == "0.75" and event["after"]["amount"] == "1.50"
     assert event["dates"]["effective_from"] == "2027-01-01" and event["change"]["pct"] == "100.00"
+
+
+def test_argon_price_doubling_is_announced_on_the_first_run(tmp_path):
+    """The official Argon page states the 2026-12-01 rate next to today's, so one baseline run already yields a confirmed
+    scheduled_change per tier and item (cache rows carry the same conditions in both periods), and no price_change."""
+    entry = {"spec": _spec("google_gemini_4_argon"), "body": GOOGLE_PAGE, "csv_amounts": {}}
+    events = ok_build(tmp_path / "out", write_run(tmp_path, RUN_A, "2026-10-25T00:17:00Z", [entry]))
+    assert {event["event_type"] for event in events["events"]} == {"scheduled_change"}
+    assert {event["status"] for event in events["events"]} == {"confirmed"}
+    by_card = {(event["billing_item"], event["conditions"]["service_tier"]): event for event in events["events"]}
+    assert len(events["events"]) == len(by_card) == 12
+    assert {tier for _, tier in by_card} == {"standard", "batch", "flex", "priority"}
+    standard_input = by_card[("input", "standard")]
+    assert (standard_input["before"]["amount"], standard_input["after"]["amount"]) == ("2.00", "4.00")
+    assert standard_input["change"] == {"pct": "100.00", "delta": "2.00"}
+    assert standard_input["dates"]["current_rate_until"] == "2026-11-30" and standard_input["dates"]["effective_from"] == "2026-12-01"
+    assert standard_input["conditions"] == {"service_tier": "standard"}
+    standard_cache = by_card[("cache_read", "standard")]
+    assert (standard_cache["before"]["amount"], standard_cache["after"]["amount"]) == ("0.10", "0.20")
+    assert standard_cache["conditions"] == {"service_tier": "standard", "explicit_prompt_caching": "not supported"}
+    assert {event["source_key"] for event in events["events"]} == {"google_gemini_4_argon"}
+    assert [baseline["billing_item"] for baseline in events["baselines"]].count("cache_read") == 4
+    assert not events["not_comparable"]
+
+
+def haiku_entry(rates: dict = HAIKU_RATES) -> dict:
+    spec, body = _spec("anthropic_claude_haiku_5_5"), haiku_page(rates)
+    return {"spec": spec, "body": body, "rows": anthropic_parse(core.SourceSpec(**spec), body, "source-1")}
+
+
+def test_haiku_prompt_length_tiers_are_separate_series_and_a_change_stays_in_its_tier(tmp_path):
+    """Both Haiku 5.5 tiers are comparable, never share a series, and a move in one is a price_change under its own conditions."""
+    run_a = write_run(tmp_path, RUN_A, "2026-10-13T00:17:00Z", [haiku_entry()])
+    first = ok_build(tmp_path / "first", run_a)
+    assert first["events"] == [] and not first["not_comparable"]
+    series = {(baseline["billing_item"], tuple(sorted(baseline["conditions"].items()))) for baseline in first["baselines"]}
+    assert len(series) == len(first["baselines"]) == 10
+    assert sum("prompt_tokens" in baseline["conditions"] for baseline in first["baselines"]) == 5
+    moved = {**HAIKU_RATES, HAIKU_HIGH: ("0.60", *HAIKU_RATES[HAIKU_HIGH][1:]), HAIKU_LOW: (*HAIKU_RATES[HAIKU_LOW][:4], "0.55")}
+    run_b = write_run(tmp_path, RUN_B, "2026-10-14T00:17:00Z", [haiku_entry(moved)])
+    events = ok_build(tmp_path / "out", run_a, run_b)
+    assert {(event["event_type"], event["status"], event["source_key"]) for event in events["events"]} == \
+        {("price_change", "confirmed", "anthropic_claude_haiku_5_5")}
+    by_item = {event["billing_item"]: event for event in events["events"]}
+    assert set(by_item) == {"input", "output"}
+    assert (by_item["input"]["before"]["amount"], by_item["input"]["after"]["amount"]) == ("0.50", "0.60")
+    assert by_item["input"]["conditions"] == {"service_tier": "standard", "prompt_tokens": "100000"}
+    assert (by_item["output"]["before"]["amount"], by_item["output"]["after"]["amount"]) == ("0.50", "0.55")
+    assert by_item["output"]["conditions"] == {"service_tier": "standard"}
+    assert not events["not_comparable"]
 
 
 def _openrouter_signal_spec() -> dict:

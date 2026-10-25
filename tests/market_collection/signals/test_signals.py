@@ -44,6 +44,17 @@ def test_exact_names_win_over_family_and_longer_versions_do_not_match_shorter():
     assert labels("Seedance 2.0 mini is 60% off") == []
 
 
+def test_a_name_inside_a_longer_registered_name_is_not_a_mention_of_the_shorter_model():
+    # glm-5.3 is registered beside glm-5.3-flash, and claude-sonnet-5 beside claude-sonnet-5-5 (as an id).
+    assert labels("GLM-5.3-Flash - price up: $0.119 -> $0.238") == [("GLM 5.3 Flash", "exact")]
+    assert labels("z-ai/glm-5.3-flash is 20% off") == [("GLM 5.3 Flash", "exact")]
+    assert labels("claude-sonnet-5-5 is 20% off") == [("Claude Sonnet 5.5", "exact")]
+    assert labels("GLM 5.3 is 50% off through November 1.") == [("GLM 5.3", "exact")]
+    # Named on its own as well as inside the longer name, the shorter model still counts.
+    assert sorted(labels("GLM-5.3 and GLM-5.3-Flash both get a price cut.")) == [("GLM 5.3", "exact"), ("GLM 5.3 Flash", "exact")]
+    assert [row["model_label"] for row in entry_signals("GLM-5.3-Flash - price up: $0.119 -> $0.238", "")] == ["GLM 5.3 Flash"]
+
+
 def test_claim_terms_skip_comparisons_and_keep_kinds():
     assert claims_in("Both models work at a lower price than GPT-6 Astra.")[0] == []
     assert claims_in("OpenAI lowered list pricing for GPT-5.6 Sol.")[0] == ["price_decrease"]

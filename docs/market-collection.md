@@ -6,27 +6,27 @@
 
 | 유형 | 기준 모델 | 경로 | 출처 사양 수 |
 |---|---|---|---:|
-| LLM | 18개 모델 ID (아래 경로별 범위 참조) | Google/OpenAI/Anthropic Direct, OpenRouter, Vercel AI Gateway, AWS Bedrock, Azure Foundry, Google Vertex, Azure Databricks | 73 |
+| LLM | 22개 모델 ID (아래 경로별 범위 참조) | Google/OpenAI/Anthropic Direct, OpenRouter, Vercel AI Gateway, AWS Bedrock, Azure Foundry, Google Vertex, Azure Databricks | 85 |
 | 이미지 | GPT Image 2.5 Sunburst, GPT Image 2.5 Flare, Ideogram 4.5 | OpenAI Direct, fal, OpenRouter, Vercel AI Gateway, Azure Foundry retail API, Ideogram Direct | 39 |
 | 영상 | Seedance 2.5, Veo 3.1 Standard/Fast/Lite | fal, Vercel AI Gateway, BytePlus ModelArk | 10 |
 
-현재 registry에는 158개 `SourceSpec`(출처 사양, 2026-10-17에 OpenRouter·Vercel LLM endpoint API 36개 추가, 2026-10-22에 Google 직접 Veo 3.1 3개 퇴역; 가격 행 478→2,037, 상세는 [events.md](events.md)), 94개 모델/경로 조합, 25개 정규 모델 ID가 있다: LLM 109개/18개 모델, 이미지 39개/3개 모델, 영상 10개/4개 모델. 사양 수는 URL 수가 아니다. 기존 83·97·103·111·113개 단계의 수치와 검증 결과는 해당 시점의 기록으로 유지한다. GPT Image 2.5의 첫 API 조건 문서 8개에 12개 보충 문서를 더했다. 보충 문서는 두 모델×6종의 문서 유형이며 가격 관측을 만들지 않는다. 이미지 모델은 `gpt-image-2.5-sunburst`, `gpt-image-2.5-flare`, `ideogram-4.5`; 영상은 `seedance-2.5`, `veo-3.1-standard`, `veo-3.1-fast`, `veo-3.1-lite`다. 수집기는 등록된 공개 HTTPS URL을 요청하며 로그인이나 유료 모델 호출은 하지 않는다. 문서별 판단 범위는 [수집 범위 검토](collector-coverage-review.md), 상세 정책은 [비교 규칙](image25-comparison-rules.md)을 참고한다.
+현재 registry에는 178개 `SourceSpec`(출처 사양, 2026-10-17에 OpenRouter·Vercel LLM endpoint API 36개 추가, 2026-10-22에 Google 직접 Veo 3.1 3개 퇴역; 가격 행 478→2,037, 상세는 [events.md](events.md). 2026-10-25에 후속 모델 4개의 출처 12개와 endpoint API 8개 추가), 106개 모델/경로 조합, 29개 정규 모델 ID가 있다: LLM 129개/22개 모델, 이미지 39개/3개 모델, 영상 10개/4개 모델. 사양 수는 URL 수가 아니다. 기존 83·97·103·111·113개 단계의 수치와 검증 결과는 해당 시점의 기록으로 유지한다. GPT Image 2.5의 첫 API 조건 문서 8개에 12개 보충 문서를 더했다. 보충 문서는 두 모델×6종의 문서 유형이며 가격 관측을 만들지 않는다. 이미지 모델은 `gpt-image-2.5-sunburst`, `gpt-image-2.5-flare`, `ideogram-4.5`; 영상은 `seedance-2.5`, `veo-3.1-standard`, `veo-3.1-fast`, `veo-3.1-lite`다. 수집기는 등록된 공개 HTTPS URL을 요청하며 로그인이나 유료 모델 호출은 하지 않는다. 문서별 판단 범위는 [수집 범위 검토](collector-coverage-review.md), 상세 정책은 [비교 규칙](image25-comparison-rules.md)을 참고한다.
 
 ### LLM 경로 범위
 
 | 경로 | 등록된 모델 ID | 문서 수 |
 |---|---|---:|
-| Google Direct | Gemini 3.8 Flash | 1 |
+| Google Direct | Gemini 3.8 Flash, Gemini 4 Argon | 2 |
 | OpenAI Direct | GPT-6 Astra, GPT-6 Sol, GPT-6.1 Sol, GPT-6 Luna, GPT-5.6 Sol, GPT-5.6 Terra, GPT-5.6 Luna | 7 |
-| Anthropic Direct | Claude Fable 5.1, Claude Opus 5.5, Claude Sonnet 5.5, Claude Haiku 4.5, Claude Sonnet 5 | 5 |
-| OpenRouter | 위 18개 모델 ID 전체 | 18 |
-| Vercel AI Gateway | 위 18개 모델 ID 전체 | 18 |
-| AWS Bedrock | GPT-6 Astra 및 위 OpenAI 모델 6개; Claude Fable 5.1, Opus 5.5, Sonnet 5.5, Haiku 4.5 | 11 |
-| Azure Foundry | GPT 계열 7개와 Claude Fable 5.1, Opus 5.5, Sonnet 5.5, Haiku 4.5 | 11 |
+| Anthropic Direct | Claude Fable 5.1, Claude Opus 5.5, Claude Sonnet 5.5, Claude Haiku 4.5, Claude Haiku 5.5, Claude Sonnet 5 | 6 |
+| OpenRouter | 위 22개 모델 ID 전체 | 22 |
+| Vercel AI Gateway | 위 22개 모델 ID 전체 | 22 |
+| AWS Bedrock | GPT-6 Astra 및 위 OpenAI 모델 6개; Claude Fable 5.1, Opus 5.5, Sonnet 5.5, Haiku 4.5, Haiku 5.5 | 12 |
+| Azure Foundry | GPT 계열 7개와 Claude Fable 5.1, Opus 5.5, Sonnet 5.5, Haiku 4.5, Haiku 5.5 | 12 |
 | Google Vertex | Gemini 3.8 Flash | 1 |
 | Azure Databricks | Gemini 3.8 Flash | 1 |
 
-경로별 사양 수는 서로 다른 URL 수나 모델 가격 행 수가 아니다. LLM 합계는 Google Direct 1, OpenAI Direct 7, Anthropic Direct 5, OpenRouter 18, Vercel 18, AWS 11, Azure Foundry 11, Google Vertex 1, Azure Databricks 1개다. Anthropic Direct는 Claude 가격표 한 페이지를 다섯 모델 ID로 각각 해석한다. Azure와 AWS Anthropic 항목은 모델별 카탈로그/카드를 등록하지만 그 페이지의 숫자 가격이 없으면 금액을 추정하지 않는다. 기존 LLM 6개 `claude-sonnet-5`, `deepseek-v4-pro`, `deepseek-v4.1-flash`, `glm-5.2`, `glm-5.3-flash`, `kimi-k3`의 경로는 유지한다. GPT Image 2.5 Sunburst와 Flare는 별도 모델이다. Azure Foundry의 이미지 retail API 사양 두 개는 같은 API URL을 사용하지만 모델별로 구분한다.
+경로별 사양 수는 서로 다른 URL 수나 모델 가격 행 수가 아니다. LLM 합계는 Google Direct 2, OpenAI Direct 7, Anthropic Direct 6, OpenRouter 22, Vercel 22, AWS 12, Azure Foundry 12, Google Vertex 1, Azure Databricks 1개다. Google Direct는 가격 문서 한 페이지를 두 모델 ID로, Anthropic Direct는 Claude 가격표 한 페이지를 여섯 모델 ID로 각각 해석한다. Azure와 AWS Anthropic 항목은 모델별 카탈로그/카드를 등록하지만 그 페이지의 숫자 가격이 없으면 금액을 추정하지 않는다. 기존 LLM 6개 `claude-sonnet-5`, `deepseek-v4-pro`, `deepseek-v4.1-flash`, `glm-5.2`, `glm-5.3-flash`, `kimi-k3`의 경로는 유지한다. GPT Image 2.5 Sunburst와 Flare는 별도 모델이다. Azure Foundry의 이미지 retail API 사양 두 개는 같은 API URL을 사용하지만 모델별로 구분한다.
 
 ## 실행
 
@@ -187,13 +187,15 @@ GPT-5.6 Sol의 OpenAI 문구 “promotional pricing is available at least throug
 
 AWS Haiku 카드의 버전이 붙은 Global inference ID는 현재 카드에서 확인한 ID 그대로 보존한다. 이 식별자는 바뀔 수 있다. 카드 구조나 ID가 달라져 파싱 결과가 비면 과거 가격을 대신 쓰지 말고 해당 회차 `raw/` 원문과 현재 카드를 확인한다.
 
+2026-10-25에 후속 모델 4개(Gemini 4 Argon, Claude Haiku 5.5, Kimi K3.1 Pro, GLM-5.3)를 추가했다. Gemini 4 Argon은 Gemini 3.8 Flash와 같은 Google 가격 문서에서 `Gemini 4 Argon` 구역을 골라 읽는다. 문서가 밝힌 현재 가격은 `published_rate`와 `effective_until=2026-11-30`으로, 2026-12-01부터의 가격은 `announced_future_rate`와 `effective_from=2026-12-01`로 기록하므로 이벤트 엔진이 첫 회차부터 예정 변경 카드를 만든다. 캐시 칸의 “Implicit caching only (explicit caching is not supported).” 문구는 가격이 아니라 `explicit_prompt_caching=not supported` 조건으로 남긴다. Claude Haiku 5.5는 Anthropic 가격표가 프롬프트 길이(100,000 토큰 이하/초과)별로 나눈 두 행을 별도 시리즈로 저장한다. 초과 구간만 `prompt_tokens`(`gt`, 100000) 조건을 갖고, 이하 구간은 게이트웨이 endpoint 행처럼 조건이 없다. 이 두 행 중 하나라도 이름이 바뀌거나 가격 칸이 비면 0행으로 통과하지 않고 해당 출처를 오류로 처리한다. Batch 가격과 미국 한정 1.1배는 다른 Claude 모델과 같이 수집하지 않는다. Kimi K3.1 Pro와 GLM-5.3은 OpenRouter·Vercel 모델 페이지의 input/output 표시값만 읽는다. Gemini 4 Argon의 Google Vertex와 Azure Databricks 경로는 등록하지 않았다. Vertex 페이지의 Argon 표는 5열이고 같은 머리글의 표 3개가 등급 표시 없이 나열돼 기존 parser로 읽을 수 없으며, Databricks는 금액 없는 모델 목록뿐이다.
+
 `fetch_status=ok`와 `parse_status=ok`는 문서를 가져와 해석기가 오류 없이 끝났다는 뜻이며 가격 행이 반드시 있다는 뜻은 아니다. 행이 없으면 원문, 모델 이름, 페이지 구조를 확인한다. 실패한 경로가 있어도 다른 경로의 원문과 행은 남는다. `history`는 원문 크기나 SHA-256이 다르면 실패한다.
 
 ## 구성과 출처 확장
 
 수집기 구성은 모델 ID와 유형을 [models.py](../scripts/market_collection/models.py), 모델·공급 경로별 URL과 parser 키가 든 `SourceSpec` 목록을 [sources.py](../scripts/market_collection/sources.py)에 둔다. `source_specs()`는 모델의 modality가 `MODEL_MODALITIES`와 맞는지 검사한다. [공급자 registry](../scripts/market_collection/collectors/__init__.py)는 공급자 parser 모듈을 명시적으로 가져와 route를 연결하며, 임의의 Python 파일을 자동 검색하지 않는다. `collectors/`에는 공급자 parser들과 공용 helper가 있다. 2026-10-05 추가에 포함된 Azure retail, Google Vertex, Azure Databricks parser와 영상 공용 `video_common.py` helper 및 fal, Vercel의 Veo/Seedance 진입점에 이어, Ideogram 4.5는 [ideogram.py](../scripts/market_collection/collectors/ideogram.py)에서 Ideogram Direct catalog를 해석하고 [ideogram_fal.py](../scripts/market_collection/collectors/ideogram_fal.py)에서 fal endpoint의 가격과 scoped OpenAPI 조건을 해석한다. 유형별 [LLM](../scripts/market_collection/adapters/llm/__init__.py), [이미지](../scripts/market_collection/adapters/image/__init__.py), [영상](../scripts/market_collection/adapters/video/__init__.py) adapter는 기존 API를 공급자 registry에 연결하는 얇은 facade다. [회귀 fixture와 검사](../tests/market_collection/gaps/)와 [Ideogram 4.5 원문 fixture](../tests/market_collection/image/fixtures/ideogram45/)는 공급자별 parser 근거를 보관한다. 예전 modality별 `missing.py`, `cloud.py`, `flare.py` parser 파일은 현재 구조에 없으며, 고정 등록 출처에 필요한 parser 키와 route alias는 유지됐다.
 
-새 모델이면 `models.py`의 정규 ID와 modality를 구성하고, 새 출처는 `sources.py`에 모델·route·공개 URL·parser 키를 가진 사양으로 등록한다. 기존 모델의 출처를 추가한다면 모델 ID와 modality는 이미 등록된 값을 사용한다. 해당 공급자의 기존 parser가 페이지 형식을 지원하면 그 parser를 재사용한다. 페이지 형식이 다르면 관련 `collectors/<supplier>.py` parser를 보완한다. 새 공급자를 추가하면 parser 모듈을 만들고 `collectors/__init__.py`의 import와 `SUPPLIERS` mapping에 route를 명시한다. 새 URL마다 modality facade를 수정하지 않는다. HTML/Markdown fixture와 parser 회귀 검사는 `tests/market_collection/`의 해당 공급자 흐름에 맞춰 둔다. 페이지 구조가 바뀌면 해당 run의 `raw/`와 대조해 parser 결과를 확인한다.
+새 모델이면 `models.py`의 정규 ID와 modality를 구성하고, 새 출처는 `sources.py`에 모델·route·공개 URL·parser 키를 가진 사양으로 등록한다. 기존 모델의 출처를 추가한다면 모델 ID와 modality는 이미 등록된 값을 사용한다. 보존된 registry fixture가 앞선 출처의 순서를 고정하므로, `STANDARD_LLM_MODELS` 등에 넣은 새 LLM은 `models.py`의 `SUCCESSOR_MODELS`에도 적어 그 출처가 기존 출처 뒤에 오게 한다. 해당 공급자의 기존 parser가 페이지 형식을 지원하면 그 parser를 재사용한다. 페이지 형식이 다르면 관련 `collectors/<supplier>.py` parser를 보완한다. 새 공급자를 추가하면 parser 모듈을 만들고 `collectors/__init__.py`의 import와 `SUPPLIERS` mapping에 route를 명시한다. 새 URL마다 modality facade를 수정하지 않는다. HTML/Markdown fixture와 parser 회귀 검사는 `tests/market_collection/`의 해당 공급자 흐름에 맞춰 둔다. 페이지 구조가 바뀌면 해당 run의 `raw/`와 대조해 parser 결과를 확인한다.
 
 기존 83개 source spec의 parser 키와 route alias는 이 구조 이동에서 유지됐다. 과거 live run은 그 run에 저장된 사양과 원문으로 replay되지만, replay는 현재 parser와 registry를 사용한다. 따라서 출처 설정을 영구 삭제하면 저장된 원본과 과거 history CSV는 남아도 해당 출처의 replay 파싱은 실패할 수 있다. 비교·재해석을 유지해야 하는 출처는 registry에서 제거하기 전에 보존 정책을 별도로 정한다.
 
