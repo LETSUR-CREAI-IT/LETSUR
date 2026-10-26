@@ -6,6 +6,7 @@ event has in events.json. The built page's data slots are read back as JSON.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 from datetime import datetime, timezone
@@ -305,18 +306,35 @@ def test_list_filter_chips_are_the_types_the_builder_emits(tmp_path: Path) -> No
     assert list(chips) == list(build.T7.values())
 
 
+def _started_discount(event_id: str, end_dates: dict, **fields) -> dict:
+    """A 40% limited discount announced 9/30 that started 10/1; end_dates is what the notice says about its end."""
+    return _claim(event_id, "limited_discount", "openrouter_endpoints", "40% off from Oct 1", route="openrouter", claim_kind="discount",
+                  change={"discount_pct": "40", "discount_pct_basis": "stated"},
+                  dates={"published": "2026-09-30", "effective_from": "2026-10-01", "note": "", **end_dates}, **fields)
+
+
 @pytest.mark.parametrize(("event", "cd"), [
     (_scheduled("s1", "input", "0.75", "1.50", "0.75"), "2027-01-01"),
     (_claim("d1", "limited_discount", "openrouter_endpoints", "20% off until Oct 31", route="openrouter", claim_kind="discount",
             change={"discount_pct": "20", "discount_pct_basis": "stated"},
             dates={"published": "2026-10-03", "end_phrase": "until Oct 31", "end_date": "2026-10-31", "note": ""}), "2026-10-31"),
+    (_started_discount("d3", {"end_phrase": "until Nov 30", "end_date": "2026-11-30"}), "2026-11-30"),  # started: still filed by its end day
+    (_started_discount("d4", {"end_phrase": "until Nov 30", "end_date": None},
+                       period_end={"date": "2026-11-30", "basis": "derived_from_publication"}), "2026-11-30"),
+    (_started_discount("d5", {"end_phrase": "for a limited time", "end_date": None}), "2026-10-01"),  # no end date to file it under
     (_claim("a1", "route_change", "openrouter_endpoints", "Now available.", route="openrouter", subtags=["add"], claim_kind="availability",
             dates={"maker_first_release_date": None, "route_added_date": "2026-10-12", "published": "2026-10-03", "note": ""}), "2026-10-12"),
+    (_claim("a2", "route_change", "openrouter_endpoints", "Now available.", route="openrouter", subtags=["add"], claim_kind="availability",
+            dates={"maker_first_release_date": None, "route_added_date": "2026-10-12", "effective_from": "2026-10-05", "published": "2026-10-03",
+                   "note": ""}), "2026-10-05"),  # only a limited discount follows its end: other types keep the start
     (_claim("p1", "price_change", "openai_news", "Prices go up.", model_id="gpt-6-sol", route="openai_direct", claim_kind="price_increase",
             dates={"published": "2026-10-03T09:00:00Z", "effective_from": None, "note": ""}), "2026-10-03"),
     (_observed("o1", "price_change", "1.00", "1.20", change={"delta": "0.20", "pct": "20.00", "direction": "up", "note": ""}), "2026-10-05"),
     (_claim("n1", "scheduled_change", "vercel_changelog", "Prices change.", route="vercel_ai_gateway", claim_kind="announced_future_rate",
             dates={"published": None, "effective_from": None, "note": ""}), None),
+    (_claim("u1", None, "openrouter_endpoints", "40% off from Oct 1 until Nov 30", route="openrouter", claim_kind="discount",
+            type_candidates=["limited_discount", "price_change"],
+            dates={"published": "2026-09-30", "effective_from": "2026-10-01", "end_date": "2026-11-30", "note": ""}), "2026-10-01"),
 ])
 def test_card_date_is_the_date_the_card_is_filed_under(tmp_path: Path, event: dict, cd: str | None) -> None:
     _write(tmp_path, [event])
@@ -333,6 +351,23 @@ def test_group_card_date_follows_the_representative(tmp_path: Path) -> None:
     _write(tmp_path, [member("g1", "member"), member("g2", "representative")])
     [card] = _build(tmp_path)[2]["EVENTS"]
     assert (card["kind"], card["cd"]) == ("한시 할인", "2026-10-31")
+
+
+def test_group_of_started_limited_discounts_is_filed_by_its_end_day(tmp_path: Path) -> None:
+    events = [_started_discount("g1", {"end_date": "2026-11-30"}, group_key="gk-1", group_role="member"),
+              _started_discount("g2", {"end_date": "2026-11-30"}, group_key="gk-1", group_role="representative")]
+    _write(tmp_path, events)
+    [card] = _build(tmp_path)[2]["EVENTS"]
+    assert (card["kind"], card["eff"], card["cd"]) == ("한시 할인", "2026-11-30", "2026-11-30")
+
+
+def test_started_limited_discount_keeps_its_card_id(tmp_path: Path) -> None:
+    """cd follows the end day, but the id is still hashed from the start day, so saved #links keep working."""
+    _write(tmp_path, [_started_discount("d3", {"end_phrase": "until Nov 30", "end_date": "2026-11-30"})])
+    [card] = _build(tmp_path)[2]["EVENTS"]
+    key = ["event", "gemini-3.8-flash", "openrouter", "limited_discount", [], "2026-10-01"]
+    assert card["id"] == "g_" + hashlib.sha256(json.dumps(key, ensure_ascii=False).encode("utf-8")).hexdigest()[:12]
+    assert (card["eff"], card["cd"]) == ("2026-11-30", "2026-11-30")
 
 
 def _group_change(event_id: str, observed_at: str, role: str, item: str = "input", **fields) -> dict:

@@ -738,8 +738,10 @@ def build_card(card_id: str, members: list[dict], sources: Sources, routes: dict
             **relation(rep, routes), "act": "pending", "real": True,
             "chgHead": table_head(t7, members), "chg": [row["row"] for row in rows], "cond": compare_line(members, rep, ch, t7), "ev": ev}
     phrase = next((part(e, "dates")["end_phrase"] for e in members if part(e, "dates").get("end_phrase")), None) if t7 == "한시 할인" else None
+    # A limited discount stays in the list until its end day; card_date (start day first) still keys the card id and the order.
+    cd = eff if t7 == "한시 할인" and eff else card_date(rep)
     for key, value in (("effLabel", label if t7 else ""), ("sub", sub), ("flag", flag_text(members)), ("eff", eff), ("effQual", qual),
-                       ("effNote", f"원문 “{phrase}”" if phrase and not eff else ""), ("cd", card_date(rep)), ("ld", last_observed_day(members))):
+                       ("effNote", f"원문 “{phrase}”" if phrase and not eff else ""), ("cd", cd), ("ld", last_observed_day(members))):
         if value:
             card[key] = value
     rate = next((r for r in map(stated_discount, members) if r is not None), None)
