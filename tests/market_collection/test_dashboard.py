@@ -669,3 +669,66 @@ def test_event_without_optional_fields(tmp_path: Path) -> None:
     code, _, data = _build(tmp_path)
     [card] = data["EVENTS"]
     assert (code, card["t7"], card["chg"], card["sum"], card["flag"], data["SRC"]) == (0, "한시 할인", [], "할인 · 종료일 미확인", "공식 확인 전", {})
+
+
+# ---- 상세페이지: 종류별 정교화 (status, checks, type candidates, clue, grouped rows) ----
+
+def test_card_carries_status_and_checks(tmp_path: Path) -> None:
+    claim = _claim("p9", "price_change", "openai_news", "Prices go up.", model_id="gpt-6-sol", route="openai_direct", claim_kind="price_increase",
+                   dates={"published": "2026-10-03", "note": ""},
+                   gaps=[{"field": "observed_price", "class": "check_first", "reason": "x", "next_check": "y"},
+                         {"field": "letsur_usage", "class": "check_first", "reason": "no LETSUR usage or contract input"}])
+    _write(tmp_path, [claim])
+    card = _build(tmp_path)[2]["EVENTS"][0]
+    assert card["st"] == "candidate" and card["clue"] is True
+    assert card["chk"] == [["first", build.GAP_KO["observed_price"]]]  # letsur_usage is said once elsewhere, not per card
+
+
+def test_observed_change_is_not_a_clue_and_counts_rows(tmp_path: Path) -> None:
+    event = _observed("o9", "price_change", "1.00", "1.20", unchanged_items=[
+        {"billing_item": "output", "amount": "5.00", "conditions": {"service_tier": "standard"}, "observation_id": "u1"}],
+        next_checks=["confirm the official source still shows the new value on the next run"])
+    _write(tmp_path, [event])
+    card = _build(tmp_path)[2]["EVENTS"][0]
+    assert card["st"] == "confirmed" and "clue" not in card
+    assert card["n"] == [1, 1]
+    assert ["next", build.NEXT_KO["confirm the official source still shows the new value on the next run"]] in card["chk"]
+
+
+def test_undecided_type_lists_its_candidates(tmp_path: Path) -> None:
+    claim = _claim("a9", None, "vercel_changelog", "Now available on AI Gateway.", route="vercel_ai_gateway", subtags=["add"],
+                   type_candidates=["route_change", "model_release"], claim_kind="availability",
+                   dates={"maker_first_release_date": None, "route_added_date": "2026-10-12", "published": "2026-10-12", "note": ""})
+    _write(tmp_path, [claim])
+    card = _build(tmp_path)[2]["EVENTS"][0]
+    assert card["t7"] == "공급 경로 변경" and card["tc"] == ["모델 출시", "공급 경로 변경"]
+
+
+def test_condition_price_change_has_its_own_type(tmp_path: Path) -> None:
+    event = _observed("c9", "condition_price_change", "0.20", "0.10", item="cache_read",
+                      condition={"key": "cache_read_multiplier", "before": {"value": "0.1", "unit": "x base input price"},
+                                 "after": {"value": "0.05", "unit": "x base input price"}},
+                      change={"delta": "-0.10", "pct": "-50.00", "price_delta": "-0.10", "price_pct": "-50.00"},
+                      subtags=["billing.cache_read_multiplier"])
+    _write(tmp_path, [event])
+    card = _build(tmp_path)[2]["EVENTS"][0]
+    assert card["t7"] == "조건·가격 변경" and card["sub"] == "과금 · 캐시"
+    assert [row[0] for row in card["chg"]] == ["캐시 읽기 배율", "캐시 읽기"]
+
+
+def test_rows_are_grouped_by_condition_and_deduplicated(tmp_path: Path) -> None:
+    def endpoint(event_id, before, after, length, tag):
+        event = _observed(event_id, "price_change", before, after, route="openrouter")
+        event["conditions"] = {"service_tier": "standard", "context_length": length, "endpoint_tag": tag}
+        return event
+    events = [endpoint("e1", "2.50", "1.20", "1048576", "Decart/fast"), endpoint("e2", "0.69", "0.55", "262144", "Inceptron/fp4")]
+    twin = endpoint("e3", "2.50", "1.20", "1048576", "Decart/fast")  # the same price read again
+    _write(tmp_path, events + [twin])
+    cards = _build(tmp_path)[2]["EVENTS"]
+    card = next(c for c in cards if len(c["chg"]) >= 2)
+    assert len(card["chg"]) == 2
+    assert [group for group, _ in card["cg"]] == ["컨텍스트 1M · Decart/fast", "컨텍스트 256K · Inceptron/fp4"]
+
+
+def test_size_ko() -> None:
+    assert [build.size_ko(v) for v in ("1048576", "262144", "131072", "4096", "1000")] == ["1M", "256K", "128K", "4K", "1000"]

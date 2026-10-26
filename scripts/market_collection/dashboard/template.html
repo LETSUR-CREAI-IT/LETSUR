@@ -465,6 +465,22 @@ td small{display:block;font-size:11.5px;color:var(--muted)}
 .gen-status b{color:var(--ink)}
 .gen-status.fail{border-color:var(--up)}
 .gen-status.warn{border-color:var(--amber)}
+/* ---- 상세: 종류별 정교화 ---- */
+.cchip{max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.tg.st.confirmed{border-color:var(--mint);color:var(--mint-ink)}
+.tg.st.candidate{border-color:var(--amber);color:var(--amber)}
+.tg.st.conflicted{border-color:var(--up);color:var(--up)}
+.kc.clue{border-style:dashed;border-color:var(--amber)}
+.kc.clue h3{color:var(--amber)}
+.clq{margin:10px 0 0;padding-left:18px;font-size:13px;color:var(--body);display:grid;gap:4px}
+.chkl{margin-top:12px;padding-top:10px;border-top:1px solid var(--line)}
+.chkl h4{margin:0 0 6px;font-size:12.5px;font-weight:700;color:var(--muted)}
+.chkl ul{list-style:none;margin:0;padding:0;display:grid;gap:5px;font-size:13px;color:var(--body)}
+.chkl li span{display:inline-block;min-width:62px;margin-right:6px;font-size:11.5px;font-weight:700;color:var(--amber)}
+.chkl li.limit span{color:var(--muted)} .chkl li.next span{color:var(--slate)}
+.tscroll{overflow-x:auto;max-width:100%}
+tr.gh td{padding-top:12px;font-size:12px;font-weight:700;color:var(--muted);background:var(--surface-2)}
+.same-rows{margin-top:10px} .same-rows>summary{cursor:pointer;font-size:12.5px;color:var(--muted)}
 </style>
 
 <header class="top">
@@ -559,7 +575,7 @@ try { const h = location.hash.slice(1); if (h) state.sel = decodeURIComponent(h)
 const TYPE = {price:{ko:"가격 알림"}, model:{ko:"모델·경로 변경"}, cond:{ko:"조건 변경"}, data:{ko:"표기 확인"}};
 const byEv = k => Object.fromEntries(EVENTS.filter(e => e[k] !== undefined).map(e => [e.id, e[k]]));
 // 수정안: 상세의 7유형과 목록·캘린더 묶음이 어긋나지 않게 한 표에서 정함 (예: Sonnet 캐시 = 조건 변경)
-const T7GROUP = {"가격 변경":"price", "예정 변경":"price", "한시 할인":"price", "조건 변경":"cond", "모델 출시":"model", "제공 종료":"model", "공급 경로 변경":"model"};
+const T7GROUP = {"가격 변경":"price", "예정 변경":"price", "한시 할인":"price", "조건 변경":"cond", "조건·가격 변경":"cond", "모델 출시":"model", "제공 종료":"model", "공급 경로 변경":"model"};
 const typeOf = e => e.t7 === null ? "data" : T7GROUP[e.t7] || "cond";
 // 목록 거르기: 유형 칩(끈 유형은 숨김) + 날짜(기본은 오늘 이후만). 둘은 AND로 겹친다.
 // 기준일은 보는 사람의 오늘(브라우저 시각)이고 ?base= 를 붙였으면 그 날짜다. 칩·토글 상태는 저장하지 않아 새로고침하면 처음(모두 켬, 오늘 이후만)으로 돌아온다.
@@ -572,6 +588,21 @@ const listOff = new Set();
 let showPast = false;
 // 상세페이지 상단용 7유형 (이벤트유형_분류규칙.md 기준, 10/10 김연우)
 const EV7 = byEv("t7"), EV7SUB = byEv("sub"), EV7FLAG = byEv("flag");
+// ---- 상세: 종류별 정교화 (박기범) ----
+// 상태(e.st)·확인할 것(e.chk)·유형 후보(e.tc)·단서만(e.clue)·할인 상태(e.ps)·행 수(e.n)·행 묶음(e.cg)은 build.py가 엔진 출력에서 넘긴다.
+const ST_KO = {confirmed:"확정", candidate:"공식 확인 전", conflicted:"출처 상충"};
+const isClue = e => !!e.clue && EV7[e.id] !== "공급 경로 변경" && EV7[e.id] !== "모델 출시" && EV7[e.id] !== "제공 종료";
+const isEnded = e => EV7[e.id] === "한시 할인" && (e.ps === "ended" || (e.ps !== "active" && e.eff && days(e.eff) < 0));
+const isAdd = e => (EV7[e.id] === "공급 경로 변경" && !/중단/.test(EV7SUB[e.id] || "")) || EV7[e.id] === "모델 출시";
+const firstChecks = (e, n) => (e.chk || []).filter(c => c[0] !== "limit").slice(0, n).map(c => c[1]);
+const pctOf = r => { const b = money(r[1]), a = money(r[2]); return b != null && a != null && b !== 0 ? (a - b) / b * 100 : null; };
+const pctRange = ps => { const lo = Math.min(...ps), hi = Math.max(...ps), f = v => fmtPct(v); return lo === hi ? f(lo) : `${f(lo)} ~ ${f(hi)}`; };
+function checksHtml(e, title){ const c = e.chk || []; if (!c.length) return "";
+  return `<div class="chkl"><h4>${esc(title || "확인할 것")}</h4><ul>${c.map(([k, t]) => `<li class="${k}">${k === "limit" ? "<span>값의 뜻</span>" : k === "next" ? "<span>다음 수집</span>" : "<span>먼저 확인</span>"}${esc(t)}</li>`).join("")}</ul></div>`; }
+function clueBox(e){
+  const qs = (e.ev || []).map(([n, t]) => [n, t]).filter(([, t]) => typeof t === "string").slice(0, 3);
+  return `<section class="kc clue"><h3>단서 · 공식 확인 전</h3><div class="big">${esc(e.sum)}</div><div class="sub2">관측값이나 공식 가격이 아직 없어 원가는 판단하지 않습니다.</div>
+    ${qs.length ? `<ul class="clq">${qs.map(([n, t]) => `<li>${refs("[" + n + "]")} ${esc(t)}</li>`).join("")}</ul>` : ""}${checksHtml(e, "확정하려면")}</section>`; }
 // 유형별 핵심 변화 표시 (상세_핵심변화_표시규칙.md)
 // 가격 변경 = 이전→현재 막대 / 나머지 = 날짜·할인율·조건을 큰 글씨로
 const KEYOVR = byEv("key");
@@ -580,21 +611,29 @@ const rowLine = r => `<li><span class="it">${r[0]}</span><span class="ba">${val(
 const dateTxt = d => `${md(d)}(${wd(d)})`;
 function keyChange(e){
   const t = EV7[e.id], rows = changed(e), o = KEYOVR[e.id] || {}, sub7 = EV7SUB[e.id] || "";
-  if (t === "가격 변경") return priceBars(e);
+  if (isClue(e)) return clueBox(e);
+  if (t === "가격 변경") return priceKey(e);
   const num = rows.map(r => [money(r[1]), money(r[2])]).find(([b, a]) => b != null && a != null);
   let big = "", sub = "", list = rows;
   if (t === "예정 변경") {
     big = e.eff ? `${dateTxt(e.eff)}부터 적용 ${ddHtml(e)}` : esc(e.effNote || "적용일 미확인");
-    sub = rows[0] ? `${plain(rows[0][0])} ${plain(val(rows[0][1]))} → ${plain(val(rows[0][2]))}${rows[0][3] ? " · " + rows[0][3][1] : ""}` : ""; list = rows.slice(1);
+    const labs = [...new Set(rows.map(r => r[3] ? r[3][1] : ""))];
+    if (rows.length > 1 && labs.length === 1 && labs[0]) { sub = `${rows.length}개 항목 모두 ${esc(labs[0])}`; list = []; }  // 같은 폭이면 한 줄로
+    else { sub = rows[0] ? `${plain(rows[0][0])} ${plain(val(rows[0][1]))} → ${plain(val(rows[0][2]))}${rows[0][3] ? " · " + rows[0][3][1] : ""}` : ""; list = rows.slice(1, 4);
+      if (rows.length > 4) sub += ` · 외 ${rows.length - 4}개 항목은 바뀐 내용 표`; }
   } else if (t === "한시 할인") {
     const pct = e.discPct != null ? e.discPct : num ? Math.round(Math.abs(1 - Math.min(...num) / Math.max(...num)) * 100) : null; // 공지 할인율 우선
-    const ended = e.eff && days(e.eff) < 0;
+    const ended = isEnded(e);
     big = `${pct != null ? pct + "% 할인 " : "할인 "}${ended ? "종료" : "진행 중"}`;
     sub = e.eff ? `${ended ? "" : "종료 예정 "}${dateTxt(e.eff)}${ended ? " 종료" : ""} ${ddHtml(e)}${ended && num ? ` · 단가 ${(num[1] / num[0]).toFixed(1).replace(/\.0$/, "")}배` : ""}` : "종료일 미확인";
-  } else if (t === "조건 변경") {
+    if (e.pub) sub += ` · 공지 ${md(e.pub)}`;
+    if (!num && rows.every(r => (r[1] && r[1].unk) && (r[2] && r[2].unk))) { sub += " · 할인가·정가 미공개"; list = []; }
+  } else if (t === "조건 변경" || t === "조건·가격 변경") {
     const r = rows[0];
-    big = r ? `${plain(r[0])} ${plain(val(r[1]))} → ${plain(val(r[2]))}` : "조건 변경";
-    sub = e.eff ? `${dateTxt(e.eff)} 적용 ${ddHtml(e)}` : esc(e.effNote || "적용일 미확인"); list = rows.slice(1);
+    big = r ? `${plain(r[0])} ${plain(val(r[1]))} → ${plain(val(r[2]))}` : t;
+    sub = e.eff ? `${dateTxt(e.eff)} 적용 ${ddHtml(e)}` : esc(e.effNote || "적용일 미확인"); list = rows.slice(1, 4);
+    if (t === "조건·가격 변경") sub += " · 조건과 가격이 함께 바뀜";
+    if (rows.length > 4) sub += ` · 외 ${rows.length - 4}개 항목은 바뀐 내용 표`;
   } else if (t === "모델 출시") {
     big = `${esc(e.m)} ${rows[0] ? plain(rows[0][2]).replace("예고", "출시 예고") : "신규 출시"}`; list = [];
     sub = e.eff ? `${dateTxt(e.eff)} 제공 ${ddHtml(e)}` : `출시일 ${esc(e.effNote || "미확인")} · 가격 미게시`;
@@ -609,15 +648,28 @@ function keyChange(e){
     const r = rows[0];
     if (/중단/.test(sub7)) { big = e.eff ? `${dateTxt(e.eff)} ${esc((e.effLabel || "경로 중단일").replace(/일$/, ""))} ${ddHtml(e)}` : "경로 중단 예정 · 날짜 미확인";
       sub = `${esc(e.ch)} · 대체 경로 확인 필요`; list = []; }
-    else { big = `${esc(e.ch)} 경로 추가`; sub = r ? `${plain(r[0])} ${plain(val(r[2]))} 게시` : ""; }
+    else { big = `${esc(e.ch)} 경로 추가`; sub = e.eff ? `${dateTxt(e.eff)} 제공 ${ddHtml(e)}` : "제공일 미확인";
+      if (r) sub += ` · ${plain(r[0])} ${plain(val(r[2]))} 게시`;
+      if (e.tc) sub += ` · ${e.tc.join("인지 ")}인지 미정 (제조사 첫 출시일 확인 필요)`; }
   } else {
     const r = (e.chg || []).find(r => r[5] === "unk" || r[5] === "con") || rows[0];
     big = r ? `${plain(r[0])} 값 확인 안 됨` : "값 확인 안 됨";
     sub = r ? `이전 ${plain(val(r[1]))} · 현재 ${plain(val(r[2]))} · 재조회 전에는 이벤트로 보지 않음` : "";
   }
   if (o.big) big = esc(o.big); if (o.sub) sub = esc(o.sub); if (e.keyAdd) sub += (sub ? " · " : "") + esc(e.keyAdd);
-  return `<section class="kc"><h3>핵심 변화</h3><div class="big">${big}</div>${sub ? `<div class="sub2">${sub}</div>` : ""}${list.length ? `<ul class="kl">${list.map(rowLine).join("")}</ul>` : ""}</section>`;
+  return `<section class="kc"><h3>핵심 변화</h3><div class="big">${big}</div>${sub ? `<div class="sub2">${sub}</div>` : ""}${list.length ? `<ul class="kl">${list.map(rowLine).join("")}</ul>` : ""}${checksHtml(e)}</section>`;
 }
+// 가격 변경: 몇 개 항목이 어느 방향으로 얼마나 바뀌었는지 한 줄, 막대는 폭이 큰 3개만
+function priceKey(e){
+  const rows = changed(e).filter(r => pctOf(r) != null), ps = rows.map(pctOf);
+  if (!rows.length) return `<section class="kc"><h3>핵심 변화</h3><div class="big">${esc(e.sum)}</div>${checksHtml(e)}</section>`;
+  const up = ps.filter(p => p > 0).length, down = ps.filter(p => p < 0).length;
+  const word = up && down ? `인상 ${up} · 인하 ${down}` : up ? "인상" : "인하";
+  const top = rows.map((r, i) => [r, Math.abs(ps[i])]).sort((a, b) => b[1] - a[1]).slice(0, 3).map(x => x[0]);
+  const rest = rows.length - top.length;
+  return `<section class="kc"><h3>핵심 변화</h3><div class="big">${rows.length}개 항목 ${word} · ${pctRange(ps)}</div>
+    <div class="sub2">${e.cond && e.cond.find(c => c[0] === "관측") ? `관측 ${esc(e.cond.find(c => c[0] === "관측")[1])}` : "수집기 관측값"}${rest > 0 ? ` · 폭이 큰 ${top.length}개만 막대로, 나머지 ${rest}개는 바뀐 내용 표` : ""}</div>
+    ${priceBars(Object.assign({}, e, {chg: top}))}${checksHtml(e)}</section>`; }
 // 출처 태그: 누가 게시했는가 (공급사 공식 / 채널 공식 / 외부 출처). 공식이라도 수집값이 정확하다는 판정은 아님
 const SRCTAG = Object.fromEntries(Object.entries(SRC).map(([k, s]) => [k, s.tag]));
 const SRCTAGKO = {sup:"공급사 공식", ch:"채널 공식", ext:"외부 출처", ls:"렛서 샘플"};
@@ -637,7 +689,10 @@ function impactHtml(e){
     cond = (t === "조건 변경" || t === "제공 종료" || t === "공급 경로 변경") && cr.length ? cr.map(r => `${r[0]} ${val(r[1])} → ${val(r[2])}`) : t === "조건 변경" && newPrice.length ? newPrice.map(r => `${r[0]} 신설 (${esc(r[2])})`) : ["제공 조건 변화 없음"]; }
   let cost = e.alt ? altSummary(e) : get(["원가"]);
   if (!cost.length) {
-    if (priceRows.length) cost = priceRows.map(r => `${r[0]} ${esc(r[1])} → ${esc(r[2])}${r[3] && r[3][1] ? ` (${esc(r[3][1])})` : ""}`);
+    if (isClue(e)) cost = ["단서만 있어 판단 전 · 공식 값이 확인되면 다시 판단"];
+    else if (priceRows.length > 3) { const ps = priceRows.map(pctOf).filter(p => p != null);
+      cost = [`${priceRows.length}개 항목 ${ps.every(p => p > 0) ? "인상" : ps.every(p => p < 0) ? "인하" : "변경"}${ps.length ? " · " + pctRange(ps) : ""}`, "항목별 값은 바뀐 내용 표"]; }
+    else if (priceRows.length) cost = priceRows.map(r => `${r[0]} ${esc(r[1])} → ${esc(r[2])}${r[3] && r[3][1] ? ` (${esc(r[3][1])})` : ""}`);
     else if (unkPrice.length) cost = unkPrice.map(r => `${r[0]} 단가 확인 전${r[2].con ? " · 출처 간 값이 다름" : ""}`);
     else if (textChg.length) cost = textChg.map(r => `${r[0]} · ${esc(plain(String(r[2])))}`);
     else if (newPrice.length) cost = ["현재 사용 경로 단가 변화 없음", ...newPrice.map(r => `새 경로 ${r[0]} ${esc(r[2])}`)];
@@ -696,6 +751,7 @@ const WHAT = {
   "예정 변경":"적용일 전 같은 모델의 다른 경로 단가, 적용일 직후 실제 반영",
   "한시 할인":"할인 대상·자격이 렛서 계정에 해당하는지, 종료일 이후 단가",
   "조건 변경":"렛서 사용 조합(캐시·Batch·구간)에 해당하는지와 청구 반영",
+  "조건·가격 변경":"바뀐 조건이 렛서 사용 조합에 해당하는지, 그 조건에서의 새 단가와 청구 반영",
   "조건 변경·지원":"고객 요청이 해당 기능·지역·한도·라이선스에 걸리는지",
   "미제공·유리":"도입 후보로서 같은 용도의 제공 중 모델 대비 단가·성능 차이",
   "한시 할인·종료":"종료 후 단가 기준으로 같은 모델의 다른 경로 비교",
@@ -710,14 +766,20 @@ function suggestOf(e){
   const t = EV7[e.id];
   if (t === null) return {resp:"hold", text:"가격 페이지 재조회 후 실제 변화인지 판단", why:"수집값 확인 전이라 이벤트로 보지 않음"};
   const rel = relOf(e), dir = dirOf(e);
-  const resp = dir === "unk" ? "hold" : MATRIX[rel === "unk" ? "use" : rel][dir];
+  let resp = dir === "unk" ? "hold" : MATRIX[rel === "unk" ? "use" : rel][dir];
+  if (isClue(e)) resp = "hold";  // 단서만: 값이 없으니 할인·전환을 제안하지 않음
+  else if (isEnded(e)) resp = "keep";  // 이미 끝난 할인: 지금 할 대응은 기록과 복귀 확인뿐
+  else if (isAdd(e)) resp = rel === "use" ? "keep" : "route";  // 경로 추가·출시는 할인이 아니라 새 선택지
+  else if (t === "한시 할인" && e.discPct == null && !changed(e).some(r => money(r[2]) != null)) resp = "hold";  // 할인 폭을 모름
+  else if (e.st && e.st !== "confirmed" && resp === "disc") resp = "hold";  // 확정 전 값으로 고객 할인을 제안하지 않음
   // 수정안: 단가가 확인 안 됐으면 '확인 후' (원가 칩 '원가 확인 전'과 맞춤)
   const blocked = rel === "unk" || dir === "unk" || !!EV7FLAG[e.id] || priceUnk(e);
   const due = e.eff && days(e.eff) > 0 ? `${dateTxt(e.eff)} 전` : e.eff && days(e.eff) === 0 ? "오늘 적용" : "";
   const key = rel === "none" && t !== "모델 출시" && dir === "good" ? "미제공·유리" : t === "조건 변경" && /^지원/.test(EV7SUB[e.id] || "") ? "조건 변경·지원" : t === "한시 할인" && dir === "bad" ? "한시 할인·종료" : t;
-  return {resp, pre: blocked ? "확인 후 " : "", text: e.what || WHAT[key] || "", due,
+  const text = isClue(e) ? "공식 가격 출처에 같은 변화가 나타나는지" : isEnded(e) ? "할인 종료 뒤 지금 단가가 할인 전으로 돌아왔는지, 같은 모델의 다른 경로 단가" : e.what || WHAT[key] || "";
+  return {resp, pre: blocked && resp !== "hold" ? "확인 후 " : "", text, due: isEnded(e) ? "" : due,
     note: resp === "disc" && t === "한시 할인" ? `기간 한정${e.eff ? " · " + md(e.eff) + "까지" : ""}` : "",
-    why: `${t} · ${REL_KO[rel]} · ${DIR_KO[dir]}${dir === "good" && t === "한시 할인" && e.eff ? ` · ${md(e.eff)}까지만, 이후 단가 미공개` : ""}${priceUnk(e) ? " · 단가 확인 전" : ""}${EV7FLAG[e.id] ? " · " + EV7FLAG[e.id] : ""}`};
+    why: `${t}${e.st ? " · " + (ST_KO[e.st] || e.st) : ""}${isEnded(e) ? " · 종료된 할인" : ""} · ${REL_KO[rel]} · ${isClue(e) ? "값 확인 전" : DIR_KO[dir]}${dir === "good" && t === "한시 할인" && e.eff ? ` · ${md(e.eff)}까지만, 이후 단가 미공개` : ""}${priceUnk(e) ? " · 단가 확인 전" : ""}${EV7FLAG[e.id] && !e.st ? " · " + EV7FLAG[e.id] : ""}${e.tc ? " · 유형 미정" : ""}`};
 }
 // 다음 할 일 (다음할일_제안로직.md 9절): 제안 판정(대응 방향) → 할 일 문장 + 먼저 확인 + 기한
 function altBest(e){ const ok = e.alt ? e.alt.rows.filter(r => r[3] != null) : []; if (!ok.length) return "";
@@ -730,16 +792,22 @@ function nextOf(e){
   const g = suggestOf(e), rel = relOf(e), dir = dirOf(e);
   const cf = (CHECKFIRST[e.id] || []).map(x => x.replace(/\s*\([^)]*\)$/, ""));
   let act;
-  if (g.resp === "hold") act = "값이 확인되면 대응 방향 판단";
+  if (isClue(e)) act = "공식 가격 출처에서 실제 값을 확인한 뒤 판단";
+  else if (isEnded(e)) act = "종료된 할인 · 지금 단가가 할인 전으로 돌아왔는지 확인";
+  else if (g.resp === "hold" && e.st && e.st !== "confirmed" && dir === "good") act = "원문과 다음 수집으로 값이 맞는지 확인한 뒤 고객 할인 검토";
+  else if (g.resp === "hold") act = t === "한시 할인" ? "할인 폭이 확인되면 대응 방향 판단" : "값이 확인되면 대응 방향 판단";
+  else if (isAdd(e) && g.resp === "route") act = t === "모델 출시" ? `${e.m}을 도입 후보로 검토` : `${e.ch} 경로 단가를 지금 쓰는 경로와 비교`;
+  else if (isAdd(e)) act = "이미 쓰는 경로 · 기록만";
   else if (g.resp === "disc") act = t === "한시 할인" ? "고객 할인은 할인 기간에만 한정해 검토 · 판매가 기본값은 유지" : "인하분을 고객 판매가 할인에 반영할지 검토"; // 수정안: 한시 할인은 기간 한정
   else if (g.resp === "route") act = dir === "bad" ? "대체 경로를 정해 전환 준비" : t === "모델 출시" ? `${e.m}을 도입 후보로 검토` : `${e.ch}로 옮기거나 추가할지 비교`;
   else act = rel === "other" ? `현재 경로 유지 · ${e.ch} 새 단가는 비교용으로 기록` : rel === "none" ? "미도입 모델이라 기록만" : "기존 조건 유지 · 청구 반영만 확인";
   const subs = [];
+  if (isClue(e) || (e.chk && !cf.length && !isEnded(e))) firstChecks(e, isClue(e) ? 2 : 1).forEach(x => subs.push(`먼저 확인 · ${x}`));
   // 수정안: 먼저 확인 옆에 짧은 이유(cfNote), 종료·연결 이벤트에서 오는 주의(risk)
   if (cf.length) subs.push(`먼저 ${cf.join(", ")} 확인${e.cfNote ? " · " + e.cfNote : ""}`);
   if (e.risk) subs.push(`주의 · ${e.risk}`);
-  else if (rel === "unk") subs.push("먼저 렛서 사용 경로 확인");
-  else if (EV7FLAG[e.id]) subs.push(`먼저 ${EV7FLAG[e.id]} 해소 (원문 대조)`);
+  else if (rel === "unk" && !isClue(e)) subs.push("먼저 렛서 사용 경로 확인");
+  else if (EV7FLAG[e.id] && !e.st) subs.push(`먼저 ${EV7FLAG[e.id]} 해소 (원문 대조)`);
   const ab = g.resp === "route" && dir === "bad" ? altBest(e) : ""; if (ab) subs.push(ab);
   subs.push(`대응 방향 · ${g.pre || ""}${RESP[g.resp]}${g.note ? ` (${g.note})` : ""}`);
   return {act, due:g.due, subs}; }
@@ -755,17 +823,18 @@ function suggestHtml(e){
 function costChip(e){
   if (e.chip) return `<span class="cchip ${e.chip[0]}">${esc(e.chip[1])}</span>`;
   if (EV7[e.id] === null) return `<span class="cchip none">원가 확인 전</span>`;
+  if (isClue(e)) return `<span class="cchip none">원가 판단 전</span>`;
   const rows = changed(e), prr = rows.filter(r => money(r[1]) != null && money(r[2]) != null && money(r[1]) !== 0),
     pr = prr.map(r => (money(r[2]) - money(r[1])) / money(r[1]) * 100);
   // 수정안: 단가 항목 일부만 바뀌면 '원가' 대신 바뀐 항목 이름 (전체 원가가 그만큼 바뀐 것처럼 읽히지 않게)
   const allPr = (e.chg || []).filter(r => money(r[1]) != null && money(r[2]) != null);
-  const lab = prr.length && prr.length < allPr.length ? [...new Set(prr.map(r => plain(r[0])))].join("·") : "원가";
+  const lab = "원가", cnt = prr.length && prr.length < allPr.length ? ` · ${prr.length}개 항목` : prr.length > 1 ? ` · ${prr.length}개 항목` : "";
   const unk = (e.chg || []).some(r => /단가|토큰|가격|캐시|배치/.test(r[0]) && r[2] && (r[2].unk || r[2].con));
   const fmt = v => (Math.round(Math.abs(v) * 10) / 10).toString().replace(/\.0$/, "");
   if (pr.length) { const v = pr.reduce((a, b) => Math.abs(b) > Math.abs(a) ? b : a, 0), mixed = pr.some(x => x > 0) && pr.some(x => x < 0);
     if (mixed) return `<span class="cchip none">원가 ▲▼ 항목별 상이</span>`;
     const mx = new Set(pr.map(fmt)).size > 1 ? "최대 " : "";
-    return v > 0 ? `<span class="cchip up">${esc(lab)} ▲ ${mx}${fmt(v)}%</span>` : `<span class="cchip down">${esc(lab)} ▼ ${mx}${fmt(v)}%</span>`; }
+    return v > 0 ? `<span class="cchip up">${esc(lab)} ▲ ${mx}${fmt(v)}%${cnt}</span>` : `<span class="cchip down">${esc(lab)} ▼ ${mx}${fmt(v)}%${cnt}</span>`; }
   const txt = rows.map(r => plain(String(r[2]))).join(" "), m = txt.match(/(\d+(?:\.\d+)?)%\s*(인상|인하)/);
   if (m) return `<span class="cchip ${m[2] === "인상" ? "up" : "down"}">원가 ${m[2] === "인상" ? "▲" : "▼"} ${m[1]}% 예고</span>`;
   if (unk) return `<span class="cchip none">원가 확인 전</span>`;
@@ -774,7 +843,9 @@ function costChip(e){
 function typeHead(e){
   const t = EV7[e.id];
   if (t === null) return `<span class="pill t7 chkd">수집 확인 필요</span><span class="sub">이벤트 아님 · 실제 변화인지 재조회 전</span>`;
-  return `<span class="pill t7">${esc(t || "미분류")}</span>${EV7SUB[e.id] ? `<span class="sub">${esc(EV7SUB[e.id])}</span>` : ""}${EV7FLAG[e.id] ? `<span class="tg flag">${esc(EV7FLAG[e.id])}</span>` : ""}`;
+  if (!e.st) return `<span class="pill t7">${esc(t || "미분류")}</span>${EV7SUB[e.id] ? `<span class="sub">${esc(EV7SUB[e.id])}</span>` : ""}${EV7FLAG[e.id] ? `<span class="tg flag">${esc(EV7FLAG[e.id])}</span>` : ""}`;
+  const name = e.tc ? "유형 미정" : t || "미분류";
+  return `<span class="pill t7">${esc(name)}</span>${EV7SUB[e.id] ? `<span class="sub">${esc(EV7SUB[e.id])}</span>` : ""}<span class="tg st ${e.st}">${esc(ST_KO[e.st] || e.st)}</span>${e.tc ? `<span class="tg">${esc(e.tc.join(" 또는 "))}</span>` : ""}`;
 }
 // 캘린더 칸에 들어갈 짧은 이름 [이름, 변동, 방향]
 const CAL = byEv("cal");
@@ -1012,6 +1083,19 @@ function priceBars(e){
 }
 // 수정안: 팀장님 수집 값 중 위 표에 안 들어가는 것(다른 등급·다른 경로·이전 세대)을 따로 보여 줌
 function extraHtml(e){ return (e.extra || []).map(x => `<div class="xt"><h4>${esc(x.title)}${x.unit ? ` <small>${esc(x.unit)}</small>` : ""}</h4><table><thead><tr>${x.head.map(h => `<th>${esc(h)}</th>`).join("")}</tr></thead><tbody>${x.rows.map(r => `<tr>${r.map((c, i) => `<td${i ? ` class="v"` : ""}>${val(c)}</td>`).join("")}</tr>`).join("")}</tbody></table>${(x.notes || []).map(n => `<p class="cnd note">${refs(n)}</p>`).join("")}</div>`).join(""); }
+// 바뀐 내용: 바뀐 행만 펼치고 조건 묶음마다 제목 한 줄, 그대로인 행은 접음 (e.cg = 행마다 [조건 묶음, 항목])
+function changeMeta(e){ const n = e.n || [changed(e).length, (e.chg || []).length - changed(e).length];
+  return [esc(e.unit || ""), n[0] ? `바뀐 항목 ${n[0]}` : "", n[1] ? `그대로 ${n[1]}` : ""].filter(Boolean).join(" · "); }
+function changeTable(e){
+  const head = e.chgHead || ["항목", "이전", "현재", "변동", "적용", "출처"], cg = e.cg || [];
+  const all = (e.chg || []).map((r, i) => ({r, g: cg[i] ? cg[i][0] : "", it: cg[i] ? cg[i][1] : r[0], same: !r[3] && JSON.stringify(r[1]) === JSON.stringify(r[2])}));
+  const body = list => { let last = null; return list.map(({r: [it0, b, a, d, ef, st, s], g, it, same}) => {
+    const gh = g && g !== last ? `<tr class="gh"><td colspan="${head.length}">${g}</td></tr>` : ""; last = g;
+    return `${gh}<tr${same ? ` class="same"` : ""}><td>${g ? it : it0}</td><td class="v">${val(b)}</td><td class="v">${val(a)}</td><td class="v">${d ? `${esc(d[0])}${d[1] ? `<small>${esc(d[1])}</small>` : ""}` : same ? "그대로" : "—"}</td><td class="v">${esc(ef)}</td><td>${(s || []).map(n => refs("[" + n + "]")).join("")}</td></tr>`; }).join(""); };
+  const moved = all.filter(x => !x.same), kept = all.filter(x => x.same);
+  const table = list => `<div class="tscroll"><table><thead><tr>${head.map(x => `<th>${esc(x)}</th>`).join("")}</tr></thead><tbody>${body(list)}</tbody></table></div>`;
+  const cnd = e.cond && e.cond.length ? `<p class="cnd"><b>비교 조건</b> ${e.cond.map(([k, v]) => `${esc(k)} ${esc(v)}`).join(" · ")}</p>` : "";
+  return `${cnd}${moved.length ? table(moved) : `<p class="cnd note">바뀐 값이 없습니다.</p>`}${kept.length ? `<details class="same-rows"><summary>그대로인 항목 ${kept.length}개 보기</summary>${table(kept)}</details>` : ""}${(e.notes || []).map(n => `<p class="cnd note">${refs(n)}</p>`).join("")}${extraHtml(e)}`; }
 const sec = (title, meta, body, open) => `<details class="sec"${open ? " open" : ""}><summary>${title}${meta ? ` <small>${meta}</small>` : ""}</summary><div class="secb">${body}</div></details>`;
 function renderDetail(){
   const e = EVENTS.find(x => x.id === state.sel), el = document.getElementById("detail");
@@ -1024,7 +1108,7 @@ function renderDetail(){
     ${e.link && EVENTS.some(x => x.id === e.link[0]) ? (l => `<div class="lk"><span>함께 볼 이벤트</span><b>${esc(l.m)} · ${esc(l.ch)}</b><span>${esc(e.link[1])}</span><button type="button" data-id="${esc(l.id)}">열기 →</button></div>`)(EVENTS.find(x => x.id === e.link[0])) : ""}
     ${keyChange(e)}${TREND[e.mid] ? `<button type="button" class="tlink" data-trend="${esc(e.mid)}">${esc(TREND[e.mid].name)} 가격 추이 보기 →</button>` : ""}`;
   const parts = [];
-  if (e.chg && e.chg.length) parts.push(sec("바뀐 내용", esc(e.unit || ""), `${e.cond && e.cond.length ? `<p class="cnd"><b>비교 조건</b> ${e.cond.map(([k, v]) => `${esc(k)} ${esc(v)}`).join(" · ")}</p>` : ""}<table><thead><tr>${(e.chgHead || ["항목", "이전", "현재", "변동", "적용", "출처"]).map(x => `<th>${esc(x)}</th>`).join("")}</tr></thead><tbody>${e.chg.map(([it, b, a, d, ef, st, s]) => { const same = !d && JSON.stringify(b) === JSON.stringify(a); return `<tr${same ? ` class="same"` : ""}><td>${it}</td><td class="v">${val(b)}</td><td class="v">${val(a)}</td><td class="v">${d ? `${esc(d[0])}${d[1] ? `<small>${esc(d[1])}</small>` : ""}` : same ? "그대로" : "—"}</td><td class="v">${esc(ef)}</td><td>${(s || []).map(n => refs("[" + n + "]")).join("")}</td></tr>`; }).join("")}</tbody></table>${(e.notes || []).map(n => `<p class="cnd note">${refs(n)}</p>`).join("")}${extraHtml(e)}`));
+  if (e.chg && e.chg.length) parts.push(sec("바뀐 내용", changeMeta(e), changeTable(e)));
   parts.push(sec("렛서에 주는 영향", "", impactHtml(e), true));
   parts.push(sec("제안", "", suggestHtml(e), true));
   if (e.ev && e.ev.length) parts.push(sec("출처", `${e.ev.length}건`, `<ul class="srcs">${e.ev.map(([n, t]) => { const s = SRC[n] || {nm:n}; const q = t == null ? "" : Array.isArray(t) ? `이전 “${esc(t[0])}” → 현재 “${esc(t[1])}”` : esc(t);
