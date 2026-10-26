@@ -40,31 +40,7 @@ TEMPLATE = Path(__file__).with_name("template.html")
 SLOT = re.compile(r"/\*DATA:(\w+)\*/|<!--STATUS-->")
 ISO_DATE = re.compile(r"\d{4}-\d{2}-\d{2}")
 T7 = {"price_change": "가격 변경", "scheduled_change": "예정 변경", "limited_discount": "한시 할인", "condition_change": "조건 변경",
-      "condition_price_change": "조건·가격 변경",  # PR #21, 2026-10-23 decision: conditions and price change together
       "model_release": "모델 출시", "model_end": "제공 종료", "route_change": "공급 경로 변경"}
-CONDITIONED = ("조건 변경", "조건·가격 변경")
-# What the detail page says for an event's gaps and next_checks; fields not listed fall back to the engine's own reason.
-GAP_KO = {
-    "observed_price": "같은 조건의 관측값이 아직 없음 · 등록된 가격 출처의 다음 수집에서 확인",
-    "discount_period_or_target": "할인 기간·대상이 이 경로의 공식 출처에 없음 · 채널의 공식 할인 조건 확인",
-    "end_date_year": "종료 문구에 연도가 없음 · 채널 할인 조건에서 연도 확인",
-    "sub_provider": "채널 전체가 아니라 안쪽 제공자 한 곳의 할인 · 렛서가 어느 제공자로 연결되는지 확인",
-    "account_actual_price": "렛서 계정·등급·지역의 실제 가격은 미확인 · 렛서 계정에서 확인",
-    "shutdown_confirmed": "실제 호출 중단은 확인 안 됨 · 날짜가 지나면 다시 확인",
-    "scope": "모델 전체·endpoint·경로 중 무엇이 끝나는지 미확인 · 공지 원문에서 범위와 날짜 확인",
-    "before": "같은 조건의 현재가가 하나로 정해지지 않음",
-    "effective_from_or_rate": "적용일과 새 가격이 둘 다 있어야 확정",
-    "raw_check": "원문을 다시 읽은 결과가 맞지 않음 · 원문 대조 필요",
-    "negated_statement": "원문에 부정·범위 축소 표현이 있음 · 원문 대조 필요",
-    "model_attribution": "한 문장에 모델이 여럿이라 어느 모델 이야기인지 미확정 · 원문 확인",
-    "maker_first_release_date": "제조사의 공식 첫 출시일이 없음 · 출시일이 7일 안이면 모델 출시, 아니면 경로 추가",
-}
-SKIP_GAPS = {"letsur_usage"}  # true of every event until LETSUR gives usage; the page says it once in 현재 사용 경로
-NEXT_KO = {
-    "confirm the official source still shows the new value on the next run": "다음 수집에서 공식 출처가 새 값을 그대로 보여 주는지 확인",
-    "confirm the official source still shows the new condition on the next run": "다음 수집에서 공식 출처가 새 조건을 그대로 보여 주는지 확인",
-    "re-observe right after the effective date to confirm the new rate is applied": "적용일 직후 다시 관측해 새 가격이 적용됐는지 확인",
-}
 CONDITION_GROUPS = {
     "billing": ("과금", (("cache", "캐시"), ("batch", "Batch"), ("unit", "단위"), ("context_threshold", "구간"), ("tier", "구간"),
                         ("surcharge", "할증"))),
@@ -75,9 +51,7 @@ ITEM_ORDER = ("input", "output", "cache_read", "cache_write")
 ITEM_KO = {"input": "입력 토큰", "output": "출력 토큰", "cache_read": "캐시 읽기", "cache_write": "캐시 쓰기"}  # the template's own row names
 MEASURE_KO = {"input": "입력", "output": "출력", "cache_read": "캐시 읽기", "cache_write": "캐시 쓰기"}
 UNIT_KO = {"1M tokens": "100만 토큰", "1000 tokens": "1,000 토큰"}
-CONDITION_KO = {"service_tier": "등급", "cache_read_multiplier": "캐시 읽기 배율", "context_length": "컨텍스트", "endpoint_tag": "엔드포인트",
-                "endpoint_provider": "제공자", "endpoint_model_slug": "모델 slug", "quantization": "정밀도", "endpoint_status": "상태",
-                "endpoint_discount": "엔드포인트 할인", "discount_application": "할인 적용", "price_basis": "가격 기준"}
+CONDITION_KO = {"service_tier": "등급", "cache_read_multiplier": "캐시 읽기 배율"}
 KIND_KO = {"llm": "LLM", "video": "영상", "image": "이미지"}
 TAG = {"manufacturer_official": "sup", "channel_official": "ch"}  # anything else is an external source
 MARK = {"confirmed": "ok", "candidate": "unk", "conflicted": "con"}
@@ -207,24 +181,6 @@ def rank(item: str) -> int:
 def route_label(route: str) -> str:
     name = ROUTE_PUBLISHERS.get(route)
     return f"{name} · {route}" if name else route or "경로 표기 없음"
-
-
-def size_ko(value) -> str:
-    """1048576 -> 1M, 262144 -> 256K: context lengths as people say them."""
-    amount = number(value)
-    if amount is None or amount <= 0 or amount != amount.to_integral_value():
-        return str(value)
-    for step, mark in ((1 << 20, "M"), (1 << 10, "K")):
-        if amount >= step and amount % (step // 4 or 1) == 0:
-            return f"{format((amount / step).normalize(), 'f')}{mark}"
-    return format(amount, "f")
-
-
-def condition_value(key: str, value) -> str:
-    """One condition value as a row label part; a bare number gets the name of what it counts."""
-    if key == "context_length":
-        return f"컨텍스트 {size_ko(value)}"
-    return cap(value)
 
 
 def compared(conditions) -> dict:
@@ -470,7 +426,7 @@ def event_rows(event: dict, t7: str | None, eff: str, refs: list, sources: Sourc
             return []
         return [row(b or unknown("공개 안 됨"), a or unknown("할인가 공개 안 됨"),
                     [f"{format(rate, 'f')}%", "공지"] if rate is not None else None, f"~{md(eff)}" if eff else "")]
-    if t7 in CONDITIONED:
+    if t7 == "조건 변경":
         rule = part(event, "condition")
         if rule:  # observed: the stated rule on both sides, then the item's own price
             key = rule.get("key") or change.get("condition_key") or ""
@@ -550,7 +506,7 @@ def condition_label(subtags: list[str]) -> str:
 
 
 def sub_label(t7, members, subtags, remove, added) -> str:
-    if t7 in CONDITIONED:
+    if t7 == "조건 변경":
         return condition_label(subtags)
     if t7 == "공급 경로 변경":
         return "경로 중단" if remove else "경로 추가" if added else ""
@@ -602,9 +558,9 @@ def summary_text(t7, members, eff, sub, q1, remove, added) -> str:
         if len(prices) == 1:
             parts.append(f"할인가 {prices.pop()}")
         return " · ".join(parts + [f"{when}까지" if eff else "종료일 미확인"])
-    if t7 in CONDITIONED:
+    if t7 == "조건 변경":
         verb = "관측" if any(observed(e) for e in members) else "언급"
-        return f"{sub} {t7} {verb}" if sub else f"{t7} {verb}"
+        return f"{sub} 조건 변경 {verb}" if sub else f"조건 변경 {verb}"
     if t7 == "모델 출시":
         return f"모델 출시 · {when} 제공" if eff else "모델 출시 · 제공일 미확인"
     if t7 == "제공 종료":
@@ -641,7 +597,7 @@ def compare_line(members, rep, ch, t7) -> list[list[str]]:
     values: dict[str, set] = {}
     for e in members:
         for key, value in compared(e.get("conditions")).items():
-            values.setdefault(key, set()).add(size_ko(value) if key == "context_length" else cap(value))
+            values.setdefault(key, set()).add(cap(value))
     line += [[CONDITION_KO.get(key, key), " / ".join(sorted(values[key]))] for key in sorted(values)]
     line.append(["경로", ch])
     if part(rep, "announced_via"):
@@ -651,48 +607,9 @@ def compare_line(members, rep, ch, t7) -> list[list[str]]:
         line.append(["조회", minute(max(seen))])
     pairs = [(kst(part(e, "before").get("observed_at_utc")), kst(part(e, "after").get("observed_at_utc"))) for e in members if observed(e)]
     pairs = [(b, a) for b, a in pairs if b and a]
-    if t7 in ("가격 변경", *CONDITIONED) and pairs:
+    if t7 in ("가격 변경", "조건 변경") and pairs:
         line.append(["관측", f"{md(day_of(min(b for b, _ in pairs)))} → {md(day_of(max(a for _, a in pairs)))}"])
     return line
-
-
-def unique_rows(rows: list[dict]) -> list[dict]:
-    """One row per condition set, item and values: the same price read from two sources or runs is one row."""
-    seen, out = set(), []
-    for row in rows:
-        key = (json.dumps(row["cond"], sort_keys=True), row["item"], row["label"], row["same"],
-               json.dumps(row["row"][1:4], ensure_ascii=False, sort_keys=True))
-        if key not in seen:
-            seen.add(key)
-            out.append(row)
-    return out
-
-
-def card_status(members: list[dict]) -> str:
-    statuses = {event.get("status") for event in members}
-    return "conflicted" if "conflicted" in statuses else "confirmed" if statuses == {"confirmed"} else "candidate"
-
-
-def checks(members: list[dict]) -> list[list[str]]:
-    """[class, text] for what to confirm: check_first gaps and next_checks first, then what limits a value's meaning."""
-    out: dict[str, str] = {}
-    for event in members:
-        for gap in event.get("gaps") or []:
-            if not isinstance(gap, dict) or gap.get("field") in SKIP_GAPS:
-                continue
-            field = str(gap.get("field") or "")
-            text = GAP_KO.get(field) or GAP_KO.get(field.rpartition(".")[0]) or gap.get("reason") or field
-            out.setdefault(text, "first" if gap.get("class") == "check_first" else "limit")
-        for step in event.get("next_checks") or []:
-            out.setdefault(NEXT_KO.get(step, step), "next")
-    order = {"first": 0, "next": 1, "limit": 2}
-    return [[kind, text] for text, kind in sorted(out.items(), key=lambda pair: order[pair[1]])]
-
-
-def has_values(members: list[dict]) -> bool:
-    """Something to read beyond words: an observed or stated price, or a stated discount."""
-    return any(observed(e) or number(part(e, "after").get("amount")) is not None or number(part(e, "before").get("amount")) is not None
-               or stated_discount(e) is not None or number(part(e, "change").get("discounted_amount")) is not None for e in members)
 
 
 def build_card(card_id: str, members: list[dict], sources: Sources, routes: dict | None) -> dict:
@@ -718,12 +635,9 @@ def build_card(card_id: str, members: list[dict], sources: Sources, routes: dict
     varying = [key for key in sorted({key for row in rows for key in row["cond"]})
                if len({json.dumps(row["cond"].get(key), sort_keys=True) for row in rows}) > 1]
     rows.sort(key=lambda row: (row["same"], [cap(row["cond"].get(key, "")) for key in varying], row["order"], rank(row["item"]), row["item"]))
-    rows = unique_rows(rows)
     for row in rows:
-        group = " · ".join(condition_value(key, row["cond"][key]) for key in varying if key in row["cond"])
-        name = row["label"] or item_ko(row["item"])
-        row["row"][0] = html.escape(" · ".join(filter(None, (group, name))))
-        row["parts"] = [html.escape(group), html.escape(name)]
+        row["row"][0] = html.escape(" · ".join([cap(row["cond"][key]) for key in varying if key in row["cond"]]
+                                               + [row["label"] or item_ko(row["item"])]))
     ev, kept = [], set()
     for index in dict.fromkeys([row["eid"] for row in rows if not row["same"]] + list(range(len(members)))):
         for sid, text in said[index]:
@@ -745,25 +659,6 @@ def build_card(card_id: str, members: list[dict], sources: Sources, routes: dict
     rate = next((r for r in map(stated_discount, members) if r is not None), None)
     if rate is not None:
         card["discPct"] = int(rate) if rate == rate.to_integral_value() else float(rate)
-    # Detail page facts the engine already wrote: status, what to confirm, type candidates, the discount's period, row counts
-    card["st"] = card_status(members)
-    found = checks(members)
-    if found:
-        card["chk"] = found
-    if q1 or not t7:
-        candidates = sorted({kind for e in members for kind in e.get("type_candidates") or []}, key=lambda k: (list(T7).index(k) if k in T7 else 99, k))
-        if candidates:
-            card["tc"] = [T7.get(kind, kind) for kind in candidates]
-    if not has_values(members):
-        card["clue"] = True
-    states = {e.get("period_state") for e in members} - {None}
-    if t7 == "한시 할인" and len(states) == 1:
-        card["ps"] = states.pop()
-    if published_day(rep):
-        card["pub"] = published_day(rep)
-    card["n"] = [sum(1 for row in rows if not row["same"]), sum(1 for row in rows if row["same"])]
-    if any(row["parts"][0] for row in rows):
-        card["cg"] = [row["parts"] for row in rows]  # [condition group, item] per chg row, for the grouped 바뀐 내용 table
     return card
 
 

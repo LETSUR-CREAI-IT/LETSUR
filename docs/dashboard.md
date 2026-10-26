@@ -75,7 +75,7 @@ python3 -B -m scripts.market_collection.dashboard --root data/market_collection 
 
 ### 유형과 표시 문구
 
-- `t7`: `price_change` 가격 변경, `scheduled_change` 예정 변경, `limited_discount` 한시 할인, `condition_change` 조건 변경, `condition_price_change` 조건·가격 변경(PR #21 박건 결정 2026-10-23, 엔진 반영 전이라 페이지만 준비), `model_release` 모델 출시, `model_end` 제공 종료, `route_change` 공급 경로 변경.
+- `t7`: `price_change` 가격 변경, `scheduled_change` 예정 변경, `limited_discount` 한시 할인, `condition_change` 조건 변경, `model_release` 모델 출시, `model_end` 제공 종료, `route_change` 공급 경로 변경.
 - 유형 미정(`event_type` null)
   - `type_candidates`가 `[model_release, route_change]`이면 공급 경로 변경 · 경로 추가로 둔다(박건 결정 2026-10-20).
   - 그 밖의 미정은 `t7` null이다.
@@ -173,25 +173,6 @@ python3 -B -m scripts.market_collection.dashboard --root data/market_collection 
 - 시연 파일 `samples/market_collection/demo_internal_routes.json`: LETSUR-events `deliverables/event-json-handoff-20261009/demo_internal_routes.json`을 2026-10-21에 바이트 그대로 복사했다(617 bytes, SHA256 `f27733b9a9c01edb54a6b34b3b6ca4aadc4e785056bf2da1632fa3b212c51f0a`). `is_demo: true`와 `purpose`는 원본 그대로다. 실제 렛서 경로가 아니라 시연용 가정이다.
   - 레코드 4개: gemini-3.8-flash · vercel_ai_gateway, claude-sonnet-5-5 · anthropic_direct, veo-3.1-standard · fal(endpoint fal-ai/veo3.1), gpt-6.1-sol · null(미도입).
 - 실제 연동: 실제 렛서 사용 경로가 생기면 workflow `Build dashboard` 단계에서 `--internal-routes`를 빼거나(모든 카드가 "사용 경로 확인 필요"로 돌아간다), 같은 형식의 실제 경로 파일(`is_demo: false`)로 바꾼다. 시연 파일은 그때 지우면 된다.
-
-### 상세페이지 필드 (박기범, 2026-10-26)
-
-상세 화면이 종류별로 다르게 그리도록 엔진이 이미 쓴 사실을 카드에 더 넘긴다. 판단 문구는 만들지 않는다.
-
-- `st`: 묶음 상태. `conflicted`가 하나라도 있으면 conflicted, 모두 confirmed면 confirmed, 나머지는 candidate. 템플릿은 "확정 / 공식 확인 전 / 출처 상충" 배지로 쓴다.
-- `chk`: `[구분, 문구]` 목록. 이벤트 `gaps`의 `check_first`는 `first`, `limits_value`는 `limit`, `next_checks`는 `next`다. 문구는 `GAP_KO`·`NEXT_KO`의 한국어이고, 없는 field는 엔진 `reason`을 그대로 쓴다. `letsur_usage`는 모든 카드에 같아 뺀다(현재 사용 경로 칸이 같은 말을 한다).
-- `tc`: 유형 미정 카드의 후보 유형 이름(예: 모델 출시, 공급 경로 변경). 있으면 배지는 "유형 미정"과 후보를 따로 보여 준다.
-- `clue`: 관측값·공지 가격·할인율이 하나도 없는 카드. 가격·할인·예정·조건 카드에서 템플릿은 단서 상자(원문, 확정하려면)를 보여 주고 원가는 "판단 전", 제안은 "판단 보류"다.
-- `ps`: 한시 할인 `period_state`(묶음에서 하나일 때). `pub`: 대표 이벤트의 공지일.
-- `n`: `[바뀐 행 수, 그대로 행 수]`. `cg`: 행마다 `[조건 묶음, 항목]`. 조건 묶음은 행마다 다른 조건 값을 " · "로 이은 것이고 `context_length`는 "컨텍스트 1M"처럼 쓴다. `chg[0]`은 이전처럼 묶음과 항목을 이은 이름이다.
-- 바뀐 내용 표의 같은 조건·항목·값 행은 하나로 합친다(같은 값을 다른 run이나 출처에서 다시 읽은 경우).
-- 비교 조건 줄의 엔드포인트 조건은 한국어 이름(컨텍스트, 엔드포인트, 정밀도, 제공자 등)으로, `context_length` 값은 1M·256K로 쓴다.
-
-템플릿 상세 화면(목록·달력·그래프는 그대로):
-- 핵심 변화: 가격 변경은 "N개 항목 인하 · 범위" 한 줄과 폭이 큰 3개 막대, 예정 변경은 모든 항목의 변동이 같으면 한 줄, 한시 할인은 진행·종료와 공지일, 조건·가격 변경은 조건 행과 단가 행, 경로 추가는 제공일과 유형 미정 안내. 아래에 `chk` 목록.
-- 바뀐 내용: 바뀐 행만 조건 묶음 제목 아래에 펼치고, 그대로 행은 "그대로인 항목 N개 보기"로 접는다.
-- 원가 칩: 항목 이름을 잇지 않고 "원가 ▼ 최대 N% · N개 항목". 렛서에 주는 영향의 원가 줄은 항목이 3개를 넘으면 요약 한 줄.
-- 제안: 단서만이면 판단 보류, 확정 전(candidate·conflicted)이면 고객 할인을 보류, 끝난 할인은 기존 조건 유지("지금 단가가 할인 전으로 돌아왔는지 확인"), 경로 추가·모델 출시는 할인이 아니라 경로 비교·도입 후보, 할인율을 모르는 할인은 판단 보류.
 
 ### 비우는 필드
 
