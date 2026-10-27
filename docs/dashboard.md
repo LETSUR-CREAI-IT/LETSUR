@@ -375,3 +375,11 @@ python3 -B -m scripts.market_collection.dashboard --root data/market_collection 
     - 콘솔 오류 0건(확인용으로 일부러 낸 오류 2건은 제외).
   - 캡처는 저장소에 넣지 않았다.
 - NOT_RUN: actionlint(미설치), Actions에서 허용하지 않은 브랜치의 배포 실패와 재실행 동작, 목록 박스와 목록 필터의 실제 휴대폰·Safari·Firefox 확인(내장 브라우저와 375px 에뮬레이션만 확인), 운영 페이지(GitHub Pages)의 단가 추이 탭 수와 목록 필터(합쳐진 뒤 workflow 배포로만 볼 수 있다), 실제 누적 데이터(이벤트 253건, 카드 61장)로 만든 페이지에서의 목록 필터.
+
+### 슬랙봇용 판정 파일 `cards.json` (2026-10-27 결정 26-4, 26-6, 26-7)
+
+- build.py는 `index.html` 옆에 `cards.json`을 쓴다. Pages 아티팩트에 함께 실리고 공개 주소에서도 읽힌다.
+- 내용: `schema`(1), `base_day`(페이지 기준일), `names`(경로 이름 `routes`, 항목 `items`, 조건 `conditions`, 등급 `tiers`, 지역 `regions`, 상태 `status`, 단위 `units`), `cards`(카드마다 `id`, 사건 id 목록 `events`, 추천 행동 `action`, 적용 배지 `applicability`, 가정 여부 `assumed`, 마감 `deadline`과 `deadline_label`, `model`, `route`, `type`, `summary`, 비교 조건 줄 `conditions`).
+- `action`·`applicability`는 template.html의 `actionKey`·`suggestOf`·`dirOf`·`applicabilityOf`를 build.py의 `judge()`가 그대로 다시 계산한 값이다. 둘 중 하나를 고치면 다른 쪽도 같이 고친다. 10/27 실제 데이터 69장에서 두 쪽의 값이 모두 같았다(내장 브라우저에서 페이지의 JS 판정과 대조).
+- 슬랙봇은 이 파일로 RECORD 카드를 빼고(NOT APPLIES는 빼지 않음), 카드 id로 바로 가기 링크를 만들고, 이름은 `names`에서 가져다 쓴다.
+- 목록 날짜 칸: 적용일·종료일이 없는 카드는 `effShort`로 "적용일 미공지 · 10/20 관측"(피드 글이면 "… 게시")처럼 사유와 카드 날짜를 적는다(2026-10-25 잠정 결정 12절).

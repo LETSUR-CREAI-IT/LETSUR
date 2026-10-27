@@ -937,6 +937,8 @@ def build_card(card_id: str, members: list[dict], sources: Sources, routes: dict
         card["ps"] = states.pop()
     if pub:
         card["pub"] = pub
+    if not eff and when:  # the list's date cell says why there is no date and what dates the card (decision 12, 10/25)
+        card["effShort"] = f"{label or '적용일'} 미공지 · {md(when)} {'게시' if when == pub else '관측'}"
     card["n"] = [sum(1 for row in rows if not row["same"]), sum(1 for row in rows if row["same"])]
     if any(row["parts"][0] for row in rows):
         card["cg"] = [row["parts"] for row in rows]  # [condition group, item] per chg row, for the grouped 바뀐 내용 table
@@ -1225,6 +1227,102 @@ def render(template: str, data: dict, status: str) -> str:
     return SLOT.sub(lambda m: status if m.group(0) == "<!--STATUS-->" else js(data[m.group(1)]), template)
 
 
+# ---- Card judgement for the Slack bot (2026-10-27 decisions 26-4, 26-6, 26-7) ----
+# template.html decides 추천 행동 (actionKey) and 적용 배지 (applicabilityOf) in the browser. The bot cannot run the page, so
+# the same rules run here once more and cards.json carries them with the names the page uses; change both together.
+MATRIX = {"use": {"good": "disc", "bad": "route", "neutral": "keep"}, "other": {"good": "route", "bad": "keep", "neutral": "keep"},
+          "none": {"good": "route", "bad": "keep", "neutral": "keep"}}
+PRICE_WORDS = re.compile("단가|토큰|가격")
+APPLICABILITY = {"use": "APPLIES", "unk": "UNKNOWN"}  # other and none: NOT APPLIES
+
+
+def js_text(value) -> str:
+    """String(value) as the template's JS writes it, for the text tests its rules make."""
+    if value is None:
+        return "null"
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if isinstance(value, list):
+        return ",".join("" if item is None else js_text(item) for item in value)
+    return "[object Object]" if isinstance(value, dict) else str(value)
+
+
+def page_money(value) -> float | None:
+    """The template's money(): a '$1,234.5' cell as a number, anything else none."""
+    match = re.fullmatch(r"\$([\d,]+(?:\.\d+)?)", value) if isinstance(value, str) else None
+    return float(match.group(1).replace(",", "")) if match else None
+
+
+def judge(card: dict, today: str) -> dict:
+    """추천 행동 (REVIEW, VERIFY, MONITOR, RECORD) and 적용 배지 of one EVENTS card, as template.html's actionKey,
+    suggestOf, dirOf and applicabilityOf decide them."""
+    t7, sub, rows, eff, st = card.get("t7"), card.get("sub") or "", card.get("chg") or [], card.get("eff") or "", card.get("st")
+    flagged = lambda cell: isinstance(cell, dict) and bool(cell.get("unk") or cell.get("con"))
+    days = lambda day: (date.fromisoformat(day[:10]) - date.fromisoformat(today)).days
+    changed = [row for row in rows if (len(row) > 3 and row[3]) or row[1] != row[2]]
+    clue = bool(card.get("clue")) and t7 not in ("공급 경로 변경", "모델 출시", "제공 종료")
+    ended = t7 == "한시 할인" and (card.get("ps") == "ended" or (card.get("ps") != "active" and bool(eff) and days(eff) < 0))
+    added = (t7 == "공급 경로 변경" and "중단" not in sub) or t7 == "모델 출시"
+    price_unk = any(PRICE_WORDS.search(re.sub(r"<[^>]+>", "", js_text(row[0]))) and flagged(row[2]) for row in rows)
+    rel = card.get("relKey") or "unk"
+
+    def direction() -> str:
+        priced = [row for row in changed if page_money(row[1]) is not None and page_money(row[2]) is not None]
+        total = sum(page_money(row[2]) - page_money(row[1]) for row in priced)
+        if t7 == "한시 할인":
+            return "bad" if eff and days(eff) < 0 else "good"
+        if t7 in ("모델 출시", "제공 종료"):
+            return "good" if t7 == "모델 출시" else "bad"
+        if t7 == "공급 경로 변경":
+            return "bad" if "중단" in sub else "good"
+        if priced:
+            return "bad" if total > 0 else "good" if total < 0 else "neutral"
+        if any(page_money(row[1]) is not None and flagged(row[2]) for row in rows):
+            return "unk"
+        said = [re.sub(r"<[^>]+>", "", js_text(row[2])) for row in changed]
+        return "bad" if any("인상" in text for text in said) else "good" if any("인하" in text for text in said) else "neutral"
+
+    def response() -> str:
+        if t7 is None:
+            return "hold"
+        way = direction()
+        resp = "hold" if way == "unk" else MATRIX["use" if rel == "unk" else rel][way]
+        if clue:
+            return "hold"
+        if ended:
+            return "keep"
+        if added:
+            return "keep" if rel == "use" else "route"
+        if t7 == "한시 할인" and card.get("discPct") is None and not any(page_money(row[2]) is not None for row in changed):
+            return "hold"
+        return "hold" if st and st != "confirmed" and resp == "disc" else resp
+
+    if t7 is None or clue or (card.get("flag") and not st) or st == "conflicted" or price_unk:
+        action = "VERIFY"
+    elif ended:
+        action = "RECORD"
+    elif rel == "unk":
+        action = "VERIFY"
+    elif st == "candidate":
+        action = "MONITOR"
+    else:
+        action = {"hold": "VERIFY", "keep": "RECORD"}.get(response(), "REVIEW")
+    return {"action": action, "applicability": APPLICABILITY.get(rel, "NOT APPLIES"), "assumed": bool(card.get("relDemo")) and rel != "unk"}
+
+
+def judgements(data: dict, groups: dict[str, list[dict]]) -> dict:
+    """cards.json: per card its events, 추천 행동, 적용 배지, deadline and display names, plus the name tables the page
+    uses, so the Slack bot filters (decision 26-4), links to the card (26-6) and writes names as the page does (26-7)."""
+    routes = {e.get("route"): route_label(e.get("route")) for members in groups.values() for e in members if e.get("route")}
+    return {"schema": 1, "base_day": data["TODAY"],
+            "names": {"routes": routes, "items": ITEM_KO, "conditions": CONDITION_KO, "tiers": TIER_NAMES, "regions": REGION_NAMES,
+                      "status": STATUS_KO, "units": UNIT_KO},
+            "cards": [{"id": card["id"], "events": data["ID"].get(card["id"], []), **judge(card, data["TODAY"]),
+                       "deadline": card.get("eff") or None, "deadline_label": card.get("effLabel") or None,
+                       "model": card.get("m") or card.get("mid"), "route": card.get("ch"), "type": card.get("t7"),
+                       "summary": card.get("sum"), "conditions": card.get("cond") or []} for card in data["EVENTS"]]}
+
+
 def collect(root: Path, today: str, routes: dict | None) -> tuple[dict, str]:
     """Page data and the status banner for <root>/events."""
     folder = root / "events"
@@ -1264,6 +1362,7 @@ def collect(root: Path, today: str, routes: dict | None) -> tuple[dict, str]:
     data = {"TODAY": today, "SRC": sources.entries(), "ID": {cid: [e.get("event_id") for e in groups[cid]] for cid in order},
             "EVENTS": cards, "MODELS": models(cards, routes), "TREND": trend(cards, groups, state, doc.get("gaps") or []),
             "COLLECTED": collected(report)}
+    data["JUDGED"] = judgements(data, groups)  # not a page slot: main writes it to cards.json
     return data, warning(continuity)
 
 
@@ -1281,14 +1380,18 @@ def main(argv: list[str] | None = None, now: datetime | None = None) -> int:
     today = (now or datetime.now(timezone.utc)).astimezone(KST).date().isoformat()
     template = TEMPLATE.read_text(encoding="utf-8")
     code, cards = 0, 0
+    judged = {"schema": 1, "base_day": today, "names": {}, "cards": []}
     try:
         routes, note = internal_routes(Path(args.internal_routes)) if args.internal_routes else (None, "")
         data, status = collect(root, today, routes)
         page, cards = render(template, data, status + note), len(data["EVENTS"])
+        judged = data.get("JUDGED") or judged
     except Exception as error:  # the page must still say today's build failed
         traceback.print_exc()
         page, code = render(template, empty(today, {"runs": []}), banner("fail", "오늘 생성 실패", f"대시보드 생성 중 오류: {type(error).__name__}")), 1
     out.mkdir(parents=True)
     (out / "index.html").write_text(page, encoding="utf-8")
+    # The Slack bot's copy of each card's judgement (decision 26-4); published next to the page and in the Pages artifact.
+    (out / "cards.json").write_text(json.dumps(judged, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
     print(f"wrote {out / 'index.html'}: {cards} cards")
     return code

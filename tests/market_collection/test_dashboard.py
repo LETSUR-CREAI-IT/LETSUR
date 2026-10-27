@@ -825,3 +825,32 @@ def test_a_tracker_note_joins_the_route_card_of_its_group_only_when_days_apart_a
     groups = {"routed": [note("o", "2026-10-17", "openrouter")], "far": [note("m", "2026-08-16", role="representative")]}
     build.merge_notes(groups, {})
     assert set(groups) == {"routed", "far"}
+
+
+@pytest.mark.parametrize(("card", "action", "applicability"), [
+    # an ended discount on the route LETSUR uses: 기록만
+    ({"t7": "한시 할인", "st": "confirmed", "ps": "ended", "eff": "2026-09-18", "relKey": "use", "chg": []}, "RECORD", "APPLIES"),
+    # a confirmed observed decrease on another route: compare the route
+    ({"t7": "가격 변경", "st": "confirmed", "relKey": "other", "chg": [["입력 토큰", "$0.30", "$0.20"]]}, "REVIEW", "NOT APPLIES"),
+    # the same increase on another route: keep the current route
+    ({"t7": "가격 변경", "st": "confirmed", "relKey": "other", "chg": [["입력 토큰", "$0.20", "$0.30"]]}, "RECORD", "NOT APPLIES"),
+    # a note with no values and no route: check first
+    ({"t7": "가격 변경", "st": "candidate", "clue": True, "relKey": "unk", "chg": []}, "VERIFY", "UNKNOWN"),
+    # a candidate with values on the route LETSUR uses: keep watching
+    ({"t7": "가격 변경", "st": "candidate", "relKey": "use", "chg": [["입력 토큰", "$0.30", "$0.20"]]}, "MONITOR", "APPLIES"),
+])
+def test_cards_judgement_matches_the_pages_rules(card, action, applicability):
+    """2026-10-27 decision 26-4: cards.json repeats template.html's actionKey and applicabilityOf for the Slack bot."""
+    judged = build.judge(card, "2026-10-27")
+    assert (judged["action"], judged["applicability"]) == (action, applicability)
+
+
+def test_build_writes_cards_json_next_to_the_page(tmp_path):
+    _write(tmp_path, [_scheduled("s1", "input", "0.75", "1.50", "0.75")])
+    _, _, data = _build(tmp_path, args=["--internal-routes", str(DEMO_ROUTES)])
+    doc = json.loads((tmp_path / "site" / "cards.json").read_text(encoding="utf-8"))
+    [card] = doc["cards"]
+    assert doc["schema"] == 1 and doc["base_day"] == data["TODAY"]
+    assert card["id"] == data["EVENTS"][0]["id"] and card["events"] == data["ID"][card["id"]]
+    assert card["action"] in ("REVIEW", "VERIFY", "MONITOR", "RECORD") and card["deadline"] == data["EVENTS"][0].get("eff")
+    assert doc["names"]["items"]["input"] == "입력 토큰" and doc["names"]["conditions"]["quantization"] == "정밀도"
