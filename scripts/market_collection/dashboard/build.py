@@ -32,6 +32,7 @@ from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
 
+from scripts.market_collection.dashboard import compare
 from scripts.market_collection.events.catalog import ROUTE_PUBLISHERS, SIGNAL_PUBLISHERS, authority as route_authority, maker
 from scripts.market_collection.events.evidence import MUTABLE_CONDITIONS
 from scripts.market_collection.models import MODEL_MODALITIES
@@ -1220,7 +1221,7 @@ def record_problem(record) -> str:
 
 
 def empty(today: str, runs: dict) -> dict:
-    return {"TODAY": today, "SRC": {}, "ID": {}, "EVENTS": [], "MODELS": {}, "TREND": {}, "COLLECTED": runs}
+    return {"TODAY": today, "SRC": {}, "ID": {}, "EVENTS": [], "MODELS": {}, "TREND": {}, "COLLECTED": runs, "COMPARE": {}}
 
 
 def render(template: str, data: dict, status: str) -> str:
@@ -1362,6 +1363,9 @@ def collect(root: Path, today: str, routes: dict | None) -> tuple[dict, str]:
     data = {"TODAY": today, "SRC": sources.entries(), "ID": {cid: [e.get("event_id") for e in groups[cid]] for cid in order},
             "EVENTS": cards, "MODELS": models(cards, routes), "TREND": trend(cards, groups, state, doc.get("gaps") or []),
             "COLLECTED": collected(report)}
+    # 공급사 비교 표 per LLM model with a card (compare.py; reads the newest processed run under <root>/runs)
+    data["COMPARE"] = compare.tables(root, [card["mid"] for card in cards], [e for e in doc["events"] if isinstance(e, dict)],
+                                     doc.get("gaps") or [], state, report, routes, today)
     data["JUDGED"] = judgements(data, groups)  # not a page slot: main writes it to cards.json
     return data, warning(continuity)
 

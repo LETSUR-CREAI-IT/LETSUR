@@ -505,6 +505,38 @@ td small{display:block;font-size:11.5px;color:var(--muted)}
 .tscroll{overflow-x:auto;max-width:100%}
 tr.gh td{padding-top:12px;font-size:12px;font-weight:700;color:var(--muted);background:var(--surface-2)}
 .same-rows{margin-top:10px} .same-rows>summary{cursor:pointer;font-size:12.5px;color:var(--muted)}
+/* ---- 공급사 비교 표 (compare.py, 결정 1~18·22절): 민트 최저 · 남색 유일 · 회색 종료·미확인 · 점선 비교 제외 · 주황 출처 상충 ---- */
+.sct{margin-top:18px}
+.sct h4{margin:0 0 6px;font-size:13px;font-weight:700;color:var(--ink)}
+.sct h4 small{margin-left:6px;font-size:12px;font-weight:500;color:var(--muted)}
+.sct-scroll{overflow-x:auto;max-width:100%}
+.sct-t{min-width:760px;font-size:12.5px}
+.sct-t th,.sct-t td{padding:6px 8px}
+.sct-t td.v small{display:block}
+.sct-t td.sct-d{white-space:normal;min-width:92px}
+.sct-who{min-width:150px;color:var(--ink);font-weight:600}
+.sct-rt{color:var(--muted);font-weight:500}
+.sct-note{min-width:200px;font-size:12px;color:var(--body)}
+.sct-t tr.sct-gh td{padding-top:10px;font-size:12px;font-weight:700;color:var(--muted);background:var(--surface-2)}
+.sct-t td.sct-lo{background:var(--mint-soft);color:var(--mint-ink);font-weight:700;box-shadow:inset 0 0 0 1px currentColor}
+.sct-t td.sct-un{background:var(--slate-soft);color:var(--slate);font-weight:700;box-shadow:inset 0 0 0 1px currentColor}
+.sct-t td.sct-fill{box-shadow:none}
+.sct-t td.sct-gy{background:var(--grey-soft);color:var(--muted)}
+.sct-t td.sct-est,.sct-t td.sct-min{color:var(--muted)}
+.sct-t tr.sct-ex td{color:var(--muted);background:transparent;border-top:1px dashed var(--line-strong);border-bottom:1px dashed var(--line-strong)}
+.sct-t tr.sct-ex .sct-who{font-weight:500}
+.sct-tag{display:inline-flex;align-items:center;height:17px;padding:0 5px;margin-left:3px;border:1px solid var(--line-strong);border-radius:4px;font-size:10.5px;font-weight:650;color:var(--muted);white-space:nowrap;vertical-align:1px}
+.sct-tag.sct-t-con{border-color:var(--amber);background:var(--amber-soft);color:var(--amber)}
+.sct-tag.sct-t-as{border-color:var(--ink);color:var(--ink)}
+.sct-key{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin:8px 0 0;font-size:11.5px;color:var(--muted)}
+.sct-key>span{display:inline-flex;align-items:center;height:18px;padding:0 6px;border-radius:4px}
+.sct-key .sct-lo{background:var(--mint-soft);color:var(--mint-ink);box-shadow:inset 0 0 0 1px currentColor}
+.sct-key .sct-un{background:var(--slate-soft);color:var(--slate);box-shadow:inset 0 0 0 1px currentColor}
+.sct-key .sct-gy{background:var(--grey-soft)}
+.sct-key .sct-dash{border:1px dashed var(--line-strong)}
+.sct-sp{margin-top:10px;padding:8px 10px;border-left:3px solid var(--line-strong);border-radius:0 8px 8px 0;background:var(--surface-2)}
+.sct-sp h5{margin:0 0 2px;font-size:12px;font-weight:700;color:var(--ink)}
+.sct-sp p{margin:0;font-size:12.5px;color:var(--body)}
 </style>
 
 <header class="top">
@@ -1178,6 +1210,26 @@ function changeTable(e){
   const table = list => `<div class="tscroll"><table><thead><tr>${head.map(x => `<th>${esc(x)}</th>`).join("")}</tr></thead><tbody>${body(list)}</tbody></table></div>`;
   const cnd = e.cond && e.cond.length ? `<p class="cnd"><b>비교 조건</b> ${e.cond.map(([k, v]) => `${esc(k)} ${esc(v)}`).join(" · ")}</p>` : "";
   return `${cnd}${moved.length ? table(moved) : `<p class="cnd note">바뀐 값이 없습니다.</p>`}${kept.length ? `<details class="same-rows"><summary>그대로인 항목 ${kept.length}개 보기</summary>${table(kept)}</details>` : ""}${(e.notes || []).map(n => `<p class="cnd note">${refs(n)}</p>`).join("")}${extraHtml(e)}`; }
+// ---- 공급사 비교 표 (compare.py가 COMPARE를 채운다, 결정 1~18·22절) ----
+// COMPARE[모델] = {at 가격 기준 관측 시각, unit, items 가격 열 이름, disc 한시 할인 열 여부, groups [[묶음 이름, 행…]], ex 비교 제외 행, special 특이사항, foot}
+// 행: w [경로, 하위 공급처] · c 열마다 [값, lo 최저 | un 유일] · d [할인가, 종료일, 종료 후 가격]마다 [값, 구분] · p [적용 기간, 근거] · n 비고 · t 칩 [이름, 구분] · f 강조는 채움만
+const COMPARE = /*DATA:COMPARE*/;
+function compareTable(e){
+  const T = COMPARE[e.mid]; if (!T) return "";
+  const span = T.items.length + (T.disc ? 3 : 0) + 3;
+  const td = ([v, k], f, x) => `<td class="v${k ? " sct-" + k : ""}${f && (k === "lo" || k === "un") ? " sct-fill" : ""}${x ? " " + x : ""}">${esc(v)}</td>`;
+  const tr = (r, ex) => `<tr${ex ? ` class="sct-ex"` : ""}><td class="sct-who"><span class="sct-rt">${esc(r.w[0])} · </span>${esc(r.w[1])}${(r.t || []).map(([t, k]) => `<span class="sct-tag sct-t-${k}">${esc(t)}</span>`).join("")}</td>`
+    + r.c.map(c => td(ex ? [c[0], ""] : c, r.f)).join("")
+    + (T.disc ? (r.d || []).map(c => td(ex && c[1] !== "gy" ? [c[0], ""] : c, r.f, "sct-d")).join("") : "")
+    + `<td class="v">${esc(r.p[0])}${r.p[1] ? `<small>${esc(r.p[1])}</small>` : ""}</td><td class="sct-note">${esc(r.n || "–")}</td></tr>`;
+  const head = `<tr><th>공급사</th>${T.items.map(x => `<th>${esc(x)}</th>`).join("")}${T.disc ? "<th>할인가</th><th>종료일</th><th>종료 후 가격</th>" : ""}<th>적용 기간</th><th>비고</th></tr>`;
+  const body = T.groups.map(([g, rows]) => `<tr class="sct-gh"><td colspan="${span}">${esc(g)}</td></tr>${rows.map(r => tr(r)).join("")}`).join("")
+    + (T.ex.length ? `<tr class="sct-gh"><td colspan="${span}">비교 제외 ${T.ex.length}</td></tr>${T.ex.map(r => tr(r, true)).join("")}` : "");
+  return `<section class="sct" aria-label="공급사 비교 표"><h4>공급사 비교 표<small>가격 기준 ${esc(T.at)} 관측 · ${esc(T.unit)}</small></h4>
+    <div class="sct-scroll"><table class="sct-t"><thead>${head}</thead><tbody>${body}</tbody></table></div>
+    <p class="sct-key"><span class="sct-lo">최저</span><span class="sct-un">유일</span><span class="sct-gy">종료·미확인</span><span class="sct-dash">비교 제외</span><span class="sct-tag sct-t-con">출처 상충</span>테두리는 정밀도가 적힌 행, 추정·상태 저하·가격 변동 큼·비공개 모델 행은 채움만${T.disc ? ` · 할인가·종료 후 가격은 ${esc(T.items.join(" / "))} 순` : ""}</p>
+    ${T.special ? `<div class="sct-sp"><h5>특이사항</h5><p>${esc(T.special)}</p></div>` : ""}${(T.foot || []).map(x => `<p class="cnd note">${esc(x)}</p>`).join("")}</section>`;
+}
 const sec = (title, meta, body, open) => `<details class="sec"${open ? " open" : ""}><summary>${title}${meta ? ` <small>${meta}</small>` : ""}</summary><div class="secb">${body}</div></details>`;
 function renderDetail(){
   const e = EVENTS.find(x => x.id === state.sel), el = document.getElementById("detail");
@@ -1190,7 +1242,7 @@ function renderDetail(){
     ${e.link && EVENTS.some(x => x.id === e.link[0]) ? (l => `<div class="lk"><span>함께 볼 이벤트</span><b>${esc(l.m)} · ${esc(l.ch)}</b><span>${esc(e.link[1])}</span><button type="button" data-id="${esc(l.id)}">열기 →</button></div>`)(EVENTS.find(x => x.id === e.link[0])) : ""}
     ${keyChange(e)}${TREND[e.mid] ? `<button type="button" class="tlink" data-trend="${esc(e.mid)}">${esc(TREND[e.mid].name)} 가격 추이 보기 →</button>` : ""}`;
   const parts = [];
-  if (e.chg && e.chg.length) parts.push(sec("바뀐 내용", changeMeta(e), changeTable(e)));
+  if ((e.chg && e.chg.length) || COMPARE[e.mid]) parts.push(sec("바뀐 내용", changeMeta(e), (e.chg && e.chg.length ? changeTable(e) : "") + compareTable(e)));
   parts.push(sec("렛서에 주는 영향", "", impactHtml(e), true));
   parts.push(sec("제안", "", suggestHtml(e), true));
   if (e.ev && e.ev.length) parts.push(sec("출처", `${e.ev.length}건`, `<ul class="srcs">${e.ev.map(([n, t]) => { const s = SRC[n] || {nm:n}; const q = t == null ? "" : Array.isArray(t) ? `이전 “${esc(t[0])}” → 현재 “${esc(t[1])}”` : esc(t);

@@ -241,6 +241,20 @@ python3 -B -m scripts.market_collection.dashboard --root data/market_collection 
 - 탭마다 선은 6개까지다(템플릿 색 s1~s6). 이벤트가 있는 선을 먼저 남기고, 뺀 선의 개수와 이름은 설명에 적는다("선이 6개를 넘어 뺀 선 N개: ...").
 - 예정 점을 그리지 않은 선은 마지막 관측의 `effective_until`(하나일 때)까지만 그린다.
 
+## 공급사 비교 표 (2026-10-25~27 검토 결정)
+
+카드 상세 '바뀐 내용'(접힌 칸)의 바뀐 내용 표 아래에 그 카드 모델의 공급사 비교 표를 둔다. LLM 모델에만 있고(영상·이미지는 묶음 규칙이 없다), 추천 문구는 없다.
+
+- 코드: 계산 `scripts/market_collection/dashboard/compare.py`, 데이터 자리표시자 `COMPARE`(모델 id → 표, `build.py` `collect()` 끝과 `empty()`), 그리기 `template.html`의 `.sct` CSS 묶음과 `compareTable()`(`changeTable()` 바로 뒤), `renderDetail()`의 '바뀐 내용' 한 줄. 테스트 `tests/market_collection/test_dashboard_compare.py`.
+- 입력(읽기만): `<root>/runs`에서 엔진이 처리한 가장 새 수집 run(`report.json` `processed_runs`)을 `evidence.load_run`으로 읽는다. 비교 제외 관측은 state.json에 금액이 없어 run CSV를 쓰고, 같은 run의 Vercel 엔드포인트 원문에서 행 안 등급·지역·피크 가격을 읽는다. 적용 기간·가격 변동 큼·관측 끊김은 state.json과 events.json, Vercel 할인 칸은 events.json의 한시 할인 공지에서 온다. run을 읽을 수 없으면 표가 없고, 표 계산 오류는 표만 빼고 traceback을 stderr에 남긴다.
+- 표: 행은 경로 · 하위 공급처(OpenRouter 태그, Vercel 공급처, 직접 경로 id), 열은 입력·출력·캐시 읽기(USD / 100만 토큰), 한시 할인 3칸(할인가·종료일·종료 후 가격, 있을 때만), 적용 기간, 비고. 위에 '가격 기준 M/D HH:MM 관측'. 캐시 쓰기는 TTL이 대부분 미기재라 뺐다.
+- 묶음: 정밀도(fp4에 mxfp4·nvfp4, fp8에 mxfp8, 비공개 모델은 '비공개') · 지역(US·EU 등) · 등급(Standard·Priority·Ultrafast·Flex·Batch) · 입력 구간이 같은 행끼리만 비교한다. OpenRouter 표기 fast 등은 Priority, us-east-1 등은 US로 묶고 원래 표기는 비고에, global은 지역 없음. Vercel 행 안 등급·지역 가격은 별도 행이고 정밀도는 그 Vercel 행이 적은 값만 쓴다.
+- 강조: 열마다 최저 민트(동점 모두), 비교할 행이 하나면 남색 '유일', 종료일은 가장 늦은 날짜. 정밀도가 적힌 행은 채움+테두리, 추정·상태 -1/-2·가격 변동 큼·비공개 모델 행은 채움만. 회색 종료·미확인, 점선 비교 제외(표 아래, 비고에 사유), 주황 출처 상충. 추정 수치와 '최소' 날짜는 강조하지 않는다.
+- 정밀도가 빈 행은 다른 게이트웨이의 같은 공급처·등급·가격 행 표기를 '추정'으로 빌린다. 10/26 손 조사 결과는 `DOC_PRECISION`·`DOC_UNCLEAR`·`DOC_NOTE`에 있다(가격이 같으면 확인, 다르면 추정).
+- 할인 칸: OpenRouter 할인은 표시 가격으로 비교하고 종료 후 가격 = 표시 ÷ (1 − 할인율) '(추정)'. Google 직접·Vertex 예정 인상은 현재가·마지막 날·새 가격, 그 일정과 맞는 OpenRouter 할인 행 종료일은 '12/31 (추정 · 공급사 문서 기준)'. Vercel 공지는 인용문의 하위 공급처 행(없으면 경로 전체)에 붙고 끝난 할인은 7일 뒤 빠진다.
+- 적용 기간: 가격 변경 이벤트가 있으면 '변경 관측', 없으면 엔드포인트의 첫 관측 run('첫 관측', 첫 수집일 10/16이면 '수집 시작일').
+- 한계: 7일 규칙은 생성일 기준이라 `?base=`로 다시 계산하지 않는다. 엔진이 비교에서 뺀 행은 가격 변경 기록이 없어 첫 관측만 보이고 가격 변동 큼도 판정하지 않는다. 공개 가중치 여부는 데이터에 칸이 없어 모델 계열(deepseek·glm·kimi)로 정한다. 결정 4-3('공식 확인 전' 값은 사유별 처리)은 처리 방법이 없어 넣지 않았다.
+
 ## 실패·경고 표시
 
 - 아래 경우에는 카드 없이 "오늘 생성 실패" 배너와 이유를 보인다(exit 0). 어제 화면이 최신처럼 남지 않도록 실패 화면도 그대로 배포한다. 수집 run 목록은 `report.json`을 읽을 수 있으면 채운다.
