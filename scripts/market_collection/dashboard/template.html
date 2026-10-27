@@ -163,10 +163,8 @@ a{color:var(--ink)}
 .lhead span{font-size:12px;color:var(--muted)}
 .lfilter{display:flex;flex-direction:column;gap:6px;padding:0 6px 8px} .lfilter:empty{display:none} .lfilter>div{display:flex;flex-wrap:wrap;align-items:center;gap:5px}
 .lfilter .mchip{height:24px;padding:0 9px;gap:5px;font-size:11.5px}
-.lfilter .mchip[aria-pressed="true"]{background:var(--grey-soft);border-color:var(--line-strong);color:var(--ink)}
-.lfilter .mchip[aria-pressed="true"] small{color:var(--muted);opacity:1}
-.lfilter .mchip[aria-pressed="false"]{border-style:dashed;color:var(--muted)}
-.lfilter .mchip[data-past][aria-pressed="false"]{border-style:solid;color:var(--ink)}
+.lfilter .mchip[data-past][aria-pressed="true"]{background:var(--grey-soft);border-color:var(--line-strong);color:var(--ink)}
+.lfilter.picked .mchip[data-kind][aria-pressed="false"]{border-style:dashed;color:var(--muted)}
 .lfilter .mchip.zero{opacity:.55}
 .lhid{font-size:11.5px;color:var(--muted)}
 .lempty{margin:14px 6px 8px;font-size:13px;color:var(--muted)}
@@ -637,15 +635,16 @@ const byEv = k => Object.fromEntries(EVENTS.filter(e => e[k] !== undefined).map(
 // 수정안: 상세의 7유형과 목록·캘린더 묶음이 어긋나지 않게 한 표에서 정함 (예: Sonnet 캐시 = 조건 변경)
 const T7GROUP = {"가격 변경":"price", "예정 변경":"price", "한시 할인":"price", "조건 변경":"cond", "조건·가격 변경":"cond", "모델 출시":"model", "제공 종료":"model", "공급 경로 변경":"model"};
 const typeOf = e => e.t7 === null ? "data" : T7GROUP[e.t7] || "cond";
-// 목록 거르기: 유형 칩(끈 유형은 숨김) + 날짜(기본은 최근 7일과 앞으로 날짜가 있는 카드). 둘은 AND로 겹친다.
+// 목록 거르기: 유형 칩(누른 유형만 보임, 아무것도 누르지 않으면 전체, 2026-10-27 박건 요청) + 날짜(기본은 최근 7일과 앞으로 날짜가 있는 카드). 둘은 AND로 겹친다.
 // 기준일은 페이지 기준일(TODAY: 생성 시점 KST 날짜, ?base= 를 붙였으면 그 날짜)이다(2026-10-27 결정 19절). 하루 늦게 본 사람도 처리하지 않은 변화를 놓치지 않게 7일을 남긴다.
-// 칩·토글 상태는 저장하지 않아 새로고침하면 처음(모두 켬, 지난 변화 숨김)으로 돌아온다.
+// 칩·토글 상태는 저장하지 않아 새로고침하면 처음(유형 선택 없음, 지난 변화 숨김)으로 돌아온다.
 const PAST_DAYS = 7;
 // 지난 변화 판정: 카드의 cd와 ld 중 늦은 날이 기준일을 포함한 최근 7일보다 앞서야 지난 변화다. ld는 묶음 카드에만 있고, 없는 카드는 cd만 본다.
 // cd는 build.py가 적용일·종료일·게시일·관측일 순으로 채우고, 날짜가 없는 피드 카드는 글의 게시일, 그 밖에는 마지막 관측일로 채운다. 날짜가 하나도 없는 카드는 지난 변화로 센다.
 // 묶음의 cd는 대표 이벤트 하나의 날짜인데 같은 묶음에는 첫 카드로부터 3일 안에 관측된 구성원이 들어오므로, 늦게 관측된 변화가 cd만으로 숨지 않게 ld로 받친다.
 const isPast = e => { const day = [e.cd, e.ld].filter(Boolean).sort().pop(); return !day || days(day) <= -PAST_DAYS; };
-const listOff = new Set();
+const listOn = new Set();
+const kindShown = e => !listOn.size || listOn.has(e.kind);
 let showPast = false;
 // 상세페이지 상단용 7유형 (이벤트유형_분류규칙.md 기준, 10/10 김연우)
 const EV7 = byEv("t7"), EV7SUB = byEv("sub"), EV7FLAG = byEv("flag");
@@ -1160,9 +1159,10 @@ function renderFilter(){
   }
   const byDay = EVENTS.filter(e => showPast || !isPast(e));
   box.querySelectorAll("[data-kind]").forEach(b => { const n = byDay.filter(e => e.kind === b.dataset.kind).length;
-    b.setAttribute("aria-pressed", !listOff.has(b.dataset.kind)); b.classList.toggle("zero", !n); b.querySelector("small").textContent = n; });
+    b.setAttribute("aria-pressed", listOn.has(b.dataset.kind)); b.classList.toggle("zero", !n); b.querySelector("small").textContent = n; });
+  box.classList.toggle("picked", listOn.size > 0);
   box.querySelector("[data-past]").setAttribute("aria-pressed", showPast);
-  const hid = showPast ? 0 : EVENTS.filter(e => !listOff.has(e.kind) && isPast(e)).length;
+  const hid = showPast ? 0 : EVENTS.filter(e => kindShown(e) && isPast(e)).length;
   box.querySelector(".lhid").textContent = hid ? `지난 변화 ${hid}건 숨김` : "";
 }
 // 정렬: 추천 순(Suggested Action → 급한 순) · 적용일 순(급한 순 → Suggested Action) · 유형별(종류 묶음 안에서 급한 순)
@@ -1173,13 +1173,13 @@ function queueRow(e){ return `<li>
       <span class="t"><span class="qbadges">${qchips(e)}</span><b>${esc(e.sum)}${e.done ? `<span class="tags"><span class="tg">결정됨</span></span>` : ""}</b><span><span class="qs t7">${esc(EV7[e.id] || "수집 확인")}</span>${esc(e.m)} · ${esc(e.ch)}</span></span>
     </button></li>`; }
 function renderQueue(){
-  const list = EVENTS.filter(e => !listOff.has(e.kind) && (showPast || !isPast(e)));
+  const list = EVENTS.filter(e => kindShown(e) && (showPast || !isPast(e)));
   // 선택은 거르기와 무관하다: 주소의 #id나 캘린더에서 고른 카드는 목록에서 숨겨져도 상세에 남는다. 처음 고를 때만 보이는 카드를 먼저 본다.
   if (!state.sel || !EVENTS.some(e => e.id === state.sel)) state.sel = (list.length ? list : EVENTS).slice().sort((a, b) => actOrder(a) - actOrder(b) || cmpU(a, b))[0]?.id;
   renderFilter();
   document.getElementById("qsort").value = state.queueSort;
   document.getElementById("lt").textContent = `전체 변화 ${list.length}`;
-  const none = EVENTS.length ? `<p class="lempty">${listOff.size ? "선택한 유형의 " : ""}${showPast ? "" : "최근 7일과 앞으로의 "}변화 0건</p>` : "";
+  const none = EVENTS.length ? `<p class="lempty">${listOn.size ? "선택한 유형의 " : ""}${showPast ? "" : "최근 7일과 앞으로의 "}변화 0건</p>` : "";
   if (state.queueSort !== "type") { document.getElementById("queue").innerHTML = list.length ? `<ul class="rows">${list.slice().sort(queueCmp).map(queueRow).join("")}</ul>` : none; return; }
   const groups = Object.keys(TYPE).map(k => [k, list.filter(e => typeOf(e) === k).sort((a, b) => cmpU(a, b) || actOrder(a) - actOrder(b))]).filter(([, l]) => l.length);
   document.getElementById("queue").innerHTML = groups.map(([k, l]) => `<section class="grp" aria-label="${TYPE[k].ko}"><h3><i class="ti-${k}"></i>${TYPE[k].ko} ${l.length}</h3><ul class="rows">${l.map(queueRow).join("")}</ul></section>`).join("") || none;
@@ -1308,7 +1308,7 @@ document.addEventListener("click", ev => {
   const tr = ev.target.closest("[data-trend]"); if (tr) { trendModel = tr.dataset.trend; trendMeasure = 0; trendTier = "Standard"; renderPrice(); document.getElementById("trend").scrollIntoView({behavior: REDUCE ? "auto" : "smooth", block: "start"}); return; }
   const mn = ev.target.closest("[data-mon]");
   if (mn) { if (!mn.disabled) { calMonth = mn.dataset.mon === "today" ? monthOf(TODAY) : addMonth(calMonth, +mn.dataset.mon); renderCalendar(); } return; }
-  const kb = ev.target.closest("[data-kind]"); if (kb) { const k = kb.dataset.kind; listOff.has(k) ? listOff.delete(k) : listOff.add(k); refilter(); return; }
+  const kb = ev.target.closest("[data-kind]"); if (kb) { const k = kb.dataset.kind; listOn.has(k) ? listOn.delete(k) : listOn.add(k); refilter(); return; }
   const pb = ev.target.closest("[data-past]"); if (pb) { showPast = !showPast; refilter(); return; }
   const r = ev.target.closest("[data-id]"); if (!r) return;
   const inList = !!r.closest("#queue");

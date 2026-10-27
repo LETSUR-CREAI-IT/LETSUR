@@ -818,6 +818,16 @@ def test_undated_card_shows_its_basis_in_the_list_and_the_whole_reason_on_hover_
     assert 'esc([e.effShort, e.effNote].filter(Boolean).join(" · ") || "미확인")' in page
 
 
+def test_type_chips_show_only_the_picked_types(tmp_path):
+    """2026-10-27 박건 request: a pressed type chip shows only its type (more chips add types); none pressed shows all."""
+    _write(tmp_path, [])
+    page = _build(tmp_path)[1]
+    assert "const kindShown = e => !listOn.size || listOn.has(e.kind);" in page
+    assert "listOn.has(k) ? listOn.delete(k) : listOn.add(k);" in page
+    assert 'b.setAttribute("aria-pressed", listOn.has(b.dataset.kind));' in page
+    assert "listOff" not in page
+
+
 def test_template_says_when_a_linked_card_is_not_on_the_page(tmp_path):
     """2026-10-27 decision 26-6: a #card id the page lacks opens the top card with a notice, cleared once a card is chosen."""
     _write(tmp_path, [])
