@@ -788,3 +788,12 @@ def test_undated_feed_card_takes_its_article_day_and_signal_cards_their_last_see
     assert build.seen_day([discount], feed) == "2026-10-27"
     gone = dict(discount, sources=[{"source_key": "openrouter_endpoints_glm_5_2", "quote": "Other (other/fp8): pricing.discount=0.1"}])
     assert build.seen_day([gone], feed) == "2026-10-16"
+
+
+def test_template_says_when_a_linked_card_is_not_on_the_page(tmp_path):
+    """2026-10-27 decision 26-6: a #card id the page lacks opens the top card with a notice, cleared once a card is chosen."""
+    _write(tmp_path, [])
+    page = _build(tmp_path)[1]
+    assert "if (!EVENTS.some(e => e.id === state.sel)) missingLink = state.sel;" in page
+    assert "링크한 카드(#${esc(missingLink)})를 이 페이지에서 찾지 못했습니다." in page
+    assert "state.sel = id; missingLink = \"\";" in page

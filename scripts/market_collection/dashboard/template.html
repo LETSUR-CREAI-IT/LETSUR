@@ -126,6 +126,7 @@ a{color:var(--ink)}
 .ev[aria-current="true"]{outline:2px solid var(--ink);opacity:1}
 .more-ev{padding-left:4px;font-size:10.5px;color:var(--muted)}
 .qt{flex:none;display:inline-block;padding:0 3px;border:1px solid var(--amber);border-radius:3px;font-size:9.5px;font-weight:700;line-height:13px;color:var(--amber);vertical-align:1px}
+.linkmiss{margin:0 0 10px;padding:6px 10px;border-radius:6px;background:var(--amber-soft);color:var(--amber);font-size:12.5px;overflow-wrap:anywhere}
 .ev.drv{outline:1.5px dashed var(--amber);outline-offset:-1.5px}
 .drvk{display:inline-block;width:14px;height:10px;margin-right:4px;border:1.5px dashed var(--amber);border-radius:3px;vertical-align:-1px}
 .lk{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin-top:12px;padding:10px 12px;border:1px dashed var(--line-strong);border-radius:10px;font-size:13px;color:var(--body)}
@@ -592,7 +593,10 @@ function cmpU(a, b){ const x = urgency(a), y = urgency(b); for (let i = 0; i < x
 function tableHtml(head, rows){ return `<table><thead><tr>${head.map(h => `<th>${esc(h)}</th>`).join("")}</tr></thead><tbody>${rows.map(r => `<tr>${r.map(c => `<td>${esc(c)}</td>`).join("")}</tr>`).join("")}</tbody></table>`; }
 
 let state = {filter:"all", sel:null, queueSort:"recommended"};
-try { const h = location.hash.slice(1); if (h) state.sel = decodeURIComponent(h); } catch (e) {}
+// 주소의 #카드id가 이 페이지에 없으면 맨 위 카드를 보이되 그렇다고 알린다(2026-10-27 결정 26-6). 카드 id는 엔진 묶음 키로 만들어서,
+// 묶음이 바뀌면 옛 슬랙 메시지의 링크가 없는 id가 될 수 있다. 다른 카드를 고르면 안내는 사라진다.
+let missingLink = "";
+try { const h = location.hash.slice(1); if (h) { state.sel = decodeURIComponent(h); if (!EVENTS.some(e => e.id === state.sel)) missingLink = state.sel; } } catch (e) {}
 
 // ---- 변화 종류 ----
 const TYPE = {price:{ko:"가격 알림"}, model:{ko:"모델·경로 변경"}, cond:{ko:"조건 변경"}, data:{ko:"표기 확인"}};
@@ -1179,7 +1183,7 @@ function renderDetail(){
   const e = EVENTS.find(x => x.id === state.sel), el = document.getElementById("detail");
   if (!e) { el.innerHTML = `<p class="unknown">이 칸에 해당하는 변화가 없습니다.</p>`; return; }
   const eff = e.eff ? `${md(e.eff)} (${wd(e.eff)}) ${ddHtml(e)}${e.effQual ? ` <b class="qt" title="${esc(e.effQual)}">해석</b>` : ""}` : esc(e.effNote || "미확인");
-  let h = `<div class="dmeta">${typeHead(e)}${costChip(e)}<span class="who">${esc(e.m)}</span><span>${esc(e.ch)}</span>${e.real ? `<span class="tg real">실제 · 공개 출처</span>` : `<span class="tg">시연 데이터</span>`}${e.done ? `<span class="tg">결정됨</span>` : ""}</div>
+  let h = `${missingLink ? `<p class="linkmiss" role="status">링크한 카드(#${esc(missingLink)})를 이 페이지에서 찾지 못했습니다. 아래는 목록 맨 위 카드입니다.</p>` : ""}<div class="dmeta">${typeHead(e)}${costChip(e)}<span class="who">${esc(e.m)}</span><span>${esc(e.ch)}</span>${e.real ? `<span class="tg real">실제 · 공개 출처</span>` : `<span class="tg">시연 데이터</span>`}${e.done ? `<span class="tg">결정됨</span>` : ""}</div>
     <h2 class="headline">${e.head || esc(e.sum)}</h2>
     <div class="decide"><div class="next"><div class="k">다음 할 일 <span class="qbadges" style="display:inline-flex">${qchips(e)}</span></div><div class="v">${nextHtml(e)}</div></div><div><div class="k">${esc(e.effLabel || "적용일")}</div><div class="v">${eff}</div></div>
       <div><div class="k">현재 사용 경로${e.relDemo ? ` <span class="tg">가정</span>` : ""}</div><div class="v">${esc(e.relShort || e.rel)}</div></div></div>
@@ -1236,7 +1240,7 @@ function showSel(){ const q = document.getElementById("queue"), r = q.querySelec
   const a = q.getBoundingClientRect(), b = r.getBoundingClientRect();
   if (b.top < a.top || b.bottom > a.bottom) q.scrollTop += b.top - a.top - (q.clientHeight - b.height) / 2; }
 function select(id, scroll){ const e = EVENTS.find(x => x.id === id); if (!e) return;
-  state.sel = id; try { history.replaceState(null, "", "#" + id); } catch (err) {}
+  state.sel = id; missingLink = ""; try { history.replaceState(null, "", "#" + id); } catch (err) {}
   if (e.eff) calMonth = monthOf(e.eff);
   renderCalendar(); renderQueue(); renderDetail();
   if (scroll) { showSel(); document.getElementById("detail").scrollIntoView({behavior: REDUCE ? "auto" : "smooth", block: "start"}); } }
