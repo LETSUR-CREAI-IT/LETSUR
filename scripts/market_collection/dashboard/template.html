@@ -48,6 +48,7 @@ a{color:var(--ink)}
 .top .tool{color:var(--nav-muted);font-size:13px;padding-left:16px;border-left:1px solid #3a3f3d;white-space:nowrap}
 .top .base{margin-left:auto;color:var(--nav-muted);font-size:12.5px;white-space:nowrap}
 @media (max-width:640px){.top{padding-inline:16px;gap:12px}.top .tool{display:none}}
+@media (max-width:640px){.top{flex-wrap:wrap;row-gap:6px;padding-block:8px}.top .base{margin-left:0}}  /* 화면 탭이 들어가 좁으면 줄을 바꾼다 */
 
 .wrap{max-width:1380px;margin:0 auto;padding-inline:24px;padding-block:22px 56px;display:flex;flex-direction:column;gap:22px}
 @media (max-width:640px){.wrap{padding-inline:16px}}
@@ -403,10 +404,27 @@ td small{display:block;font-size:11.5px;color:var(--muted)}
 .tfoot .tv{margin-top:2px}
 .tfoot .tv p{margin:6px 0 0;max-width:900px;line-height:1.6}
 .tnote b{color:var(--body);font-weight:650}
-.mpick{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;margin-top:8px;padding-top:8px;border-top:1px solid var(--line)}
-.mpick h3{display:none}
-.mgrp{display:flex;flex-wrap:wrap;align-items:center;gap:5px}
-.mgrp>span{margin-right:2px;font-size:11px;font-weight:650;color:var(--muted)}
+/* 화면 탭(2026-10-28 박건 요청): 변화 | 모델별 가격. body[data-page]가 보일 칸을 정한다. */
+.ptabs{display:flex;gap:4px}
+.ptabs button{height:30px;padding:0 12px;border:0;border-radius:8px;background:none;color:var(--nav-muted);font-size:13px;font-weight:650;cursor:pointer;white-space:nowrap}
+.ptabs button:hover{color:var(--nav-ink)}
+.ptabs button[aria-selected="true"]{background:var(--surface);color:var(--ink)}
+body[data-page="models"] .summary-grid,body[data-page="models"] .hero,body[data-page="models"] .work{display:none}
+body:not([data-page="models"]) .mpage{display:none}
+.mpage{display:grid;grid-template-columns:minmax(0,230px) minmax(0,1fr);gap:16px;align-items:start}
+.mcol{display:flex;flex-direction:column;gap:16px;min-width:0}
+.mlist{padding:10px;position:sticky;top:12px}
+.mlist h3{margin:12px 8px 4px;font-size:11.5px;font-weight:700;color:var(--muted)}
+.mlist h3:first-child{margin-top:2px}
+.mrow{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;padding:6px 8px;border:0;border-radius:8px;background:none;text-align:left;font-size:13px;color:var(--ink);cursor:pointer}
+.mrow small{font-size:11px;font-weight:600;color:var(--muted);white-space:nowrap}
+.mrow small.up{color:var(--up)} .mrow small.down{color:var(--down)}
+.mrow:hover{background:var(--grey-soft)}
+.mrow[aria-pressed="true"]{background:var(--mint-soft);font-weight:700}
+@media (max-width:900px){.mpage{grid-template-columns:minmax(0,1fr)}.mlist{position:static;display:flex;flex-wrap:wrap;gap:4px}.mlist h3{width:100%}.mrow{width:auto}}
+.ptable .th{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;margin-bottom:8px}
+.ptable .th h2{margin:0;font-size:14px;font-weight:700;color:var(--ink)}
+.ptable .th span{font-size:12px;color:var(--muted)}
 .mchip{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 10px;border:1px solid var(--line-strong);border-radius:999px;background:var(--surface);font-size:12px;cursor:pointer;color:var(--ink)}
 .mchip small{font-size:10.5px;font-weight:650;color:var(--muted)}
 .mchip small.up{color:var(--up)} .mchip small.down{color:var(--down)}
@@ -415,18 +433,16 @@ td small{display:block;font-size:11.5px;color:var(--muted)}
 .mchip[aria-pressed="true"] small{color:var(--surface);opacity:.85}
 .tlink{margin-top:10px;display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 12px;border:1px solid var(--line-strong);border-radius:8px;background:var(--surface);font-size:12.5px;color:var(--ink);cursor:pointer}
 .tlink:hover{border-color:var(--ink)}
-/* 2026-10-28 가안: 카드 상세의 모델별 가격 링크(가격 추이·현재 가격 표), 모델별 가격 탭, 변동 잦음 묶음 */
+/* 2026-10-28 가안: 카드 상세의 모델별 가격 링크(가격 추이·현재 가격 표), 변동 잦음 묶음 */
 .vgbtn{display:flex;flex-wrap:wrap;gap:0 8px}
 .vgbtn .tlink{height:auto;min-height:30px;padding:4px 12px;flex-wrap:wrap;text-align:left}
 .tlink small{color:var(--muted);font-size:11.5px;font-weight:500}
-.seg.tview{margin-left:0}
 .row.vg{box-shadow:inset 3px 0 0 var(--line-strong)}
 .vgnote{margin:10px 0 0;font-size:13px;line-height:1.6;color:var(--body)}
 .vgh{margin:18px 0 6px;font-size:13px;font-weight:700;color:var(--ink)}
 
 /* ---- v16: 캘린더·그래프 메인, 종류별 목록, 상세 2×2 ---- */
-.hero{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);gap:14px;align-items:stretch}
-@media (max-width:1100px){.hero{grid-template-columns:minmax(0,1fr)}}
+.hero{display:grid;grid-template-columns:minmax(0,1fr);gap:14px;align-items:stretch}  /* 단가 추이는 모델별 가격 화면으로(2026-10-28) */
 .hero>.card{padding:16px 18px}
 .day{min-height:80px}
 .ev{height:22px;font-size:11.5px;gap:4px}
@@ -551,12 +567,13 @@ tr.gh td{padding-top:12px;font-size:12px;font-weight:700;color:var(--muted);back
 <header class="top">
   <img src="data:image/png;base64,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" alt="LETSUR" width="130" height="17">
   <span class="tool">모델 가격·조건 모니터</span>
+  <nav class="ptabs" role="tablist" aria-label="화면"><button type="button" role="tab" data-ptab="changes" aria-selected="true">변화</button><button type="button" role="tab" data-ptab="models" aria-selected="false">모델별 가격</button></nav>
   <span class="base" id="base"></span>
 </header>
 
 <main class="wrap">
   <div class="title">
-    <h1>확인할 변화</h1>
+    <h1 id="ptitle">확인할 변화</h1>
 <!--STATUS-->
     <div class="summary-grid" role="list" aria-label="요약">
       <div class="summary-item" role="listitem"><span class="summary-label">전체 변화</span><strong id="sum-total">0</strong></div>
@@ -568,17 +585,24 @@ tr.gh td{padding-top:12px;font-size:12px;font-weight:700;color:var(--muted);back
     </div>
   </div>
 
-  <section class="hero" aria-label="일정과 단가">
+  <section class="hero" aria-label="일정">
     <div class="card">
       <div class="ch"><h2>일정 캘린더</h2></div>
       <div id="cal"></div>
     </div>
-    <section class="card trend" id="trend" aria-label="단가 추이"></section>
   </section>
 
   <section class="work" aria-label="변화 목록과 상세">
     <nav class="card list" aria-label="변화 목록"><div class="lhead"><h2 id="lt">전체 변화</h2><div class="qtools"><label for="qsort">정렬</label><select id="qsort"><option value="recommended">추천 순</option><option value="date">적용일 순</option><option value="type">유형별</option></select></div></div><div class="lfilter" id="lf"></div><div id="queue"></div></nav>
     <article class="card detail" id="detail" aria-live="polite"></article>
+  </section>
+
+  <section class="mpage" aria-label="모델별 가격">
+    <nav class="card mlist" id="mlist" aria-label="모델 목록"></nav>
+    <div class="mcol">
+      <section class="card trend" id="trend" aria-label="가격 추이"></section>
+      <section class="card ptable" id="ptable" aria-label="현재 가격 표"></section>
+    </div>
   </section>
 
   
@@ -639,8 +663,9 @@ const VG = {}; EVENTS.forEach(e => { if (e.vg) (VG[e.vg] = VG[e.vg] || []).push(
 let state = {filter:"all", sel:null, queueSort:"recommended"};
 // 주소의 #카드id가 이 페이지에 없으면 맨 위 카드를 보이되 그렇다고 알린다(2026-10-27 결정 26-6). 카드 id는 엔진 묶음 키로 만들어서,
 // 묶음이 바뀌면 옛 슬랙 메시지의 링크가 없는 id가 될 수 있다. 다른 카드를 고르면 안내는 사라진다.
-let missingLink = "";
-try { const h = location.hash.slice(1); if (h) { state.sel = decodeURIComponent(h); if (!EVENTS.some(e => e.id === state.sel) && !VG[state.sel]) missingLink = state.sel; } } catch (e) {}
+let missingLink = "", startModel = null;
+// 주소 #m/모델은 모델별 가격 화면이다(2026-10-28).
+try { const h = location.hash.slice(1); if (h.startsWith("m/")) startModel = decodeURIComponent(h.slice(2)); else if (h) { state.sel = decodeURIComponent(h); if (!EVENTS.some(e => e.id === state.sel) && !VG[state.sel]) missingLink = state.sel; } } catch (e) {}
 
 // ---- 변화 종류 ----
 const TYPE = {price:{ko:"가격 알림"}, model:{ko:"모델·경로 변경"}, cond:{ko:"조건 변경"}, data:{ko:"표기 확인"}};
@@ -1010,11 +1035,12 @@ function renderCalendar(){
 const TREND = /*DATA:TREND*/;
 // ---- 수집 run 목록: report.json processed_runs의 run 시각(KST) ----
 const COLLECTED = /*DATA:COLLECTED*/;
-// 수정안: 그래프 모델 버튼을 이벤트 모델 / 그 밖의 수집 모델로 묶음
-const TREND_GROUPS = [...new Set(Object.values(TREND).map(m => m.group || "이벤트 모델"))].map(g => [g, Object.keys(TREND).filter(k => (TREND[k].group || "이벤트 모델") === g)]);
-let trendModel = Object.keys(TREND)[0], trendMeasure = 0, trendTier = "Standard";
-// 모델별 가격(2026-10-28 가안): 가격 추이 그래프와 현재 가격 표(공급사 비교 표, 카드 상세에서 옮김)를 탭으로 바꿔 본다.
-let trendView = "chart";
+// 모델별 가격 화면의 모델 목록(2026-10-28 박건 요청): 만든 회사별로 묶고 회사·모델 이름순. 회사는 모델 id 앞부분으로 정한다.
+const MAKERS = [["claude", "Anthropic"], ["seedance", "ByteDance"], ["deepseek", "DeepSeek"], ["gemini", "Google"], ["kimi", "Moonshot AI"], ["gpt", "OpenAI"], ["glm", "Z.AI"]];
+const makerOf = k => (MAKERS.find(([p]) => k.startsWith(p)) || ["", "기타"])[1];
+const MODEL_GROUPS = [...new Set(Object.keys(TREND).map(makerOf))].sort((a, b) => (a === "기타") - (b === "기타") || a.localeCompare(b))
+  .map(g => [g, Object.keys(TREND).filter(k => makerOf(k) === g).sort((a, b) => TREND[a].name.localeCompare(TREND[b].name, undefined, {numeric: true}))]);
+let trendModel = (MODEL_GROUPS[0] || ["", []])[1][0], trendMeasure = 0, trendTier = "Standard";
 // 비교 모드: 탭은 정밀도·지역·등급까지 나뉘어 한 탭 안의 선은 공급처가 달라도 같은 조건이다. 엄격 비교는 그 선만, 전체 관측은 조건이 정해지지 않은
 // 참고 선(ref: 표시 최소가 같은 대표가, 비교 표가 상태로 빼는 엔드포인트)도 함께 본다(2026-10-27 결정 26-2).
 let trendCompare = "strict";
@@ -1057,7 +1083,17 @@ function trendStats(M, mi){
     tile("다음 예정", next ? `${md(next.d)}${pct(next)}` : note ? `${md(note[0])}<small class="up">${ddTxt(note[0])}</small>` : "없음",
       next ? `${esc(next.s)} · ${ddTxt(next.d)}` : note ? esc(note[1]) : "알려진 예정 없음");
 }
+function renderModelList(){
+  document.getElementById("mlist").innerHTML = MODEL_GROUPS.map(([g, ks]) => `<h3>${esc(g)}</h3>${ks.map(k => `<button type="button" class="mrow" data-model="${esc(k)}" aria-pressed="${k === trendModel}"><span>${esc(TREND[k].name)}</span><small class="${TREND[k].badge[1]}">${esc(TREND[k].badge[0])}</small></button>`).join("")}`).join("");
+}
+// 현재 가격 표: 공급사 비교 표를 모델별 가격 화면의 가격 추이 아래에 둔다(2026-10-28 가안, 카드 상세에는 링크만).
+function renderTable(){
+  const el = document.getElementById("ptable"), T = COMPARE[trendModel];
+  el.hidden = !T;
+  el.innerHTML = T ? `<div class="th"><h2>현재 가격 표</h2><span>${compareMeta(trendModel)}</span></div>${compareTable(trendModel)}` : "";
+}
 function renderPrice(){
+  renderModelList(); renderTable();
   // 수정안: 등급(tiers)이 있으면 고른 등급의 선만
   if (!TREND[trendModel]) { const p = document.createElement("p"); p.className = "unknown"; p.textContent = "단가 추이: 그릴 수 있는 관측 단가가 없습니다."; document.getElementById("trend").replaceChildren(p); return; }
   const M0 = TREND[trendModel], tierKeys = M0.tiers ? Object.keys(M0.tiers) : [], tier = M0.tiers && M0.tiers[trendTier] ? trendTier : tierKeys[0];
@@ -1066,14 +1102,7 @@ function renderPrice(){
   const colors = ["var(--s1)", "var(--s2)", "var(--s3)", "var(--s4)", "var(--s5)", "var(--s6)"];
   const lg = M.series.map((s, i) => { const p = valueAt(s, TODAY, mi), v = p ? pv(p, mi) : null;
     return `<span style="color:${colors[i]}"><i></i><b>${esc(s.name)}</b><small>${p == null ? "아직 없음" : v == null ? "미게시" : "현재 " + money2(v)}${s.obsOnly ? " · 관측" : ""}</small></span>`; }).join("");
-  const chips = TREND_GROUPS.map(([g, ks]) => `<div class="mgrp"><span>${g}</span>${ks.map(k => `<button type="button" class="mchip" data-model="${esc(k)}" aria-pressed="${k === trendModel}">${esc(TREND[k].name)}<small class="${TREND[k].badge[1]}">${esc(TREND[k].badge[0])}</small></button>`).join("")}</div>`).join("");
-  const view = trendView === "table" && COMPARE[trendModel] ? "table" : "chart";
-  const views = `<span class="seg tview" role="group" aria-label="보기">${[["chart", "가격 추이"], ["table", "현재 가격 표"]].map(([k, l]) => `<button type="button" data-tview="${k}" aria-pressed="${k === view}"${k === "table" && !COMPARE[trendModel] ? " disabled" : ""}>${l}</button>`).join("")}</span>`;
-  if (view === "table") {
-    el.innerHTML = `<div class="th"><h2>모델별 가격</h2>${views}<span class="mname">${esc(M.name)}</span><span class="unit">${compareMeta(trendModel)}</span></div>${compareTable(trendModel)}<div class="mpick">${chips}</div>`;
-    return;
-  }
-  el.innerHTML = `<div class="th"><h2>모델별 가격</h2>${views}<span class="mname">${esc(M.name)}</span><span class="unit">${esc(M.unit)}${M.real ? " · 실제" : " · 시연 데이터"}</span>
+  el.innerHTML = `<div class="th"><h2>가격 추이</h2><span class="mname">${esc(M.name)}</span><span class="unit">${esc(M.unit)}${M.real ? " · 실제" : " · 시연 데이터"}</span>
       <span class="tctl"><span class="rng" role="group" aria-label="기간">${T_RANGES.map(([k, l]) => `<button type="button" data-rng="${k}" aria-pressed="${k === trendRange}">${l}</button>`).join("")}</span>
       ${tierKeys.length ? `<span class="seg ttabs" role="group" aria-label="가격 조건">${tierKeys.map(k => `<button type="button" data-tier="${esc(k)}" aria-pressed="${k === tier}" title="${esc((M.conds || {})[k] || k)}">${esc(k)}</button>`).join("")}</span>` : ""}
       ${M.measures.length > 1 ? `<span class="seg" role="group" aria-label="단가 종류">${M.measures.map((m, i) => `<button type="button" data-meas="${i}" aria-pressed="${i === mi}">${m}</button>`).join("")}</span>` : ""}</span></div>
@@ -1082,8 +1111,7 @@ function renderPrice(){
     <div class="tstats">${trendStats(M, mi)}</div>
     <div class="lg">${lg}</div><div class="tplot" id="tplot"></div>
     <div class="tfoot"><p class="tnote">${overlapNote(M, mi)}올리면 날짜별 값, 점을 누르면 상세로 이동</p>
-      <details class="tv"><summary>출처·설명 · 표로 보기</summary><p>${esc(M.note)}</p>${cmp.excluded.length ? `<p class="cmpwarn">엄격 비교에서 뺀 참고 선(조건이 정해지지 않은 선: 표시 최소가·중단 등 비교에서 빠진 상태의 엔드포인트):${esc(cmp.excluded.map(x => plain(x.name)).join(", "))}. 전체 관측에서 볼 수 있습니다.</p>` : ""}<div id="trend-tv"></div></details></div>
-    <div class="mpick">${chips}</div>`;
+      <details class="tv"><summary>출처·설명 · 표로 보기</summary><p>${esc(M.note)}</p>${cmp.excluded.length ? `<p class="cmpwarn">엄격 비교에서 뺀 참고 선(조건이 정해지지 않은 선: 표시 최소가·중단 등 비교에서 빠진 상태의 엔드포인트):${esc(cmp.excluded.map(x => plain(x.name)).join(", "))}. 전체 관측에서 볼 수 있습니다.</p>` : ""}<div id="trend-tv"></div></details></div>`;
   drawPrice(M, mi, colors);
   document.getElementById("trend-tv").innerHTML = tableHtml(["경로", "날짜", M.measures[mi], "비고"], M.series.flatMap(s => s.pts.map(p => [s.name, String(p[0]).replace("T", " "), pv(p, mi) == null ? "미게시" : money2(pv(p, mi)), p[3] === "unk" ? "시작 시점 기록 없음" : day(p[0]) > TODAY ? "예정" : ""])));
 }
@@ -1357,7 +1385,21 @@ const REDUCE = matchMedia("(prefers-reduced-motion: reduce)").matches;
 function showSel(){ const q = document.getElementById("queue"), r = q.querySelector("[aria-current=true]"); if (!r) return;
   const a = q.getBoundingClientRect(), b = r.getBoundingClientRect();
   if (b.top < a.top || b.bottom > a.bottom) q.scrollTop += b.top - a.top - (q.clientHeight - b.height) / 2; }
+// 화면 탭(2026-10-28 박건 요청): 변화(요약·캘린더·목록·상세) | 모델별 가격(모델 목록·가격 추이·현재 가격 표).
+// 주소는 변화가 #카드id, 모델별 가격이 #m/모델이다. target이 있으면 그 칸(가격 추이 'chart', 현재 가격 표 'table')으로 내려간다.
+function setPage(p, model, target){
+  document.body.dataset.page = p;
+  document.querySelectorAll("[data-ptab]").forEach(b => b.setAttribute("aria-selected", String(b.dataset.ptab === p)));
+  document.getElementById("ptitle").textContent = p === "models" ? "모델별 가격" : "확인할 변화";
+  if (p !== "models") { try { history.replaceState(null, "", state.sel ? "#" + state.sel : location.pathname + location.search); } catch (err) {} return; }
+  if (model && TREND[model] && model !== trendModel) { trendModel = model; trendMeasure = 0; trendTier = "Standard"; }
+  renderPrice();
+  try { history.replaceState(null, "", "#m/" + encodeURIComponent(trendModel)); } catch (err) {}
+  const to = target === "table" && COMPARE[trendModel] ? "ptable" : target ? "trend" : null;
+  if (to) document.getElementById(to).scrollIntoView({behavior: REDUCE ? "auto" : "smooth", block: "start"});
+}
 function select(id, scroll){ const e = EVENTS.find(x => x.id === id); if (!e && !VG[id]) return;
+  if (document.body.dataset.page === "models") setPage("changes");
   state.sel = id; missingLink = ""; try { history.replaceState(null, "", "#" + id); } catch (err) {}
   if (e && e.eff) calMonth = monthOf(e.eff);
   renderCalendar(); renderQueue(); renderDetail();
@@ -1365,13 +1407,13 @@ function select(id, scroll){ const e = EVENTS.find(x => x.id === id); if (!e && 
 function refilter(){ renderQueue(); document.getElementById("queue").scrollTop = 0; }
 document.addEventListener("change", ev => { if (ev.target && ev.target.id === "qsort") { state.queueSort = ev.target.value; refilter(); } });
 document.addEventListener("click", ev => {
-  const md_ = ev.target.closest("[data-model]"); if (md_) { trendModel = md_.dataset.model; trendMeasure = 0; trendTier = "Standard"; renderPrice(); return; }
+  const pg = ev.target.closest("[data-ptab]"); if (pg) { setPage(pg.dataset.ptab); window.scrollTo(0, 0); return; }
+  const md_ = ev.target.closest("[data-model]"); if (md_) { setPage("models", md_.dataset.model); return; }
   const tt = ev.target.closest("[data-tier]"); if (tt) { trendTier = tt.dataset.tier; renderPrice(); return; }
   const ms = ev.target.closest("[data-meas]"); if (ms) { trendMeasure = +ms.dataset.meas; renderPrice(); return; }
   const cm = ev.target.closest("[data-cmp]"); if (cm) { trendCompare = cm.dataset.cmp; renderPrice(); return; }
   const rg = ev.target.closest("[data-rng]"); if (rg) { trendRange = rg.dataset.rng; renderPrice(); return; }
-  const tv = ev.target.closest("[data-tview]:not([data-trend])"); if (tv) { if (!tv.disabled) { trendView = tv.dataset.tview; renderPrice(); } return; }
-  const tr = ev.target.closest("[data-trend]"); if (tr) { trendModel = tr.dataset.trend; trendMeasure = 0; trendTier = "Standard"; trendView = tr.dataset.tview || "chart"; renderPrice(); document.getElementById("trend").scrollIntoView({behavior: REDUCE ? "auto" : "smooth", block: "start"}); return; }
+  const tr = ev.target.closest("[data-trend]"); if (tr) { setPage("models", tr.dataset.trend, tr.dataset.tview || "chart"); return; }
   const mn = ev.target.closest("[data-mon]");
   if (mn) { if (!mn.disabled) { calMonth = mn.dataset.mon === "today" ? monthOf(TODAY) : addMonth(calMonth, +mn.dataset.mon); renderCalendar(); } return; }
   const kb = ev.target.closest("[data-kind]"); if (kb) { const k = kb.dataset.kind; listOn.has(k) ? listOn.delete(k) : listOn.add(k); refilter(); return; }
@@ -1403,5 +1445,6 @@ function renderCollected(){
 }
 document.addEventListener("change", ev => { if (ev.target && ev.target.id === "collsel") { collModel = ev.target.value; renderCollected(); } });
 renderMeta(); renderCalendar(); renderPrice(); renderQueue(); renderDetail(); showSel();
+if (startModel !== null) setPage("models", startModel); else document.body.dataset.page = "changes";
 let rzT; window.addEventListener("resize", () => { clearTimeout(rzT); rzT = setTimeout(renderPrice, 150); });
 </script>

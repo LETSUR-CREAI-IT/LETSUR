@@ -452,15 +452,22 @@ def test_frequent_price_changes_of_one_route_share_a_bundle() -> None:
 
 def test_template_bundles_the_list_and_moves_the_table_to_the_model_view(tmp_path: Path) -> None:
     """2026-10-28 가안: the list shows one row per 변동 잦음 bundle at its first member's place, a bundle opens its own detail
-    (#vg) with links to 모델별 가격, and the 공급사 비교 표 is that view's 현재 가격 표 tab. The browser check covers behaviour."""
+    (#vg) with links to 모델별 가격, and the page has two screens, 변화 and 모델별 가격 (model list by maker, 가격 추이, 현재 가격
+    표). The browser check covers behaviour."""
     _write(tmp_path, [])
     page = _build(tmp_path)[1]
     assert "const VG = {}; EVENTS.forEach(e => { if (e.vg) (VG[e.vg] = VG[e.vg] || []).push(e); });" in page
     assert 'list.flatMap(e => !e.vg ? [e] : seen.has(e.vg) ? [] : (seen.add(e.vg), [{vg: e.vg}]))' in page
     assert "bundled(list.slice().sort(queueCmp)).map(rowOf)" in page and "bundled(l).map(rowOf)" in page
     assert "if (VG[state.sel]) { renderBundle(state.sel); return; }" in page
-    assert 'let trendView = "chart";' in page and 'trendView = tr.dataset.tview || "chart";' in page
-    assert '<h2>모델별 가격</h2>${views}' in page
+    # two screens: the tabs live in the header, body[data-page] picks what shows, #m/<model> opens 모델별 가격
+    assert '<button type="button" role="tab" data-ptab="changes" aria-selected="true">변화</button>' in page
+    assert 'body:not([data-page="models"]) .mpage{display:none}' in page and 'if (h.startsWith("m/")) startModel' in page
+    assert '<section class="card trend" id="trend" aria-label="가격 추이"></section>' in page and 'id="ptable"' in page
+    assert 'setPage("models", tr.dataset.trend, tr.dataset.tview || "chart");' in page
+    # models grouped by maker (from the id), makers and models in name order
+    assert 'const MAKERS = [["claude", "Anthropic"], ["seedance", "ByteDance"], ["deepseek", "DeepSeek"], ["gemini", "Google"]' in page
+    assert "TREND[a].name.localeCompare(TREND[b].name, undefined, {numeric: true})" in page
 
 
 def test_observed_condition_change(tmp_path: Path) -> None:
