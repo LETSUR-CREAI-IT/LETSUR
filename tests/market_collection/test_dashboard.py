@@ -797,3 +797,17 @@ def test_template_says_when_a_linked_card_is_not_on_the_page(tmp_path):
     assert "if (!EVENTS.some(e => e.id === state.sel)) missingLink = state.sel;" in page
     assert "링크한 카드(#${esc(missingLink)})를 이 페이지에서 찾지 못했습니다." in page
     assert "state.sel = id; missingLink = \"\";" in page
+
+
+def test_each_feed_entry_gets_its_own_source_chip():
+    """2026-10-27 decision 20: one chip per feed entry with its own link; one chip per run showed one notice on every card."""
+    def notice(url: str, locator: str) -> dict:
+        return {"model_id": "gpt-5.6-sol", "route": "vercel_ai_gateway", "source_key": "vercel_changelog",
+                "evidence_refs": [{"source_key": "vercel_changelog", "run_id": "20261016T070332Z-x", "url": url, "locator": locator}]}
+    sources = build.Sources()
+    first = build.register(notice("https://vercel.com/changelog/a", "feed/entry[1]"), sources)[0][1]
+    second = build.register(notice("https://vercel.com/changelog/b", "feed/entry[2]"), sources)[0][1]
+    again = build.register(notice("https://vercel.com/changelog/a", "feed/entry[1]"), sources)[0][1]
+    entries = sources.entries()
+    assert first != second and again == first
+    assert entries[first]["url"].endswith("/a") and entries[second]["url"].endswith("/b")

@@ -35,6 +35,7 @@ from pathlib import Path
 from scripts.market_collection.events.catalog import ROUTE_PUBLISHERS, SIGNAL_PUBLISHERS, authority as route_authority, maker
 from scripts.market_collection.events.evidence import MUTABLE_CONDITIONS
 from scripts.market_collection.models import MODEL_MODALITIES
+from scripts.market_collection.signals.parsers import SignalParseError, atom_entries, rss_entries, utc_text
 
 KST = timezone(timedelta(hours=9))
 TEMPLATE = Path(__file__).with_name("template.html")
@@ -344,7 +345,8 @@ def feed_days(root: Path) -> dict:
     runs = sorted((root / "signals" / "runs").glob("*/signals.csv"))
     if not runs:
         return out
-    moment = run_time(runs[-1].parent.name)
+    folder = runs[-1].parent
+    moment = run_time(folder.name)
     out["day"] = day_of(moment) if moment else ""
     with runs[-1].open(encoding="utf-8", newline="") as handle:
         for row in csv.DictReader(handle):
@@ -352,6 +354,24 @@ def feed_days(root: Path) -> dict:
             if day and row.get("entry_url"):
                 out["days"].setdefault(row["entry_url"], []).append((plain_title(row.get("entry_title") or ""), day))
             out["seen"].add((row.get("source_key") or "", said_key(row.get("quote") or "")))
+    # signals.csv keeps only entries in its time window and matched to a model; the run's raw feeds list every entry, read
+    # with the collector's own parsers (which refuse DOCTYPE and ENTITY), so older notices get their day too.
+    listed = folder / "signal_sources.csv"
+    if listed.is_file():
+        with listed.open(encoding="utf-8", newline="") as handle:
+            raws = [folder / row["raw_path"] for row in csv.DictReader(handle) if row.get("raw_path")]
+        for raw in raws:
+            try:
+                body = raw.read_bytes()
+                if not body.lstrip()[:1] == b"<":
+                    continue
+                entries = atom_entries(body) if b"<feed" in body[:4096] else rss_entries(body)
+            except (OSError, SignalParseError):
+                continue
+            for entry in entries:
+                day = iso(utc_text(entry.published)[:10]) if entry.published else None
+                if day and entry.url:
+                    out["days"].setdefault(entry.url, []).append((plain_title(entry.title), day))
     return out
 
 
@@ -452,14 +472,18 @@ def publisher(source_key: str, authority: str, model_id: str, route: str) -> str
 
 
 class Sources:
-    """SRC entries, one per (source_key, run_id), numbered s1, s2, ... in first-use order."""
+    """SRC entries, one per (source_key, run_id) and, for a feed, per entry, numbered s1, s2, ... in first-use order.
+
+    A feed run holds many notices; one chip per run showed one notice's link and date on every card (2026-10-27 decision 20),
+    so each feed entry (its locator) gets its own chip with its own link and publication day.
+    """
 
     def __init__(self):
-        self.ids: dict[tuple[str, str], str] = {}
+        self.ids: dict[tuple[str, str, str], str] = {}
         self.facts: dict[str, dict] = {}
 
-    def add(self, event: dict, source_key: str, run_id: str, url: str = "", seen=None, published=None) -> str:
-        sid = self.ids.setdefault((source_key, run_id), f"s{len(self.ids) + 1}")
+    def add(self, event: dict, source_key: str, run_id: str, url: str = "", seen=None, published=None, entry: str = "") -> str:
+        sid = self.ids.setdefault((source_key, run_id, entry), f"s{len(self.ids) + 1}")
         facts = self.facts.setdefault(sid, {"source_key": source_key, "run_id": run_id, "authority": source_authority(event, source_key),
                                             "model_id": event.get("model_id") or "", "route": event.get("route") or "",
                                             "url": "", "seen": [], "published": []})
@@ -490,14 +514,15 @@ class Sources:
         return out
 
 
-def register(event: dict, sources: Sources) -> list[tuple[dict, str]]:
-    """(ref, SRC key) for each evidence ref, in order."""
+def register(event: dict, sources: Sources, feed: dict | None = None) -> list[tuple[dict, str]]:
+    """(ref, SRC key) for each evidence ref, in order; a feed entry's ref gets its own chip dated by its publication day."""
     sides = {side["observation_id"]: side for side in (part(event, "before"), part(event, "after")) if side.get("observation_id")}
     refs = [ref for ref in event.get("evidence_refs") or [] if isinstance(ref, dict)]
     keys = {ref.get("source_key") or event.get("source_key") or "" for ref in refs}
-    published = published_day(event) if len(keys) == 1 else None
+    published = (published_day(event) or article_day(event, feed or {}) or None) if len(keys) == 1 else None
+    entry = lambda ref: str(ref.get("locator") or "") if str(ref.get("locator") or "").startswith("feed/") else ""
     return [(ref, sources.add(event, ref.get("source_key") or event.get("source_key") or "", ref.get("run_id") or "", ref.get("url") or "",
-                              sides.get(ref.get("observation_id") or None, {}).get("observed_at_utc"), published)) for ref in refs]
+                              sides.get(ref.get("observation_id") or None, {}).get("observed_at_utc"), published, entry(ref))) for ref in refs]
 
 
 def quotes(event: dict, refs: list[tuple[dict, str]]) -> list[list]:
@@ -830,7 +855,7 @@ def build_card(card_id: str, members: list[dict], sources: Sources, routes: dict
     ch = route_label(rep.get("route") or "")
     changed, unchanged, said = [], {}, []
     for index, event in enumerate(members):
-        refs = register(event, sources)
+        refs = register(event, sources, feed)
         said.append(quotes(event, refs))
         changed += [dict(row, eid=index) for row in event_rows(event, t7, eff, refs, sources)]
         for row in unchanged_rows(event, refs):

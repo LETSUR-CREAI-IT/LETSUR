@@ -126,10 +126,11 @@ python3 -B -m scripts.market_collection.dashboard --root data/market_collection 
 
 ### 출처
 
-- (`source_key`, `run_id`)마다 하나씩 `s1`, `s2` … 순서로 번호를 매긴다.
+- (`source_key`, `run_id`)마다 하나씩 `s1`, `s2` … 순서로 번호를 매긴다. 피드는 글(근거의 `locator`가 `feed/…`)마다 따로 매겨서, 칩마다 그 공지의 링크와 게시일이 보인다(2026-10-27 결정 20절). 전에는 run 하나에 칩 하나라 Vercel 공지 카드 21장이 칩 하나를 나눠 써서 대부분 카드에서 다른 공지의 날짜와 링크가 보였다.
 - 이름: 공급사 공식(`manufacturer_official`)은 모델 제조사, 채널 공식(`channel_official`)은 경로 게시자, 신호 출처는 그 게시자 이름을 쓰고 뒤에 ` · <source_key>`를 붙인다. 그 밖은 `source_key`만 쓴다.
 - 배지: 공급사 공식 `sup`, 채널 공식 `ch`, 그 밖은 외부 출처 `ext`. authority는 이벤트 `sources`에 있으면 그 값을, 없으면 `catalog.authority()`를 쓴다.
 - 시각: 게시일(근거가 한 출처인 이벤트, 공지의 UTC 날짜), 조회(관측 시각) 또는 수집(run id 시각). 조회·수집 시각은 KST다.
+  - 게시일이 이벤트에 없으면 최신 signals run에서 찾는다(`feed_days`): `signals.csv`의 `published_at_utc`, 그리고 같은 run의 원본 피드(`signal_sources.csv`의 `raw_path`)를 수집기 파서(`atom_entries`, `rss_entries`)로 읽은 글 날짜다. 피드의 `<published>`가 없으면 `<updated>`를 쓰는데, Vercel 공지 4건을 열어 보니 `<updated>`가 페이지의 게시일(datePublished)과 같았고 나중 수정 시각과는 달랐다. modelpricewatch는 항목 id에 같은 날짜가 들어 있다.
 - 링크는 http(s) URL일 때만 넣는다.
 - 인용(`ev`): claim은 `sources.quote`, 없으면 `locator`. 관측은 비교한 두 관측의 locator를 "이전/현재"(예정 변경은 "현재가/예정가")로 붙인다.
 
