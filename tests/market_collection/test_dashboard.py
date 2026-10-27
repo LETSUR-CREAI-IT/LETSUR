@@ -629,17 +629,18 @@ def _gateway_change(event_id: str, endpoint: dict, before: str, after: str) -> d
                   sources=[_source(OPENROUTER, "channel_official")])
 
 
-def test_endpoints_of_one_price_condition_are_lines_of_one_tab(tmp_path: Path) -> None:
+def test_endpoints_split_into_tabs_by_precision_and_region(tmp_path: Path) -> None:
+    """2026-10-27 decision 21: tabs are the comparison table's groups (precision, region, tier), so the lines of one tab are
+    the same condition whoever serves them."""
     state = {"series": {"a": _gateway("g1-2", "openrouter", OPENROUTER, "Alibaba", "0.20", **ALIBABA),
                         "n": _gateway("n-2", "openrouter", OPENROUTER, "Novita", "0.25", **NOVITA),
                         "d": _gateway("d-2", "vercel_ai_gateway", VERCEL, "DeepInfra", "0.30", **DEEPINFRA)}}
     _write(tmp_path, [_gateway_change("g1", ALIBABA, "0.30", "0.20")], state=state)
     trend = _build(tmp_path)[2]["TREND"]["deepseek-v4-pro"]
-    assert "tiers" not in trend
-    assert [(line["name"], [pt[1] for pt in line["pts"]]) for line in trend["series"]] == [
-        ("OpenRouter · openrouter · alibaba/fp8/us-east-1", [[0.3], [0.2]]),
-        ("OpenRouter · openrouter · novita/fp4", [[0.25]]),
-        ("Vercel · vercel_ai_gateway · DeepInfra · fp8", [[0.3]])]
+    assert {tab: [(line["name"], [pt[1] for pt in line["pts"]]) for line in lines] for tab, lines in trend["tiers"].items()} == {
+        "fp8 · US": [("OpenRouter · openrouter · alibaba/fp8/us-east-1", [[0.3], [0.2]])],
+        "fp4 · Standard": [("OpenRouter · openrouter · novita/fp4", [[0.25]])],
+        "fp8 · Standard": [("Vercel · vercel_ai_gateway · DeepInfra · fp8", [[0.3]])]}
     assert "연결할 선이 여럿이라" not in trend["note"]
 
 
@@ -650,19 +651,24 @@ def test_a_different_service_tier_still_gets_its_own_tab(tmp_path: Path) -> None
     _write(tmp_path, [_gateway_change("g1", ALIBABA, "0.30", "0.20")], state=state)
     tiers = _build(tmp_path)[2]["TREND"]["deepseek-v4-pro"]["tiers"]
     assert {tab: [line["name"] for line in lines] for tab, lines in tiers.items()} == {
-        "Standard": ["OpenRouter · openrouter · alibaba/fp8/us-east-1", "OpenRouter · openrouter · novita/fp4"],
-        "Priority": ["OpenRouter · openrouter · alibaba/fp8/us-east-1"]}
+        "fp8 · US": ["OpenRouter · openrouter · alibaba/fp8/us-east-1"], "fp4 · Standard": ["OpenRouter · openrouter · novita/fp4"],
+        "fp8 · US · Priority": ["OpenRouter · openrouter · alibaba/fp8/us-east-1"]}
 
 
 
-def test_gateway_endpoint_lines_are_marked_for_the_strict_comparison(tmp_path: Path) -> None:
-    """김연우 10/27: the strict comparison leaves out gateway endpoint and display-basis lines; each tab names its unit."""
+def test_only_unsettled_lines_are_reference_lines(tmp_path: Path) -> None:
+    """2026-10-27 decision 26-2: endpoint lines compare inside their tab; a model-level display price states no precision or
+    region, so it is a reference line in every tab of its tier and its own tab goes; each tab names its unit."""
     state = {"series": {"a": _gateway("g1-2", "openrouter", OPENROUTER, "Alibaba", "0.20", **ALIBABA),
-                        "p": _gateway("p-2", "openrouter", OPENROUTER, "Alibaba", "0.60", service_tier="priority", **ALIBABA)}}
+                        "p": _gateway("p-2", "openrouter", OPENROUTER, "Alibaba", "0.60", service_tier="priority", **ALIBABA),
+                        "v": _gateway("v-2", "vercel", "vercel_models", "Vercel", "0.15", price_basis="displayed model quote")}}
     _write(tmp_path, [_gateway_change("g1", ALIBABA, "0.30", "0.20")], state=state)
     trend = _build(tmp_path)[2]["TREND"]["deepseek-v4-pro"]
-    assert all(line.get("ref") is True for lines in trend["tiers"].values() for line in lines)
-    assert trend["units"] == {"Standard": "USD / 100만 토큰", "Priority": "USD / 100만 토큰"}
+    tiers = trend["tiers"]
+    assert set(tiers) == {"fp8 · US", "fp8 · US · Priority"}
+    assert [bool(line.get("ref")) for line in tiers["fp8 · US"]] == [False, True]
+    assert not any(line.get("ref") for line in tiers["fp8 · US · Priority"])
+    assert trend["units"] == {"fp8 · US": "USD / 100만 토큰", "fp8 · US · Priority": "USD / 100만 토큰"}
 
 def test_lines_over_the_limit_say_how_many_were_left_out(tmp_path: Path) -> None:
     endpoints = {f"p{n}": {**NOVITA, "endpoint_tag": f"p{n}/fp8", "quantization": "fp8"} for n in range(8)}
@@ -671,7 +677,7 @@ def test_lines_over_the_limit_say_how_many_were_left_out(tmp_path: Path) -> None
     _write(tmp_path, [_gateway_change("g1", endpoints["p7"], "0.30", "0.20")], state=state)
     trend = _build(tmp_path)[2]["TREND"]["deepseek-v4-pro"]
     assert [line["name"] for line in trend["series"]] == [f"OpenRouter · openrouter · p{n}/fp8" for n in (0, 1, 2, 3, 4, 7)]  # the changed endpoint stays
-    assert ("선이 6개를 넘어 뺀 선 2개: Standard: OpenRouter · openrouter · p5/fp8, Standard: OpenRouter · openrouter · p6/fp8."
+    assert ("선이 6개를 넘어 뺀 선 2개: fp8 · Standard: OpenRouter · openrouter · p5/fp8, fp8 · Standard: OpenRouter · openrouter · p6/fp8."
             in trend["note"])
 
 

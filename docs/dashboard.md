@@ -210,7 +210,8 @@ python3 -B -m scripts.market_collection.dashboard --root data/market_collection 
   - 다음 확인(`next_check`, 팀 기준 날짜이고 공지 날짜가 아님): `eff`가 미래이고 `chk`에 먼저 확인(`first`)이 있으면 전날 "적용 전 확인"(종료 날짜면 "종료 전 확인"), 다음 수집 확인(`next`)만 있으면 다음 날 "적용 후 재관측"("종료 후 재관측").
   - "14일 내 일정" 수는 14일 안에 날짜가 있는 카드 수다.
 - 단가 추이 비교 모드: 엄격 비교(기본)는 `ref` 선을 빼고, 전체 관측은 모두 보인다. 뺀 선 이름은 "출처·설명"에 적는다. 남는 선이 없으면 참고 선을 그대로 보이고 그렇다고 적는다. 비교 조건 줄은 모델 · 항목 · 단위(`units`) · 가격 조건(탭)이다.
-  - `ref`: 게이트웨이 엔드포인트 사실이나 가격 근거 표기(`ENDPOINT`)가 붙은 선. 같은 가격 조건이라도 제공자·정밀도·표시 기준이 달라 경로 간 비교에서는 참고로 둔다.
+  - `ref`(2026-10-27 결정 26-2): 조건이 정해지지 않은 선만이다. 모델 단위 표시 가격(`price_basis`가 `DISPLAY_BASIS`, 예: "displayed model quote", "starting listing quote")과 OpenRouter가 상태를 낮춘 엔드포인트(`endpoint_status`가 0이 아님)가 해당한다. 게이트웨이 엔드포인트 선은 탭이 정밀도·지역·등급까지 나뉘므로 공급처가 달라도 비교한다. 참고 선은 단위가 같고 그 선이 적은 조건을 모두 갖춘 탭에도 붙고, 자기 탭에 다른 선이 없으면 그 탭은 없앤다.
+  - `old`: 가장 최근 수집(그 모델 선들의 가장 늦은 run)에 없는 선. 템플릿의 "그래프 안 최저"(옛 "현재 최저") 칸은 이 선을 세지 않는다(결정 9절·21절).
   - `units`: 탭이 둘 이상일 때 탭 이름별 단위.
 
 ### 비우는 필드
@@ -227,8 +228,9 @@ python3 -B -m scripts.market_collection.dashboard --root data/market_collection 
 ### 단가 추이
 
 - 이벤트 카드가 있는 모델만 넣는다(키 `model_id`).
-- 탭은 가격 조건 묶음(비교 조건 + 단위, 예: Standard, Batch), 선은 경로와 게이트웨이 엔드포인트, 측정은 청구 항목이다.
-  - 게이트웨이(OpenRouter, Vercel) 목록이 적는 엔드포인트 사실(`endpoint_tag`, `endpoint_provider`, `endpoint_model_slug`, `context_length`, `quantization`, `endpoint_status`, `endpoint_discount`, `discount_application`)과 가격 근거 표기(`price_basis`, 모델 페이지 수집기도 낸다)는 가격 조건이 아니라서 탭을 가르지 않고 선을 가른다. `service_tier`나 `prompt_tokens` 같은 실제 가격 조건이나 단위가 다르면 탭이 갈라진다.
+- 탭은 공급사 비교 표와 같은 묶음(정밀도 묶음 · 지역 · 등급, 그 밖의 가격 조건 + 단위)이고, 선은 경로와 게이트웨이 엔드포인트, 측정은 청구 항목이다(2026-10-27 결정 21절).
+  - 게이트웨이(OpenRouter, Vercel) 목록이 적는 엔드포인트 사실(`endpoint_tag`, `endpoint_provider`, `endpoint_model_slug`, `context_length`, `quantization`, `endpoint_status`, `endpoint_discount`, `discount_application`)과 가격 근거 표기(`price_basis`, 모델 페이지 수집기도 낸다)는 그대로는 탭을 가르지 않고 선을 가른다. 다만 `quantization`의 정밀도 묶음(mxfp4·nvfp4는 fp4, mxfp8은 fp8)과 `endpoint_tag`·`region`의 지역(us·us-east-1은 US, eu·eu-west-1·europe은 EU, global은 지역 없음)은 탭을 가른다(`tab_facts`). `service_tier`나 `prompt_tokens` 같은 실제 가격 조건이나 단위가 다르면 탭이 갈라진다.
+  - 탭 이름은 정밀도 · 지역 · 그 밖의 조건 · 등급 순이고(예: "fp4 · Standard", "fp8 · US", "fp8 · US · Priority"), 지역 탭은 Standard를 적지 않는다. 값은 26-1대로 원문이고 등급과 지역만 이름(Standard·Priority, US·EU)으로 적는다.
   - 선 이름은 경로 뒤에 엔드포인트 이름(OpenRouter는 태그, Vercel은 제공자)과 양자화를 붙인다(이름에 양자화가 이미 있으면 한 번만). 그래도 같은 이름이 되는 선은 source_key 등으로 구분한다.
 - 점은 실제 관측값과 공지된 예정 단가만 쓴다.
   - 관측: `state.json` `series`의 최신 관측과 이벤트의 이전·이후 관측. run마다 점 하나이고, 그 run에 없는 항목은 앞 값을 잇는다.

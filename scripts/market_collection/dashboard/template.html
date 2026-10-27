@@ -964,7 +964,8 @@ const COLLECTED = /*DATA:COLLECTED*/;
 // 수정안: 그래프 모델 버튼을 이벤트 모델 / 그 밖의 수집 모델로 묶음
 const TREND_GROUPS = [...new Set(Object.values(TREND).map(m => m.group || "이벤트 모델"))].map(g => [g, Object.keys(TREND).filter(k => (TREND[k].group || "이벤트 모델") === g)]);
 let trendModel = Object.keys(TREND)[0], trendMeasure = 0, trendTier = "Standard";
-// 비교 모드: 엄격 비교는 같은 가격 조건(탭)에서 경로 간 비교가 되는 선만, 전체 관측은 게이트웨이 엔드포인트별·표시 기준가 선(ref)도 참고로 함께 본다.
+// 비교 모드: 탭은 정밀도·지역·등급까지 나뉘어 한 탭 안의 선은 공급처가 달라도 같은 조건이다. 엄격 비교는 그 선만, 전체 관측은 조건이 정해지지 않은
+// 참고 선(ref: 표시 최소가 같은 대표가, 상태가 낮아진 엔드포인트)도 함께 본다(2026-10-27 결정 26-2).
 let trendCompare = "strict";
 function comparableSeries(series){
   if (trendCompare !== "strict") return {shown: series, excluded: []};
@@ -990,7 +991,8 @@ function overlapNote(M, mi){ // 오늘 같은 값인 경로끼리는 선이 겹�
 let trendRange = "all";
 const T_RANGES = [["3m", "3개월", 92], ["6m", "6개월", 183], ["all", "전체", 0]];
 function trendStats(M, mi){
-  const cur = M.series.map(s => { const p = valueAt(s, TODAY, mi); return p && pv(p, mi) != null ? [s.name, pv(p, mi)] : null; }).filter(Boolean).sort((a, b) => a[1] - b[1]);
+  // 그래프 안 최저: 그려진 선 중 가장 최근 수집에 있는 선만 센다(old 선 제외, 결정 9절·21절). 같은 조건의 시장 최저가는 카드의 공급사 비교 표가 맡는다.
+  const cur = M.series.filter(s => !s.old).map(s => { const p = valueAt(s, TODAY, mi); return p && pv(p, mi) != null ? [s.name, pv(p, mi)] : null; }).filter(Boolean).sort((a, b) => a[1] - b[1]);
   let last = null, next = null;
   M.series.forEach(s => s.pts.forEach((p, i) => { if (!i) return; const v = pv(p, mi), pr = pv(s.pts[i - 1], mi); if (v == null || pr == null || v === pr) return;
     const o = {d:p[0], s:s.name, pct:(v - pr) / pr * 100, v, pr};
@@ -998,7 +1000,7 @@ function trendStats(M, mi){
   const note = (M.notes || []).filter(n => n[0] > TODAY).sort((a, b) => dt(a[0]) - dt(b[0]))[0];
   const tile = (k, v, s) => `<div class="tstat"><div class="k">${k}</div><div class="v tn">${v}</div><div class="s">${s}</div></div>`;
   const pct = o => `<small class="${o.pct > 0 ? "up" : "down"}">${o.pct > 0 ? "▲" : "▼"}${Math.abs(o.pct).toFixed(o.pct % 1 ? 1 : 0)}%</small>`;
-  return tile(`현재 최저 ${esc(M.measures[mi])}가`, cur.length ? money2(cur[0][1]) : "—", cur.length ? esc(cur[0][0]) + (cur.length > 1 ? ` · 최고 ${money2(cur[cur.length - 1][1])}` : "") : "값 없음") +
+  return tile(`그래프 안 최저 ${esc(M.measures[mi])}가`, cur.length ? money2(cur[0][1]) : "—", cur.length ? esc(cur[0][0]) + (cur.length > 1 ? ` · 최고 ${money2(cur[cur.length - 1][1])}` : "") : "값 없음") +
     tile("최근 변동", last ? `${md(last.d)}${pct(last)}` : "없음", last ? `${esc(last.s)} · ${money2(last.pr)} → ${money2(last.v)}` : "기간 안에 변동 없음") +
     tile("다음 예정", next ? `${md(next.d)}${pct(next)}` : note ? `${md(note[0])}<small class="up">${ddTxt(note[0])}</small>` : "없음",
       next ? `${esc(next.s)} · ${ddTxt(next.d)}` : note ? esc(note[1]) : "알려진 예정 없음");
@@ -1022,7 +1024,7 @@ function renderPrice(){
     <div class="tstats">${trendStats(M, mi)}</div>
     <div class="lg">${lg}</div><div class="tplot" id="tplot"></div>
     <div class="tfoot"><p class="tnote">${overlapNote(M, mi)}올리면 날짜별 값, 점을 누르면 상세로 이동</p>
-      <details class="tv"><summary>출처·설명 · 표로 보기</summary><p>${esc(M.note)}</p>${cmp.excluded.length ? `<p class="cmpwarn">엄격 비교에서 뺀 참고 선(게이트웨이 엔드포인트별·표시 기준가): ${esc(cmp.excluded.map(x => plain(x.name)).join(", "))}. 전체 관측에서 볼 수 있습니다.</p>` : ""}<div id="trend-tv"></div></details></div>
+      <details class="tv"><summary>출처·설명 · 표로 보기</summary><p>${esc(M.note)}</p>${cmp.excluded.length ? `<p class="cmpwarn">엄격 비교에서 뺀 참고 선(조건이 정해지지 않은 선: 표시 최소가·상태가 낮아진 엔드포인트):${esc(cmp.excluded.map(x => plain(x.name)).join(", "))}. 전체 관측에서 볼 수 있습니다.</p>` : ""}<div id="trend-tv"></div></details></div>
     <div class="mpick">${chips}</div>`;
   drawPrice(M, mi, colors);
   document.getElementById("trend-tv").innerHTML = tableHtml(["경로", "날짜", M.measures[mi], "비고"], M.series.flatMap(s => s.pts.map(p => [s.name, String(p[0]).replace("T", " "), pv(p, mi) == null ? "미게시" : money2(pv(p, mi)), p[3] === "unk" ? "시작 시점 기록 없음" : day(p[0]) > TODAY ? "예정" : ""])));

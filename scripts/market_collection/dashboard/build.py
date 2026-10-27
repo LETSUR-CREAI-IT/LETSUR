@@ -79,7 +79,7 @@ UNIT_KO = {"1M tokens": "100만 토큰", "1000 tokens": "1,000 토큰"}
 CONDITION_KO = {"service_tier": "등급", "cache_read_multiplier": "캐시 읽기 배율", "context_length": "컨텍스트", "endpoint_tag": "엔드포인트",
                 "endpoint_provider": "제공자", "endpoint_model_slug": "모델 slug", "quantization": "정밀도", "endpoint_status": "상태",
                 "endpoint_discount": "엔드포인트 할인", "discount_application": "할인 적용", "price_basis": "가격 기준",
-                "region": "지역", "input_token_band": "입력 구간"}
+                "region": "지역", "input_token_band": "입력 구간", "precision": "정밀도"}
 # Condition values stay as the source wrote them; only tiers and regions get the dashboard's names (2026-10-27 decision 26-1).
 TIER_NAMES = {"standard": "Standard", "priority": "Priority", "ultrafast": "Ultrafast", "flex": "Flex", "batch": "Batch"}
 REGION_NAMES = {"us": "US", "eu": "EU"}
@@ -253,6 +253,42 @@ def compared(conditions) -> dict:
 def endpoint(conditions) -> tuple:
     """The stated endpoint facts of a price; they are part of the trend line's key."""
     return tuple(sorted((key, str(value)) for key, value in (conditions or {}).items() if key in ENDPOINT))
+
+
+DISPLAY_BASIS = {"displayed model quote", "starting listing quote"}  # a model-level 'from' price: no endpoint, tier or precision stated
+
+
+def precision_group(value) -> str:
+    """fp4 also takes mxfp4 and nvfp4, fp8 takes mxfp8 (decision 2); other formats stay as written, unknown is none."""
+    text = str(value or "").lower()
+    for group in ("fp4", "fp8"):
+        if text in (group, f"mx{group}", f"nv{group}"):
+            return group
+    return "" if text in ("", "unknown") else text
+
+
+def region_group(conditions) -> str:
+    """US or EU from a stated region or an endpoint tag's parts (us, us-east-1 to US; eu, eu-west-1, europe to EU); global is none."""
+    stated = conditions or {}
+    for part in [str(stated.get("region") or "").lower(), *str(stated.get("endpoint_tag") or "").lower().split("/")[1:]]:
+        if part == "us" or part.startswith("us-"):
+            return "US"
+        if part in ("eu", "europe") or part.startswith("eu-"):
+            return "EU"
+    return ""
+
+
+def tab_facts(conditions) -> dict:
+    """What splits trend tabs beyond the priced-under conditions: precision group and region (2026-10-27 decisions 21, 26-2)."""
+    facts = {"precision": precision_group((conditions or {}).get("quantization")), "region": region_group(conditions)}
+    return {key: value for key, value in facts.items() if value}
+
+
+def reference_line(facts: tuple) -> bool:
+    """A line whose conditions are not settled: a model-level display price or an endpoint OpenRouter demoted. The strict
+    comparison leaves it out and 전체 관측 shows it (2026-10-27 decision 26-2); endpoint facts alone no longer make one."""
+    stated = dict(facts)
+    return stated.get("price_basis") in DISPLAY_BASIS or str(stated.get("endpoint_status") or "0") != "0"
 
 
 def endpoint_label(facts: tuple) -> str:
@@ -885,6 +921,7 @@ def model_trend(model_id: str, cards: list[dict], groups: dict[str, list[dict]],
 
     def tab_key(conditions, unit) -> tuple[str, str]:
         priced_under = {key: value for key, value in compared(conditions).items() if key not in ENDPOINT}
+        priced_under.update(tab_facts(conditions))
         return json.dumps(priced_under, sort_keys=True, ensure_ascii=False), unit or ""
 
     def line(tab, key) -> dict:
@@ -951,16 +988,32 @@ def model_trend(model_id: str, cards: list[dict], groups: dict[str, list[dict]],
             for slot, values in lines[tab][key]["planned"].items():
                 memo.add(slot[0])
                 count["unplaced"] += len(values)
-        tabs[tab] = [(labels[key], lines[tab][key], bool(key[2])) for key in sorted(order[:MAX_LINES], key=lambda key: labels[key])]
+        tabs[tab] = [(labels[key], lines[tab][key], reference_line(key[2])) for key in sorted(order[:MAX_LINES], key=lambda key: labels[key])]
+    # A reference line also joins every tab of its unit whose conditions include all it states; its own tab goes when nothing
+    # else was drawn there (2026-10-27 decision 26-2).
+    for tab, kept in list(tabs.items()):
+        refs, rest, stated = [drawn for drawn in kept if drawn[2]], [drawn for drawn in kept if not drawn[2]], json.loads(tab[0])
+        homes = [other for other, there in tabs.items() if other != tab and other[1] == tab[1]
+                 and any(not drawn[2] for drawn in there) and all(json.loads(other[0]).get(k) == v for k, v in stated.items())]
+        if refs and homes:
+            for other in homes:
+                tabs[other] = tabs[other] + refs
+            if rest:
+                tabs[tab] = rest
+            else:
+                del tabs[tab]
     measures = sorted({row[1] for kept in tabs.values() for _, entry, _ in kept for rows in entry["runs"].values() for row in rows},
                       key=lambda item: (rank(item), item))
+    # 그래프 안 최저 counts only lines the newest collection still has (decision 9); older ones are marked old.
+    latest = max((run for kept in tabs.values() for _, entry, _ in kept for run in entry["runs"]), default="")
     drawn = {}
     for tab, kept in tabs.items():
         drawn[names[tab]] = []
-        for label, entry, gateway in kept:
+        for label, entry, ref in kept:
             pts, until = points(entry, measures, count, memo)
-            # ref: a gateway endpoint's or display-basis price; the strict comparison leaves it out (김연우 10/27 규칙)
-            drawn[names[tab]].append({"name": html.escape(label), "pts": pts, **({"until": until} if until else {}), **({"ref": True} if gateway else {})})
+            old = bool(latest) and max(entry["runs"], default="") < latest
+            drawn[names[tab]].append({"name": html.escape(label), "pts": pts, **({"until": until} if until else {}),
+                                      **({"ref": True} if ref else {}), **({"old": True} if old else {})})
     facts = ["수집기 관측 단가(state.json의 최신 관측과 이벤트의 이전·이후 관측)와 공지된 예정 단가(점선)만 그렸습니다. 첫 관측 전 값은 기록이 없어 그리지 않았습니다."
              if series is not None else "state.json을 쓰지 못해 이벤트의 이전·이후 관측만 그렸습니다."]
     for name, text in (("currency", "USD가 아닌 값 {n}건은 그리지 않았습니다."), ("suspect", "검증되지 않은 관측 {n}건(파서 의심)은 뺐습니다."),
@@ -1006,17 +1059,29 @@ def points(line, measures, count, memo) -> tuple[list, str | None]:
 
 
 def tab_names(keys) -> dict:
-    """'Standard' for {service_tier: standard}; names that would clash spell out keys and unit instead."""
+    """'fp4 · Standard', 'fp8 · US' (a region tab drops Standard), 'Standard' alone where no precision is stated: precision,
+    region, other conditions, then tier, written as the comparison table writes them (2026-10-27 decisions 21, 26-1).
+    Names that would clash spell out keys and unit instead."""
+    def ordered(conditions):
+        rest = sorted(name for name in conditions if name not in ("precision", "region", "service_tier"))
+        return [name for name in ("precision", "region") if name in conditions] + rest + (["service_tier"] if "service_tier" in conditions else [])
+
+    def text(conditions, name):
+        return str(conditions[name]) if name == "precision" else value_text(name, conditions[name])
+
     def short(key):
         conditions = json.loads(key[0])
-        return " · ".join(cap(conditions[name]) for name in sorted(conditions)) or "조건 없음"
+        regional = text(conditions, "region") in REGION_NAMES.values() if "region" in conditions else False
+        parts = [text(conditions, name) for name in ordered(conditions)
+                 if not (name == "service_tier" and regional and text(conditions, name) == "Standard")]
+        return " · ".join(part for part in parts if part) or "조건 없음"
 
     names = {key: short(key) for key in keys}
     clash = {name for name in names.values() if list(names.values()).count(name) > 1}
     for key, name in names.items():
         if name in clash:
             conditions = json.loads(key[0])
-            names[key] = " · ".join([f"{k} {cap(conditions[k])}" for k in sorted(conditions)] + [unit_ko(key[1]) or "단위 없음"])
+            names[key] = " · ".join([f"{k} {text(conditions, k)}" for k in ordered(conditions)] + [unit_ko(key[1]) or "단위 없음"])
     return names
 
 
