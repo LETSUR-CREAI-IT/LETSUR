@@ -373,6 +373,9 @@ def test_page_carries_the_tables(tmp_path):
     page = (tmp_path / "site" / "index.html").read_text(encoding="utf-8")
     data = json.loads(re.search(r"^const COMPARE = (.*);$", page, re.M).group(1))
     assert [name for name, _ in data[GLM]["groups"]] == ["fp8 · Standard"] and "function compareTable(e)" in page
+    # its own folding section, closed at first, with the excluded rows folded once more (2026-10-27 박건 요청)
+    assert 'parts.push(sec("공급사 비교 표", compareMeta(e), compareTable(e)));' in page
+    assert '<details class="same-rows"><summary>비교 제외 ${T.ex.length}행 보기' in page
     (folder / "events.json").write_text("{", encoding="utf-8")
     assert build.main(["--root", str(tmp_path / "root"), "--output", str(tmp_path / "failed")]) == 0
     failed = (tmp_path / "failed" / "index.html").read_text(encoding="utf-8")

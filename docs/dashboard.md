@@ -248,7 +248,7 @@ python3 -B -m scripts.market_collection.dashboard --root data/market_collection 
 
 ## 공급사 비교 표 (2026-10-25~27 검토 결정)
 
-카드 상세 '바뀐 내용'(접힌 칸)의 바뀐 내용 표 아래에 그 카드 모델의 공급사 비교 표를 둔다. LLM 모델에만 있고(영상·이미지는 묶음 규칙이 없다), 추천 문구는 없다.
+카드 상세에 '공급사 비교 표' 칸을 '바뀐 내용' 바로 아래 따로 두고, 처음에는 접어 둔다. 칸 제목 옆에 비교 행 수, 제외 행 수, 가격 기준 시각이 보인다. 비교 제외 행은 표 아래 '비교 제외 N행 보기'로 한 번 더 접는다(2026-10-27 박건 요청: 표가 너무 길다). 처음에는 '바뀐 내용' 표 아래에 붙어 있었다. LLM 모델에만 있고(영상·이미지는 묶음 규칙이 없다), 추천 문구는 없다.
 
 - 코드: 계산 `scripts/market_collection/dashboard/compare.py`, 데이터 자리표시자 `COMPARE`(모델 id → 표, `build.py` `collect()` 끝과 `empty()`), 그리기 `template.html`의 `.sct` CSS 묶음과 `compareTable()`(`changeTable()` 바로 뒤), `renderDetail()`의 '바뀐 내용' 한 줄. 테스트 `tests/market_collection/test_dashboard_compare.py`.
 - 입력(읽기만): `<root>/runs`에서 엔진이 처리한 가장 새 수집 run(`report.json` `processed_runs`)을 `evidence.load_run`으로 읽는다. 비교 제외 관측은 state.json에 금액이 없어 run CSV를 쓰고, 같은 run의 Vercel 엔드포인트 원문에서 행 안 등급·지역·피크 가격을 읽는다. 적용 기간·가격 변동 큼·관측 끊김은 state.json과 events.json, Vercel 할인 칸은 events.json의 한시 할인 공지에서 온다. run을 읽을 수 없으면 표가 없고, 표 계산 오류는 표만 빼고 traceback을 stderr에 남긴다.
