@@ -396,4 +396,4 @@ python3 -B -m scripts.market_collection.dashboard --root data/market_collection 
 - 내용: `schema`(1), `base_day`(페이지 기준일), `names`(경로 이름 `routes`, 항목 `items`, 조건 `conditions`, 등급 `tiers`, 지역 `regions`, 상태 `status`, 단위 `units`), `cards`(카드마다 `id`, 사건 id 목록 `events`, 추천 행동 `action`, 적용 배지 `applicability`, 가정 여부 `assumed`, 마감 `deadline`과 `deadline_label`, `model`, `route`, `type`, `summary`, 비교 조건 줄 `conditions`).
 - `action`·`applicability`는 template.html의 `actionKey`·`suggestOf`·`dirOf`·`applicabilityOf`를 build.py의 `judge()`가 그대로 다시 계산한 값이다. 둘 중 하나를 고치면 다른 쪽도 같이 고친다. 10/27 실제 데이터 69장에서 두 쪽의 값이 모두 같았다(내장 브라우저에서 페이지의 JS 판정과 대조).
 - 슬랙봇은 이 파일로 RECORD 카드를 빼고(NOT APPLIES는 빼지 않음), 카드 id로 바로 가기 링크를 만들고, 이름은 `names`에서 가져다 쓴다.
-- 목록 날짜 칸: 적용일·종료일이 없는 카드는 `effShort`로 "적용일 미공지 · 10/20 관측"(피드 글이면 "… 게시")처럼 사유와 카드 날짜를 적는다(2026-10-25 잠정 결정 12절).
+- 목록 날짜 칸: 적용일·종료일이 없는 카드는 D-day 자리에 `effSeen`("관측", 피드 글이면 "게시")을 점선 칸으로, 그 아래에 카드 날짜(`cd`)를 적는다. 사유와 날짜를 함께 적은 `effShort` 문구 전체("적용일 미공지 · 10/20 관측")는 그 칸의 마우스 설명과 상세(날짜 칸, 요약 줄)에 나온다. 문구는 2026-10-25 잠정 결정 12절, 이 배치는 10/27 결정이다. 58px 칸에 문구 전체를 넣으면 옆 칩을 덮는다.

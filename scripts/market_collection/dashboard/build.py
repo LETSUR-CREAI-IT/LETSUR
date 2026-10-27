@@ -941,8 +941,9 @@ def build_card(card_id: str, members: list[dict], sources: Sources, routes: dict
         card["ps"] = states.pop()
     if pub:
         card["pub"] = pub
-    if not eff and when:  # the list's date cell says why there is no date and what dates the card (decision 12, 10/25)
-        card["effShort"] = f"{label or '적용일'} 미공지 · {md(when)} {'게시' if when == pub else '관측'}"
+    if not eff and when:  # no date (decision 12, 10/25): the list cell shows effSeen over cd, effShort its tooltip and the detail (10/27)
+        card["effSeen"] = "게시" if when == pub else "관측"
+        card["effShort"] = f"{label or '적용일'} 미공지 · {md(when)} {card['effSeen']}"
     card["n"] = [sum(1 for row in rows if not row["same"]), sum(1 for row in rows if row["same"])]
     if any(row["parts"][0] for row in rows):
         card["cg"] = [row["parts"] for row in rows]  # [condition group, item] per chg row, for the grouped 바뀐 내용 table

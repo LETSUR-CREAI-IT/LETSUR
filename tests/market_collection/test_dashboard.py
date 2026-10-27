@@ -805,6 +805,19 @@ def test_undated_feed_card_takes_its_article_day_and_signal_cards_their_last_see
     assert build.seen_day([gone], feed) == "2026-10-16"
 
 
+def test_undated_card_shows_its_basis_in_the_list_and_the_whole_reason_on_hover_and_in_the_detail(tmp_path):
+    """2026-10-25 decision 12 wording, 10/27 placement: the 58px list cell shows 관측 (or 게시) over the card's day; the
+    whole '적용일 미공지 · M/D 관측' is the cell's tooltip and the detail's date."""
+    _write(tmp_path, [_gateway_change("g1", ALIBABA, "0.30", "0.20")])
+    _, page, data = _build(tmp_path)
+    [card] = data["EVENTS"]
+    assert "eff" not in card
+    assert (card["effSeen"], card["effShort"]) == ("관측", f"적용일 미공지 · {build.md(card['cd'])} 관측")
+    assert '<span class="dl2"${!e.eff && e.effShort ? ` title="${esc(e.effShort)}"` : ""}>' in page
+    assert ': e.effSeen ? `<small class="tn">${md(e.cd)}</small>` : ""' in page
+    assert 'esc([e.effShort, e.effNote].filter(Boolean).join(" · ") || "미확인")' in page
+
+
 def test_template_says_when_a_linked_card_is_not_on_the_page(tmp_path):
     """2026-10-27 decision 26-6: a #card id the page lacks opens the top card with a notice, cleared once a card is chosen."""
     _write(tmp_path, [])
