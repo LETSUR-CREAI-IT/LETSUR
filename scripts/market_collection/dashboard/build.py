@@ -865,15 +865,16 @@ def model_trend(model_id: str, cards: list[dict], groups: dict[str, list[dict]],
             for slot, values in lines[tab][key]["planned"].items():
                 memo.add(slot[0])
                 count["unplaced"] += len(values)
-        tabs[tab] = [(labels[key], lines[tab][key]) for key in sorted(order[:MAX_LINES], key=lambda key: labels[key])]
-    measures = sorted({row[1] for kept in tabs.values() for _, entry in kept for rows in entry["runs"].values() for row in rows},
+        tabs[tab] = [(labels[key], lines[tab][key], bool(key[2])) for key in sorted(order[:MAX_LINES], key=lambda key: labels[key])]
+    measures = sorted({row[1] for kept in tabs.values() for _, entry, _ in kept for rows in entry["runs"].values() for row in rows},
                       key=lambda item: (rank(item), item))
     drawn = {}
     for tab, kept in tabs.items():
         drawn[names[tab]] = []
-        for label, entry in kept:
+        for label, entry, gateway in kept:
             pts, until = points(entry, measures, count, memo)
-            drawn[names[tab]].append({"name": html.escape(label), "pts": pts, **({"until": until} if until else {})})
+            # ref: a gateway endpoint's or display-basis price; the strict comparison leaves it out (김연우 10/27 규칙)
+            drawn[names[tab]].append({"name": html.escape(label), "pts": pts, **({"until": until} if until else {}), **({"ref": True} if gateway else {})})
     facts = ["수집기 관측 단가(state.json의 최신 관측과 이벤트의 이전·이후 관측)와 공지된 예정 단가(점선)만 그렸습니다. 첫 관측 전 값은 기록이 없어 그리지 않았습니다."
              if series is not None else "state.json을 쓰지 못해 이벤트의 이전·이후 관측만 그렸습니다."]
     for name, text in (("currency", "USD가 아닌 값 {n}건은 그리지 않았습니다."), ("suspect", "검증되지 않은 관측 {n}건(파서 의심)은 뺐습니다."),
@@ -893,6 +894,7 @@ def model_trend(model_id: str, cards: list[dict], groups: dict[str, list[dict]],
         entry["series"] = next(iter(drawn.values()))
     else:
         entry["tiers"] = drawn
+        entry["units"] = {names[tab]: f"USD / {unit_ko(tab[1])}" if tab[1] else "USD" for tab in tabs}
     return entry
 
 

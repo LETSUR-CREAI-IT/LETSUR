@@ -651,6 +651,16 @@ def test_a_different_service_tier_still_gets_its_own_tab(tmp_path: Path) -> None
         "Priority": ["OpenRouter · openrouter · alibaba/fp8/us-east-1"]}
 
 
+
+def test_gateway_endpoint_lines_are_marked_for_the_strict_comparison(tmp_path: Path) -> None:
+    """김연우 10/27: the strict comparison leaves out gateway endpoint and display-basis lines; each tab names its unit."""
+    state = {"series": {"a": _gateway("g1-2", "openrouter", OPENROUTER, "Alibaba", "0.20", **ALIBABA),
+                        "p": _gateway("p-2", "openrouter", OPENROUTER, "Alibaba", "0.60", service_tier="priority", **ALIBABA)}}
+    _write(tmp_path, [_gateway_change("g1", ALIBABA, "0.30", "0.20")], state=state)
+    trend = _build(tmp_path)[2]["TREND"]["deepseek-v4-pro"]
+    assert all(line.get("ref") is True for lines in trend["tiers"].values() for line in lines)
+    assert trend["units"] == {"Standard": "USD / 100만 토큰", "Priority": "USD / 100만 토큰"}
+
 def test_lines_over_the_limit_say_how_many_were_left_out(tmp_path: Path) -> None:
     endpoints = {f"p{n}": {**NOVITA, "endpoint_tag": f"p{n}/fp8", "quantization": "fp8"} for n in range(8)}
     state = {"series": {tag: _gateway(f"{tag}-2" if tag != "p7" else "g1-2", "openrouter", OPENROUTER, tag, "0.20", **endpoint)
