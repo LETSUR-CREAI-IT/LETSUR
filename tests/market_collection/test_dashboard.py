@@ -670,6 +670,21 @@ def test_only_unsettled_lines_are_reference_lines(tmp_path: Path) -> None:
     assert not any(line.get("ref") for line in tiers["fp8 · US · Priority"])
     assert trend["units"] == {"fp8 · US": "USD / 100만 토큰", "fp8 · US · Priority": "USD / 100만 토큰"}
 
+
+def test_status_lines_follow_the_comparison_table(tmp_path: Path) -> None:
+    """Decisions 8 and 26-2: the 공급사 비교 표 compares OpenRouter's -1 and -2 with a chip and leaves -3, -5 and -10 out, so
+    only those are reference lines here."""
+    state = {"series": {"a": _gateway("g1-2", "openrouter", OPENROUTER, "Alibaba", "0.20", **ALIBABA),
+                        "b": _gateway("b-2", "openrouter", OPENROUTER, "Baidu", "0.25",
+                                      **{**ALIBABA, "endpoint_tag": "baidu/fp8/us-east-1", "endpoint_status": "-2"}),
+                        "c": _gateway("c-2", "openrouter", OPENROUTER, "Crusoe", "0.15",
+                                      **{**ALIBABA, "endpoint_tag": "crusoe/fp8/us-east-1", "endpoint_status": "-5"})}}
+    _write(tmp_path, [_gateway_change("g1", ALIBABA, "0.30", "0.20")], state=state)
+    lines = _build(tmp_path)[2]["TREND"]["deepseek-v4-pro"]["series"]  # one tab (fp8 · US), so no tiers
+    assert {line["name"].rsplit(" · ", 1)[-1]: bool(line.get("ref")) for line in lines} == {
+        "alibaba/fp8/us-east-1": False, "baidu/fp8/us-east-1": False, "crusoe/fp8/us-east-1": True}
+
+
 def test_lines_over_the_limit_say_how_many_were_left_out(tmp_path: Path) -> None:
     endpoints = {f"p{n}": {**NOVITA, "endpoint_tag": f"p{n}/fp8", "quantization": "fp8"} for n in range(8)}
     state = {"series": {tag: _gateway(f"{tag}-2" if tag != "p7" else "g1-2", "openrouter", OPENROUTER, tag, "0.20", **endpoint)

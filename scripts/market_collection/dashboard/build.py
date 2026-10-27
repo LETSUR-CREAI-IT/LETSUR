@@ -286,11 +286,14 @@ def tab_facts(conditions) -> dict:
     return {key: value for key, value in facts.items() if value}
 
 
-def reference_line(facts: tuple) -> bool:
-    """A line whose conditions are not settled: a model-level display price or an endpoint OpenRouter demoted. The strict
-    comparison leaves it out and 전체 관측 shows it (2026-10-27 decision 26-2); endpoint facts alone no longer make one."""
+def reference_line(route: str, facts: tuple) -> bool:
+    """A line whose conditions are not settled, as the 공급사 비교 표 leaves it out: a model-level display price, or an endpoint
+    whose status is not 0 (OpenRouter's -1 and -2 stay compared there with a chip, decision 8). The strict comparison leaves
+    it out and 전체 관측 shows it (2026-10-27 decision 26-2); endpoint facts alone no longer make one."""
     stated = dict(facts)
-    return stated.get("price_basis") in DISPLAY_BASIS or str(stated.get("endpoint_status") or "0") != "0"
+    status = str(stated.get("endpoint_status") or "0")
+    compared = status == "0" or (route == "openrouter" and status in ("-1", "-2"))
+    return stated.get("price_basis") in DISPLAY_BASIS or not compared
 
 
 def endpoint_label(facts: tuple) -> str:
@@ -1045,7 +1048,7 @@ def model_trend(model_id: str, cards: list[dict], groups: dict[str, list[dict]],
             for slot, values in lines[tab][key]["planned"].items():
                 memo.add(slot[0])
                 count["unplaced"] += len(values)
-        tabs[tab] = [(labels[key], lines[tab][key], reference_line(key[2])) for key in sorted(order[:MAX_LINES], key=lambda key: labels[key])]
+        tabs[tab] = [(labels[key], lines[tab][key], reference_line(key[0], key[2])) for key in sorted(order[:MAX_LINES], key=lambda key: labels[key])]
     # A reference line also joins every tab of its unit whose conditions include all it states; its own tab goes when nothing
     # else was drawn there (2026-10-27 decision 26-2).
     for tab, kept in list(tabs.items()):

@@ -1001,7 +1001,7 @@ const COLLECTED = /*DATA:COLLECTED*/;
 const TREND_GROUPS = [...new Set(Object.values(TREND).map(m => m.group || "이벤트 모델"))].map(g => [g, Object.keys(TREND).filter(k => (TREND[k].group || "이벤트 모델") === g)]);
 let trendModel = Object.keys(TREND)[0], trendMeasure = 0, trendTier = "Standard";
 // 비교 모드: 탭은 정밀도·지역·등급까지 나뉘어 한 탭 안의 선은 공급처가 달라도 같은 조건이다. 엄격 비교는 그 선만, 전체 관측은 조건이 정해지지 않은
-// 참고 선(ref: 표시 최소가 같은 대표가, 상태가 낮아진 엔드포인트)도 함께 본다(2026-10-27 결정 26-2).
+// 참고 선(ref: 표시 최소가 같은 대표가, 비교 표가 상태로 빼는 엔드포인트)도 함께 본다(2026-10-27 결정 26-2).
 let trendCompare = "strict";
 function comparableSeries(series){
   if (trendCompare !== "strict") return {shown: series, excluded: []};
@@ -1060,7 +1060,7 @@ function renderPrice(){
     <div class="tstats">${trendStats(M, mi)}</div>
     <div class="lg">${lg}</div><div class="tplot" id="tplot"></div>
     <div class="tfoot"><p class="tnote">${overlapNote(M, mi)}올리면 날짜별 값, 점을 누르면 상세로 이동</p>
-      <details class="tv"><summary>출처·설명 · 표로 보기</summary><p>${esc(M.note)}</p>${cmp.excluded.length ? `<p class="cmpwarn">엄격 비교에서 뺀 참고 선(조건이 정해지지 않은 선: 표시 최소가·상태가 낮아진 엔드포인트):${esc(cmp.excluded.map(x => plain(x.name)).join(", "))}. 전체 관측에서 볼 수 있습니다.</p>` : ""}<div id="trend-tv"></div></details></div>
+      <details class="tv"><summary>출처·설명 · 표로 보기</summary><p>${esc(M.note)}</p>${cmp.excluded.length ? `<p class="cmpwarn">엄격 비교에서 뺀 참고 선(조건이 정해지지 않은 선: 표시 최소가·중단 등 비교에서 빠진 상태의 엔드포인트):${esc(cmp.excluded.map(x => plain(x.name)).join(", "))}. 전체 관측에서 볼 수 있습니다.</p>` : ""}<div id="trend-tv"></div></details></div>
     <div class="mpick">${chips}</div>`;
   drawPrice(M, mi, colors);
   document.getElementById("trend-tv").innerHTML = tableHtml(["경로", "날짜", M.measures[mi], "비고"], M.series.flatMap(s => s.pts.map(p => [s.name, String(p[0]).replace("T", " "), pv(p, mi) == null ? "미게시" : money2(pv(p, mi)), p[3] === "unk" ? "시작 시점 기록 없음" : day(p[0]) > TODAY ? "예정" : ""])));
