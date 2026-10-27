@@ -204,6 +204,7 @@ a{color:var(--ink)}
 .row .dl2 small{font-size:11.5px;color:var(--muted);padding-left:2px}
 .row .t{min-width:0}
 .row .t b{display:block;font-size:14.5px;font-weight:650;color:var(--ink);line-height:1.35}
+.row .t b .subj{font-weight:750}  /* 목록 줄의 주어: 어떤 모델의 변화인지(2026-10-27 박건 요청) */
 .row .t>span{display:block;font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .row .tags{display:inline-flex;gap:5px;margin-left:6px;vertical-align:1px}
 .tg{display:inline-flex;align-items:center;height:18px;padding:0 6px;border:1px solid var(--line-strong);border-radius:5px;font-size:11px;font-weight:600;color:var(--muted)}
@@ -1170,7 +1171,7 @@ function queueCmp(a, b){ return state.queueSort === "date" ? cmpU(a, b) || actOr
 function queueRow(e){ return `<li>
     <button type="button" class="row${e.done ? " done" : ""}" data-id="${esc(e.id)}" aria-current="${state.sel === e.id}">
       <span class="dl2"${!e.eff && e.effShort ? ` title="${esc(e.effShort)}"` : ""}>${ddHtml(e)}${e.eff ? `<small class="tn">${md(e.eff)}${e.effQual ? ` <b class="qt" title="${esc(e.effQual)}">해석</b>` : ""}</small>` : e.effSeen ? `<small class="tn">${md(e.cd)}</small>` : ""}</span>
-      <span class="t"><span class="qbadges">${qchips(e)}</span><b>${esc(e.sum)}${e.done ? `<span class="tags"><span class="tg">결정됨</span></span>` : ""}</b><span><span class="qs t7">${esc(EV7[e.id] || "수집 확인")}</span>${esc(e.m)} · ${esc(e.ch)}</span></span>
+      <span class="t"><span class="qbadges">${qchips(e)}</span><b><span class="subj">${esc(e.m)}</span> ${esc(e.sum)}${e.done ? `<span class="tags"><span class="tg">결정됨</span></span>` : ""}</b><span><span class="qs t7">${esc(EV7[e.id] || "수집 확인")}</span>${esc(e.ch)}</span></span>
     </button></li>`; }
 function renderQueue(){
   const list = EVENTS.filter(e => kindShown(e) && (showPast || !isPast(e)));

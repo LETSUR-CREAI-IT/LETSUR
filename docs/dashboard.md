@@ -67,6 +67,8 @@ python3 -B -m scripts.market_collection.dashboard --root data/market_collection 
 
 ### 카드 묶음과 순서
 
+- OpenRouter 엔드포인트 할인 신호(근거 위치가 엔드포인트 API의 `pricing.discount`인 한시 할인)는 카드로 만들지 않는다(2026-10-27 결정, `endpoint_discount()`). 시작일·종료일·이전 가격이 없고 할인율이 날마다 바뀌어 '할인 · 종료일 미확인' 카드만 쌓였다(10/27 12장). 오늘의 할인율은 공급사 비교 표 그 엔드포인트 행의 비고('할인 N% · 기간 미공지')에 나온다. 이벤트 기록(events.json)에는 그대로 있다. 채널 공지에서 온 할인은 그대로 카드다.
+
 - 이벤트 여러 건이 카드 1장이 될 수 있다. 묶음 키는 모델 + 경로 + 유형 + 하위 태그 + 날짜다.
   - 날짜: 적용일·종료일·제공일(`dates.effective_from`, `dates.end_date`, `period_end.date`, `dates.route_added_date`), 없으면 공지 게시일(`dates.published`의 날짜, UTC), 없으면 관측일(KST).
   - `group_key`가 있으면 `group_key` + 경로로 묶고, `group_role`이 `representative`인 이벤트를 대표로 쓴다.
@@ -201,6 +203,7 @@ python3 -B -m scripts.market_collection.dashboard --root data/market_collection 
 
 - Applicability: `relKey`가 use면 APPLIES, unk면 UNKNOWN, other·none이면 NOT APPLIES. `relDemo`면 "· 가정"을 붙인다.
 - Suggested Action: 상세 제안(`suggestOf`)과 같은 판단에서 나와 목록·달력·상세가 같은 값을 보인다. 상세 "다음 할 일" 옆에도 같은 배지를 둔다.
+- 목록 줄 제목은 모델 이름을 앞에 둔 "glm-5.3-flash 20개 항목 단가 인하 관측" 꼴이고, 아래 줄은 유형과 경로다(2026-10-27 박건 요청: 어떤 모델의 변화인지 주어가 보이게).
 - 상세 "다음 할 일" 아래 줄은 "확인 : …", "대응 : …", "주의 : …"처럼 라벨과 내용을 쌍점으로 잇는다(2026-10-27 박건 요청, 이전 "먼저 확인 · …", "대응 방향 · …"). "확인"에는 엔진의 다음 수집 확인(`next`)도 들어간다. 굵은 첫 줄(예: "현재 경로 유지 : Google · google_direct 새 단가는 비교용으로 기록", "고객 할인 : 할인 기간에만 한정해 검토, 판매가 기본값은 유지")과 "현재 사용 경로"(예: "모델 제공 중 : Vercel · vercel_ai_gateway 경로로 사용 (가정)")도 같은 꼴이다. "Vercel · vercel_ai_gateway"처럼 경로 이름 안의 "·"는 그대로다.
   - VERIFY: 유형 미정(`t7` null), 단서만(`clue`), 출처 상충(`st` conflicted), 단가 확인 전, `st`가 없는 옛 카드의 flag, 렛서 적용 UNKNOWN, 제안이 판단 보류.
   - RECORD: 끝난 한시 할인, 제안이 기존 조건 유지.
