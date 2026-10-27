@@ -372,9 +372,11 @@ def test_page_carries_the_tables(tmp_path):
     assert build.main(["--root", str(tmp_path / "root"), "--output", str(tmp_path / "site")]) == 0
     page = (tmp_path / "site" / "index.html").read_text(encoding="utf-8")
     data = json.loads(re.search(r"^const COMPARE = (.*);$", page, re.M).group(1))
-    assert [name for name, _ in data[GLM]["groups"]] == ["fp8 · Standard"] and "function compareTable(e)" in page
-    # its own folding section, closed at first, with the excluded rows folded once more (2026-10-27 박건 요청)
-    assert 'parts.push(sec("공급사 비교 표", compareMeta(e), compareTable(e)));' in page
+    assert [name for name, _ in data[GLM]["groups"]] == ["fp8 · Standard"] and "function compareTable(mid)" in page
+    # 2026-10-28 가안: the table is the 현재 가격 표 tab of 모델별 가격, and a card's detail only links to it
+    assert 'if (view === "table") {' in page and "${compareTable(trendModel)}" in page
+    assert 'parts.push(sec("공급사 비교 표"' not in page and 'data-tview="table">공급사 비교 표 보기 → <small>${compareMeta(e.mid)}</small>' in page
+    # the excluded rows stay folded once more (2026-10-27 박건 요청)
     assert '<details class="same-rows"><summary>비교 제외 ${T.ex.length}행 보기' in page
     (folder / "events.json").write_text("{", encoding="utf-8")
     assert build.main(["--root", str(tmp_path / "root"), "--output", str(tmp_path / "failed")]) == 0

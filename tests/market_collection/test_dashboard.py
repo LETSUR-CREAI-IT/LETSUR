@@ -429,7 +429,38 @@ def test_template_recommended_order_puts_letsur_routes_first(tmp_path: Path) -> 
             '["가격 변경", "예정 변경", "한시 할인", "조건·가격 변경"].includes(t) ? 1 : 2;') in tier
     assert 'if (r === "unk") return 3;' in tier and 'if (r === "other") return dirOf(e) === "good" ? 4 : 5;' in tier
     assert "function recCmp(a, b){ return tierOf(a) - tierOf(b) || cmpU(a, b) || actOrder(a) - actOrder(b); }" in page
-    assert ': recCmp(a, b); }' in page and ".slice().sort(recCmp)[0]?.id" in page
+    assert ': recCmp(a, b); }' in page and ".slice().sort(recCmp)[0]; state.sel = top && top.vg ? top.vg : top?.id;" in page
+
+
+def test_frequent_price_changes_of_one_route_share_a_bundle() -> None:
+    """2026-10-28 가안 (변동 잦음): 3 or more 가격 변경 cards of one model and route within 7 days of each other share a vg;
+    every 가격 변경 card of that route joins, and other types, routes and route-less notes stay apart."""
+    def card(day, t7="가격 변경", model="glm-5.3-flash", route="OpenRouter · openrouter"):
+        return {"t7": t7, "mid": model, "cd": day, "ch": route}
+    busy = [card("2026-10-17"), card("2026-10-17"), card("2026-10-20"), card("2026-10-30")]
+    calm = [card("2026-10-17", model="kimi-k3"), card("2026-10-24", model="kimi-k3"), card("2026-10-30", model="kimi-k3")]
+    others = [card("2026-10-18", t7="예정 변경"), card("2026-10-18", route=build.route_label("")),
+              card("2026-10-18", route=build.route_label("")), card("2026-10-18", route=build.route_label(""))]
+    cards = busy + calm + others
+    build.mark_volatile(cards)
+    assert len({c["vg"] for c in busy}) == 1 and busy[0]["vg"].startswith("v_")  # 10/30 joins: the bundle is the whole route
+    assert not any("vg" in c for c in calm + others)  # 7 days apart each; another type; no route
+    again = busy[:3]
+    build.mark_volatile(again)
+    assert again[0]["vg"] == busy[0]["vg"]  # the id comes from model and route, so links stay put
+
+
+def test_template_bundles_the_list_and_moves_the_table_to_the_model_view(tmp_path: Path) -> None:
+    """2026-10-28 가안: the list shows one row per 변동 잦음 bundle at its first member's place, a bundle opens its own detail
+    (#vg) with links to 모델별 가격, and the 공급사 비교 표 is that view's 현재 가격 표 tab. The browser check covers behaviour."""
+    _write(tmp_path, [])
+    page = _build(tmp_path)[1]
+    assert "const VG = {}; EVENTS.forEach(e => { if (e.vg) (VG[e.vg] = VG[e.vg] || []).push(e); });" in page
+    assert 'list.flatMap(e => !e.vg ? [e] : seen.has(e.vg) ? [] : (seen.add(e.vg), [{vg: e.vg}]))' in page
+    assert "bundled(list.slice().sort(queueCmp)).map(rowOf)" in page and "bundled(l).map(rowOf)" in page
+    assert "if (VG[state.sel]) { renderBundle(state.sel); return; }" in page
+    assert 'let trendView = "chart";' in page and 'trendView = tr.dataset.tview || "chart";' in page
+    assert '<h2>모델별 가격</h2>${views}' in page
 
 
 def test_observed_condition_change(tmp_path: Path) -> None:
@@ -920,7 +951,8 @@ def test_template_says_when_a_linked_card_is_not_on_the_page(tmp_path):
     """2026-10-27 decision 26-6: a #card id the page lacks opens the top card with a notice, cleared once a card is chosen."""
     _write(tmp_path, [])
     page = _build(tmp_path)[1]
-    assert "if (!EVENTS.some(e => e.id === state.sel)) missingLink = state.sel;" in page
+    # a 변동 잦음 bundle id (#v_…, 2026-10-28 가안) is on the page too
+    assert "if (!EVENTS.some(e => e.id === state.sel) && !VG[state.sel]) missingLink = state.sel;" in page
     assert "링크한 카드(#${esc(missingLink)})를 이 페이지에서 찾지 못했습니다." in page
     assert "state.sel = id; missingLink = \"\";" in page
 

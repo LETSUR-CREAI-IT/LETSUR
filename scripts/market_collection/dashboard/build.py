@@ -451,6 +451,26 @@ def merge_notes(groups: dict[str, list[dict]], feed: dict) -> None:
                 groups[routed[0]].extend(groups.pop(cid))
 
 
+VOLATILE_DAYS, VOLATILE_CARDS = 7, 3  # 변동 잦음 (2026-10-28 가안)
+
+
+def mark_volatile(cards: list[dict]) -> None:
+    """변동 잦음 묶음 (2026-10-28 가안): when the 가격 변경 cards of one model and route number VOLATILE_CARDS or more within
+    VOLATILE_DAYS days of each other (by card date), each of them gets the same vg and the list shows them as one row that
+    leads to the model view. OpenRouter endpoint prices go up and down every few days, and each run made a pair of cards.
+    Scheduled changes, discounts and route-less notes stay separate cards."""
+    series: dict[tuple[str, str], list[dict]] = {}
+    for card in cards:
+        if card["t7"] == "가격 변경" and card["mid"] and card.get("cd") and card["ch"] != route_label(""):
+            series.setdefault((card["mid"], card["ch"]), []).append(card)
+    for (model_id, route), members in series.items():
+        days = sorted(date.fromisoformat(card["cd"][:10]) for card in members)
+        if any(sum(1 for later in days[i:] if (later - start).days < VOLATILE_DAYS) >= VOLATILE_CARDS for i, start in enumerate(days)):
+            vg = "v_" + hashlib.sha256(json.dumps([model_id, route], ensure_ascii=False).encode("utf-8")).hexdigest()[:12]
+            for card in members:
+                card["vg"] = vg
+
+
 def relation(rep: dict, routes: dict | None) -> dict:
     """relKey, relShort and relDemo for the card's model and route from the --internal-routes file.
 
@@ -1444,6 +1464,7 @@ def collect(root: Path, today: str, routes: dict | None) -> tuple[dict, str]:
     order = sorted(groups, key=order_key)
     sources = Sources()
     cards = [build_card(cid, groups[cid], sources, routes, feed) for cid in order]
+    mark_volatile(cards)
     data = {"TODAY": today, "SRC": sources.entries(), "ID": {cid: [e.get("event_id") for e in groups[cid]] for cid in order},
             "EVENTS": cards, "MODELS": models(cards, routes), "TREND": trend(cards, groups, state, doc.get("gaps") or []),
             "COLLECTED": collected(report)}

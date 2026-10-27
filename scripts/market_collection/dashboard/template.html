@@ -177,6 +177,7 @@ a{color:var(--ink)}
 .qchip{display:inline-flex;align-items:center;min-height:18px;padding:0 6px;border:1px solid transparent;border-radius:999px;font-size:10.5px;font-weight:750;letter-spacing:.01em;white-space:nowrap}
 .qchip.review{background:var(--mint-soft);color:var(--mint-ink)} .qchip.verify{background:var(--amber-soft);color:var(--amber)}
 .qchip.monitor{background:var(--slate-soft);color:var(--slate)} .qchip.record{background:var(--grey-soft);color:var(--muted)}
+.qchip.vgc{border-color:var(--line-strong);background:var(--surface);color:var(--ink)}
 .qchip.applies{border-color:var(--mint);color:var(--mint-ink)} .qchip.unknown{border-color:var(--amber);color:var(--amber)} .qchip.not-applies{border-color:var(--line-strong);color:var(--muted)}
 .dkind{display:inline-flex;align-items:center;flex:none;height:15px;padding:0 4px;border-radius:4px;font-size:9.5px;font-weight:800}
 .dkind.effective{background:var(--mint-soft);color:var(--mint-ink)} .dkind.end{background:var(--surface-2);color:var(--up);box-shadow:inset 0 0 0 1px var(--line)} .dkind.next_check{background:var(--slate-soft);color:var(--slate)}
@@ -414,6 +415,14 @@ td small{display:block;font-size:11.5px;color:var(--muted)}
 .mchip[aria-pressed="true"] small{color:var(--surface);opacity:.85}
 .tlink{margin-top:10px;display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 12px;border:1px solid var(--line-strong);border-radius:8px;background:var(--surface);font-size:12.5px;color:var(--ink);cursor:pointer}
 .tlink:hover{border-color:var(--ink)}
+/* 2026-10-28 가안: 카드 상세의 모델별 가격 링크(가격 추이·현재 가격 표), 모델별 가격 탭, 변동 잦음 묶음 */
+.vgbtn{display:flex;flex-wrap:wrap;gap:0 8px}
+.vgbtn .tlink{height:auto;min-height:30px;padding:4px 12px;flex-wrap:wrap;text-align:left}
+.tlink small{color:var(--muted);font-size:11.5px;font-weight:500}
+.seg.tview{margin-left:0}
+.row.vg{box-shadow:inset 3px 0 0 var(--line-strong)}
+.vgnote{margin:10px 0 0;font-size:13px;line-height:1.6;color:var(--body)}
+.vgh{margin:18px 0 6px;font-size:13px;font-weight:700;color:var(--ink)}
 
 /* ---- v16: 캘린더·그래프 메인, 종류별 목록, 상세 2×2 ---- */
 .hero{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);gap:14px;align-items:stretch}
@@ -624,11 +633,14 @@ function urgency(e){ const d = e.eff ? days(e.eff) : null; return [e.done ? 1 : 
 function cmpU(a, b){ const x = urgency(a), y = urgency(b); for (let i = 0; i < x.length; i++) if (x[i] !== y[i]) return x[i] - y[i]; return 0; }
 function tableHtml(head, rows){ return `<table><thead><tr>${head.map(h => `<th>${esc(h)}</th>`).join("")}</tr></thead><tbody>${rows.map(r => `<tr>${r.map(c => `<td>${esc(c)}</td>`).join("")}</tr>`).join("")}</tbody></table>`; }
 
+// 변동 잦음 묶음(2026-10-28 가안): build.py mark_volatile이 같은 모델·경로의 가격 변경 카드가 7일 안에 3장 이상이면 같은 vg를 준다.
+// 목록은 그 카드들을 한 줄로 묶고, 묶음 상세(#vg)는 묶인 카드와 모델별 가격(가격 추이·현재 가격 표)으로 가는 링크를 보인다.
+const VG = {}; EVENTS.forEach(e => { if (e.vg) (VG[e.vg] = VG[e.vg] || []).push(e); });
 let state = {filter:"all", sel:null, queueSort:"recommended"};
 // 주소의 #카드id가 이 페이지에 없으면 맨 위 카드를 보이되 그렇다고 알린다(2026-10-27 결정 26-6). 카드 id는 엔진 묶음 키로 만들어서,
 // 묶음이 바뀌면 옛 슬랙 메시지의 링크가 없는 id가 될 수 있다. 다른 카드를 고르면 안내는 사라진다.
 let missingLink = "";
-try { const h = location.hash.slice(1); if (h) { state.sel = decodeURIComponent(h); if (!EVENTS.some(e => e.id === state.sel)) missingLink = state.sel; } } catch (e) {}
+try { const h = location.hash.slice(1); if (h) { state.sel = decodeURIComponent(h); if (!EVENTS.some(e => e.id === state.sel) && !VG[state.sel]) missingLink = state.sel; } } catch (e) {}
 
 // ---- 변화 종류 ----
 const TYPE = {price:{ko:"가격 알림"}, model:{ko:"모델·경로 변경"}, cond:{ko:"조건 변경"}, data:{ko:"표기 확인"}};
@@ -1001,6 +1013,8 @@ const COLLECTED = /*DATA:COLLECTED*/;
 // 수정안: 그래프 모델 버튼을 이벤트 모델 / 그 밖의 수집 모델로 묶음
 const TREND_GROUPS = [...new Set(Object.values(TREND).map(m => m.group || "이벤트 모델"))].map(g => [g, Object.keys(TREND).filter(k => (TREND[k].group || "이벤트 모델") === g)]);
 let trendModel = Object.keys(TREND)[0], trendMeasure = 0, trendTier = "Standard";
+// 모델별 가격(2026-10-28 가안): 가격 추이 그래프와 현재 가격 표(공급사 비교 표, 카드 상세에서 옮김)를 탭으로 바꿔 본다.
+let trendView = "chart";
 // 비교 모드: 탭은 정밀도·지역·등급까지 나뉘어 한 탭 안의 선은 공급처가 달라도 같은 조건이다. 엄격 비교는 그 선만, 전체 관측은 조건이 정해지지 않은
 // 참고 선(ref: 표시 최소가 같은 대표가, 비교 표가 상태로 빼는 엔드포인트)도 함께 본다(2026-10-27 결정 26-2).
 let trendCompare = "strict";
@@ -1053,7 +1067,13 @@ function renderPrice(){
   const lg = M.series.map((s, i) => { const p = valueAt(s, TODAY, mi), v = p ? pv(p, mi) : null;
     return `<span style="color:${colors[i]}"><i></i><b>${esc(s.name)}</b><small>${p == null ? "아직 없음" : v == null ? "미게시" : "현재 " + money2(v)}${s.obsOnly ? " · 관측" : ""}</small></span>`; }).join("");
   const chips = TREND_GROUPS.map(([g, ks]) => `<div class="mgrp"><span>${g}</span>${ks.map(k => `<button type="button" class="mchip" data-model="${esc(k)}" aria-pressed="${k === trendModel}">${esc(TREND[k].name)}<small class="${TREND[k].badge[1]}">${esc(TREND[k].badge[0])}</small></button>`).join("")}</div>`).join("");
-  el.innerHTML = `<div class="th"><h2>단가 추이</h2><span class="mname">${esc(M.name)}</span><span class="unit">${esc(M.unit)}${M.real ? " · 실제" : " · 시연 데이터"}</span>
+  const view = trendView === "table" && COMPARE[trendModel] ? "table" : "chart";
+  const views = `<span class="seg tview" role="group" aria-label="보기">${[["chart", "가격 추이"], ["table", "현재 가격 표"]].map(([k, l]) => `<button type="button" data-tview="${k}" aria-pressed="${k === view}"${k === "table" && !COMPARE[trendModel] ? " disabled" : ""}>${l}</button>`).join("")}</span>`;
+  if (view === "table") {
+    el.innerHTML = `<div class="th"><h2>모델별 가격</h2>${views}<span class="mname">${esc(M.name)}</span><span class="unit">${compareMeta(trendModel)}</span></div>${compareTable(trendModel)}<div class="mpick">${chips}</div>`;
+    return;
+  }
+  el.innerHTML = `<div class="th"><h2>모델별 가격</h2>${views}<span class="mname">${esc(M.name)}</span><span class="unit">${esc(M.unit)}${M.real ? " · 실제" : " · 시연 데이터"}</span>
       <span class="tctl"><span class="rng" role="group" aria-label="기간">${T_RANGES.map(([k, l]) => `<button type="button" data-rng="${k}" aria-pressed="${k === trendRange}">${l}</button>`).join("")}</span>
       ${tierKeys.length ? `<span class="seg ttabs" role="group" aria-label="가격 조건">${tierKeys.map(k => `<button type="button" data-tier="${esc(k)}" aria-pressed="${k === tier}" title="${esc((M.conds || {})[k] || k)}">${esc(k)}</button>`).join("")}</span>` : ""}
       ${M.measures.length > 1 ? `<span class="seg" role="group" aria-label="단가 종류">${M.measures.map((m, i) => `<button type="button" data-meas="${i}" aria-pressed="${i === mi}">${m}</button>`).join("")}</span>` : ""}</span></div>
@@ -1187,17 +1207,31 @@ function queueRow(e){ return `<li>
       <span class="dl2"${!e.eff && e.effShort ? ` title="${esc(e.effShort)}"` : ""}>${ddHtml(e)}${e.eff ? `<small class="tn">${md(e.eff)}${e.effQual ? ` <b class="qt" title="${esc(e.effQual)}">해석</b>` : ""}</small>` : e.effSeen ? `<small class="tn">${md(e.cd)}</small>` : ""}</span>
       <span class="t"><span class="qbadges">${qchips(e)}</span><b><span class="subj">${esc(e.m)}</span> ${esc(e.sum)}${e.done ? `<span class="tags"><span class="tg">결정됨</span></span>` : ""}</b><span><span class="qs t7">${esc(EV7[e.id] || "수집 확인")}</span>${esc(e.ch)}</span></span>
     </button></li>`; }
+// 변동 잦음 묶음: 정렬된 목록에서 묶음 구성원은 맨 앞 구성원 자리에 한 줄로 모은다. 날짜 칸은 묶인 카드 수와 기간이다.
+function bundled(list){ const seen = new Set();
+  return list.flatMap(e => !e.vg ? [e] : seen.has(e.vg) ? [] : (seen.add(e.vg), [{vg: e.vg}])); }
+function vgSum(id){ const l = VG[id], days = l.map(e => e.cd).filter(Boolean).sort();
+  return {l, e0: l[0], up: l.filter(e => dirOf(e) === "bad").length, down: l.filter(e => dirOf(e) === "good").length, from: days[0], to: days[days.length - 1]}; }
+function vgRow(b){ const {l, e0, up, down, from, to} = vgSum(b.vg), a = applicabilityOf(e0);
+  return `<li>
+    <button type="button" class="row vg" data-id="${esc(b.vg)}" aria-current="${state.sel === b.vg}">
+      <span class="dl2"><span class="dd none seen">${l.length}장</span><small class="tn">${md(from)}~</small><small class="tn">${md(to)}</small></span>
+      <span class="t"><span class="qbadges"><span class="qchip vgc">변동 잦음</span><span class="qchip ${a.cls}" title="렛서 적용 ${a.ko}${e0.relDemo ? " (시연용 가정)" : ""}">${a.en}${e0.relDemo && a !== APPSTAT.unk ? " · 가정" : ""}</span></span><b><span class="subj">${esc(e0.m)}</span> 가격이 자주 바뀜 · 인상 ${up} · 인하 ${down}</b><span><span class="qs t7">가격 변경 묶음</span>${esc(e0.ch)}</span></span>
+    </button></li>`; }
+const rowOf = x => x.vg && !x.id ? vgRow(x) : queueRow(x);
 function renderQueue(){
   const list = EVENTS.filter(e => kindShown(e) && (showPast || !isPast(e)));
   // 선택은 거르기와 무관하다: 주소의 #id나 캘린더에서 고른 카드는 목록에서 숨겨져도 상세에 남는다. 처음 고를 때만 보이는 카드를 먼저 본다.
-  if (!state.sel || !EVENTS.some(e => e.id === state.sel)) state.sel = (list.length ? list : EVENTS).slice().sort(recCmp)[0]?.id;
+  // 맨 위 카드가 변동 잦음 묶음에 들면 묶음을 고른다.
+  if (!state.sel || (!EVENTS.some(e => e.id === state.sel) && !VG[state.sel])) { const top = (list.length ? list : EVENTS).slice().sort(recCmp)[0]; state.sel = top && top.vg ? top.vg : top?.id; }
   renderFilter();
   document.getElementById("qsort").value = state.queueSort;
-  document.getElementById("lt").textContent = `전체 변화 ${list.length}`;
+  const lines = bundled(list).length;
+  document.getElementById("lt").textContent = `전체 변화 ${list.length}${lines < list.length ? ` · 묶어서 ${lines}줄` : ""}`;
   const none = EVENTS.length ? `<p class="lempty">${listOn.size ? "선택한 유형의 " : ""}${showPast ? "" : "최근 7일과 앞으로의 "}변화 0건</p>` : "";
-  if (state.queueSort !== "type") { document.getElementById("queue").innerHTML = list.length ? `<ul class="rows">${list.slice().sort(queueCmp).map(queueRow).join("")}</ul>` : none; return; }
+  if (state.queueSort !== "type") { document.getElementById("queue").innerHTML = list.length ? `<ul class="rows">${bundled(list.slice().sort(queueCmp)).map(rowOf).join("")}</ul>` : none; return; }
   const groups = Object.keys(TYPE).map(k => [k, list.filter(e => typeOf(e) === k).sort((a, b) => cmpU(a, b) || actOrder(a) - actOrder(b))]).filter(([, l]) => l.length);
-  document.getElementById("queue").innerHTML = groups.map(([k, l]) => `<section class="grp" aria-label="${TYPE[k].ko}"><h3><i class="ti-${k}"></i>${TYPE[k].ko} ${l.length}</h3><ul class="rows">${l.map(queueRow).join("")}</ul></section>`).join("") || none;
+  document.getElementById("queue").innerHTML = groups.map(([k, l]) => `<section class="grp" aria-label="${TYPE[k].ko}"><h3><i class="ti-${k}"></i>${TYPE[k].ko} ${l.length}</h3><ul class="rows">${bundled(l).map(rowOf).join("")}</ul></section>`).join("") || none;
 }
 
 // ---- 상세 ----
@@ -1230,8 +1264,10 @@ function changeTable(e){
 // COMPARE[모델] = {at 가격 기준 관측 시각, unit, items 가격 열 이름, disc 한시 할인 열 여부, groups [[묶음 이름, 행…]], ex 비교 제외 행, special 특이사항, foot}
 // 행: w [경로, 하위 공급처] · c 열마다 [값, lo 최저 | un 유일] · d [할인가, 종료일, 종료 후 가격]마다 [값, 구분] · p [적용 기간, 근거] · n 비고 · t 칩 [이름, 구분] · f 강조는 채움만
 const COMPARE = /*DATA:COMPARE*/;
-function compareTable(e){
-  const T = COMPARE[e.mid]; if (!T) return "";
+// 2026-10-28 가안: 표는 모델별 가격의 '현재 가격 표' 탭에 두고, 카드 상세에는 그 탭으로 가는 링크만 둔다. 표는 모델마다 하나라서
+// 같은 모델의 카드 여러 장에 같은 표가 되풀이되고, 이벤트 없이 모델 가격만 볼 자리가 없었다.
+function compareTable(mid){
+  const T = COMPARE[mid]; if (!T) return "";
   const span = T.items.length + (T.disc ? 3 : 0) + 3;
   const td = ([v, k], f, x) => `<td class="v${k ? " sct-" + k : ""}${f && (k === "lo" || k === "un") ? " sct-fill" : ""}${x ? " " + x : ""}">${esc(v)}</td>`;
   const tr = (r, ex) => `<tr${ex ? ` class="sct-ex"` : ""}><td class="sct-who"><span class="sct-rt">${esc(r.w[0])} · </span>${esc(r.w[1])}${(r.t || []).map(([t, k]) => `<span class="sct-tag sct-t-${k}">${esc(t)}</span>`).join("")}</td>`
@@ -1248,10 +1284,19 @@ function compareTable(e){
     <p class="sct-key"><span class="sct-lo">최저</span><span class="sct-un">유일</span><span class="sct-gy">종료·미확인</span><span class="sct-dash">비교 제외</span><span class="sct-tag sct-t-con">출처 상충</span>테두리는 정밀도가 적힌 행, 추정·상태 저하·가격 변동 큼·비공개 모델 행은 채움만${T.disc ? ` · 할인가·종료 후 가격은 ${esc(T.items.join(" / "))} 순` : ""}</p>
     ${T.special ? `<div class="sct-sp"><h5>특이사항</h5><p>${esc(T.special)}</p></div>` : ""}${(T.foot || []).map(x => `<p class="cnd note">${esc(x)}</p>`).join("")}</section>`;
 }
-const compareMeta = e => { const T = COMPARE[e.mid];
+const compareMeta = mid => { const T = COMPARE[mid];
   return `${T.groups.reduce((n, [, rows]) => n + rows.length, 0)}행 비교${T.ex.length ? ` · 제외 ${T.ex.length}행` : ""} · 가격 기준 ${esc(T.at)} 관측 · ${esc(T.unit)}`; };
 const sec = (title, meta, body, open) => `<details class="sec"${open ? " open" : ""}><summary>${title}${meta ? ` <small>${meta}</small>` : ""}</summary><div class="secb">${body}</div></details>`;
+function renderBundle(id){
+  const {l, e0, up, down, from, to} = vgSum(id), mid = e0.mid;
+  document.getElementById("detail").innerHTML = `<div class="dmeta"><span class="tg">가격 변경 묶음</span><span class="who">${esc(e0.m)}</span><span>${esc(e0.ch)}</span><span class="tg real">실제 · 공개 출처</span></div>
+    <h2 class="headline">${esc(e0.m)} 가격이 자주 바뀜 · 카드 ${l.length}장</h2>
+    <p class="vgnote">${md(from)}~${md(to)}에 이 경로의 가격 변경 카드가 ${l.length}장(인상 ${up} · 인하 ${down}) 생겼습니다. 같은 모델·경로의 가격 변경 카드가 7일 안에 3장 이상이면 목록에서 한 줄로 묶습니다(2026-10-28 가안). 가격 흐름은 가격 추이와 현재 가격 표에서 보세요.</p>
+    <div class="vgbtn">${TREND[mid] ? `<button type="button" class="tlink" data-trend="${esc(mid)}" data-tview="chart">가격 추이 보기 →</button>` : ""}${COMPARE[mid] ? `<button type="button" class="tlink" data-trend="${esc(mid)}" data-tview="table">현재 가격 표 보기 →</button>` : ""}</div>
+    <h3 class="vgh">묶인 카드 ${l.length}장</h3><ul class="rows">${l.slice().sort((a, b) => (b.cd || "").localeCompare(a.cd || "") || recCmp(a, b)).map(queueRow).join("")}</ul>`;
+}
 function renderDetail(){
+  if (VG[state.sel]) { renderBundle(state.sel); return; }
   const e = EVENTS.find(x => x.id === state.sel), el = document.getElementById("detail");
   if (!e) { el.innerHTML = `<p class="unknown">이 칸에 해당하는 변화가 없습니다.</p>`; return; }
   const eff = e.eff ? `${md(e.eff)} (${wd(e.eff)}) ${ddHtml(e)}${e.effQual ? ` <b class="qt" title="${esc(e.effQual)}">해석</b>` : ""}` : esc([e.effShort, e.effNote].filter(Boolean).join(" · ") || "미확인");
@@ -1260,10 +1305,10 @@ function renderDetail(){
     <div class="decide"><div class="next"><div class="k">다음 할 일 <span class="qbadges" style="display:inline-flex">${qchips(e)}</span></div><div class="v">${nextHtml(e)}</div></div><div><div class="k">${esc(e.effLabel || "적용일")}</div><div class="v">${eff}</div></div>
       <div><div class="k">현재 사용 경로${e.relDemo ? ` <span class="tg">가정</span>` : ""}</div><div class="v">${esc(e.relShort || e.rel)}</div></div></div>
     ${e.link && EVENTS.some(x => x.id === e.link[0]) ? (l => `<div class="lk"><span>함께 볼 이벤트</span><b>${esc(l.m)} · ${esc(l.ch)}</b><span>${esc(e.link[1])}</span><button type="button" data-id="${esc(l.id)}">열기 →</button></div>`)(EVENTS.find(x => x.id === e.link[0])) : ""}
-    ${keyChange(e)}${TREND[e.mid] ? `<button type="button" class="tlink" data-trend="${esc(e.mid)}">${esc(TREND[e.mid].name)} 가격 추이 보기 →</button>` : ""}`;
+    ${e.vg ? `<div class="lk"><span>변동 잦음 묶음</span><b>${esc(e.m)} · ${esc(e.ch)}</b><span>이 경로의 가격 변경 카드 ${VG[e.vg].length}장을 목록에서 한 줄로 묶었습니다</span><button type="button" data-id="${esc(e.vg)}">묶음 보기 →</button></div>` : ""}
+    ${keyChange(e)}<div class="vgbtn">${TREND[e.mid] ? `<button type="button" class="tlink" data-trend="${esc(e.mid)}" data-tview="chart">${esc(TREND[e.mid].name)} 가격 추이 보기 →</button>` : ""}${COMPARE[e.mid] ? `<button type="button" class="tlink" data-trend="${esc(e.mid)}" data-tview="table">공급사 비교 표 보기 → <small>${compareMeta(e.mid)}</small></button>` : ""}</div>`;
   const parts = [];
   if (e.chg && e.chg.length) parts.push(sec("바뀐 내용", changeMeta(e), changeTable(e)));
-  if (COMPARE[e.mid]) parts.push(sec("공급사 비교 표", compareMeta(e), compareTable(e)));  // 따로 접고 편다(2026-10-27 박건 요청)
   parts.push(sec("렛서에 주는 영향", "", impactHtml(e), true));
   parts.push(sec("제안", "", suggestHtml(e), true));
   if (e.ev && e.ev.length) parts.push(sec("출처", `${e.ev.length}건`, `<ul class="srcs">${e.ev.map(([n, t]) => { const s = SRC[n] || {nm:n}; const q = t == null ? "" : Array.isArray(t) ? `이전 “${esc(t[0])}” → 현재 “${esc(t[1])}”` : esc(t);
@@ -1312,9 +1357,9 @@ const REDUCE = matchMedia("(prefers-reduced-motion: reduce)").matches;
 function showSel(){ const q = document.getElementById("queue"), r = q.querySelector("[aria-current=true]"); if (!r) return;
   const a = q.getBoundingClientRect(), b = r.getBoundingClientRect();
   if (b.top < a.top || b.bottom > a.bottom) q.scrollTop += b.top - a.top - (q.clientHeight - b.height) / 2; }
-function select(id, scroll){ const e = EVENTS.find(x => x.id === id); if (!e) return;
+function select(id, scroll){ const e = EVENTS.find(x => x.id === id); if (!e && !VG[id]) return;
   state.sel = id; missingLink = ""; try { history.replaceState(null, "", "#" + id); } catch (err) {}
-  if (e.eff) calMonth = monthOf(e.eff);
+  if (e && e.eff) calMonth = monthOf(e.eff);
   renderCalendar(); renderQueue(); renderDetail();
   if (scroll) { showSel(); document.getElementById("detail").scrollIntoView({behavior: REDUCE ? "auto" : "smooth", block: "start"}); } }
 function refilter(){ renderQueue(); document.getElementById("queue").scrollTop = 0; }
@@ -1325,7 +1370,8 @@ document.addEventListener("click", ev => {
   const ms = ev.target.closest("[data-meas]"); if (ms) { trendMeasure = +ms.dataset.meas; renderPrice(); return; }
   const cm = ev.target.closest("[data-cmp]"); if (cm) { trendCompare = cm.dataset.cmp; renderPrice(); return; }
   const rg = ev.target.closest("[data-rng]"); if (rg) { trendRange = rg.dataset.rng; renderPrice(); return; }
-  const tr = ev.target.closest("[data-trend]"); if (tr) { trendModel = tr.dataset.trend; trendMeasure = 0; trendTier = "Standard"; renderPrice(); document.getElementById("trend").scrollIntoView({behavior: REDUCE ? "auto" : "smooth", block: "start"}); return; }
+  const tv = ev.target.closest("[data-tview]:not([data-trend])"); if (tv) { if (!tv.disabled) { trendView = tv.dataset.tview; renderPrice(); } return; }
+  const tr = ev.target.closest("[data-trend]"); if (tr) { trendModel = tr.dataset.trend; trendMeasure = 0; trendTier = "Standard"; trendView = tr.dataset.tview || "chart"; renderPrice(); document.getElementById("trend").scrollIntoView({behavior: REDUCE ? "auto" : "smooth", block: "start"}); return; }
   const mn = ev.target.closest("[data-mon]");
   if (mn) { if (!mn.disabled) { calMonth = mn.dataset.mon === "today" ? monthOf(TODAY) : addMonth(calMonth, +mn.dataset.mon); renderCalendar(); } return; }
   const kb = ev.target.closest("[data-kind]"); if (kb) { const k = kb.dataset.kind; listOn.has(k) ? listOn.delete(k) : listOn.add(k); refilter(); return; }

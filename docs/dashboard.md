@@ -209,6 +209,7 @@ python3 -B -m scripts.market_collection.dashboard --root data/market_collection 
   - RECORD: 끝난 한시 할인, 제안이 기존 조건 유지.
   - MONITOR: 값은 있으나 공식 확인 전(`st` candidate).
   - REVIEW: 나머지(고객 할인·경로 추가·변경 검토).
+- 변동 잦음 묶음(2026-10-28 가안, build.py `mark_volatile`): 같은 모델·경로의 가격 변경 카드가 7일 안에 3장 이상이면 그 경로의 가격 변경 카드에 모두 같은 `vg`(모델·경로로 만든 `v_` id)를 준다. 목록은 그 카드들을 맨 앞 구성원 자리에 한 줄('가격이 자주 바뀜 · 인상 a · 인하 b', 날짜 칸은 카드 수와 기간)로 묶고, 목록 제목에 '묶어서 N줄'을 붙인다. 묶음을 누르면 상세(#v_…)에 묶인 카드 목록과 '가격 추이 보기'·'현재 가격 표 보기' 링크가 나오고, 묶인 카드의 상세에는 '묶음 보기' 링크가 붙는다. 예정 변경·할인·경로 없는 단서는 묶지 않는다. 카드와 `cards.json`(슬랙봇)은 그대로다. 10/27 자료에서는 OpenRouter 5개 경로의 카드 27장이 묶음 5개가 되고, 기본 목록이 18줄에서 7줄이 된다. OpenRouter 엔드포인트 가격이 며칠마다 오르내리고 수집마다 인상·인하 카드가 한 쌍씩 생겼다.
 - 목록 정렬: 추천 순(기본, 렛서 판단 단계 → 급한 순 → Suggested Action), 적용일 순(급한 순 → Suggested Action), 유형별(이전 화면의 종류 묶음). 유형 칩과 "지난 변화 보기" 거르기는 그대로 겹친다. 처음 열 때 고르는 카드도 추천 순 맨 위 카드다.
 - 렛서 판단 단계(2026-10-28 가안, template.html `tierOf`): 3팀 서면보고에 적힌 렛서 판단 순서(지금 쓰는 판매처 → 판매 중단 위험과 기한 → 같은 조건의 비용 증감 → 대신 쓸 판매처 → 보안·계약상 빼야 할 곳)를 따른다. 렛서 경로(APPLIES)의 판매 중단(제공 종료, 경로 중단) → 렛서 경로의 비용 증감(가격 변경, 예정 변경, 한시 할인, 조건·가격 변경) → 렛서 경로의 그 밖 → 사용 경로 모름(UNKNOWN) → 다른 경로의 대신 쓸 만한 변화(`dirOf`가 good: 인하, 할인, 경로 추가) → 다른 경로의 그 밖 → 렛서가 쓰지 않는 모델 → RECORD 순이다. 렛서 답변 원문은 확인 전이고, 보안·계약 기준은 렛서 신뢰 공급사 목록이 없어 비워 두었다. 10/27 자료 기본 목록 19장에서는 gemini-3.8-flash Vercel 할인 카드(APPLIES)가 4번째에서 1번째로 오르고, 다른 경로의 인상 카드 2장이 인하 카드 뒤로 간다.
 - 달력 날짜: 카드 하나가 날짜 여러 개를 낼 수 있다.
@@ -234,8 +235,9 @@ python3 -B -m scripts.market_collection.dashboard --root data/market_collection 
 - `MODELS`: 카드에 나온 모델마다 제조사(`catalog.maker()`, 모르면 빈칸)와 종류(`MODEL_MODALITIES`: LLM, 영상, 이미지). 사용 경로(`use`)는 `--internal-routes` 파일에 그 모델의 레코드가 있을 때만 채운다(위 "렛서 관계"). 템플릿은 `MODELS`를 호출되지 않는 `renderModels()`에서만 읽어서 `MODELS`는 지금 화면에 나오지 않는다.
 - `COLLECTED.runs`: `report.json` `processed_runs`의 [run 시작 시각(KST, run id에서 읽음), run id], 오래된 순. 템플릿은 상단 요약의 수집 횟수와 기간에 쓴다. 원본의 "수집 데이터 전체" 표(`COLLECTED.models`)는 페이지를 열 때 호출되지 않는 코드라 채우지 않는다.
 
-### 단가 추이
+### 단가 추이 (모델별 가격의 '가격 추이' 탭)
 
+- 2026-10-28 가안: 이 칸의 제목은 '모델별 가격'이고 탭이 둘이다. '가격 추이'는 아래 그래프, '현재 가격 표'는 공급사 비교 표다(`trendView`). 모델 칩으로 모델을 바꿔도 탭은 그대로이고, 비교 표가 없는 모델(영상·이미지)은 표 탭을 누를 수 없다.
 - 이벤트 카드가 있는 모델만 넣는다(키 `model_id`).
 - 탭은 공급사 비교 표와 같은 묶음(정밀도 묶음 · 지역 · 등급, 그 밖의 가격 조건 + 단위)이고, 선은 경로와 게이트웨이 엔드포인트, 측정은 청구 항목이다(2026-10-27 결정 21절).
   - 게이트웨이(OpenRouter, Vercel) 목록이 적는 엔드포인트 사실(`endpoint_tag`, `endpoint_provider`, `endpoint_model_slug`, `context_length`, `quantization`, `endpoint_status`, `endpoint_discount`, `discount_application`)과 가격 근거 표기(`price_basis`, 모델 페이지 수집기도 낸다)는 그대로는 탭을 가르지 않고 선을 가른다. 다만 `quantization`의 정밀도 묶음(mxfp4·nvfp4는 fp4, mxfp8은 fp8)과 `endpoint_tag`·`region`의 지역(us·us-east-1은 US, eu·eu-west-1·europe은 EU, global은 지역 없음)은 탭을 가른다(`tab_facts`). `service_tier`나 `prompt_tokens` 같은 실제 가격 조건이나 단위가 다르면 탭이 갈라진다.
@@ -250,7 +252,9 @@ python3 -B -m scripts.market_collection.dashboard --root data/market_collection 
 
 ## 공급사 비교 표 (2026-10-25~27 검토 결정)
 
-카드 상세에 '공급사 비교 표' 칸을 '바뀐 내용' 바로 아래 따로 두고, 처음에는 접어 둔다. 칸 제목 옆에 비교 행 수, 제외 행 수, 가격 기준 시각이 보인다. 비교 제외 행은 표 아래 '비교 제외 N행 보기'로 한 번 더 접는다(2026-10-27 박건 요청: 표가 너무 길다). 처음에는 '바뀐 내용' 표 아래에 붙어 있었다. LLM 모델에만 있고(영상·이미지는 묶음 규칙이 없다), 추천 문구는 없다.
+2026-10-28 가안: 표는 모델별 가격의 '현재 가격 표' 탭에 있고, 카드 상세에는 그 탭으로 가는 '공급사 비교 표 보기 →' 링크(비교 행 수, 제외 행 수, 가격 기준 시각)만 둔다. 표는 모델마다 하나라서 같은 모델의 카드 여러 장에 같은 표가 되풀이되었고, 이벤트 없이 모델 가격만 볼 자리가 없었다. 표는 매일 빌드할 때 가장 최근 수집(`latest_run`)으로 다시 계산하므로 지난 카드에서 열어도 최신 가격이다. 이벤트 당시 값은 카드의 '바뀐 내용'에 남는다.
+
+그 전(10/27)에는 카드 상세에 '공급사 비교 표' 칸을 '바뀐 내용' 바로 아래 따로 두고 처음에는 접어 두었다. 비교 제외 행은 표 아래 '비교 제외 N행 보기'로 한 번 더 접는다(2026-10-27 박건 요청: 표가 너무 길다). LLM 모델에만 있고(영상·이미지는 묶음 규칙이 없다), 추천 문구는 없다.
 
 - 코드: 계산 `scripts/market_collection/dashboard/compare.py`, 데이터 자리표시자 `COMPARE`(모델 id → 표, `build.py` `collect()` 끝과 `empty()`), 그리기 `template.html`의 `.sct` CSS 묶음과 `compareTable()`(`changeTable()` 바로 뒤), `renderDetail()`의 '바뀐 내용' 한 줄. 테스트 `tests/market_collection/test_dashboard_compare.py`.
 - 입력(읽기만): `<root>/runs`에서 엔진이 처리한 가장 새 수집 run(`report.json` `processed_runs`)을 `evidence.load_run`으로 읽는다. 비교 제외 관측은 state.json에 금액이 없어 run CSV를 쓰고, 같은 run의 Vercel 엔드포인트 원문에서 행 안 등급·지역·피크 가격을 읽는다. 적용 기간·가격 변동 큼·관측 끊김은 state.json과 events.json, Vercel 할인 칸은 events.json의 한시 할인 공지에서 온다. run을 읽을 수 없으면 표가 없고, 표 계산 오류는 표만 빼고 traceback을 stderr에 남긴다.
