@@ -201,6 +201,7 @@ python3 -B -m scripts.market_collection.dashboard --root data/market_collection 
 
 - Applicability: `relKey`가 use면 APPLIES, unk면 UNKNOWN, other·none이면 NOT APPLIES. `relDemo`면 "· 가정"을 붙인다.
 - Suggested Action: 상세 제안(`suggestOf`)과 같은 판단에서 나와 목록·달력·상세가 같은 값을 보인다. 상세 "다음 할 일" 옆에도 같은 배지를 둔다.
+- 상세 "다음 할 일" 아래 줄은 "확인 : …", "대응 : …", "주의 : …"처럼 라벨과 내용을 쌍점으로 잇는다(2026-10-27 박건 요청, 이전 "먼저 확인 · …", "대응 방향 · …"). "확인"에는 엔진의 다음 수집 확인(`next`)도 들어간다.
   - VERIFY: 유형 미정(`t7` null), 단서만(`clue`), 출처 상충(`st` conflicted), 단가 확인 전, `st`가 없는 옛 카드의 flag, 렛서 적용 UNKNOWN, 제안이 판단 보류.
   - RECORD: 끝난 한시 할인, 제안이 기존 조건 유지.
   - MONITOR: 값은 있으나 공식 확인 전(`st` candidate).

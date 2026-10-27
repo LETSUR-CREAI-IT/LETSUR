@@ -862,14 +862,14 @@ function nextOf(e){
   else if (g.resp === "route") act = dir === "bad" ? "대체 경로를 정해 전환 준비" : t === "모델 출시" ? `${e.m}을 도입 후보로 검토` : `${e.ch}로 옮기거나 추가할지 비교`;
   else act = rel === "other" ? `현재 경로 유지 · ${e.ch} 새 단가는 비교용으로 기록` : rel === "none" ? "미도입 모델이라 기록만" : "기존 조건 유지 · 청구 반영만 확인";
   const subs = [];
-  if (isClue(e) || (e.chk && !cf.length && !isEnded(e))) firstChecks(e, isClue(e) ? 2 : 1).forEach(x => subs.push(`먼저 확인 · ${x}`));
+  if (isClue(e) || (e.chk && !cf.length && !isEnded(e))) firstChecks(e, isClue(e) ? 2 : 1).forEach(x => subs.push(`확인 : ${x}`));
   // 수정안: 먼저 확인 옆에 짧은 이유(cfNote), 종료·연결 이벤트에서 오는 주의(risk)
   if (cf.length) subs.push(`먼저 ${cf.join(", ")} 확인${e.cfNote ? " · " + e.cfNote : ""}`);
-  if (e.risk) subs.push(`주의 · ${e.risk}`);
+  if (e.risk) subs.push(`주의 : ${e.risk}`);
   else if (rel === "unk" && !isClue(e)) subs.push("먼저 렛서 사용 경로 확인");
   else if (EV7FLAG[e.id] && !e.st) subs.push(`먼저 ${EV7FLAG[e.id]} 해소 (원문 대조)`);
   const ab = g.resp === "route" && dir === "bad" ? altBest(e) : ""; if (ab) subs.push(ab);
-  subs.push(`대응 방향 · ${g.pre || ""}${RESP[g.resp]}${g.note ? ` (${g.note})` : ""}`);
+  subs.push(`대응 : ${g.pre || ""}${RESP[g.resp]}${g.note ? ` (${g.note})` : ""}`);  // '라벨 : 내용' 꼴(2026-10-27 박건 요청)
   return {act, due:g.due, subs}; }
 function nextHtml(e){ const n = nextOf(e);
   return `${esc(n.act)}${n.due ? ` <span class="due">${esc(n.due)}</span>` : ""}${n.subs.map(x => `<div class="s">${esc(x)}</div>`).join("")}`; }

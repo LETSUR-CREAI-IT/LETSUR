@@ -828,6 +828,14 @@ def test_type_chips_show_only_the_picked_types(tmp_path):
     assert "listOff" not in page
 
 
+def test_next_step_lines_read_label_colon_text(tmp_path):
+    """2026-10-27 박건 request: '확인 : …' and '대응 : …' under 다음 할 일, not '먼저 확인 · …' and '대응 방향 · …'."""
+    _write(tmp_path, [])
+    page = _build(tmp_path)[1]
+    assert "subs.push(`확인 : ${x}`)" in page and "subs.push(`대응 : ${g.pre" in page
+    assert "먼저 확인 · ${x}" not in page and "대응 방향 · ${g.pre" not in page
+
+
 def test_template_says_when_a_linked_card_is_not_on_the_page(tmp_path):
     """2026-10-27 decision 26-6: a #card id the page lacks opens the top card with a notice, cleared once a card is chosen."""
     _write(tmp_path, [])
