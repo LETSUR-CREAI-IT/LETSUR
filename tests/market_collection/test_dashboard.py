@@ -863,6 +863,14 @@ def test_a_discount_that_runs_out_into_an_announced_price_links_the_cards():
     assert "postEst" not in other_route and "risk" not in other_route and "link" not in other
 
 
+def test_list_rows_lead_with_the_model(tmp_path):
+    """2026-10-27 박건 request: each list row says which model it is about before what changed."""
+    _write(tmp_path, [])
+    page = _build(tmp_path)[1]
+    assert '<b><span class="subj">${esc(e.m)}</span> ${esc(e.sum)}' in page
+    assert '${esc(e.m)} · ${esc(e.ch)}</span></span>' not in page
+
+
 def test_template_says_when_a_linked_card_is_not_on_the_page(tmp_path):
     """2026-10-27 decision 26-6: a #card id the page lacks opens the top card with a notice, cleared once a card is chosen."""
     _write(tmp_path, [])
