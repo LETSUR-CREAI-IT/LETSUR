@@ -8,6 +8,7 @@ from datetime import datetime, timedelta, timezone
 from urllib.parse import parse_qs, urlsplit
 
 from alerts import acknowledge, digest, encode
+from dashboard_cards import condition_value, name
 
 ACTION_ID = "ack_card"
 MAX_BODY_BYTES = 128 * 1024
@@ -49,25 +50,33 @@ def _schedule(card):
     return f"오늘 {label}" if days == 0 else f"{label}까지 {days}일"
 
 
-def _card_text(card):
+def _dashboard_cards(card):
+    """Ids of the dashboard cards that hold this card's events, in the order the events list them."""
+    return list(dict.fromkeys(item["dashboard_card"] for item in card["items"] if item.get("dashboard_card")))
+
+
+def _card_text(card, names):
     lines = [f"{_clip(card.get('model', '모델 미확인'), 180)} / {_clip(card.get('route', '경로 미확인'), 180)}",
              _schedule(card)]
     conditions = card.get("conditions") or {}
-    shown = [f"{key}: {_clip(conditions[key], 100)}" for key in (
-        "endpoint_tag", "service_tier", "region", "input_token_band"
-    ) if key in conditions]
+    shown = []
+    for key in ("endpoint_tag", "service_tier", "region", "input_token_band", "endpoint_status"):
+        value = condition_value(names, key, conditions[key]) if key in conditions else ""
+        if value != "":
+            shown.append(f"{_clip(name(names, 'conditions', key), 40)}: {_clip(value, 100)}")
     if shown:
         lines.append("조건 · " + " / ".join(shown))
     if card.get("date_basis") == "derived_from_publication":
         lines.append("종료 연도는 게시일에서 파생")
     for item in card["items"]:
         before, after = item.get("before") or {}, item.get("after") or {}
+        label = name(names, "items", item.get("billing_item"))
         if before.get("amount") is not None and after.get("amount") is not None:
-            lines.append(f"{_clip(item.get('billing_item') or '가격', 80)}: {_clip(before['amount'], 40)} → {_clip(after['amount'], 40)} {_clip(after.get('currency', ''), 20)} / {_clip(after.get('unit', ''), 50)}")
+            lines.append(f"{_clip(label or '가격', 80)}: {_clip(before['amount'], 40)} → {_clip(after['amount'], 40)} {_clip(after.get('currency', ''), 20)} / {_clip(name(names, 'units', after.get('unit', '')), 50)}")
         elif (item.get("change") or {}).get("discount_pct") is not None:
             lines.append(f"할인율: {_clip(item['change']['discount_pct'], 30)}%")
         else:
-            lines.append("변경 항목: " + _clip(item.get("billing_item") or item.get("event_type") or item["event_id"], 100))
+            lines.append("변경 항목: " + _clip(label or item.get("event_type") or item["event_id"], 100))
     if any(i.get("delivery_kind") == "changed" for i in card["items"]):
         lines.append("변경된 미확인 사건")
     if any(i.get("status") != "confirmed" for i in card["items"]):
@@ -86,10 +95,13 @@ def _card_text(card):
             lines.append("미확정 사유: " + _clip(" / ".join(shown), 350))
     if any(i.get("missing_in_current_input") for i in card["items"]):
         lines.append("최신 수집에서 미관측 · 취소로 간주하지 않음")
+    others = len(_dashboard_cards(card)) - 1
+    if others > 0:
+        lines.append(f"대시보드 카드 외 {others}장")
     return "\n".join(lines)
 
 
-def _display_parts(cards):
+def _display_parts(cards, names):
     """Keep every acknowledged item visible; long cards get multiple buttons."""
     result = []
     for card in cards:
@@ -97,11 +109,11 @@ def _display_parts(cards):
         current["items"] = []
         for item in card["items"]:
             trial = dict(current, items=current["items"] + [item])
-            if current["items"] and len(_card_text(trial)) > 2800:
+            if current["items"] and len(_card_text(trial, names)) > 2800:
                 result.append(current)
                 current = dict(card, items=[])
             current["items"].append(item)
-            if len(_card_text(current)) > 2800:
+            if len(_card_text(current, names)) > 2800:
                 raise ValueError("단일 이벤트 표시 내용이 Slack 제한을 넘습니다")
         if current["items"]:
             result.append(current)
@@ -119,12 +131,19 @@ def _https_url(url):
     return url
 
 
+def _card_url(url, card):
+    """The dashboard opened at the first dashboard card that holds the card's events, else the plain address (decision 26-6)."""
+    ids = _dashboard_cards(card)
+    return (url.split("#", 1)[0] + "#" + ids[0]) if ids else url
+
+
 def message_batches(db, report, *, dashboard_url=None, max_blocks=40):
     """Return (Slack payload, displayed card snapshots) batches; never sends."""
     if not 4 <= max_blocks <= 40:
         raise ValueError("max_blocks는 4~40이어야 합니다")
     url = _https_url(dashboard_url)
-    cards = _display_parts(report.get("cards") or [])
+    names = report.get("names") or {}
+    cards = _display_parts(report.get("cards") or [], names)
     if not cards:
         return []
     per_message = (max_blocks - 1) // 3
@@ -141,9 +160,9 @@ def message_batches(db, report, *, dashboard_url=None, max_blocks=40):
                              "action_id": ACTION_ID, "value": token}]
                 if url:
                     elements.append({"type": "button", "text": {"type": "plain_text", "text": "대시보드"},
-                                     "action_id": "open_dashboard", "url": url})
+                                     "action_id": "open_dashboard", "url": _card_url(url, card)})
                 blocks.extend([
-                    {"type": "section", "text": {"type": "plain_text", "text": _card_text(card)}},
+                    {"type": "section", "text": {"type": "plain_text", "text": _card_text(card, names)}},
                     {"type": "actions", "block_id": "ack_" + secrets.token_hex(12), "elements": elements},
                     {"type": "divider"},
                 ])

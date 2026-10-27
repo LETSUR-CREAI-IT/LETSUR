@@ -9,6 +9,7 @@ from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 from alerts import connect
+from dashboard_cards import parse
 from delivery import DefiniteFailure
 from runtime import run_cycle
 from runtime_socket import initialize, process_payload, repair_displays
@@ -173,6 +174,22 @@ run_cycle(sys.argv[1],json.loads(Path(sys.argv[2]).read_text()),date(2026,10,27)
         changed = run_cycle(self.db, self.document, DAY + timedelta(days=1), 'CTEST', self.send)
         self.assertEqual(changed['report']['event_count'], 1)
         self.assertEqual(len(self.calls), 3)
+
+    def test_dashboard_judgement_decides_what_is_sent_and_where_the_button_goes(self):
+        cards = json.loads((ROOT / 'fixtures_cards.json').read_text(encoding='utf-8'))
+        link = 'https://dashboard.example/LETSUR/'
+        result = run_cycle(self.db, self.document, DAY, 'CTEST', self.send, link, judged=parse(cards))
+        self.assertEqual(result['sent_messages'], 1)
+        with closing(connect(self.db)) as db:
+            payload = json.loads(db.execute('SELECT payload FROM delivery_outbox').fetchone()[0])
+        urls = [e['url'] for b in payload['blocks'] for e in b.get('elements', []) if e['action_id'] == 'open_dashboard']
+        self.assertEqual(urls, [link + '#g_0000000000a1'])
+        self.assertIn('입력 토큰: 1 → 2 USD / 100만 토큰', json.dumps(payload, ensure_ascii=False))
+        # The same events in a RECORD card send nothing, even on another day when the earlier message is not in the way.
+        cards['cards'][0]['action'] = 'RECORD'
+        later = run_cycle(self.db, self.document, DAY + timedelta(days=1), 'CTEST', self.send, link, judged=parse(cards))
+        self.assertEqual((later['sent_messages'], later['report']['event_count']), (0, 0))
+        self.assertEqual(len(self.calls), 1)
 
 
 if __name__ == '__main__':

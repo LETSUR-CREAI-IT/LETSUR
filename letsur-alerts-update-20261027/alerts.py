@@ -7,6 +7,11 @@ from datetime import date, datetime, timezone
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
 
+from dashboard_cards import name
+
+# Decision 26-4 (2026-10-27): an unacknowledged alert is last sent 7 days after its deadline, from the 8th day on it stops.
+OVERDUE_DAYS = 7
+
 
 def encode(value):
     return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
@@ -263,7 +268,9 @@ def grouping(event):
             "deadline": day.isoformat() if day else None, "basis": basis}
 
 
-def prepare(db, today, channel, urgent_days=5):
+def prepare(db, today, channel, urgent_days=5, judged=None):
+    """Cards of the unacknowledged urgent events. judged is the run's cards.json as dashboard_cards.parse returns it;
+    None means no dashboard judgement, only the rules here (and the 7-day limit)."""
     check_urgent_days(urgent_days)
     check_day(db, today)
     # No collection is needed for the clock to move from D-6 to D-5.
@@ -277,15 +284,21 @@ def prepare(db, today, channel, urgent_days=5):
             day, _, _ = deadline(event)
             if event_eligible(event) and day is not None and (day - today).days <= urgent_days:
                 db.execute("UPDATE events SET urgent=1 WHERE id=?", (row["id"],))
+    names = judged["names"] if judged else {}
     groups = {}
     for row in db.execute("SELECT * FROM events WHERE urgent=1 ORDER BY id"):
         if row["ack_signature"] == row["signature"]:
             continue
         event = json.loads(row["payload"])
-        key = digest(grouping(event))
         day, label, basis = deadline(event)
-        card = groups.setdefault(key, {"card_id": key, "model": event.get("model_id"),
-            "route": event.get("route"), "conditions": event.get("conditions") or {},
+        match = (judged["events"].get(row["id"]) if judged else None) or {}
+        # Decision 26-4: a dashboard RECORD card is not an alert (NOT APPLIES still is), and an alert stops on the 8th day after its deadline.
+        if (day is not None and (today - day).days > OVERDUE_DAYS) or match.get("action") == "RECORD":
+            continue
+        key = digest(grouping(event))
+        card = groups.setdefault(key, {"card_id": key, "model": match.get("model") or event.get("model_id"),
+            "route": match.get("route") or name(names, "routes", event.get("route")),
+            "conditions": event.get("conditions") or {},
             "deadline": day.isoformat() if day else None, "schedule_label": label,
             "date_basis": basis, "days": (day - today).days if day else None, "items": []})
         sent = db.execute("""SELECT 1 FROM simulated_deliveries
@@ -301,7 +314,7 @@ def prepare(db, today, channel, urgent_days=5):
             "after": event.get("after"), "change": event.get("change") or {},
             "sources": event.get("sources") or [], "evidence_refs": event.get("evidence_refs") or [],
             "gaps": event.get("gaps") or [], "next_checks": event.get("next_checks") or [],
-            "missing_in_current_input": row["seen_day"] != today.isoformat(),
+            "missing_in_current_input": row["seen_day"] != today.isoformat(), "dashboard_card": match.get("card"),
             "delivery_kind": "changed" if changed else "reminder" if previous else "initial",
             "already_simulated_today": bool(sent)})
     cards = list(groups.values())
@@ -310,10 +323,11 @@ def prepare(db, today, channel, urgent_days=5):
     cards = [card for card in cards if card["items"]]
     cards.sort(key=lambda c: (c["days"] is None, c["days"] or 0, c["card_id"]))
     return {"mode": "OFFLINE_ONLY", "as_of": today.isoformat(), "channel": channel,
-            "card_count": len(cards), "event_count": sum(len(c["items"]) for c in cards), "cards": cards}
+            "card_count": len(cards), "event_count": sum(len(c["items"]) for c in cards), "names": names, "cards": cards}
 
 
 def render(report):
+    names = report.get("names") or {}
     lines = ["【로컬 미리보기 · Slack 미발송】",
              f"기준일 {report['as_of']} | 사건 카드 {report['card_count']}개 / 이벤트 {report['event_count']}건", ""]
     if not report["cards"]:
@@ -331,7 +345,7 @@ def render(report):
         for item in card["items"]:
             before, after = item["before"] or {}, item["after"] or {}
             if before.get("amount") is not None and after.get("amount") is not None:
-                lines.append(f"  {item['billing_item']}: {before['amount']} → {after['amount']} {after.get('currency','')} / {after.get('unit','')}")
+                lines.append(f"  {name(names, 'items', item['billing_item'])}: {before['amount']} → {after['amount']} {after.get('currency','')} / {name(names, 'units', after.get('unit',''))}")
             elif item["change"].get("discount_pct") is not None:
                 lines.append(f"  할인율: {item['change']['discount_pct']}%")
             lines.append(f"  {item['event_id']} / revision {item['revision']} / {item['status']}")

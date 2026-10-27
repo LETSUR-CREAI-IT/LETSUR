@@ -1,0 +1,19 @@
+{
+  "fixture_notice": "합성 검증용. fixtures.json의 이벤트에 연결한 cards.json이며 names는 2026-10-27 실제 빌드에서 복사했다.",
+  "schema": 1,
+  "base_day": "2026-10-26",
+  "names": {
+    "routes": {"openrouter": "OpenRouter · openrouter", "vercel_ai_gateway": "Vercel · vercel_ai_gateway", "google_vertex": "Google Cloud · google_vertex", "google_direct": "Google · google_direct"},
+    "items": {"input": "입력 토큰", "output": "출력 토큰", "cache_read": "캐시 읽기", "cache_write": "캐시 쓰기"},
+    "conditions": {"service_tier": "등급", "cache_read_multiplier": "캐시 읽기 배율", "context_length": "컨텍스트", "endpoint_tag": "엔드포인트", "endpoint_provider": "제공자", "endpoint_model_slug": "모델 slug", "quantization": "정밀도", "endpoint_status": "상태", "endpoint_discount": "엔드포인트 할인", "discount_application": "할인 적용", "price_basis": "가격 기준", "region": "지역", "input_token_band": "입력 구간", "precision": "정밀도"},
+    "tiers": {"standard": "Standard", "priority": "Priority", "ultrafast": "Ultrafast", "flex": "Flex", "batch": "Batch"},
+    "regions": {"us": "US", "eu": "EU"},
+    "status": {"-1": "우선순위 낮춤", "-2": "성능 저하", "-3": "순위 하향", "-5": "중단", "-10": "사용 중지"},
+    "units": {"1M tokens": "100만 토큰", "1000 tokens": "1,000 토큰"}
+  },
+  "cards": [
+    {"id": "g_0000000000a1", "events": ["demo-input", "demo-output"], "action": "REVIEW", "applicability": "NOT APPLIES", "assumed": true, "deadline": "2026-10-29", "deadline_label": "적용일", "model": "가상 모델 A", "route": "가상 공급 경로", "type": "예정 변경", "summary": "2개 항목 단가 10/29부터 인상 예정", "conditions": [["경로", "가상 공급 경로"]]},
+    {"id": "g_0000000000b1", "events": ["demo-discount"], "action": "RECORD", "applicability": "NOT APPLIES", "assumed": true, "deadline": "2026-10-24", "deadline_label": "할인 종료일", "model": "가상 모델 B", "route": "가상 공급 경로", "type": "한시 할인", "summary": "50% 할인 · 10/24까지", "conditions": [["경로", "가상 공급 경로"]]},
+    {"id": "g_0000000000c1", "events": ["demo-no-date"], "action": "VERIFY", "applicability": "UNKNOWN", "assumed": false, "deadline": null, "deadline_label": "적용일", "model": "가상 모델 C", "route": "가상 공급 경로", "type": "가격 변경", "summary": "단가 변경 언급 · 관측값 확인 전", "conditions": [["경로", "가상 공급 경로"]]}
+  ]
+}

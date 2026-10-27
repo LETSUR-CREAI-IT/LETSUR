@@ -12,6 +12,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from alerts import connect, render
+from dashboard_cards import from_source
 from github_credentials import github_token
 from github_source import fetch_latest, SourceError
 from runtime import run_cycle
@@ -132,12 +133,15 @@ def cycle(command, config, state, settings):
             document, source_error = None, 'no_collection_today'
     if command == 'watch' and source_error and 'newer_run_pending' in source_error and not fallback_due:
         return {'status': 'collection_in_progress', 'sent_messages': 0}
+    judged, cards_warning = from_source(source)
     notice = '테스트 워크스페이스 · 공개 수집 자료'
     if source_error:
         notice += ' · 수집 갱신 실패/지연 — 기존 미확인 사건 재알림'
     elif source:
         created = datetime.fromisoformat(source['metadata']['run_created_at'].replace('Z', '+00:00')).astimezone(KST)
         notice += ' · 수집 ' + created.strftime('%Y-%m-%d %H:%M KST')
+    if cards_warning:
+        notice += ' · ' + cards_warning
     dbpath = state / ('preview.sqlite' if command == 'preview' else 'alerts.sqlite')
     live = state / 'alerts.sqlite'
     if document is None:
@@ -165,7 +169,7 @@ def cycle(command, config, state, settings):
         api.authenticate(settings['SLACK_TEAM_ID'])
         sender = api.send
     result = run_cycle(dbpath, document, today, settings['SLACK_CHANNEL_ID'], sender,
-        config.get('dashboard_url'), config['urgent_days'], notice=notice)
+        config.get('dashboard_url'), config['urgent_days'], notice=notice, judged=judged)
     report = result['report']
     atomic_json(state / (command + '-result.json'), result)
     (state / (command + '-preview.txt')).write_text(notice + '\n' + render(report), encoding='utf-8')
@@ -177,7 +181,7 @@ def cycle(command, config, state, settings):
         atomic_json(marker_path, {'source_key': source_key, 'processed_day': today.isoformat(),
                                  'processed_at': datetime.now(timezone.utc).isoformat()})
     return {'status': 'needs_attention' if needs_attention else 'completed', 'source_error': source_error,
-            'run_id': source['metadata']['run_id'] if source else None,
+            'cards_warning': cards_warning, 'run_id': source['metadata']['run_id'] if source else None,
             'source_events': total, 'cards': report['card_count'], 'events': report['event_count'],
             'sent_messages': result['sent_messages'], 'outcomes': result['outcomes'],
             'held_uncertain_versions': result['held_uncertain_versions']}
