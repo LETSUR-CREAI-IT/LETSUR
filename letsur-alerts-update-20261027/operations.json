@@ -1,0 +1,9 @@
+{
+  "app_id": "REPLACE_WITH_YOUR_SLACK_APP_ID",
+  "urgent_days": 5,
+  "collection_check_minutes": 10,
+  "missing_collection_fallback_kst": "23:00",
+  "max_source_age_hours": 36,
+  "dashboard_url": "https://letsur-creai-it.github.io/LETSUR/",
+  "state_directory": "output/live"
+}

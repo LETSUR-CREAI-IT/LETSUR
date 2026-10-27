@@ -1,0 +1,217 @@
+{
+  "mode": "OFFLINE_ONLY",
+  "snapshots": [
+    {
+      "day": "2026-10-25",
+      "filename": "events.json",
+      "sha256": "0e92c39ff978f5468e3e52012685d635b957ef6721d094289ce228d1c1367a8f",
+      "counts": {
+        "total": 372,
+        "by_status": {
+          "confirmed": 270,
+          "candidate": 102
+        },
+        "by_type": {
+          "price_change": 274,
+          "limited_discount": 63,
+          "scheduled_change": 18,
+          "null": 15,
+          "route_change": 2
+        },
+        "classification": {
+          "eligible_but_no_deadline": 247,
+          "quality_gate_excluded": 102,
+          "eligible_deadline_after_five_days": 19,
+          "eligible_overdue": 4
+        }
+      }
+    },
+    {
+      "day": "2026-10-26",
+      "filename": "events.json",
+      "sha256": "d0cffb84bee641d2d2f36ce98cbd93db2765883085ee85235064e3ee3f9452e3",
+      "counts": {
+        "total": 395,
+        "by_status": {
+          "confirmed": 293,
+          "candidate": 102
+        },
+        "by_type": {
+          "price_change": 297,
+          "limited_discount": 63,
+          "scheduled_change": 18,
+          "null": 15,
+          "route_change": 2
+        },
+        "classification": {
+          "eligible_but_no_deadline": 270,
+          "quality_gate_excluded": 102,
+          "eligible_deadline_after_five_days": 19,
+          "eligible_overdue": 4
+        }
+      }
+    }
+  ],
+  "unacknowledged": {
+    "rows": [
+      {
+        "day": "2026-10-25",
+        "evidence_kind": "actual_snapshot",
+        "candidate_cards": 3,
+        "candidate_events": 4,
+        "simulated_messages": 1,
+        "same_day_repeat_messages": 0
+      },
+      {
+        "day": "2026-10-26",
+        "evidence_kind": "actual_snapshot",
+        "candidate_cards": 3,
+        "candidate_events": 4,
+        "simulated_messages": 1,
+        "same_day_repeat_messages": 0
+      },
+      {
+        "day": "2026-10-27",
+        "evidence_kind": "frozen_input_scenario",
+        "candidate_cards": 3,
+        "candidate_events": 4,
+        "simulated_messages": 1,
+        "same_day_repeat_messages": 0
+      },
+      {
+        "day": "2026-10-28",
+        "evidence_kind": "frozen_input_scenario",
+        "candidate_cards": 3,
+        "candidate_events": 4,
+        "simulated_messages": 1,
+        "same_day_repeat_messages": 0
+      },
+      {
+        "day": "2026-10-29",
+        "evidence_kind": "frozen_input_scenario",
+        "candidate_cards": 3,
+        "candidate_events": 4,
+        "simulated_messages": 1,
+        "same_day_repeat_messages": 0
+      },
+      {
+        "day": "2026-10-30",
+        "evidence_kind": "frozen_input_scenario",
+        "candidate_cards": 3,
+        "candidate_events": 4,
+        "simulated_messages": 1,
+        "same_day_repeat_messages": 0
+      }
+    ],
+    "simulated_message_total": 6,
+    "actual_slack_calls": 0
+  },
+  "acknowledged_after_first": {
+    "rows": [
+      {
+        "day": "2026-10-25",
+        "evidence_kind": "actual_snapshot",
+        "candidate_cards": 3,
+        "candidate_events": 4,
+        "simulated_messages": 1,
+        "same_day_repeat_messages": 0
+      },
+      {
+        "day": "2026-10-26",
+        "evidence_kind": "actual_snapshot",
+        "candidate_cards": 0,
+        "candidate_events": 0,
+        "simulated_messages": 0,
+        "same_day_repeat_messages": 0
+      },
+      {
+        "day": "2026-10-27",
+        "evidence_kind": "frozen_input_scenario",
+        "candidate_cards": 0,
+        "candidate_events": 0,
+        "simulated_messages": 0,
+        "same_day_repeat_messages": 0
+      },
+      {
+        "day": "2026-10-28",
+        "evidence_kind": "frozen_input_scenario",
+        "candidate_cards": 0,
+        "candidate_events": 0,
+        "simulated_messages": 0,
+        "same_day_repeat_messages": 0
+      },
+      {
+        "day": "2026-10-29",
+        "evidence_kind": "frozen_input_scenario",
+        "candidate_cards": 0,
+        "candidate_events": 0,
+        "simulated_messages": 0,
+        "same_day_repeat_messages": 0
+      },
+      {
+        "day": "2026-10-30",
+        "evidence_kind": "frozen_input_scenario",
+        "candidate_cards": 0,
+        "candidate_events": 0,
+        "simulated_messages": 0,
+        "same_day_repeat_messages": 0
+      }
+    ],
+    "simulated_message_total": 1,
+    "actual_slack_calls": 0
+  },
+  "synthetic_capacity": {
+    "evidence_kind": "synthetic_capacity_not_market_forecast",
+    "cards": 100,
+    "simulated_messages": 9,
+    "displayed_parts_per_message": [
+      12,
+      12,
+      12,
+      12,
+      12,
+      12,
+      12,
+      12,
+      4
+    ],
+    "daily_message_cap_exists": false,
+    "actual_slack_calls": 0
+  },
+  "known_schedule_growth": {
+    "evidence_kind": "frozen_input_known_schedules_not_actual_future_runs",
+    "rows": [
+      {
+        "day": "2026-10-26",
+        "cards": 3,
+        "events": 4,
+        "simulated_messages": 1
+      },
+      {
+        "day": "2026-12-26",
+        "cards": 4,
+        "events": 5,
+        "simulated_messages": 1
+      },
+      {
+        "day": "2026-12-27",
+        "cards": 10,
+        "events": 23,
+        "simulated_messages": 1
+      }
+    ],
+    "already_stated_future_events": [
+      {
+        "deadline": "2026-12-31",
+        "event_type": "limited_discount",
+        "events": 1
+      },
+      {
+        "deadline": "2027-01-01",
+        "event_type": "scheduled_change",
+        "events": 18
+      }
+    ],
+    "actual_slack_calls": 0
+  }
+}

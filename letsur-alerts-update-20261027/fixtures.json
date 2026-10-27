@@ -1,0 +1,10 @@
+{
+  "fixture_notice": "합성 검증용. 실제 모델·시장 사건이 아닙니다.",
+  "events": [
+    {"event_id":"demo-input","event_type":"scheduled_change","model_id":"가상 모델 A","route":"가상 공급 경로","billing_item":"input","status":"confirmed","revision":1,"conditions":{"service_tier":"standard"},"before":{"amount":"1","currency":"USD","unit":"1M tokens"},"after":{"amount":"2","currency":"USD","unit":"1M tokens"},"change":{"pct":"100"},"dates":{"effective_from":"2026-10-29"}},
+    {"event_id":"demo-output","event_type":"scheduled_change","model_id":"가상 모델 A","route":"가상 공급 경로","billing_item":"output","status":"confirmed","revision":1,"conditions":{"service_tier":"standard"},"before":{"amount":"4","currency":"USD","unit":"1M tokens"},"after":{"amount":"6","currency":"USD","unit":"1M tokens"},"change":{"pct":"50"},"dates":{"effective_from":"2026-10-29"}},
+    {"event_id":"demo-discount","event_type":"limited_discount","model_id":"가상 모델 B","route":"가상 공급 경로","status":"confirmed","revision":1,"change":{"discount_pct":"50"},"dates":{"end_date":"2026-10-24"},"period_end":{"date":"2026-10-24","basis":"stated","as_of":"2026-10-26"}},
+    {"event_id":"demo-no-date","event_type":"price_change","model_id":"가상 모델 C","route":"가상 공급 경로","status":"confirmed","revision":1,"dates":{}},
+    {"event_id":"demo-candidate","event_type":"scheduled_change","model_id":"가상 모델 D","route":"가상 공급 경로","status":"candidate","revision":1,"dates":{"effective_from":"2026-10-27"}}
+  ]
+}
