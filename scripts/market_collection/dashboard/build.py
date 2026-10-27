@@ -1328,6 +1328,46 @@ def judgements(data: dict, groups: dict[str, list[dict]]) -> dict:
                        "summary": card.get("sum"), "conditions": card.get("cond") or []} for card in data["EVENTS"]]}
 
 
+def link_promotions(cards: list[dict], groups: dict[str, list[dict]], tables: dict, routes: dict | None) -> None:
+    """A gateway discount that runs out into its upstream's announced price (the 공급사 비교 표 match of decision 16): the
+    announced change's cards and the discount cards link to each other ('함께 볼 이벤트'), and on the route LETSUR uses the
+    discount card gets the price after it as an estimate and a 주의 line, and so does the announced change (2026-10-27
+    결정 1번 가안, gemini-3.8-flash). Each table's promo list is taken out here; the page does not carry it."""
+    for model_id, table in tables.items():
+        matches = sorted(table.pop("promo", None) or [], key=lambda m: (m["direct"], m["route"], not m["standard"]))
+        mine = [card for card in cards if card["mid"] == model_id]
+        route = {card["id"]: representative(groups[card["id"]]).get("route") or "" for card in mine}
+        changes = {route[card["id"]]: card for card in mine if card["t7"] == "예정 변경" and card.get("eff")}
+        sales: dict[str, list[dict]] = {}
+        for card in mine:
+            if card["t7"] == "한시 할인" and card.get("ps") != "ended":
+                sales.setdefault(route[card["id"]], []).append(card)
+        pairs = [(m, changes[m["direct"]]) for m in matches
+                 if m["direct"] in changes and changes[m["direct"]]["eff"] == m["start"] and m["route"] in sales]
+        used = {record["route_id"] for record in (routes or {}).get("records", []) if record["model_id"] == model_id}
+        mark = " 가정" if (routes or {}).get("is_demo") else ""
+        for gateway in dict.fromkeys(m["route"] for m, _ in pairs):
+            change = next(c for m, c in pairs if m["route"] == gateway)
+            for sale in sales[gateway]:
+                sale["link"] = [change["id"], change["sum"]]
+        for change in {c["id"]: c for _, c in pairs}.values():
+            gateways = [m["route"] for m, c in pairs if c is change]
+            gateway = next((g for g in gateways if g in used), gateways[0])
+            change["link"] = [sales[gateway][0]["id"], sales[gateway][0]["sum"]]
+            if gateway in used:
+                end = sales[gateway][0].get("eff") or (date.fromisoformat(change["eff"]) - timedelta(days=1)).isoformat()
+                change["risk"] = (f"렛서{mark} 경로({ROUTE_PUBLISHERS.get(gateway, gateway)})도 {md(end)}에 할인이 끝나 "
+                                  f"{md(change['eff'])}부터 같은 가격이 될 수 있음(추정)")
+        for gateway in dict.fromkeys(m["route"] for m, _ in pairs if m["route"] in used):
+            on = [(m, c) for m, c in pairs if m["route"] == gateway]
+            m, change = next(((m, c) for m, c in on if m["standard"]), on[0])  # the Standard row, else the first one
+            times = "두 배" if m["times"] == "2" else f"{m['times']}배"
+            for sale in sales[gateway]:
+                sale["postEst"] = (f"할인 끝난 뒤 {'Standard ' if m['standard'] else ''}{m['after']} "
+                                   f"(추정 · {ROUTE_PUBLISHERS.get(m['direct'], m['direct'])} {md(change['eff'])} 가격 기준)")
+                sale["risk"] = f"{md(change['eff'])}부터 지금 가격의 {times}가 될 수 있음(추정)"
+
+
 def collect(root: Path, today: str, routes: dict | None) -> tuple[dict, str]:
     """Page data and the status banner for <root>/events."""
     folder = root / "events"
@@ -1370,6 +1410,7 @@ def collect(root: Path, today: str, routes: dict | None) -> tuple[dict, str]:
     # 공급사 비교 표 per LLM model with a card (compare.py; reads the newest processed run under <root>/runs)
     data["COMPARE"] = compare.tables(root, [card["mid"] for card in cards], [e for e in doc["events"] if isinstance(e, dict)],
                                      doc.get("gaps") or [], state, report, routes, today)
+    link_promotions(cards, groups, data["COMPARE"], routes)
     data["JUDGED"] = judgements(data, groups)  # not a page slot: main writes it to cards.json
     return data, warning(continuity)
 

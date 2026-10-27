@@ -220,8 +220,9 @@ python3 -B -m scripts.market_collection.dashboard --root data/market_collection 
 ### 비우는 필드
 
 - `act: "pending"`(평가 보류).
-- 넣지 않는 필드: `head`, `key`, `keyAdd`, `chip`, `what`, `checkFirst`, `link`, `risk`, `notes`, `extra`, `alt`, `imp_rows`, `dir`, 캘린더 문구(`cal`). 엔진 `significance`·`impact`·`suggestion` 문구도 쓰지 않는다.
+- 넣지 않는 필드: `head`, `key`, `keyAdd`, `chip`, `what`, `checkFirst`, `notes`, `extra`, `alt`, `imp_rows`, `dir`, 캘린더 문구(`cal`). 엔진 `significance`·`impact`·`suggestion` 문구도 쓰지 않는다.
 - 원가 칩과 제안 문구는 템플릿 로직이 바뀐 내용 표 값으로 계산한다.
+- `link`·`risk`·`postEst`(2026-10-27 결정 1번 가안): 게이트웨이 할인이 상류 공급사의 공식 예정 가격으로 끝날 때만 채운다(공급사 비교 표의 16절 맞춤과 같은 조건). 예정 변경 카드와 할인 카드가 '함께 볼 이벤트'로 서로 잇는다(`link`). 렛서 경로의 할인 카드에는 할인 끝난 뒤 추정 가격(`postEst`, 핵심 변화에 표시)과 주의 줄(`risk`)이, 예정 변경 카드에는 렛서 경로도 같은 가격이 될 수 있다는 주의 줄이 붙는다. `build.py` `link_promotions()`가 `compare.py` 표의 `promo`를 읽고 페이지에 넣기 전에 지운다. 10/27 데이터에서는 gemini-3.8-flash의 네 카드(Google 인상, Vertex 인상, Vercel 할인, OpenRouter 할인)만 해당한다.
 
 ### MODELS, COLLECTED
 
@@ -252,7 +253,7 @@ python3 -B -m scripts.market_collection.dashboard --root data/market_collection 
 - 묶음: 정밀도(fp4에 mxfp4·nvfp4, fp8에 mxfp8, 비공개 모델은 '비공개') · 지역(US·EU 등) · 등급(Standard·Priority·Ultrafast·Flex·Batch) · 입력 구간이 같은 행끼리만 비교한다. OpenRouter 표기 fast 등은 Priority, us-east-1 등은 US로 묶고 원래 표기는 비고에, global은 지역 없음. Vercel 행 안 등급·지역 가격은 별도 행이고 정밀도는 그 Vercel 행이 적은 값만 쓴다.
 - 강조: 열마다 최저 민트(동점 모두), 비교할 행이 하나면 남색 '유일', 종료일은 가장 늦은 날짜. 정밀도가 적힌 행은 채움+테두리, 추정·상태 -1/-2·가격 변동 큼·비공개 모델 행은 채움만. 회색 종료·미확인, 점선 비교 제외(표 아래, 비고에 사유), 주황 출처 상충. 추정 수치와 '최소' 날짜는 강조하지 않는다.
 - 정밀도가 빈 행은 다른 게이트웨이의 같은 공급처·등급·가격 행 표기를 '추정'으로 빌린다. 10/26 손 조사 결과는 `DOC_PRECISION`·`DOC_UNCLEAR`·`DOC_NOTE`에 있다(가격이 같으면 확인, 다르면 추정).
-- 할인 칸: OpenRouter 할인은 표시 가격으로 비교하고 종료 후 가격 = 표시 ÷ (1 − 할인율) '(추정)'. Google 직접·Vertex 예정 인상은 현재가·마지막 날·새 가격, 그 일정과 맞는 OpenRouter 할인 행 종료일은 '12/31 (추정 · 공급사 문서 기준)'. Vercel 공지는 인용문의 하위 공급처 행(없으면 경로 전체)에 붙고 끝난 할인은 7일 뒤 빠진다.
+- 할인 칸: OpenRouter 할인은 표시 가격으로 비교하고 종료 후 가격 = 표시 ÷ (1 − 할인율) '(추정)'. Google 직접·Vertex 예정 인상은 현재가·마지막 날·새 가격, 그 일정과 맞는 OpenRouter 할인 행 종료일은 '12/31 (추정 · 공급사 문서 기준)'. Vercel 공지는 인용문의 하위 공급처 행(없으면 경로 전체)에 붙고 끝난 할인은 7일 뒤 빠진다. Vercel 공지가 할인율만 밝히면 종료 후 가격은 '미확인'이다. 다만 그 행의 표시 가격이 같은 하위 공급처 직접 경로의 현재가와 같고, 할인율로 되돌린 값이 그 경로의 공식 예정 가격과 같으면 그 값을 '(추정 · 공급사 문서 기준)'으로 적는다(2026-10-27 결정 1번 가안, `announced()`).
 - 적용 기간: 가격 변경 이벤트가 있으면 '변경 관측', 없으면 엔드포인트의 첫 관측 run('첫 관측', 첫 수집일 10/16이면 '수집 시작일').
 - 한계: 7일 규칙은 생성일 기준이라 `?base=`로 다시 계산하지 않는다. 엔진이 비교에서 뺀 행은 가격 변경 기록이 없어 첫 관측만 보이고 가격 변동 큼도 판정하지 않는다. 공개 가중치 여부는 데이터에 칸이 없어 모델 계열(deepseek·glm·kimi)로 정한다. 결정 4-3('공식 확인 전' 값은 사유별 처리)은 처리 방법이 없어 넣지 않았다.
 

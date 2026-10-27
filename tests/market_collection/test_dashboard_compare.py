@@ -269,6 +269,24 @@ def test_channel_notices_end_dates_recent_endings_and_named_upstreams():
     assert blackbox["notes"][0] == "eve 전용 100% 할인 · 할인 칸에 넣지 않음" and blackbox["disc"][0][0].startswith("50%")
 
 
+def test_vercel_notice_runs_out_into_the_upstreams_announced_price():
+    """2026-10-27 결정(1번 가안): a rate-only Vercel notice on a row priced like its upstream today, whose undiscounted price is
+    the upstream's announced next price, gets that price as an estimate; any other row keeps 미확인."""
+    notices = compare.channel_notices([_notice("e1", "50", "2026-12-31", "active", "2026-09-02T00:00:00Z",
+                                               "The model is 50% off through December 31st.")], {GLM})
+    vercel = _row(route="vercel_ai_gateway", provider="googleaistudio", prices=D("0.75", "3.75", "0.075"))
+    other = _row(route="vercel_ai_gateway", provider="novita", prices=D("0.75", "3.75", "0.075"))
+    direct = _row(route="google_direct", prices=D("0.75", "3.75", "0.075"), future=D("1.50", "7.50", "0.15"), start={"2027-01-01"},
+                  until={"2026-12-31"})
+    rows = [vercel, other, direct]
+    for row in rows:
+        compare.discount_cells(row, rows, compare.ITEMS, notices, date(2026, 10, 27))
+    assert vercel["disc"] == [["50% 할인 (공개 안 됨 · 추정 수치)", ""], ["12/31 (연도 추정)", "date"],
+                              ["1.5 / 7.5 / 0.15 (추정 · 공급사 문서 기준)", "est"]]
+    assert (vercel["promo"]["direct"], vercel["promo"]["start"], vercel["promo"]["rate"]) == ("google_direct", "2027-01-01", Decimal("0.5"))
+    assert other["disc"][2] == ["미확인", "gy"] and "promo" not in other
+
+
 def test_period_and_large_swing_from_state_and_events():
     conditions = {"endpoint_tag": "x/fp8", "service_tier": "standard", "quantization": "fp8"}
     state = {"processed_runs": ["20261016T070232Z-a", "20261022T045858Z-b"],

@@ -840,6 +840,29 @@ def test_next_step_lines_read_label_colon_text(tmp_path):
         "relShort"] == "경로 표기 없음 : 사용 경로 확인 필요"
 
 
+def test_a_discount_that_runs_out_into_an_announced_price_links_the_cards():
+    """2026-10-27 결정(1번 가안): the announced change and the discounts link to each other; on LETSUR's route the discount
+    card gets the price after it as an estimate and a 주의 line, and so does the announced change."""
+    cards = [{"id": "up", "mid": "m", "t7": "예정 변경", "eff": "2027-01-01", "sum": "12개 항목 단가 1/1부터 인상 예정"},
+             {"id": "vercel", "mid": "m", "t7": "한시 할인", "eff": "2026-12-31", "sum": "50% 할인 · 12/31까지"},
+             {"id": "or", "mid": "m", "t7": "한시 할인", "sum": "할인 · 종료일 미확인"},
+             {"id": "other", "mid": "n", "t7": "한시 할인", "sum": "x"}]
+    groups = {"up": [{"route": "google_direct"}], "vercel": [{"route": "vercel_ai_gateway"}], "or": [{"route": "openrouter"}],
+              "other": [{"route": "vercel_ai_gateway"}]}
+    promo = [{"route": route, "direct": "google_direct", "start": "2027-01-01", "standard": True, "after": "$1.50 / $7.50 / $0.15",
+              "times": "2"} for route in ("openrouter", "vercel_ai_gateway")]
+    tables = {"m": {"groups": [], "promo": promo}}
+    routes = {"records": [{"model_id": "m", "route_id": "vercel_ai_gateway"}], "is_demo": True}
+    build.link_promotions(cards, groups, tables, routes)
+    up, vercel, other_route, other = cards
+    assert "promo" not in tables["m"]
+    assert up["link"] == ["vercel", "50% 할인 · 12/31까지"] and vercel["link"] == other_route["link"] == ["up", "12개 항목 단가 1/1부터 인상 예정"]
+    assert up["risk"] == "렛서 가정 경로(Vercel)도 12/31에 할인이 끝나 1/1부터 같은 가격이 될 수 있음(추정)"
+    assert vercel["postEst"] == "할인 끝난 뒤 Standard $1.50 / $7.50 / $0.15 (추정 · Google 1/1 가격 기준)"
+    assert vercel["risk"] == "1/1부터 지금 가격의 두 배가 될 수 있음(추정)"
+    assert "postEst" not in other_route and "risk" not in other_route and "link" not in other
+
+
 def test_template_says_when_a_linked_card_is_not_on_the_page(tmp_path):
     """2026-10-27 decision 26-6: a #card id the page lacks opens the top card with a notice, cleared once a card is chosen."""
     _write(tmp_path, [])

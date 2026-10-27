@@ -717,7 +717,7 @@ function keyChange(e){
     sub = r ? `이전 ${plain(val(r[1]))} · 현재 ${plain(val(r[2]))} · 재조회 전에는 이벤트로 보지 않음` : "";
   }
   if (o.big) big = esc(o.big); if (o.sub) sub = esc(o.sub); if (e.keyAdd) sub += (sub ? " · " : "") + esc(e.keyAdd);
-  return `<section class="kc"><h3>핵심 변화</h3><div class="big">${big}</div>${sub ? `<div class="sub2">${sub}</div>` : ""}${list.length ? `<ul class="kl">${list.map(rowLine).join("")}</ul>` : ""}${checksHtml(e)}</section>`;
+  return `<section class="kc"><h3>핵심 변화</h3><div class="big">${big}</div>${sub ? `<div class="sub2">${sub}</div>` : ""}${e.postEst ? `<div class="sub2">${esc(e.postEst)}</div>` : ""}${list.length ? `<ul class="kl">${list.map(rowLine).join("")}</ul>` : ""}${checksHtml(e)}</section>`;
 }
 // 가격 변경: 몇 개 항목이 어느 방향으로 얼마나 바뀌었는지 한 줄, 막대는 폭이 큰 3개만
 function priceKey(e){

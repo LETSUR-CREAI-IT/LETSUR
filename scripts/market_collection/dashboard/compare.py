@@ -520,6 +520,16 @@ def channel_notices(events: list[dict], models: set) -> list[dict]:
     return out
 
 
+def announced(row: dict, rows: list[dict], after: dict) -> dict | None:
+    """The direct route's announced change a discounted gateway row runs out into (decision 6 exception, 16): the same
+    upstream, tier, region and band, today's price the same, and the price without the discount the announced one."""
+    direct = DIRECT_OF.get(row["provider"])
+    return next((other for other in rows if direct and other["route"] == direct
+                 and (other["tier"], other["region"], other["band"]) == (row["tier"], row["region"], row["band"])
+                 and other["future"] and other["start"] and same_price(other["prices"], row["prices"]) and after
+                 and all(after.get(i) == round6(v) for i, v in other["future"].items() if i in after)), None)
+
+
 def discount_cells(row: dict, rows: list[dict], items: tuple, notices: list[dict], today: date) -> None:
     """할인가 · 종료일 · 종료 후 가격 and the note: OpenRouter discounts (decision 6), announced changes (16), promotion end
     dates (4-2), channel notices (22). Estimates, unknowns and lower bounds are never highlighted (3)."""
@@ -528,12 +538,10 @@ def discount_cells(row: dict, rows: list[dict], items: tuple, notices: list[dict
         rate = row["discount"]
         after = {item: round6(value / (1 - rate)) for item, value in row["prices"].items()} if rate < 1 else {}
         end = ["미확인", "gy"]
-        direct = DIRECT_OF.get(row["provider"])
-        for other in rows:
-            if direct and other["route"] == direct and (other["tier"], other["region"], other["band"]) == (row["tier"], row["region"], row["band"]) \
-                    and other["future"] and other["start"] and same_price(other["prices"], row["prices"]) and after \
-                    and all(after.get(i) == round6(v) for i, v in other["future"].items() if i in after):
-                end = [f"{md(date.fromisoformat(min(other['start'])) - timedelta(days=1))} (추정 · 공급사 문서 기준)", "est"]
+        other = announced(row, rows, after)
+        if other:
+            end = [f"{md(date.fromisoformat(min(other['start'])) - timedelta(days=1))} (추정 · 공급사 문서 기준)", "est"]
+            row["promo"] = {"direct": other["route"], "start": min(other["start"]), "after": after, "rate": rate}
         row["disc"] = [[triple(row["prices"], items), ""], end, [f"{triple(after, items)} (추정)", "est"] if after else ["미확인", "gy"]]
         row["notes"].append(f"할인 {plain(rate * 100)}% · 기간 미공지")
         return
@@ -564,8 +572,16 @@ def discount_cells(row: dict, rows: list[dict], items: tuple, notices: list[dict
     if notice["ended"]:
         row["disc"] = [["종료", "gy"], [end, "gy"], ["미확인", "gy"]]
     else:
+        # a notice that states only its rate: the shown price taken as the discounted one, its undiscounted price is an
+        # estimate only when it is the upstream's own announced next price (2026-10-27, gemini-3.8-flash on Vercel)
+        rate = number(notice["pct"]) / 100 if notice["pct"] else None
+        after = {item: round6(value / (1 - rate)) for item, value in row["prices"].items()} if rate and rate < 1 else {}
+        other = announced(row, rows, after)
         row["disc"] = [[f"{notice['pct']}% 할인 (공개 안 됨 · 추정 수치)" if notice["pct"] else "할인 (폭 미공개)", ""],
-                       [end, "date" if notice["end"] else "gy"], ["미확인", "gy"]]
+                       [end, "date" if notice["end"] else "gy"],
+                       [f"{triple(after, items)} (추정 · 공급사 문서 기준)", "est"] if other else ["미확인", "gy"]]
+        if other:
+            row["promo"] = {"direct": other["route"], "start": min(other["start"]), "after": after, "rate": rate}
         if notice["end"]:
             row["end"] = notice["end"].isoformat()
     row["notes"].append(f"한시 할인{' ' + notice['pct'] + '%' if notice['pct'] else ''} · {notice['who']} 공지"
@@ -914,5 +930,11 @@ def build_tables(root: Path, model_ids: list[str], events: list[dict], gaps: lis
         unread = [text for model, text in problems if model == model_id]
         if unread:
             table["foot"] = ["Vercel 엔드포인트 원문을 읽지 못해 행 안 등급·지역 가격을 뺀 출처: " + ", ".join(unread)]
+        promo = [{"route": r["route"], "direct": r["promo"]["direct"], "start": r["promo"]["start"],
+                  "standard": r["tier"] == "Standard" and not r["region"] and not r["band"],
+                  "after": " / ".join(money(r["promo"]["after"].get(i)) for i in items), "times": plain(round(1 / (1 - r["promo"]["rate"]), 2))}
+                 for r in rows if r.get("promo")]
+        if promo:
+            table["promo"] = promo  # build.py takes it out for the cards (link_promotions) before the page gets the table
         out[model_id] = table
     return out
