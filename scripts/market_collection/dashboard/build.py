@@ -77,7 +77,13 @@ MEASURE_KO = {"input": "입력", "output": "출력", "cache_read": "캐시 읽�
 UNIT_KO = {"1M tokens": "100만 토큰", "1000 tokens": "1,000 토큰"}
 CONDITION_KO = {"service_tier": "등급", "cache_read_multiplier": "캐시 읽기 배율", "context_length": "컨텍스트", "endpoint_tag": "엔드포인트",
                 "endpoint_provider": "제공자", "endpoint_model_slug": "모델 slug", "quantization": "정밀도", "endpoint_status": "상태",
-                "endpoint_discount": "엔드포인트 할인", "discount_application": "할인 적용", "price_basis": "가격 기준"}
+                "endpoint_discount": "엔드포인트 할인", "discount_application": "할인 적용", "price_basis": "가격 기준",
+                "region": "지역", "input_token_band": "입력 구간"}
+# Condition values stay as the source wrote them; only tiers and regions get the dashboard's names (2026-10-27 decision 26-1).
+TIER_NAMES = {"standard": "Standard", "priority": "Priority", "ultrafast": "Ultrafast", "flex": "Flex", "batch": "Batch"}
+REGION_NAMES = {"us": "US", "eu": "EU"}
+STATUS_KO = {"-1": "우선순위 낮춤", "-2": "성능 저하", "-3": "순위 하향", "-5": "중단", "-10": "사용 중지"}  # OpenRouter; 0 is normal and not shown
+HIDDEN_CONDITIONS = {"price_basis"}  # how the collector read the listing, not a condition a reader compares
 KIND_KO = {"llm": "LLM", "video": "영상", "image": "이미지"}
 TAG = {"manufacturer_official": "sup", "channel_official": "ch"}  # anything else is an external source
 MARK = {"confirmed": "ok", "candidate": "unk", "conflicted": "con"}
@@ -220,11 +226,23 @@ def size_ko(value) -> str:
     return format(amount, "f")
 
 
+def value_text(key: str, value) -> str:
+    """A condition value as the source wrote it, except tier and region names; an OpenRouter status in Korean, 0 as nothing."""
+    text = str(value)
+    if key == "service_tier":
+        return TIER_NAMES.get(text.lower(), cap(text))
+    if key == "region":
+        return REGION_NAMES.get(text.lower(), text)
+    if key == "endpoint_status":
+        return "" if text == "0" else STATUS_KO.get(text, text)
+    return "" if key in HIDDEN_CONDITIONS else text
+
+
 def condition_value(key: str, value) -> str:
     """One condition value as a row label part; a bare number gets the name of what it counts."""
     if key == "context_length":
         return f"컨텍스트 {size_ko(value)}"
-    return cap(value)
+    return value_text(key, value)
 
 
 def compared(conditions) -> dict:
@@ -644,7 +662,9 @@ def compare_line(members, rep, ch, t7) -> list[list[str]]:
     values: dict[str, set] = {}
     for e in members:
         for key, value in compared(e.get("conditions")).items():
-            values.setdefault(key, set()).add(size_ko(value) if key == "context_length" else cap(value))
+            text = size_ko(value) if key == "context_length" else value_text(key, value)
+            if text:
+                values.setdefault(key, set()).add(text)
     line += [[CONDITION_KO.get(key, key), " / ".join(sorted(values[key]))] for key in sorted(values)]
     line.append(["경로", ch])
     if part(rep, "announced_via"):
@@ -723,7 +743,7 @@ def build_card(card_id: str, members: list[dict], sources: Sources, routes: dict
     rows.sort(key=lambda row: (row["same"], [cap(row["cond"].get(key, "")) for key in varying], row["order"], rank(row["item"]), row["item"]))
     rows = unique_rows(rows)
     for row in rows:
-        group = " · ".join(condition_value(key, row["cond"][key]) for key in varying if key in row["cond"])
+        group = " · ".join(filter(None, (condition_value(key, row["cond"][key]) for key in varying if key in row["cond"])))
         name = row["label"] or item_ko(row["item"])
         row["row"][0] = html.escape(" · ".join(filter(None, (group, name))))
         row["parts"] = [html.escape(group), html.escape(name)]

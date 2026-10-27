@@ -742,3 +742,16 @@ def test_rows_are_grouped_by_condition_and_deduplicated(tmp_path: Path) -> None:
 
 def test_size_ko() -> None:
     assert [build.size_ko(v) for v in ("1048576", "262144", "131072", "4096", "1000")] == ["1M", "256K", "128K", "4K", "1000"]
+
+
+def test_condition_values_keep_source_text_except_tier_and_region():
+    """2026-10-27 decision 26-1: values as the source wrote them; tiers and regions get names; status 0 and price basis hidden."""
+    assert build.value_text("quantization", "fp4") == "fp4"
+    assert build.value_text("endpoint_tag", "inference-net/fast") == "inference-net/fast"
+    assert build.value_text("endpoint_model_slug", "z-ai/glm-5.2-20260616") == "z-ai/glm-5.2-20260616"
+    assert build.value_text("service_tier", "priority") == "Priority"
+    assert build.value_text("region", "us") == "US"
+    assert build.value_text("endpoint_status", "0") == ""
+    assert build.value_text("endpoint_status", "-2") == "성능 저하"
+    assert build.value_text("price_basis", "endpoint_default_conditions") == ""
+    assert build.condition_name("region") == "지역"
