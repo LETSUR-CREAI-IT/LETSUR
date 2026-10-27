@@ -475,9 +475,9 @@ def _record(route_id: str | None, model_id: str = "gemini-3.8-flash", **fields) 
     (None, ("unk", "사용 경로 확인 필요", False)),  # no --internal-routes
     ([_record("google_direct")], ("use", "이 경로로 사용 중 (가정)", True)),
     ([_record("google_direct", endpoint_id="ep-1"), _record("vercel_ai_gateway", endpoint_id="ep-2")],
-     ("use", "이 경로로 사용 중 · endpoint ep-1 (가정)", True)),
+     ("use", "이 경로로 사용 중 : endpoint ep-1 (가정)", True)),
     ([_record("vercel_ai_gateway", endpoint_id=None), _record("openrouter")],
-     ("other", "모델 제공 중 · Vercel · vercel_ai_gateway, OpenRouter · openrouter 경로로 사용 (가정)", True)),
+     ("other", "모델 제공 중 : Vercel · vercel_ai_gateway, OpenRouter · openrouter 경로로 사용 (가정)", True)),
     ([_record(None, endpoint_id=None)], ("none", "미도입 (가정)", True)),
     ([_record("google_direct", model_id="claude-sonnet-5-5")], ("unk", "사용 경로 확인 필요", False)),  # no record is not "not used"
 ])
@@ -512,7 +512,7 @@ def test_routes_that_are_not_a_demo_are_not_marked_as_assumed(tmp_path: Path) ->
     _write(tmp_path, [_scheduled("e1", "input", "0.75", "1.50", "0.75")])
     _, _, data = _build(tmp_path, args=_routes(tmp_path, {"is_demo": False, "records": [_record("vercel_ai_gateway")]}))
     [card] = data["EVENTS"]
-    assert (card["relKey"], card["relShort"], card["relDemo"]) == ("other", "모델 제공 중 · Vercel · vercel_ai_gateway 경로로 사용", False)
+    assert (card["relKey"], card["relShort"], card["relDemo"]) == ("other", "모델 제공 중 : Vercel · vercel_ai_gateway 경로로 사용", False)
     assert data["MODELS"]["gemini-3.8-flash"]["use"] == "Vercel · vercel_ai_gateway 경로로 사용"
 
 
@@ -521,7 +521,7 @@ def test_committed_demo_routes(tmp_path: Path) -> None:
     _write(tmp_path, [_scheduled("e1", "input", "0.75", "1.50", "0.75")])
     _, _, data = _build(tmp_path, args=["--internal-routes", str(DEMO_ROUTES)])
     [card] = data["EVENTS"]
-    assert (card["relKey"], card["relShort"], card["relDemo"]) == ("other", "모델 제공 중 · Vercel · vercel_ai_gateway 경로로 사용 (가정)", True)
+    assert (card["relKey"], card["relShort"], card["relDemo"]) == ("other", "모델 제공 중 : Vercel · vercel_ai_gateway 경로로 사용 (가정)", True)
     assert data["MODELS"] == {"gemini-3.8-flash": {"prov": "Google", "kind": "LLM", "use": "Vercel · vercel_ai_gateway 경로로 사용 (가정)"}}
 
 
@@ -834,6 +834,10 @@ def test_next_step_lines_read_label_colon_text(tmp_path):
     page = _build(tmp_path)[1]
     assert "subs.push(`확인 : ${x}`)" in page and "subs.push(`대응 : ${g.pre" in page
     assert "먼저 확인 · ${x}" not in page and "대응 방향 · ${g.pre" not in page
+    # the bold line too, and 현재 사용 경로 (relation() in build.py) the same way
+    assert "`현재 경로 유지 : ${e.ch} 새 단가는 비교용으로 기록`" in page and '"이미 쓰는 경로 : 기록만"' in page
+    assert build.relation({"model_id": "m", "route": ""}, {"records": [{"model_id": "m", "route_id": "openrouter"}], "is_demo": False})[
+        "relShort"] == "경로 표기 없음 : 사용 경로 확인 필요"
 
 
 def test_template_says_when_a_linked_card_is_not_on_the_page(tmp_path):

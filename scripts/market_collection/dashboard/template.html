@@ -853,14 +853,14 @@ function nextOf(e){
   const cf = (CHECKFIRST[e.id] || []).map(x => x.replace(/\s*\([^)]*\)$/, ""));
   let act;
   if (isClue(e)) act = "공식 가격 출처에서 실제 값을 확인한 뒤 판단";
-  else if (isEnded(e)) act = "종료된 할인 · 지금 단가가 할인 전으로 돌아왔는지 확인";
+  else if (isEnded(e)) act = "종료된 할인 : 지금 단가가 할인 전으로 돌아왔는지 확인";
   else if (g.resp === "hold" && e.st && e.st !== "confirmed" && dir === "good") act = "원문과 다음 수집으로 값이 맞는지 확인한 뒤 고객 할인 검토";
   else if (g.resp === "hold") act = t === "한시 할인" ? "할인 폭이 확인되면 대응 방향 판단" : "값이 확인되면 대응 방향 판단";
   else if (isAdd(e) && g.resp === "route") act = t === "모델 출시" ? `${e.m}을 도입 후보로 검토` : `${e.ch} 경로 단가를 지금 쓰는 경로와 비교`;
-  else if (isAdd(e)) act = "이미 쓰는 경로 · 기록만";
-  else if (g.resp === "disc") act = t === "한시 할인" ? "고객 할인은 할인 기간에만 한정해 검토 · 판매가 기본값은 유지" : "인하분을 고객 판매가 할인에 반영할지 검토"; // 수정안: 한시 할인은 기간 한정
+  else if (isAdd(e)) act = "이미 쓰는 경로 : 기록만";
+  else if (g.resp === "disc") act = t === "한시 할인" ? "고객 할인 : 할인 기간에만 한정해 검토, 판매가 기본값은 유지" : "인하분을 고객 판매가 할인에 반영할지 검토"; // 수정안: 한시 할인은 기간 한정
   else if (g.resp === "route") act = dir === "bad" ? "대체 경로를 정해 전환 준비" : t === "모델 출시" ? `${e.m}을 도입 후보로 검토` : `${e.ch}로 옮기거나 추가할지 비교`;
-  else act = rel === "other" ? `현재 경로 유지 · ${e.ch} 새 단가는 비교용으로 기록` : rel === "none" ? "미도입 모델이라 기록만" : "기존 조건 유지 · 청구 반영만 확인";
+  else act = rel === "other" ? `현재 경로 유지 : ${e.ch} 새 단가는 비교용으로 기록` : rel === "none" ? "미도입 모델이라 기록만" : "기존 조건 유지 : 청구 반영만 확인";
   const subs = [];
   if (isClue(e) || (e.chk && !cf.length && !isEnded(e))) firstChecks(e, isClue(e) ? 2 : 1).forEach(x => subs.push(`확인 : ${x}`));
   // 수정안: 먼저 확인 옆에 짧은 이유(cfNote), 종료·연결 이벤트에서 오는 주의(risk)

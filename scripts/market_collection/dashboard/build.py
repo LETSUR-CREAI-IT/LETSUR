@@ -454,12 +454,12 @@ def relation(rep: dict, routes: dict | None) -> dict:
         return {"relKey": "unk", "relShort": "사용 경로 확인 필요", "relDemo": False}
     route, used = rep.get("route") or "", list(dict.fromkeys(record["route_id"] for record in records if record["route_id"]))
     if not route and used:
-        return {"relKey": "unk", "relShort": "경로 표기 없음 · 사용 경로 확인 필요", "relDemo": False}
+        return {"relKey": "unk", "relShort": "경로 표기 없음 : 사용 경로 확인 필요", "relDemo": False}
     if route in used:
         endpoints = dict.fromkeys(record["endpoint_id"] for record in records if record["route_id"] == route and record.get("endpoint_id"))
-        key, short = "use", " · ".join(["이 경로로 사용 중", *(f"endpoint {endpoint}" for endpoint in endpoints)])
+        key, short = "use", "이 경로로 사용 중" + (" : " + ", ".join(f"endpoint {endpoint}" for endpoint in endpoints) if endpoints else "")
     elif used:
-        key, short = "other", f"모델 제공 중 · {', '.join(map(route_label, used))} 경로로 사용"
+        key, short = "other", f"모델 제공 중 : {', '.join(map(route_label, used))} 경로로 사용"
     else:
         key, short = "none", "미도입"
     return {"relKey": key, "relShort": short + (" (가정)" if routes["is_demo"] else ""), "relDemo": routes["is_demo"]}

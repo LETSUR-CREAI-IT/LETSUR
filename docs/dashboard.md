@@ -144,18 +144,18 @@ python3 -B -m scripts.market_collection.dashboard --root data/market_collection 
 | 그 모델의 레코드 | relKey | relShort |
 |---|---|---|
 | 카드 경로와 같은 `route_id`가 있음 | `use` | 이 경로로 사용 중 |
-| `route_id`가 다른 경로뿐 | `other` | 모델 제공 중 · <쓰는 경로> 경로로 사용 |
+| `route_id`가 다른 경로뿐 | `other` | 모델 제공 중 : <쓰는 경로> 경로로 사용 |
 | `route_id`가 모두 null | `none` | 미도입 |
 | 레코드 없음 | `unk` | 사용 경로 확인 필요 |
 
 - 레코드가 없는 모델은 미사용이 아니라 미확인이라 `unk`로 둔다.
 - 한 모델에 레코드가 여럿이면 카드 경로와 같은 레코드가 하나라도 있을 때 `use`, 없고 null이 아닌 경로가 있으면 `other`(쓰는 경로를 모두 ", "로 잇는다), 모두 null이면 `none`이다.
 - `other`의 쓰는 경로는 카드 경로와 같은 표기(게시자 · route_id, 예: "Vercel · vercel_ai_gateway")다. 경로 표기가 없는 카드도 그 모델에 경로가 있는 레코드가 있으면 `other`다.
-- `endpoint_id`는 경로가 같을 때만 보조 정보로 붙인다(예: "이 경로로 사용 중 · endpoint fal-ai/veo3.1"). 카드는 endpoint를 비교하지 않아 1011 원본 예시의 "이 endpoint로 사용 중"은 쓰지 않는다.
+- `endpoint_id`는 경로가 같을 때만 보조 정보로 붙인다(예: "이 경로로 사용 중 : endpoint fal-ai/veo3.1", 여럿이면 ", "로 잇는다). 카드는 endpoint를 비교하지 않아 1011 원본 예시의 "이 endpoint로 사용 중"은 쓰지 않는다.
 - `is_demo`
   - true: 그 파일로 정한 카드(`use`, `other`, `none`)에 `relDemo: true`를 넣고 `relShort` 끝에 " (가정)"을 붙인다. 템플릿은 제안 근거 끝에 "(렛서 관계는 시연용 가정)"을, 상세 "현재 사용 경로"에 가정 태그를 붙인다. 영향 줄 "제공·사용"은 태그 없이 `relShort`만 보여서 " (가정)"을 문구에 넣었다(1011 원본 표기와 같다).
   - false: 둘 다 붙이지 않는다. 레코드가 없는 카드(`unk`)는 is_demo와 상관없이 `relDemo: false`다.
-- 제안·다음 할 일은 템플릿 규칙이 `relKey`로 계산하고, 이 규칙은 바꾸지 않았다. 예: `other`인 단가 인상 예정 카드는 "기존 조건 유지 검토", "현재 경로 유지 · Google · google_direct 새 단가는 비교용으로 기록"이다. `unk` 카드는 사용 중으로 가정하되 "확인 후 "와 "먼저 렛서 사용 경로 확인"이 붙는다.
+- 제안·다음 할 일은 템플릿 규칙이 `relKey`로 계산하고, 이 규칙은 바꾸지 않았다. 예: `other`인 단가 인상 예정 카드는 "기존 조건 유지 검토", "현재 경로 유지 : Google · google_direct 새 단가는 비교용으로 기록"이다. `unk` 카드는 사용 중으로 가정하되 "확인 후 "와 "먼저 렛서 사용 경로 확인"이 붙는다.
 - 모델별 사용 경로(`MODELS[model].use`)는 카드 경로와 상관없이 모델 단위로 같은 파일에서 채운다(2026-10-21 박건 요청). 카드에 나온 모델만 다룬다.
 - 이 값은 지금 화면에 나오지 않는다. 이 값을 보일 템플릿의 "모델별 현황" 표(`renderModels()`, 1037행)는 정의만 있고 호출되지 않으며, 표를 넣을 `id="models"` 요소도 없다. 1011 원본도 같다(1221행에 정의, 호출 없음). 아래 규칙은 페이지 데이터 기준이다.
 
@@ -165,7 +165,7 @@ python3 -B -m scripts.market_collection.dashboard --root data/market_collection 
 | `route_id`가 모두 null | 미도입 |
 | 레코드 없음 | 넣지 않음(표를 그리면 템플릿 기본값 "사용 경로 미확인") |
 
-- `use`의 쓰는 경로는 카드 `other`와 같은 표기(게시자 · route_id)를 ", "로 잇는다. 카드 `other` 문구에서 "모델 제공 중 · "만 뺀 꼴이다. 예: "Vercel · vercel_ai_gateway 경로로 사용".
+- `use`의 쓰는 경로는 카드 `other`와 같은 표기(게시자 · route_id)를 ", "로 잇는다. 카드 `other` 문구에서 "모델 제공 중 : "만 뺀 꼴이다. 예: "Vercel · vercel_ai_gateway 경로로 사용".
 - `use`의 endpoint: 경로가 있는 레코드의 `endpoint_id`를 " · endpoint <id>"로 뒤에 붙인다(예: "fal · fal 경로로 사용 · endpoint fal-ai/veo3.1"). 경로가 여럿이면 endpoint가 어느 경로의 것인지는 문구에 나오지 않는다.
 - `use`의 is_demo: true면 끝에 " (가정)"을 붙이고 false면 붙이지 않는다. 시연 파일로는 gemini-3.8-flash가 "Vercel · vercel_ai_gateway 경로로 사용 (가정)"이다.
 - 1011 원본 `MODELS` 예시("제공 중 · Vercel 경로 (가정)", "미도입 (가정)")와 달리 "제공 중 · "을 붙이지 않고 경로를 카드와 같은 표기로 쓴다.
@@ -201,7 +201,7 @@ python3 -B -m scripts.market_collection.dashboard --root data/market_collection 
 
 - Applicability: `relKey`가 use면 APPLIES, unk면 UNKNOWN, other·none이면 NOT APPLIES. `relDemo`면 "· 가정"을 붙인다.
 - Suggested Action: 상세 제안(`suggestOf`)과 같은 판단에서 나와 목록·달력·상세가 같은 값을 보인다. 상세 "다음 할 일" 옆에도 같은 배지를 둔다.
-- 상세 "다음 할 일" 아래 줄은 "확인 : …", "대응 : …", "주의 : …"처럼 라벨과 내용을 쌍점으로 잇는다(2026-10-27 박건 요청, 이전 "먼저 확인 · …", "대응 방향 · …"). "확인"에는 엔진의 다음 수집 확인(`next`)도 들어간다.
+- 상세 "다음 할 일" 아래 줄은 "확인 : …", "대응 : …", "주의 : …"처럼 라벨과 내용을 쌍점으로 잇는다(2026-10-27 박건 요청, 이전 "먼저 확인 · …", "대응 방향 · …"). "확인"에는 엔진의 다음 수집 확인(`next`)도 들어간다. 굵은 첫 줄(예: "현재 경로 유지 : Google · google_direct 새 단가는 비교용으로 기록", "고객 할인 : 할인 기간에만 한정해 검토, 판매가 기본값은 유지")과 "현재 사용 경로"(예: "모델 제공 중 : Vercel · vercel_ai_gateway 경로로 사용 (가정)")도 같은 꼴이다. "Vercel · vercel_ai_gateway"처럼 경로 이름 안의 "·"는 그대로다.
   - VERIFY: 유형 미정(`t7` null), 단서만(`clue`), 출처 상충(`st` conflicted), 단가 확인 전, `st`가 없는 옛 카드의 flag, 렛서 적용 UNKNOWN, 제안이 판단 보류.
   - RECORD: 끝난 한시 할인, 제안이 기존 조건 유지.
   - MONITOR: 값은 있으나 공식 확인 전(`st` candidate).
