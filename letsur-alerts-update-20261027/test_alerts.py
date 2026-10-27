@@ -6,7 +6,8 @@ import sqlite3
 import tempfile
 import unittest
 
-from alerts import connect, sync, prepare, acknowledge, simulated_success, digest, material
+from alerts import connect, sync, prepare, acknowledge, render, simulated_success, digest, material
+from dashboard_cards import parse
 
 
 class AlertTests(unittest.TestCase):
@@ -287,6 +288,106 @@ class AlertTests(unittest.TestCase):
             self.assertEqual(reopened.execute("SELECT COUNT(*) FROM acknowledgements").fetchone()[0], 1)
         finally:
             reopened.close()
+
+    def cards_document(self):
+        return json.loads(Path(__file__).with_name("fixtures_cards.json").read_text(encoding="utf-8"))
+
+    def judged_ids(self, document=None, today=None):
+        report = prepare(self.db, today or self.today, "test", judged=parse(document or self.cards_document()))
+        return sorted(i["event_id"] for c in report["cards"] for i in c["items"])
+
+    def test_record_cards_are_not_alerts_but_not_applies_cards_still_are(self):
+        sync(self.db, self.document, self.today, 5)
+        self.assertEqual(prepare(self.db, self.today, "test")["event_count"], 3)
+        # fixtures_cards.json: the card of both prices is REVIEW and NOT APPLIES, the card of the discount is RECORD
+        self.assertEqual(self.judged_ids(), ["demo-input", "demo-output"])
+
+    def test_only_the_record_action_is_excluded_whatever_the_badge(self):
+        sync(self.db, self.document, self.today, 5)
+        for action, badge, expected in (("REVIEW", "NOT APPLIES", 3), ("VERIFY", "UNKNOWN", 3),
+                                        ("MONITOR", "APPLIES", 3), ("RECORD", "APPLIES", 0)):
+            with self.subTest(action=action, badge=badge):
+                document = self.cards_document()
+                for card in document["cards"]:
+                    card.update(action=action, applicability=badge)
+                self.assertEqual(len(self.judged_ids(document)), expected)
+
+    def test_record_is_decided_per_event_inside_a_bot_card(self):
+        sync(self.db, self.document, self.today, 5)
+        document = self.cards_document()
+        document["cards"][0]["events"] = ["demo-input"]
+        document["cards"].append(dict(document["cards"][0], id="g_0000000000a2", events=["demo-output"], action="RECORD"))
+        self.assertEqual(self.judged_ids(document), ["demo-input"])
+
+    def test_events_without_a_dashboard_card_follow_the_bot_rules(self):
+        sync(self.db, self.document, self.today, 5)
+        document = self.cards_document()
+        document["cards"].pop(1)
+        self.assertEqual(self.judged_ids(document), ["demo-discount", "demo-input", "demo-output"])
+
+    def test_overdue_alert_is_sent_through_day_7_and_stops_on_day_8(self):
+        events = []
+        for days in (6, 7, 8, 30):
+            event = copy.deepcopy(self.document["events"][0])
+            event["event_id"] = "overdue-" + str(days)
+            event["dates"]["effective_from"] = (self.today - timedelta(days=days)).isoformat()
+            events.append(event)
+        sync(self.db, {"events": events}, self.today, 5)
+        self.assertEqual(self.db.execute("SELECT COUNT(*) FROM events WHERE urgent=1").fetchone()[0], 4)
+        for judged in (None, parse(self.cards_document())):
+            with self.subTest(judged=judged is not None):
+                report = prepare(self.db, self.today, "test", judged=judged)
+                self.assertEqual(sorted(i["event_id"] for c in report["cards"] for i in c["items"]),
+                                 ["overdue-6", "overdue-7"])
+
+    def test_latched_alert_stops_on_the_eighth_day_after_the_deadline(self):
+        sync(self.db, {"events": [self.document["events"][0]]}, self.today, 5)
+        deadline = date(2026, 10, 29)
+        for days, expected in ((-3, 1), (0, 1), (6, 1), (7, 1), (8, 0), (9, 0), (40, 0)):
+            with self.subTest(days_after_deadline=days):
+                self.assertEqual(prepare(self.db, deadline + timedelta(days=days), "test")["event_count"], expected)
+
+    def test_overdue_limit_does_not_touch_events_without_a_date(self):
+        self.load()
+        self.document["events"][2]["dates"] = {}
+        self.document["events"][2]["period_end"] = None
+        self.load()
+        report = prepare(self.db, self.today + timedelta(days=30), "test")
+        self.assertEqual([c["days"] for c in report["cards"]], [None])
+
+    def test_report_carries_dashboard_strings_names_and_card_ids(self):
+        events = []
+        for event_id, model, route in (("mapped", "gemini-3.8-flash", "google_direct"),
+                                       ("labelled", "gpt-x", "vercel_ai_gateway"),
+                                       ("raw", "model-3", "no_such_route")):
+            event = copy.deepcopy(self.document["events"][0])
+            event.update(event_id=event_id, model_id=model, route=route)
+            events.append(event)
+        sync(self.db, {"events": events}, self.today, 5)
+        document = self.cards_document()
+        document["cards"] = [dict(document["cards"][0], id="g_0000000000d1", events=["mapped"],
+                                  model="Gemini 3.8 Flash", route="구글 직접")]
+        report = prepare(self.db, self.today, "test", judged=parse(document))
+        cards = {c["model"]: c for c in report["cards"]}
+        self.assertEqual(sorted(cards), ["Gemini 3.8 Flash", "gpt-x", "model-3"])
+        self.assertEqual(cards["Gemini 3.8 Flash"]["route"], "구글 직접")
+        self.assertEqual(cards["Gemini 3.8 Flash"]["items"][0]["dashboard_card"], "g_0000000000d1")
+        self.assertEqual(cards["gpt-x"]["route"], "Vercel · vercel_ai_gateway")
+        self.assertEqual(cards["model-3"]["route"], "no_such_route")
+        self.assertIsNone(cards["gpt-x"]["items"][0]["dashboard_card"])
+        self.assertEqual(report["names"]["routes"]["google_direct"], "Google · google_direct")
+        plain = prepare(self.db, self.today, "test")
+        self.assertEqual({c["card_id"] for c in plain["cards"]}, {c["card_id"] for c in report["cards"]})
+        self.assertEqual(plain["names"], {})
+        self.assertEqual({c["route"] for c in plain["cards"]}, {"google_direct", "vercel_ai_gateway", "no_such_route"})
+
+    def test_text_preview_uses_the_dashboard_item_and_unit_names(self):
+        sync(self.db, self.document, self.today, 5)
+        text = render(prepare(self.db, self.today, "test", judged=parse(self.cards_document())))
+        self.assertIn("입력 토큰: 1 → 2 USD / 100만 토큰", text)
+        self.assertIn("출력 토큰: 4 → 6 USD / 100만 토큰", text)
+        self.assertNotIn("1M tokens", text)
+        self.assertIn("input: 1 → 2 USD / 1M tokens", render(prepare(self.db, self.today, "test")))
 
 
 if __name__ == "__main__":

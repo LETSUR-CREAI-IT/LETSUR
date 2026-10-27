@@ -38,13 +38,14 @@ def _without_staged(db, report):
     return result
 
 
-def run_cycle(dbpath, document, today, channel, sender=None, dashboard_url=None, urgent_days=5, *, now=None, notice=None):
+def run_cycle(dbpath, document, today, channel, sender=None, dashboard_url=None, urgent_days=5, *, now=None, notice=None, judged=None):
     """Sync and preview, or send with an injected sender(payload, job_id).
 
     Each call opens/closes its own connection. Confirmation and successful deliveries
     survive process restart. document=None reevaluates the existing state only.
     Previous-day known-unsent jobs are replaced by today's freshly rendered report;
     unknown sends are held for reconciliation rather than blindly repeated.
+    judged is the run's cards.json as dashboard_cards.parse returns it; None sends by the bot's own rules only.
     """
     now = now or datetime.now(timezone.utc)
     if notice is not None and (not isinstance(notice, str) or len(notice) > 2000):
@@ -54,7 +55,7 @@ def run_cycle(dbpath, document, today, channel, sender=None, dashboard_url=None,
         setup(db)
         if document is not None:
             sync(db, document, today, urgent_days)
-        initial = pending_report(db, prepare(db, today, channel, urgent_days))
+        initial = pending_report(db, prepare(db, today, channel, urgent_days, judged))
         preview, uncertain = _without_uncertain(db, initial)
         if notice:
             preview['notice'] = notice
@@ -72,7 +73,7 @@ def run_cycle(dbpath, document, today, channel, sender=None, dashboard_url=None,
         for row in existing:
             attempted.add(row['id'])
             outcomes.append({'job_id': row['id'], 'state': attempt(db, row['id'], sender, now)})
-        fresh, uncertain = _without_uncertain(db, pending_report(db, prepare(db, today, channel, urgent_days)))
+        fresh, uncertain = _without_uncertain(db, pending_report(db, prepare(db, today, channel, urgent_days, judged)))
         fresh = _without_staged(db, fresh)
         for payload, cards in message_batches(db, fresh, dashboard_url=dashboard_url, max_blocks=37 if notice else 40):
             if notice:
@@ -88,7 +89,7 @@ def run_cycle(dbpath, document, today, channel, sender=None, dashboard_url=None,
                               (channel, today.isoformat())):
             if row['id'] not in attempted:
                 outcomes.append({'job_id': row['id'], 'state': 'failed'})
-        remaining, uncertain = _without_uncertain(db, pending_report(db, prepare(db, today, channel, urgent_days)))
+        remaining, uncertain = _without_uncertain(db, pending_report(db, prepare(db, today, channel, urgent_days, judged)))
         return {'mode': 'send', 'report': preview, 'remaining': remaining,
                 'held_uncertain_versions': uncertain, 'outcomes': outcomes,
                 'sent_messages': sum(item['state'] == 'sent' for item in outcomes)}

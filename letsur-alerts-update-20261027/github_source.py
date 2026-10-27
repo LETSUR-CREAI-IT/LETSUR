@@ -25,6 +25,8 @@ MAX_ARCHIVE = 64 * 1024 * 1024
 MAX_TAR = 256 * 1024 * 1024
 MAX_JSON = 32 * 1024 * 1024
 FILES = ('events.json', 'report.json', 'continuity.json')
+# actions/upload-pages-artifact's default name. The dashboard build writes cards.json next to index.html, so it is in there too.
+PAGES_ARTIFACT = 'github-pages'
 
 
 class SourceError(Exception):
@@ -188,6 +190,73 @@ def unpack(archive, expected_run):
         raise SourceError('invalid_artifact') from None
 
 
+def unpack_cards(archive):
+    """Read cards.json out of a Pages artifact without extracting anything.
+
+    upload-pages-artifact uploads one file, artifact.tar: a plain tar of the site folder whose members start with './'.
+    """
+    raw = None
+    try:
+        if len(archive) > MAX_ARCHIVE:
+            raise ValueError()
+        with zipfile.ZipFile(io.BytesIO(archive)) as outer:
+            entries = outer.infolist()
+            if len(entries) > 1000 or any(not _safe_name(i.filename) for i in entries):
+                raise ValueError()
+            selected = [i for i in entries if i.filename == 'artifact.tar']
+            if len(selected) != 1 or selected[0].file_size > MAX_ARCHIVE:
+                raise ValueError()
+            tar_bytes = outer.read(selected[0])
+        with tarfile.open(fileobj=io.BytesIO(tar_bytes), mode='r:') as inner:
+            for index, member in enumerate(inner):
+                if index > 100000 or not _safe_name(member.name):
+                    raise ValueError()
+                if PurePosixPath(member.name).parts != ('cards.json',):
+                    continue
+                if raw is not None or not member.isfile() or member.size > MAX_JSON:
+                    raise ValueError()
+                raw = inner.extractfile(member).read(MAX_JSON + 1)
+        if raw is not None and not isinstance(json.loads(raw), dict):
+            raise ValueError()
+    except (ValueError, KeyError, TypeError, AttributeError, UnicodeError, OSError,
+            zipfile.BadZipFile, tarfile.TarError, EOFError):
+        raise SourceError('invalid_artifact') from None
+    if raw is None:
+        raise SourceError('cards_not_in_artifact')
+    return raw
+
+
+def _fetch_cards(client, artifacts, destination):
+    """Keep the run's cards.json beside its events. It is optional input: a failure comes back as a code and never
+    raises, so the alerts still go out (by the bot's own rules) when only the dashboard side is missing."""
+    path = destination / 'cards.json'
+    try:
+        if path.exists():
+            json.loads(path.read_bytes())  # a damaged copy is fetched again
+            return str(path.resolve()), None
+    except (ValueError, OSError):
+        pass
+    try:
+        named = [a for a in artifacts if a.get('name') == PAGES_ARTIFACT]
+        found = [a for a in named if a.get('expired') is False]
+        if len(found) != 1:
+            raise SourceError('pages_artifact_ambiguous' if found else 'pages_artifact_expired' if named else 'pages_artifact_missing')
+        archive = client.archive(found[0].get('id'))
+        if found[0].get('digest') and found[0]['digest'] != 'sha256:' + hashlib.sha256(archive).hexdigest():
+            raise SourceError('archive_digest_mismatch')
+        temporary = path.with_suffix('.tmp-' + str(os.getpid()))
+        try:
+            temporary.write_bytes(unpack_cards(archive))
+            os.replace(temporary, path)
+        finally:
+            temporary.unlink(missing_ok=True)
+    except SourceError as error:
+        return None, error.code
+    except OSError:
+        return None, 'cards_cache'
+    return str(path.resolve()), None
+
+
 def _atomic_json(path, data):
     path = Path(path)
     with tempfile.NamedTemporaryFile(mode='w', dir=path.parent, encoding='utf-8', delete=False) as stream:
@@ -280,7 +349,9 @@ def fetch_latest(cache_dir, token=None, *, client=None, now=None, max_age_hours=
             if temporary.exists():
                 shutil.rmtree(temporary)
     _atomic_json(cache / 'latest.json', metadata)
+    cards_path, cards_error = _fetch_cards(client, artifacts, destination)
     return {'events_path': str((destination / 'events.json').resolve()),
             'report_path': str((destination / 'report.json').resolve()),
             'continuity_path': str((destination / 'continuity.json').resolve()),
+            'cards_path': cards_path, 'cards_error': cards_error,
             'metadata': metadata, 'fresh': not stale, 'stale_reasons': stale}
