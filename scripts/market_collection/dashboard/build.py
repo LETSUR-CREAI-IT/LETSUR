@@ -21,6 +21,7 @@ yesterday's page never stays up as if it were current. Mapping rules: docs/dashb
 from __future__ import annotations
 
 import argparse
+import csv
 import hashlib
 import html
 import json
@@ -31,16 +32,42 @@ from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
 
+from scripts.market_collection.dashboard import compare
 from scripts.market_collection.events.catalog import ROUTE_PUBLISHERS, SIGNAL_PUBLISHERS, authority as route_authority, maker
 from scripts.market_collection.events.evidence import MUTABLE_CONDITIONS
 from scripts.market_collection.models import MODEL_MODALITIES
+from scripts.market_collection.signals.parsers import SignalParseError, atom_entries, rss_entries, utc_text
 
 KST = timezone(timedelta(hours=9))
 TEMPLATE = Path(__file__).with_name("template.html")
 SLOT = re.compile(r"/\*DATA:(\w+)\*/|<!--STATUS-->")
 ISO_DATE = re.compile(r"\d{4}-\d{2}-\d{2}")
 T7 = {"price_change": "가격 변경", "scheduled_change": "예정 변경", "limited_discount": "한시 할인", "condition_change": "조건 변경",
+      "condition_price_change": "조건·가격 변경",  # PR #21, 2026-10-23 decision: conditions and price change together
       "model_release": "모델 출시", "model_end": "제공 종료", "route_change": "공급 경로 변경"}
+CONDITIONED = ("조건 변경", "조건·가격 변경")
+# What the detail page says for an event's gaps and next_checks; fields not listed fall back to the engine's own reason.
+GAP_KO = {
+    "observed_price": "같은 조건의 관측값이 아직 없음 · 등록된 가격 출처의 다음 수집에서 확인",
+    "discount_period_or_target": "할인 기간·대상이 이 경로의 공식 출처에 없음 · 채널의 공식 할인 조건 확인",
+    "end_date_year": "종료 문구에 연도가 없음 · 채널 할인 조건에서 연도 확인",
+    "sub_provider": "채널 전체가 아니라 안쪽 제공자 한 곳의 할인 · 렛서가 어느 제공자로 연결되는지 확인",
+    "account_actual_price": "렛서 계정·등급·지역의 실제 가격은 미확인 · 렛서 계정에서 확인",
+    "shutdown_confirmed": "실제 호출 중단은 확인 안 됨 · 날짜가 지나면 다시 확인",
+    "scope": "모델 전체·endpoint·경로 중 무엇이 끝나는지 미확인 · 공지 원문에서 범위와 날짜 확인",
+    "before": "같은 조건의 현재가가 하나로 정해지지 않음",
+    "effective_from_or_rate": "적용일과 새 가격이 둘 다 있어야 확정",
+    "raw_check": "원문을 다시 읽은 결과가 맞지 않음 · 원문 대조 필요",
+    "negated_statement": "원문에 부정·범위 축소 표현이 있음 · 원문 대조 필요",
+    "model_attribution": "한 문장에 모델이 여럿이라 어느 모델 이야기인지 미확정 · 원문 확인",
+    "maker_first_release_date": "제조사의 공식 첫 출시일이 없음 · 출시일이 7일 안이면 모델 출시, 아니면 경로 추가",
+}
+SKIP_GAPS = {"letsur_usage"}  # true of every event until LETSUR gives usage; the page says it once in 현재 사용 경로
+NEXT_KO = {
+    "confirm the official source still shows the new value on the next run": "다음 수집에서 공식 출처가 새 값을 그대로 보여 주는지 확인",
+    "confirm the official source still shows the new condition on the next run": "다음 수집에서 공식 출처가 새 조건을 그대로 보여 주는지 확인",
+    "re-observe right after the effective date to confirm the new rate is applied": "적용일 직후 다시 관측해 새 가격이 적용됐는지 확인",
+}
 CONDITION_GROUPS = {
     "billing": ("과금", (("cache", "캐시"), ("batch", "Batch"), ("unit", "단위"), ("context_threshold", "구간"), ("tier", "구간"),
                         ("surcharge", "할증"))),
@@ -51,7 +78,15 @@ ITEM_ORDER = ("input", "output", "cache_read", "cache_write")
 ITEM_KO = {"input": "입력 토큰", "output": "출력 토큰", "cache_read": "캐시 읽기", "cache_write": "캐시 쓰기"}  # the template's own row names
 MEASURE_KO = {"input": "입력", "output": "출력", "cache_read": "캐시 읽기", "cache_write": "캐시 쓰기"}
 UNIT_KO = {"1M tokens": "100만 토큰", "1000 tokens": "1,000 토큰"}
-CONDITION_KO = {"service_tier": "등급", "cache_read_multiplier": "캐시 읽기 배율"}
+CONDITION_KO = {"service_tier": "등급", "cache_read_multiplier": "캐시 읽기 배율", "context_length": "컨텍스트", "endpoint_tag": "엔드포인트",
+                "endpoint_provider": "제공자", "endpoint_model_slug": "모델 slug", "quantization": "정밀도", "endpoint_status": "상태",
+                "endpoint_discount": "엔드포인트 할인", "discount_application": "할인 적용", "price_basis": "가격 기준",
+                "region": "지역", "input_token_band": "입력 구간", "precision": "정밀도"}
+# Condition values stay as the source wrote them; only tiers and regions get the dashboard's names (2026-10-27 decision 26-1).
+TIER_NAMES = {"standard": "Standard", "priority": "Priority", "ultrafast": "Ultrafast", "flex": "Flex", "batch": "Batch"}
+REGION_NAMES = {"us": "US", "eu": "EU"}
+STATUS_KO = {"-1": "우선순위 낮춤", "-2": "성능 저하", "-3": "순위 하향", "-5": "중단", "-10": "사용 중지"}  # OpenRouter; 0 is normal and not shown
+HIDDEN_CONDITIONS = {"price_basis"}  # how the collector read the listing, not a condition a reader compares
 KIND_KO = {"llm": "LLM", "video": "영상", "image": "이미지"}
 TAG = {"manufacturer_official": "sup", "channel_official": "ch"}  # anything else is an external source
 MARK = {"confirmed": "ok", "candidate": "unk", "conflicted": "con"}
@@ -183,6 +218,36 @@ def route_label(route: str) -> str:
     return f"{name} · {route}" if name else route or "경로 표기 없음"
 
 
+def size_ko(value) -> str:
+    """1048576 -> 1M, 262144 -> 256K: context lengths as people say them."""
+    amount = number(value)
+    if amount is None or amount <= 0 or amount != amount.to_integral_value():
+        return str(value)
+    for step, mark in ((1 << 20, "M"), (1 << 10, "K")):
+        if amount >= step and amount % (step // 4 or 1) == 0:
+            return f"{format((amount / step).normalize(), 'f')}{mark}"
+    return format(amount, "f")
+
+
+def value_text(key: str, value) -> str:
+    """A condition value as the source wrote it, except tier and region names; an OpenRouter status in Korean, 0 as nothing."""
+    text = str(value)
+    if key == "service_tier":
+        return TIER_NAMES.get(text.lower(), cap(text))
+    if key == "region":
+        return REGION_NAMES.get(text.lower(), text)
+    if key == "endpoint_status":
+        return "" if text == "0" else STATUS_KO.get(text, text)
+    return "" if key in HIDDEN_CONDITIONS else text
+
+
+def condition_value(key: str, value) -> str:
+    """One condition value as a row label part; a bare number gets the name of what it counts."""
+    if key == "context_length":
+        return f"컨텍스트 {size_ko(value)}"
+    return value_text(key, value)
+
+
 def compared(conditions) -> dict:
     return {key: value for key, value in (conditions or {}).items() if key not in IGNORED}
 
@@ -190,6 +255,45 @@ def compared(conditions) -> dict:
 def endpoint(conditions) -> tuple:
     """The stated endpoint facts of a price; they are part of the trend line's key."""
     return tuple(sorted((key, str(value)) for key, value in (conditions or {}).items() if key in ENDPOINT))
+
+
+DISPLAY_BASIS = {"displayed model quote", "starting listing quote"}  # a model-level 'from' price: no endpoint, tier or precision stated
+
+
+def precision_group(value) -> str:
+    """fp4 also takes mxfp4 and nvfp4, fp8 takes mxfp8 (decision 2); other formats stay as written, unknown is none."""
+    text = str(value or "").lower()
+    for group in ("fp4", "fp8"):
+        if text in (group, f"mx{group}", f"nv{group}"):
+            return group
+    return "" if text in ("", "unknown") else text
+
+
+def region_group(conditions) -> str:
+    """US or EU from a stated region or an endpoint tag's parts (us, us-east-1 to US; eu, eu-west-1, europe to EU); global is none."""
+    stated = conditions or {}
+    for part in [str(stated.get("region") or "").lower(), *str(stated.get("endpoint_tag") or "").lower().split("/")[1:]]:
+        if part == "us" or part.startswith("us-"):
+            return "US"
+        if part in ("eu", "europe") or part.startswith("eu-"):
+            return "EU"
+    return ""
+
+
+def tab_facts(conditions) -> dict:
+    """What splits trend tabs beyond the priced-under conditions: precision group and region (2026-10-27 decisions 21, 26-2)."""
+    facts = {"precision": precision_group((conditions or {}).get("quantization")), "region": region_group(conditions)}
+    return {key: value for key, value in facts.items() if value}
+
+
+def reference_line(route: str, facts: tuple) -> bool:
+    """A line whose conditions are not settled, as the 공급사 비교 표 leaves it out: a model-level display price, or an endpoint
+    whose status is not 0 (OpenRouter's -1 and -2 stay compared there with a chip, decision 8). The strict comparison leaves
+    it out and 전체 관측 shows it (2026-10-27 decision 26-2); endpoint facts alone no longer make one."""
+    stated = dict(facts)
+    status = str(stated.get("endpoint_status") or "0")
+    compared = status == "0" or (route == "openrouter" and status in ("-1", "-2"))
+    return stated.get("price_basis") in DISPLAY_BASIS or not compared
 
 
 def endpoint_label(facts: tuple) -> str:
@@ -223,6 +327,82 @@ def last_observed_day(members: list[dict]) -> str:
     return max(map(day_of, moments), default="") if len(members) > 1 else ""
 
 
+def plain_title(text: str) -> str:
+    """Feed titles and the quotes cut from them, compared regardless of dash style, spacing and case."""
+    return re.sub(r"\s+", " ", re.sub(r"\s*[—–-]\s*", " - ", text)).strip().lower()
+
+
+def said_key(quote: str) -> str:
+    """What a signal says, without the prices that follow ';' in an endpoint discount line."""
+    return plain_title(str(quote or "").split(";")[0])
+
+
+def feed_days(root: Path) -> dict:
+    """The newest signals run: publication day of each feed entry by URL ("days": [(plain title, day)]), what it still
+    says ("seen": {(source_key, said_key)}) and the day it ran ("day").
+
+    Events made from a feed entry before the engine kept dates.published carry no date at all; the feed still lists
+    the entry with its date, and the newest signals run keeps it (2026-10-27 decision: a feed card's date is its article's).
+    A signal the newest run still shows, such as a running endpoint discount, was last observed that day.
+    """
+    out: dict = {"days": {}, "seen": set(), "day": ""}
+    runs = sorted((root / "signals" / "runs").glob("*/signals.csv"))
+    if not runs:
+        return out
+    folder = runs[-1].parent
+    moment = run_time(folder.name)
+    out["day"] = day_of(moment) if moment else ""
+    with runs[-1].open(encoding="utf-8", newline="") as handle:
+        for row in csv.DictReader(handle):
+            day = iso((row.get("published_at_utc") or "")[:10])
+            if day and row.get("entry_url"):
+                out["days"].setdefault(row["entry_url"], []).append((plain_title(row.get("entry_title") or ""), day))
+            out["seen"].add((row.get("source_key") or "", said_key(row.get("quote") or "")))
+    # signals.csv keeps only entries in its time window and matched to a model; the run's raw feeds list every entry, read
+    # with the collector's own parsers (which refuse DOCTYPE and ENTITY), so older notices get their day too.
+    listed = folder / "signal_sources.csv"
+    if listed.is_file():
+        with listed.open(encoding="utf-8", newline="") as handle:
+            raws = [folder / row["raw_path"] for row in csv.DictReader(handle) if row.get("raw_path")]
+        for raw in raws:
+            try:
+                body = raw.read_bytes()
+                if not body.lstrip()[:1] == b"<":
+                    continue
+                entries = atom_entries(body) if b"<feed" in body[:4096] else rss_entries(body)
+            except (OSError, SignalParseError):
+                continue
+            for entry in entries:
+                day = iso(utc_text(entry.published)[:10]) if entry.published else None
+                if day and entry.url:
+                    out["days"].setdefault(entry.url, []).append((plain_title(entry.title), day))
+    return out
+
+
+def article_day(event: dict, feed: dict) -> str:
+    """The publication day of the feed entry an undated event was made from: its URL alone, or URL and title."""
+    said = [plain_title(str(s.get("quote") or "")) for s in event.get("sources") or [] if isinstance(s, dict)]
+    for ref in event.get("evidence_refs") or []:
+        entries = feed.get("days", {}).get(ref.get("url") or "", []) if isinstance(ref, dict) else []
+        days = {day for _, day in entries}
+        if len(days) == 1:
+            return days.pop()
+        for title, day in entries:
+            if title and any(quote.startswith(title) for quote in said):
+                return day
+    return ""
+
+
+def seen_day(members: list[dict], feed: dict) -> str:
+    """The last observation day of a card with no date of its own: the newest signals run when it still says what a member
+    said, else the newest day a member's evidence was collected (KST)."""
+    if feed.get("day") and any((s.get("source_key") or e.get("source_key") or "", said_key(s.get("quote") or "")) in feed["seen"]
+                               for e in members for s in e.get("sources") or [] if isinstance(s, dict)):
+        return feed["day"]
+    moments = filter(None, (run_time(ref.get("run_id")) for e in members for ref in e.get("evidence_refs") or [] if isinstance(ref, dict)))
+    return max(map(day_of, moments), default="")
+
+
 def card_key(event: dict) -> list:
     if event.get("group_key"):
         return ["group", event["group_key"], event.get("route") or ""]
@@ -231,23 +411,55 @@ def card_key(event: dict) -> list:
 
 
 def representative(members: list[dict]) -> dict:
-    return next((event for event in members if event.get("group_role") == "representative"), members[0])
+    """The engine's representative, taken among members with a route when a card holds route-less notes too (merge_notes)."""
+    pool = [event for event in members if event.get("route")] or members
+    return next((event for event in pool if event.get("group_role") == "representative"), pool[0])
+
+
+GROUP_WINDOW_DAYS = 3  # the engine's grouping window (events/engine.py, 2026-10-19 decision)
+
+
+def merge_notes(groups: dict[str, list[dict]], feed: dict) -> None:
+    """A route-less card the engine grouped with exactly one routed card joins it when their days are at most
+    GROUP_WINDOW_DAYS apart: a tracker's note of the same change becomes evidence on the route's card (2026-10-27
+    decision 26-3). Notes taken from feeds before the engine kept dates were grouped without one, so the group alone is
+    not proof of one change (an 8/16 note sat with a 10/17 observation)."""
+    def days(cid):
+        found = (card_date(event) or article_day(event, feed) for event in groups[cid])
+        return [date.fromisoformat(day) for day in found if day and iso(day)]
+
+    by_group: dict[str, list[str]] = {}
+    for cid, members in groups.items():
+        if members[0].get("group_key"):
+            by_group.setdefault(members[0]["group_key"], []).append(cid)
+    for cids in by_group.values():
+        routed = [cid for cid in cids if any(event.get("route") for event in groups[cid])]
+        if len(routed) != 1:
+            continue
+        there = days(routed[0])
+        for cid in cids:
+            here = days(cid) if cid not in routed else []
+            if here and there and min(abs((a - b).days) for a in here for b in there) <= GROUP_WINDOW_DAYS:
+                groups[routed[0]].extend(groups.pop(cid))
 
 
 def relation(rep: dict, routes: dict | None) -> dict:
     """relKey, relShort and relDemo for the card's model and route from the --internal-routes file.
 
     A model with no record stays unconfirmed: no record does not mean LETSUR does not use it.
+    A card with no route stays unconfirmed too: its source never said which route changed (2026-10-27 decision).
     endpoint_id only adds detail when the route matches."""
     records = [record for record in (routes or {}).get("records", []) if record["model_id"] == rep.get("model_id")]
     if not records:
         return {"relKey": "unk", "relShort": "사용 경로 확인 필요", "relDemo": False}
     route, used = rep.get("route") or "", list(dict.fromkeys(record["route_id"] for record in records if record["route_id"]))
+    if not route and used:
+        return {"relKey": "unk", "relShort": "경로 표기 없음 : 사용 경로 확인 필요", "relDemo": False}
     if route in used:
         endpoints = dict.fromkeys(record["endpoint_id"] for record in records if record["route_id"] == route and record.get("endpoint_id"))
-        key, short = "use", " · ".join(["이 경로로 사용 중", *(f"endpoint {endpoint}" for endpoint in endpoints)])
+        key, short = "use", "이 경로로 사용 중" + (" : " + ", ".join(f"endpoint {endpoint}" for endpoint in endpoints) if endpoints else "")
     elif used:
-        key, short = "other", f"모델 제공 중 · {', '.join(map(route_label, used))} 경로로 사용"
+        key, short = "other", f"모델 제공 중 : {', '.join(map(route_label, used))} 경로로 사용"
     else:
         key, short = "none", "미도입"
     return {"relKey": key, "relShort": short + (" (가정)" if routes["is_demo"] else ""), "relDemo": routes["is_demo"]}
@@ -293,14 +505,18 @@ def publisher(source_key: str, authority: str, model_id: str, route: str) -> str
 
 
 class Sources:
-    """SRC entries, one per (source_key, run_id), numbered s1, s2, ... in first-use order."""
+    """SRC entries, one per (source_key, run_id) and, for a feed, per entry, numbered s1, s2, ... in first-use order.
+
+    A feed run holds many notices; one chip per run showed one notice's link and date on every card (2026-10-27 decision 20),
+    so each feed entry (its locator) gets its own chip with its own link and publication day.
+    """
 
     def __init__(self):
-        self.ids: dict[tuple[str, str], str] = {}
+        self.ids: dict[tuple[str, str, str], str] = {}
         self.facts: dict[str, dict] = {}
 
-    def add(self, event: dict, source_key: str, run_id: str, url: str = "", seen=None, published=None) -> str:
-        sid = self.ids.setdefault((source_key, run_id), f"s{len(self.ids) + 1}")
+    def add(self, event: dict, source_key: str, run_id: str, url: str = "", seen=None, published=None, entry: str = "") -> str:
+        sid = self.ids.setdefault((source_key, run_id, entry), f"s{len(self.ids) + 1}")
         facts = self.facts.setdefault(sid, {"source_key": source_key, "run_id": run_id, "authority": source_authority(event, source_key),
                                             "model_id": event.get("model_id") or "", "route": event.get("route") or "",
                                             "url": "", "seen": [], "published": []})
@@ -331,14 +547,15 @@ class Sources:
         return out
 
 
-def register(event: dict, sources: Sources) -> list[tuple[dict, str]]:
-    """(ref, SRC key) for each evidence ref, in order."""
+def register(event: dict, sources: Sources, feed: dict | None = None) -> list[tuple[dict, str]]:
+    """(ref, SRC key) for each evidence ref, in order; a feed entry's ref gets its own chip dated by its publication day."""
     sides = {side["observation_id"]: side for side in (part(event, "before"), part(event, "after")) if side.get("observation_id")}
     refs = [ref for ref in event.get("evidence_refs") or [] if isinstance(ref, dict)]
     keys = {ref.get("source_key") or event.get("source_key") or "" for ref in refs}
-    published = published_day(event) if len(keys) == 1 else None
+    published = (published_day(event) or article_day(event, feed or {}) or None) if len(keys) == 1 else None
+    entry = lambda ref: str(ref.get("locator") or "") if str(ref.get("locator") or "").startswith("feed/") else ""
     return [(ref, sources.add(event, ref.get("source_key") or event.get("source_key") or "", ref.get("run_id") or "", ref.get("url") or "",
-                              sides.get(ref.get("observation_id") or None, {}).get("observed_at_utc"), published)) for ref in refs]
+                              sides.get(ref.get("observation_id") or None, {}).get("observed_at_utc"), published, entry(ref))) for ref in refs]
 
 
 def quotes(event: dict, refs: list[tuple[dict, str]]) -> list[list]:
@@ -426,7 +643,7 @@ def event_rows(event: dict, t7: str | None, eff: str, refs: list, sources: Sourc
             return []
         return [row(b or unknown("공개 안 됨"), a or unknown("할인가 공개 안 됨"),
                     [f"{format(rate, 'f')}%", "공지"] if rate is not None else None, f"~{md(eff)}" if eff else "")]
-    if t7 == "조건 변경":
+    if t7 in CONDITIONED:
         rule = part(event, "condition")
         if rule:  # observed: the stated rule on both sides, then the item's own price
             key = rule.get("key") or change.get("condition_key") or ""
@@ -506,7 +723,7 @@ def condition_label(subtags: list[str]) -> str:
 
 
 def sub_label(t7, members, subtags, remove, added) -> str:
-    if t7 == "조건 변경":
+    if t7 in CONDITIONED:
         return condition_label(subtags)
     if t7 == "공급 경로 변경":
         return "경로 중단" if remove else "경로 추가" if added else ""
@@ -558,9 +775,9 @@ def summary_text(t7, members, eff, sub, q1, remove, added) -> str:
         if len(prices) == 1:
             parts.append(f"할인가 {prices.pop()}")
         return " · ".join(parts + [f"{when}까지" if eff else "종료일 미확인"])
-    if t7 == "조건 변경":
+    if t7 in CONDITIONED:
         verb = "관측" if any(observed(e) for e in members) else "언급"
-        return f"{sub} 조건 변경 {verb}" if sub else f"조건 변경 {verb}"
+        return f"{sub} {t7} {verb}" if sub else f"{t7} {verb}"
     if t7 == "모델 출시":
         return f"모델 출시 · {when} 제공" if eff else "모델 출시 · 제공일 미확인"
     if t7 == "제공 종료":
@@ -597,7 +814,9 @@ def compare_line(members, rep, ch, t7) -> list[list[str]]:
     values: dict[str, set] = {}
     for e in members:
         for key, value in compared(e.get("conditions")).items():
-            values.setdefault(key, set()).add(cap(value))
+            text = size_ko(value) if key == "context_length" else value_text(key, value)
+            if text:
+                values.setdefault(key, set()).add(text)
     line += [[CONDITION_KO.get(key, key), " / ".join(sorted(values[key]))] for key in sorted(values)]
     line.append(["경로", ch])
     if part(rep, "announced_via"):
@@ -607,14 +826,58 @@ def compare_line(members, rep, ch, t7) -> list[list[str]]:
         line.append(["조회", minute(max(seen))])
     pairs = [(kst(part(e, "before").get("observed_at_utc")), kst(part(e, "after").get("observed_at_utc"))) for e in members if observed(e)]
     pairs = [(b, a) for b, a in pairs if b and a]
-    if t7 in ("가격 변경", "조건 변경") and pairs:
+    if t7 in ("가격 변경", *CONDITIONED) and pairs:
         line.append(["관측", f"{md(day_of(min(b for b, _ in pairs)))} → {md(day_of(max(a for _, a in pairs)))}"])
     return line
 
 
-def build_card(card_id: str, members: list[dict], sources: Sources, routes: dict | None) -> dict:
+def unique_rows(rows: list[dict]) -> list[dict]:
+    """One row per condition set, item and values: the same price read from two sources or runs is one row."""
+    seen, out = set(), []
+    for row in rows:
+        key = (json.dumps(row["cond"], sort_keys=True), row["item"], row["label"], row["same"],
+               json.dumps(row["row"][1:4], ensure_ascii=False, sort_keys=True))
+        if key not in seen:
+            seen.add(key)
+            out.append(row)
+    return out
+
+
+def card_status(members: list[dict]) -> str:
+    statuses = {event.get("status") for event in members}
+    return "conflicted" if "conflicted" in statuses else "confirmed" if statuses == {"confirmed"} else "candidate"
+
+
+def checks(members: list[dict]) -> list[list[str]]:
+    """[class, text] for what to confirm: check_first gaps and next_checks first, then what limits a value's meaning."""
+    out: dict[str, str] = {}
+    for event in members:
+        for gap in event.get("gaps") or []:
+            if not isinstance(gap, dict) or gap.get("field") in SKIP_GAPS:
+                continue
+            field = str(gap.get("field") or "")
+            text = GAP_KO.get(field) or GAP_KO.get(field.rpartition(".")[0]) or gap.get("reason") or field
+            out.setdefault(text, "first" if gap.get("class") == "check_first" else "limit")
+        for step in event.get("next_checks") or []:
+            out.setdefault(NEXT_KO.get(step, step), "next")
+    order = {"first": 0, "next": 1, "limit": 2}
+    return [[kind, text] for text, kind in sorted(out.items(), key=lambda pair: order[pair[1]])]
+
+
+def has_values(members: list[dict]) -> bool:
+    """Something to read beyond words: an observed or stated price, or a stated discount."""
+    return any(observed(e) or number(part(e, "after").get("amount")) is not None or number(part(e, "before").get("amount")) is not None
+               or stated_discount(e) is not None or number(part(e, "change").get("discounted_amount")) is not None for e in members)
+
+
+def build_card(card_id: str, members: list[dict], sources: Sources, routes: dict | None, feed: dict | None = None) -> dict:
     """One EVENTS entry; members share model, route, type, subtags and date (or a group_key)."""
     rep = representative(members)
+    feed = feed or {}
+    # A card with no date of its own is dated by its feed entry's publication day, else by its last observation day
+    # (2026-10-27 decisions 19 and 26-3); the list filter reads cd.
+    pub = published_day(rep) or article_day(rep, feed)
+    when = card_date(rep) or max((day for day in (article_day(e, feed) for e in members) if day), default="") or seen_day(members, feed)
     q1 = undecided_release(rep)
     t7 = T7.get(rep.get("event_type")) or ("공급 경로 변경" if q1 else None)
     subtags = list(dict.fromkeys(str(tag) for e in members for tag in e.get("subtags") or []))
@@ -625,7 +888,7 @@ def build_card(card_id: str, members: list[dict], sources: Sources, routes: dict
     ch = route_label(rep.get("route") or "")
     changed, unchanged, said = [], {}, []
     for index, event in enumerate(members):
-        refs = register(event, sources)
+        refs = register(event, sources, feed)
         said.append(quotes(event, refs))
         changed += [dict(row, eid=index) for row in event_rows(event, t7, eff, refs, sources)]
         for row in unchanged_rows(event, refs):
@@ -635,9 +898,12 @@ def build_card(card_id: str, members: list[dict], sources: Sources, routes: dict
     varying = [key for key in sorted({key for row in rows for key in row["cond"]})
                if len({json.dumps(row["cond"].get(key), sort_keys=True) for row in rows}) > 1]
     rows.sort(key=lambda row: (row["same"], [cap(row["cond"].get(key, "")) for key in varying], row["order"], rank(row["item"]), row["item"]))
+    rows = unique_rows(rows)
     for row in rows:
-        row["row"][0] = html.escape(" · ".join([cap(row["cond"][key]) for key in varying if key in row["cond"]]
-                                               + [row["label"] or item_ko(row["item"])]))
+        group = " · ".join(filter(None, (condition_value(key, row["cond"][key]) for key in varying if key in row["cond"])))
+        name = row["label"] or item_ko(row["item"])
+        row["row"][0] = html.escape(" · ".join(filter(None, (group, name))))
+        row["parts"] = [html.escape(group), html.escape(name)]
     ev, kept = [], set()
     for index in dict.fromkeys([row["eid"] for row in rows if not row["same"]] + list(range(len(members)))):
         for sid, text in said[index]:
@@ -653,12 +919,34 @@ def build_card(card_id: str, members: list[dict], sources: Sources, routes: dict
             "chgHead": table_head(t7, members), "chg": [row["row"] for row in rows], "cond": compare_line(members, rep, ch, t7), "ev": ev}
     phrase = next((part(e, "dates")["end_phrase"] for e in members if part(e, "dates").get("end_phrase")), None) if t7 == "한시 할인" else None
     for key, value in (("effLabel", label if t7 else ""), ("sub", sub), ("flag", flag_text(members)), ("eff", eff), ("effQual", qual),
-                       ("effNote", f"원문 “{phrase}”" if phrase and not eff else ""), ("cd", card_date(rep)), ("ld", last_observed_day(members))):
+                       ("effNote", f"원문 “{phrase}”" if phrase and not eff else ""), ("cd", when), ("ld", last_observed_day(members))):
         if value:
             card[key] = value
     rate = next((r for r in map(stated_discount, members) if r is not None), None)
     if rate is not None:
         card["discPct"] = int(rate) if rate == rate.to_integral_value() else float(rate)
+    # Detail page facts the engine already wrote: status, what to confirm, type candidates, the discount's period, row counts
+    card["st"] = card_status(members)
+    found = checks(members)
+    if found:
+        card["chk"] = found
+    if q1 or not t7:
+        candidates = sorted({kind for e in members for kind in e.get("type_candidates") or []}, key=lambda k: (list(T7).index(k) if k in T7 else 99, k))
+        if candidates:
+            card["tc"] = [T7.get(kind, kind) for kind in candidates]
+    if not has_values(members):
+        card["clue"] = True
+    states = {e.get("period_state") for e in members} - {None}
+    if t7 == "한시 할인" and len(states) == 1:
+        card["ps"] = states.pop()
+    if pub:
+        card["pub"] = pub
+    if not eff and when:  # no date (decision 12, 10/25): the list cell shows effSeen over cd, effShort its tooltip and the detail (10/27)
+        card["effSeen"] = "게시" if when == pub else "관측"
+        card["effShort"] = f"{label or '적용일'} 미공지 · {md(when)} {card['effSeen']}"
+    card["n"] = [sum(1 for row in rows if not row["same"]), sum(1 for row in rows if row["same"])]
+    if any(row["parts"][0] for row in rows):
+        card["cg"] = [row["parts"] for row in rows]  # [condition group, item] per chg row, for the grouped 바뀐 내용 table
     return card
 
 
@@ -694,6 +982,7 @@ def model_trend(model_id: str, cards: list[dict], groups: dict[str, list[dict]],
 
     def tab_key(conditions, unit) -> tuple[str, str]:
         priced_under = {key: value for key, value in compared(conditions).items() if key not in ENDPOINT}
+        priced_under.update(tab_facts(conditions))
         return json.dumps(priced_under, sort_keys=True, ensure_ascii=False), unit or ""
 
     def line(tab, key) -> dict:
@@ -760,15 +1049,32 @@ def model_trend(model_id: str, cards: list[dict], groups: dict[str, list[dict]],
             for slot, values in lines[tab][key]["planned"].items():
                 memo.add(slot[0])
                 count["unplaced"] += len(values)
-        tabs[tab] = [(labels[key], lines[tab][key]) for key in sorted(order[:MAX_LINES], key=lambda key: labels[key])]
-    measures = sorted({row[1] for kept in tabs.values() for _, entry in kept for rows in entry["runs"].values() for row in rows},
+        tabs[tab] = [(labels[key], lines[tab][key], reference_line(key[0], key[2])) for key in sorted(order[:MAX_LINES], key=lambda key: labels[key])]
+    # A reference line also joins every tab of its unit whose conditions include all it states; its own tab goes when nothing
+    # else was drawn there (2026-10-27 decision 26-2).
+    for tab, kept in list(tabs.items()):
+        refs, rest, stated = [drawn for drawn in kept if drawn[2]], [drawn for drawn in kept if not drawn[2]], json.loads(tab[0])
+        homes = [other for other, there in tabs.items() if other != tab and other[1] == tab[1]
+                 and any(not drawn[2] for drawn in there) and all(json.loads(other[0]).get(k) == v for k, v in stated.items())]
+        if refs and homes:
+            for other in homes:
+                tabs[other] = tabs[other] + refs
+            if rest:
+                tabs[tab] = rest
+            else:
+                del tabs[tab]
+    measures = sorted({row[1] for kept in tabs.values() for _, entry, _ in kept for rows in entry["runs"].values() for row in rows},
                       key=lambda item: (rank(item), item))
+    # 그래프 안 최저 counts only lines the newest collection still has (decision 9); older ones are marked old.
+    latest = max((run for kept in tabs.values() for _, entry, _ in kept for run in entry["runs"]), default="")
     drawn = {}
     for tab, kept in tabs.items():
         drawn[names[tab]] = []
-        for label, entry in kept:
+        for label, entry, ref in kept:
             pts, until = points(entry, measures, count, memo)
-            drawn[names[tab]].append({"name": html.escape(label), "pts": pts, **({"until": until} if until else {})})
+            old = bool(latest) and max(entry["runs"], default="") < latest
+            drawn[names[tab]].append({"name": html.escape(label), "pts": pts, **({"until": until} if until else {}),
+                                      **({"ref": True} if ref else {}), **({"old": True} if old else {})})
     facts = ["수집기 관측 단가(state.json의 최신 관측과 이벤트의 이전·이후 관측)와 공지된 예정 단가(점선)만 그렸습니다. 첫 관측 전 값은 기록이 없어 그리지 않았습니다."
              if series is not None else "state.json을 쓰지 못해 이벤트의 이전·이후 관측만 그렸습니다."]
     for name, text in (("currency", "USD가 아닌 값 {n}건은 그리지 않았습니다."), ("suspect", "검증되지 않은 관측 {n}건(파서 의심)은 뺐습니다."),
@@ -788,6 +1094,7 @@ def model_trend(model_id: str, cards: list[dict], groups: dict[str, list[dict]],
         entry["series"] = next(iter(drawn.values()))
     else:
         entry["tiers"] = drawn
+        entry["units"] = {names[tab]: f"USD / {unit_ko(tab[1])}" if tab[1] else "USD" for tab in tabs}
     return entry
 
 
@@ -813,17 +1120,29 @@ def points(line, measures, count, memo) -> tuple[list, str | None]:
 
 
 def tab_names(keys) -> dict:
-    """'Standard' for {service_tier: standard}; names that would clash spell out keys and unit instead."""
+    """'fp4 · Standard', 'fp8 · US' (a region tab drops Standard), 'Standard' alone where no precision is stated: precision,
+    region, other conditions, then tier, written as the comparison table writes them (2026-10-27 decisions 21, 26-1).
+    Names that would clash spell out keys and unit instead."""
+    def ordered(conditions):
+        rest = sorted(name for name in conditions if name not in ("precision", "region", "service_tier"))
+        return [name for name in ("precision", "region") if name in conditions] + rest + (["service_tier"] if "service_tier" in conditions else [])
+
+    def text(conditions, name):
+        return str(conditions[name]) if name == "precision" else value_text(name, conditions[name])
+
     def short(key):
         conditions = json.loads(key[0])
-        return " · ".join(cap(conditions[name]) for name in sorted(conditions)) or "조건 없음"
+        regional = text(conditions, "region") in REGION_NAMES.values() if "region" in conditions else False
+        parts = [text(conditions, name) for name in ordered(conditions)
+                 if not (name == "service_tier" and regional and text(conditions, name) == "Standard")]
+        return " · ".join(part for part in parts if part) or "조건 없음"
 
     names = {key: short(key) for key in keys}
     clash = {name for name in names.values() if list(names.values()).count(name) > 1}
     for key, name in names.items():
         if name in clash:
             conditions = json.loads(key[0])
-            names[key] = " · ".join([f"{k} {cap(conditions[k])}" for k in sorted(conditions)] + [unit_ko(key[1]) or "단위 없음"])
+            names[key] = " · ".join([f"{k} {text(conditions, k)}" for k in ordered(conditions)] + [unit_ko(key[1]) or "단위 없음"])
     return names
 
 
@@ -906,11 +1225,147 @@ def record_problem(record) -> str:
 
 
 def empty(today: str, runs: dict) -> dict:
-    return {"TODAY": today, "SRC": {}, "ID": {}, "EVENTS": [], "MODELS": {}, "TREND": {}, "COLLECTED": runs}
+    return {"TODAY": today, "SRC": {}, "ID": {}, "EVENTS": [], "MODELS": {}, "TREND": {}, "COLLECTED": runs, "COMPARE": {}}
 
 
 def render(template: str, data: dict, status: str) -> str:
     return SLOT.sub(lambda m: status if m.group(0) == "<!--STATUS-->" else js(data[m.group(1)]), template)
+
+
+# ---- Card judgement for the Slack bot (2026-10-27 decisions 26-4, 26-6, 26-7) ----
+# template.html decides 추천 행동 (actionKey) and 적용 배지 (applicabilityOf) in the browser. The bot cannot run the page, so
+# the same rules run here once more and cards.json carries them with the names the page uses; change both together.
+MATRIX = {"use": {"good": "disc", "bad": "route", "neutral": "keep"}, "other": {"good": "route", "bad": "keep", "neutral": "keep"},
+          "none": {"good": "route", "bad": "keep", "neutral": "keep"}}
+PRICE_WORDS = re.compile("단가|토큰|가격")
+APPLICABILITY = {"use": "APPLIES", "unk": "UNKNOWN"}  # other and none: NOT APPLIES
+
+
+def js_text(value) -> str:
+    """String(value) as the template's JS writes it, for the text tests its rules make."""
+    if value is None:
+        return "null"
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if isinstance(value, list):
+        return ",".join("" if item is None else js_text(item) for item in value)
+    return "[object Object]" if isinstance(value, dict) else str(value)
+
+
+def page_money(value) -> float | None:
+    """The template's money(): a '$1,234.5' cell as a number, anything else none."""
+    match = re.fullmatch(r"\$([\d,]+(?:\.\d+)?)", value) if isinstance(value, str) else None
+    return float(match.group(1).replace(",", "")) if match else None
+
+
+def judge(card: dict, today: str) -> dict:
+    """추천 행동 (REVIEW, VERIFY, MONITOR, RECORD) and 적용 배지 of one EVENTS card, as template.html's actionKey,
+    suggestOf, dirOf and applicabilityOf decide them."""
+    t7, sub, rows, eff, st = card.get("t7"), card.get("sub") or "", card.get("chg") or [], card.get("eff") or "", card.get("st")
+    flagged = lambda cell: isinstance(cell, dict) and bool(cell.get("unk") or cell.get("con"))
+    days = lambda day: (date.fromisoformat(day[:10]) - date.fromisoformat(today)).days
+    changed = [row for row in rows if (len(row) > 3 and row[3]) or row[1] != row[2]]
+    clue = bool(card.get("clue")) and t7 not in ("공급 경로 변경", "모델 출시", "제공 종료")
+    ended = t7 == "한시 할인" and (card.get("ps") == "ended" or (card.get("ps") != "active" and bool(eff) and days(eff) < 0))
+    added = (t7 == "공급 경로 변경" and "중단" not in sub) or t7 == "모델 출시"
+    price_unk = any(PRICE_WORDS.search(re.sub(r"<[^>]+>", "", js_text(row[0]))) and flagged(row[2]) for row in rows)
+    rel = card.get("relKey") or "unk"
+
+    def direction() -> str:
+        priced = [row for row in changed if page_money(row[1]) is not None and page_money(row[2]) is not None]
+        total = sum(page_money(row[2]) - page_money(row[1]) for row in priced)
+        if t7 == "한시 할인":
+            return "bad" if eff and days(eff) < 0 else "good"
+        if t7 in ("모델 출시", "제공 종료"):
+            return "good" if t7 == "모델 출시" else "bad"
+        if t7 == "공급 경로 변경":
+            return "bad" if "중단" in sub else "good"
+        if priced:
+            return "bad" if total > 0 else "good" if total < 0 else "neutral"
+        if any(page_money(row[1]) is not None and flagged(row[2]) for row in rows):
+            return "unk"
+        said = [re.sub(r"<[^>]+>", "", js_text(row[2])) for row in changed]
+        return "bad" if any("인상" in text for text in said) else "good" if any("인하" in text for text in said) else "neutral"
+
+    def response() -> str:
+        if t7 is None:
+            return "hold"
+        way = direction()
+        resp = "hold" if way == "unk" else MATRIX["use" if rel == "unk" else rel][way]
+        if clue:
+            return "hold"
+        if ended:
+            return "keep"
+        if added:
+            return "keep" if rel == "use" else "route"
+        if t7 == "한시 할인" and card.get("discPct") is None and not any(page_money(row[2]) is not None for row in changed):
+            return "hold"
+        return "hold" if st and st != "confirmed" and resp == "disc" else resp
+
+    if t7 is None or clue or (card.get("flag") and not st) or st == "conflicted" or price_unk:
+        action = "VERIFY"
+    elif ended:
+        action = "RECORD"
+    elif rel == "unk":
+        action = "VERIFY"
+    elif st == "candidate":
+        action = "MONITOR"
+    else:
+        action = {"hold": "VERIFY", "keep": "RECORD"}.get(response(), "REVIEW")
+    return {"action": action, "applicability": APPLICABILITY.get(rel, "NOT APPLIES"), "assumed": bool(card.get("relDemo")) and rel != "unk"}
+
+
+def judgements(data: dict, groups: dict[str, list[dict]]) -> dict:
+    """cards.json: per card its events, 추천 행동, 적용 배지, deadline and display names, plus the name tables the page
+    uses, so the Slack bot filters (decision 26-4), links to the card (26-6) and writes names as the page does (26-7)."""
+    routes = {e.get("route"): route_label(e.get("route")) for members in groups.values() for e in members if e.get("route")}
+    return {"schema": 1, "base_day": data["TODAY"],
+            "names": {"routes": routes, "items": ITEM_KO, "conditions": CONDITION_KO, "tiers": TIER_NAMES, "regions": REGION_NAMES,
+                      "status": STATUS_KO, "units": UNIT_KO},
+            "cards": [{"id": card["id"], "events": data["ID"].get(card["id"], []), **judge(card, data["TODAY"]),
+                       "deadline": card.get("eff") or None, "deadline_label": card.get("effLabel") or None,
+                       "model": card.get("m") or card.get("mid"), "route": card.get("ch"), "type": card.get("t7"),
+                       "summary": card.get("sum"), "conditions": card.get("cond") or []} for card in data["EVENTS"]]}
+
+
+def link_promotions(cards: list[dict], groups: dict[str, list[dict]], tables: dict, routes: dict | None) -> None:
+    """A gateway discount that runs out into its upstream's announced price (the 공급사 비교 표 match of decision 16): the
+    announced change's cards and the discount cards link to each other ('함께 볼 이벤트'), and on the route LETSUR uses the
+    discount card gets the price after it as an estimate and a 주의 line, and so does the announced change (2026-10-27
+    결정 1번 가안, gemini-3.8-flash). Each table's promo list is taken out here; the page does not carry it."""
+    for model_id, table in tables.items():
+        matches = sorted(table.pop("promo", None) or [], key=lambda m: (m["direct"], m["route"], not m["standard"]))
+        mine = [card for card in cards if card["mid"] == model_id]
+        route = {card["id"]: representative(groups[card["id"]]).get("route") or "" for card in mine}
+        changes = {route[card["id"]]: card for card in mine if card["t7"] == "예정 변경" and card.get("eff")}
+        sales: dict[str, list[dict]] = {}
+        for card in mine:
+            if card["t7"] == "한시 할인" and card.get("ps") != "ended":
+                sales.setdefault(route[card["id"]], []).append(card)
+        pairs = [(m, changes[m["direct"]]) for m in matches
+                 if m["direct"] in changes and changes[m["direct"]]["eff"] == m["start"] and m["route"] in sales]
+        used = {record["route_id"] for record in (routes or {}).get("records", []) if record["model_id"] == model_id}
+        mark = " 가정" if (routes or {}).get("is_demo") else ""
+        for gateway in dict.fromkeys(m["route"] for m, _ in pairs):
+            change = next(c for m, c in pairs if m["route"] == gateway)
+            for sale in sales[gateway]:
+                sale["link"] = [change["id"], change["sum"]]
+        for change in {c["id"]: c for _, c in pairs}.values():
+            gateways = [m["route"] for m, c in pairs if c is change]
+            gateway = next((g for g in gateways if g in used), gateways[0])
+            change["link"] = [sales[gateway][0]["id"], sales[gateway][0]["sum"]]
+            if gateway in used:
+                end = sales[gateway][0].get("eff") or (date.fromisoformat(change["eff"]) - timedelta(days=1)).isoformat()
+                change["risk"] = (f"렛서{mark} 경로({ROUTE_PUBLISHERS.get(gateway, gateway)})도 {md(end)}에 할인이 끝나 "
+                                  f"{md(change['eff'])}부터 같은 가격이 될 수 있음(추정)")
+        for gateway in dict.fromkeys(m["route"] for m, _ in pairs if m["route"] in used):
+            on = [(m, c) for m, c in pairs if m["route"] == gateway]
+            m, change = next(((m, c) for m, c in on if m["standard"]), on[0])  # the Standard row, else the first one
+            times = "두 배" if m["times"] == "2" else f"{m['times']}배"
+            for sale in sales[gateway]:
+                sale["postEst"] = (f"할인 끝난 뒤 {'Standard ' if m['standard'] else ''}{m['after']} "
+                                   f"(추정 · {ROUTE_PUBLISHERS.get(m['direct'], m['direct'])} {md(change['eff'])} 가격 기준)")
+                sale["risk"] = f"{md(change['eff'])}부터 지금 가격의 {times}가 될 수 있음(추정)"
 
 
 def collect(root: Path, today: str, routes: dict | None) -> tuple[dict, str]:
@@ -939,6 +1394,8 @@ def collect(root: Path, today: str, routes: dict | None) -> tuple[dict, str]:
     for event in sorted((e for e in doc["events"] if isinstance(e, dict)), key=lambda e: str(e.get("event_id") or "")):
         cid = "g_" + hashlib.sha256(json.dumps(card_key(event), ensure_ascii=False).encode("utf-8")).hexdigest()[:12]
         groups.setdefault(cid, []).append(event)
+    feed = feed_days(root)
+    merge_notes(groups, feed)
 
     def order_key(cid):
         rep = representative(groups[cid])
@@ -946,10 +1403,15 @@ def collect(root: Path, today: str, routes: dict | None) -> tuple[dict, str]:
 
     order = sorted(groups, key=order_key)
     sources = Sources()
-    cards = [build_card(cid, groups[cid], sources, routes) for cid in order]
+    cards = [build_card(cid, groups[cid], sources, routes, feed) for cid in order]
     data = {"TODAY": today, "SRC": sources.entries(), "ID": {cid: [e.get("event_id") for e in groups[cid]] for cid in order},
             "EVENTS": cards, "MODELS": models(cards, routes), "TREND": trend(cards, groups, state, doc.get("gaps") or []),
             "COLLECTED": collected(report)}
+    # 공급사 비교 표 per LLM model with a card (compare.py; reads the newest processed run under <root>/runs)
+    data["COMPARE"] = compare.tables(root, [card["mid"] for card in cards], [e for e in doc["events"] if isinstance(e, dict)],
+                                     doc.get("gaps") or [], state, report, routes, today)
+    link_promotions(cards, groups, data["COMPARE"], routes)
+    data["JUDGED"] = judgements(data, groups)  # not a page slot: main writes it to cards.json
     return data, warning(continuity)
 
 
@@ -967,14 +1429,18 @@ def main(argv: list[str] | None = None, now: datetime | None = None) -> int:
     today = (now or datetime.now(timezone.utc)).astimezone(KST).date().isoformat()
     template = TEMPLATE.read_text(encoding="utf-8")
     code, cards = 0, 0
+    judged = {"schema": 1, "base_day": today, "names": {}, "cards": []}
     try:
         routes, note = internal_routes(Path(args.internal_routes)) if args.internal_routes else (None, "")
         data, status = collect(root, today, routes)
         page, cards = render(template, data, status + note), len(data["EVENTS"])
+        judged = data.get("JUDGED") or judged
     except Exception as error:  # the page must still say today's build failed
         traceback.print_exc()
         page, code = render(template, empty(today, {"runs": []}), banner("fail", "오늘 생성 실패", f"대시보드 생성 중 오류: {type(error).__name__}")), 1
     out.mkdir(parents=True)
     (out / "index.html").write_text(page, encoding="utf-8")
+    # The Slack bot's copy of each card's judgement (decision 26-4); published next to the page and in the Pages artifact.
+    (out / "cards.json").write_text(json.dumps(judged, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
     print(f"wrote {out / 'index.html'}: {cards} cards")
     return code

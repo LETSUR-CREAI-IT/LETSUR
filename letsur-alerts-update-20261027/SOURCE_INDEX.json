@@ -1,0 +1,181 @@
+{
+  "proposal": "letsur-alerts-update-20261027",
+  "original_team_files_modified": false,
+  "contains_secrets_or_runtime_state": false,
+  "verification": {
+    "unit_tests_passed_in_share_copy": 78,
+    "new_slack_installation_tested": false
+  },
+  "files": [
+    {
+      "file": "alerts.py",
+      "sha256": "ecebb8c7c4195697baade12e92eaa1a876ac107dfc22aecf2fc9422cf43cd7f9",
+      "kind": "unchanged_copy"
+    },
+    {
+      "file": "delivery.py",
+      "sha256": "7c33b5084577767e51756ddc34afc50dc114f5aaa6ef3e001171cb2b23563eed",
+      "kind": "unchanged_copy"
+    },
+    {
+      "file": "github_credentials.py",
+      "sha256": "f284b02acfff676ecfd334642cdfdd2aa59f02ed60c17e6f7b20f654082477b2",
+      "kind": "unchanged_copy"
+    },
+    {
+      "file": "github_source.py",
+      "sha256": "7dcdd2be386b2370b4f6dbc42a8cf3c4522a6d89359ff4b66c8f1e26803bfbdd",
+      "kind": "unchanged_copy"
+    },
+    {
+      "file": "runtime.py",
+      "sha256": "0df54d8a723d0e7e5ce068d97e6580f81d641eaadb6d08b2fa51161746eda38f",
+      "kind": "unchanged_copy"
+    },
+    {
+      "file": "runtime_socket.py",
+      "sha256": "c4eb3eb1d86fa1bdbec764636a85555f1d5c44a588b66d3c5eb5bf7a96437365",
+      "kind": "unchanged_copy"
+    },
+    {
+      "file": "slack_adapter.py",
+      "sha256": "4075dad59fb55364fba5789152e3f456fae304cc7f943fdac79af7e81e2a8e5c",
+      "kind": "unchanged_copy"
+    },
+    {
+      "file": "slack_connect.py",
+      "sha256": "afbb43bbec68eebce8cfe551b0521091f92e98d1b51d36ff0fffda4c74cb01cc",
+      "kind": "unchanged_copy"
+    },
+    {
+      "file": "operations.py",
+      "sha256": "419a7405a1b09f1d51ebf59707636e82f573029a67f44b0fc800629a0f648223",
+      "kind": "updated_copy"
+    },
+    {
+      "file": "fixtures.json",
+      "sha256": "f3da5df3c41d0040596fddb7ce2da5c2e5de00aa0ff4b89b478ccab1a1367c86",
+      "kind": "unchanged_copy"
+    },
+    {
+      "file": "config.json",
+      "sha256": "4c415f459ca6e778b1f98986ae2e75df365c8a46ba3a301b16e6baa4703cebfa",
+      "kind": "unchanged_copy"
+    },
+    {
+      "file": "requirements.txt",
+      "sha256": "5b0bc7e6d4152070448a7eb24c2a01c10ec4219e3c6402568339dfaf0a537de4",
+      "kind": "unchanged_copy"
+    },
+    {
+      "file": "offline_demo.py",
+      "sha256": "4e30f34014c8b307b744d7e828bc954594d7dbbed7eae32c1156b4bd31939667",
+      "kind": "unchanged_copy"
+    },
+    {
+      "file": "test_alerts.py",
+      "sha256": "1c7d0b4aa036f50f3283f056854bb2ebb912362262cec27880d70e985c8acaca",
+      "kind": "unchanged_copy"
+    },
+    {
+      "file": "test_delivery.py",
+      "sha256": "ffb8d4211bbf18fb9e46a9d96e033483ee26dd39f89867ac733f2a39a44e879f",
+      "kind": "unchanged_copy"
+    },
+    {
+      "file": "test_github_source.py",
+      "sha256": "7495472fec0a049c580e91ea939b2f388c67b479899f597769f73b000e037a17",
+      "kind": "unchanged_copy"
+    },
+    {
+      "file": "test_operations.py",
+      "sha256": "35e731a2b56b93bcfc53b221c54eeb5d8ca969f259432938c790faee212c9e89",
+      "kind": "unchanged_copy"
+    },
+    {
+      "file": "test_runtime.py",
+      "sha256": "6cee8667df909b53044954c90434b8493946d8491559829c3074ae0a0eefccfc",
+      "kind": "unchanged_copy"
+    },
+    {
+      "file": "test_slack_adapter.py",
+      "sha256": "9ceac376ce0afbc11f1753bd3a5514976779b4a0f4e15894e63c8d4aa7e63d5a",
+      "kind": "unchanged_copy"
+    },
+    {
+      "file": "test_slack_connect.py",
+      "sha256": "dc6d490b64a7f79ec0aad2ffd94a4e0bae851072ebe7c4968c9fb8e920605a20",
+      "kind": "unchanged_copy"
+    },
+    {
+      "file": ".gitignore",
+      "sha256": "2e4ecc15115ebc1a477d8dce66efde0ce498c64131dac178ac1cb20b4a1bef78",
+      "kind": "updated_copy"
+    },
+    {
+      "file": ".env.example",
+      "sha256": "29d3e3ab5d2f6019497db8cbef17c5e61cbe80a6954673aba73014388f1ecfe2",
+      "kind": "new_handoff_file"
+    },
+    {
+      "file": "operations.json",
+      "sha256": "e14b785aadc00916893d058ecd54677d1d0587f4e3f249b41ae8aa370b4462e4",
+      "kind": "updated_copy"
+    },
+    {
+      "file": "slack-app-manifest.json",
+      "sha256": "0f005bf918a515e9572c2d29a3896e21b041533389e5abf15a06b2e6a91335f6",
+      "kind": "new_handoff_file"
+    },
+    {
+      "file": "start-listener.ps1",
+      "sha256": "6f0da665cd311f2328ccc473078f83c5b2bdd2563b975321d992fa73c5c97066",
+      "kind": "updated_copy"
+    },
+    {
+      "file": "run-watch.ps1",
+      "sha256": "aaa6a81f3574d3e635f3658fd84d334bbb3bce212859d8c688417b7a39c73f5b",
+      "kind": "new_handoff_file"
+    },
+    {
+      "file": "README.md",
+      "sha256": "e3c2f5ca5279d5dacecd91b6c9ee1360b3d67e9e58f46814772cad10f134f139",
+      "kind": "updated_copy"
+    },
+    {
+      "file": "SLACK_SETUP.md",
+      "sha256": "29806778794425a62c8ef7e5607f0d2f536bfce843faf7abea3bd4a8c5908e06",
+      "kind": "new_handoff_file"
+    },
+    {
+      "file": "SHARING.md",
+      "sha256": "380b1b4c26ea6db9957135ad6826929a91568ceeb5a532729f7e941336c6edd3",
+      "kind": "new_handoff_file"
+    },
+    {
+      "file": "RUNNING.md",
+      "sha256": "666dd144ed06b66f8ead54c99c4e8d30b79dc92e592b56b4629495a253cb5472",
+      "kind": "new_handoff_file"
+    },
+    {
+      "file": "UPDATE_PROPOSAL_20261027.md",
+      "sha256": "04a87e2f74a2f56183975c90837ff133c5aaec622ba6d509f22195cabccedfe5",
+      "kind": "updated_copy"
+    },
+    {
+      "file": "simulate_volume.py",
+      "sha256": "55b03dbaf9971416c5f31497908c49e46f45f13ef8159ace34c63bb49a0e8620",
+      "kind": "unchanged_copy"
+    },
+    {
+      "file": "SIMULATION.md",
+      "sha256": "dc61ff4cc7a1e675acf5f2abc512214a5a84f189edc79b23ca2d0772511656ac",
+      "kind": "new_handoff_file"
+    },
+    {
+      "file": "simulation-results.json",
+      "sha256": "ca2285f8c7fbf75228e3d4e073b05af4a7bd77cfcdc5c3d582f07f3926a1ffe6",
+      "kind": "new_handoff_file"
+    }
+  ]
+}

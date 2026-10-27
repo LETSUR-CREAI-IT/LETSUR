@@ -21,6 +21,71 @@
       "model_id": "gpt-6.1-sol",
       "route_id": null,
       "endpoint_id": null
+    },
+    {
+      "model_id": "claude-fable-5-1",
+      "route_id": "vercel_ai_gateway",
+      "endpoint_id": null
+    },
+    {
+      "model_id": "claude-opus-5-5",
+      "route_id": "vercel_ai_gateway",
+      "endpoint_id": null
+    },
+    {
+      "model_id": "claude-sonnet-5",
+      "route_id": "vercel_ai_gateway",
+      "endpoint_id": null
+    },
+    {
+      "model_id": "deepseek-v4-pro",
+      "route_id": "vercel_ai_gateway",
+      "endpoint_id": null
+    },
+    {
+      "model_id": "deepseek-v4.1-flash",
+      "route_id": "vercel_ai_gateway",
+      "endpoint_id": null
+    },
+    {
+      "model_id": "glm-5.2",
+      "route_id": "vercel_ai_gateway",
+      "endpoint_id": null
+    },
+    {
+      "model_id": "glm-5.3-flash",
+      "route_id": "vercel_ai_gateway",
+      "endpoint_id": null
+    },
+    {
+      "model_id": "gpt-5.6-luna",
+      "route_id": "vercel_ai_gateway",
+      "endpoint_id": null
+    },
+    {
+      "model_id": "gpt-5.6-sol",
+      "route_id": "vercel_ai_gateway",
+      "endpoint_id": null
+    },
+    {
+      "model_id": "gpt-5.6-terra",
+      "route_id": "vercel_ai_gateway",
+      "endpoint_id": null
+    },
+    {
+      "model_id": "gpt-6-astra",
+      "route_id": "vercel_ai_gateway",
+      "endpoint_id": null
+    },
+    {
+      "model_id": "kimi-k3",
+      "route_id": "vercel_ai_gateway",
+      "endpoint_id": null
+    },
+    {
+      "model_id": "seedance-2.5",
+      "route_id": "vercel_ai_gateway",
+      "endpoint_id": null
     }
   ]
 }

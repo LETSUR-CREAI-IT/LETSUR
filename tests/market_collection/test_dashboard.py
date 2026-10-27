@@ -315,8 +315,9 @@ def test_list_filter_chips_are_the_types_the_builder_emits(tmp_path: Path) -> No
     (_claim("p1", "price_change", "openai_news", "Prices go up.", model_id="gpt-6-sol", route="openai_direct", claim_kind="price_increase",
             dates={"published": "2026-10-03T09:00:00Z", "effective_from": None, "note": ""}), "2026-10-03"),
     (_observed("o1", "price_change", "1.00", "1.20", change={"delta": "0.20", "pct": "20.00", "direction": "up", "note": ""}), "2026-10-05"),
+    # no date of its own and no feed entry to date it: the last day its evidence was collected (2026-10-27 decision 19)
     (_claim("n1", "scheduled_change", "vercel_changelog", "Prices change.", route="vercel_ai_gateway", claim_kind="announced_future_rate",
-            dates={"published": None, "effective_from": None, "note": ""}), None),
+            dates={"published": None, "effective_from": None, "note": ""}), "2026-10-05"),
 ])
 def test_card_date_is_the_date_the_card_is_filed_under(tmp_path: Path, event: dict, cd: str | None) -> None:
     _write(tmp_path, [event])
@@ -395,8 +396,10 @@ def test_template_files_a_card_as_past_by_its_last_observed_day(tmp_path: Path) 
     _write(tmp_path, [])
     page = _build(tmp_path)[1]
     [rule] = re.findall(r"^const isPast = (.*?);(?: //.*)?$", page, re.M)
-    # past once the later of cd and ld is before the viewed day (ld only on groups); a card with no date at all counts as past
-    assert rule == "e => { const day = [e.cd, e.ld].filter(Boolean).sort().pop(); return !day || day < VIEW_DAY; }"
+    # past once the later of cd and ld is 7 or more days before the page's base day (ld only on groups; 2026-10-27 decision 19);
+    # a card with no date at all counts as past
+    assert rule == "e => { const day = [e.cd, e.ld].filter(Boolean).sort().pop(); return !day || days(day) <= -PAST_DAYS; }"
+    assert "const PAST_DAYS = 7;" in page
 
 
 def test_observed_condition_change(tmp_path: Path) -> None:
@@ -472,9 +475,9 @@ def _record(route_id: str | None, model_id: str = "gemini-3.8-flash", **fields) 
     (None, ("unk", "사용 경로 확인 필요", False)),  # no --internal-routes
     ([_record("google_direct")], ("use", "이 경로로 사용 중 (가정)", True)),
     ([_record("google_direct", endpoint_id="ep-1"), _record("vercel_ai_gateway", endpoint_id="ep-2")],
-     ("use", "이 경로로 사용 중 · endpoint ep-1 (가정)", True)),
+     ("use", "이 경로로 사용 중 : endpoint ep-1 (가정)", True)),
     ([_record("vercel_ai_gateway", endpoint_id=None), _record("openrouter")],
-     ("other", "모델 제공 중 · Vercel · vercel_ai_gateway, OpenRouter · openrouter 경로로 사용 (가정)", True)),
+     ("other", "모델 제공 중 : Vercel · vercel_ai_gateway, OpenRouter · openrouter 경로로 사용 (가정)", True)),
     ([_record(None, endpoint_id=None)], ("none", "미도입 (가정)", True)),
     ([_record("google_direct", model_id="claude-sonnet-5-5")], ("unk", "사용 경로 확인 필요", False)),  # no record is not "not used"
 ])
@@ -509,7 +512,7 @@ def test_routes_that_are_not_a_demo_are_not_marked_as_assumed(tmp_path: Path) ->
     _write(tmp_path, [_scheduled("e1", "input", "0.75", "1.50", "0.75")])
     _, _, data = _build(tmp_path, args=_routes(tmp_path, {"is_demo": False, "records": [_record("vercel_ai_gateway")]}))
     [card] = data["EVENTS"]
-    assert (card["relKey"], card["relShort"], card["relDemo"]) == ("other", "모델 제공 중 · Vercel · vercel_ai_gateway 경로로 사용", False)
+    assert (card["relKey"], card["relShort"], card["relDemo"]) == ("other", "모델 제공 중 : Vercel · vercel_ai_gateway 경로로 사용", False)
     assert data["MODELS"]["gemini-3.8-flash"]["use"] == "Vercel · vercel_ai_gateway 경로로 사용"
 
 
@@ -518,7 +521,7 @@ def test_committed_demo_routes(tmp_path: Path) -> None:
     _write(tmp_path, [_scheduled("e1", "input", "0.75", "1.50", "0.75")])
     _, _, data = _build(tmp_path, args=["--internal-routes", str(DEMO_ROUTES)])
     [card] = data["EVENTS"]
-    assert (card["relKey"], card["relShort"], card["relDemo"]) == ("other", "모델 제공 중 · Vercel · vercel_ai_gateway 경로로 사용 (가정)", True)
+    assert (card["relKey"], card["relShort"], card["relDemo"]) == ("other", "모델 제공 중 : Vercel · vercel_ai_gateway 경로로 사용 (가정)", True)
     assert data["MODELS"] == {"gemini-3.8-flash": {"prov": "Google", "kind": "LLM", "use": "Vercel · vercel_ai_gateway 경로로 사용 (가정)"}}
 
 
@@ -626,17 +629,18 @@ def _gateway_change(event_id: str, endpoint: dict, before: str, after: str) -> d
                   sources=[_source(OPENROUTER, "channel_official")])
 
 
-def test_endpoints_of_one_price_condition_are_lines_of_one_tab(tmp_path: Path) -> None:
+def test_endpoints_split_into_tabs_by_precision_and_region(tmp_path: Path) -> None:
+    """2026-10-27 decision 21: tabs are the comparison table's groups (precision, region, tier), so the lines of one tab are
+    the same condition whoever serves them."""
     state = {"series": {"a": _gateway("g1-2", "openrouter", OPENROUTER, "Alibaba", "0.20", **ALIBABA),
                         "n": _gateway("n-2", "openrouter", OPENROUTER, "Novita", "0.25", **NOVITA),
                         "d": _gateway("d-2", "vercel_ai_gateway", VERCEL, "DeepInfra", "0.30", **DEEPINFRA)}}
     _write(tmp_path, [_gateway_change("g1", ALIBABA, "0.30", "0.20")], state=state)
     trend = _build(tmp_path)[2]["TREND"]["deepseek-v4-pro"]
-    assert "tiers" not in trend
-    assert [(line["name"], [pt[1] for pt in line["pts"]]) for line in trend["series"]] == [
-        ("OpenRouter · openrouter · alibaba/fp8/us-east-1", [[0.3], [0.2]]),
-        ("OpenRouter · openrouter · novita/fp4", [[0.25]]),
-        ("Vercel · vercel_ai_gateway · DeepInfra · fp8", [[0.3]])]
+    assert {tab: [(line["name"], [pt[1] for pt in line["pts"]]) for line in lines] for tab, lines in trend["tiers"].items()} == {
+        "fp8 · US": [("OpenRouter · openrouter · alibaba/fp8/us-east-1", [[0.3], [0.2]])],
+        "fp4 · Standard": [("OpenRouter · openrouter · novita/fp4", [[0.25]])],
+        "fp8 · Standard": [("Vercel · vercel_ai_gateway · DeepInfra · fp8", [[0.3]])]}
     assert "연결할 선이 여럿이라" not in trend["note"]
 
 
@@ -647,8 +651,38 @@ def test_a_different_service_tier_still_gets_its_own_tab(tmp_path: Path) -> None
     _write(tmp_path, [_gateway_change("g1", ALIBABA, "0.30", "0.20")], state=state)
     tiers = _build(tmp_path)[2]["TREND"]["deepseek-v4-pro"]["tiers"]
     assert {tab: [line["name"] for line in lines] for tab, lines in tiers.items()} == {
-        "Standard": ["OpenRouter · openrouter · alibaba/fp8/us-east-1", "OpenRouter · openrouter · novita/fp4"],
-        "Priority": ["OpenRouter · openrouter · alibaba/fp8/us-east-1"]}
+        "fp8 · US": ["OpenRouter · openrouter · alibaba/fp8/us-east-1"], "fp4 · Standard": ["OpenRouter · openrouter · novita/fp4"],
+        "fp8 · US · Priority": ["OpenRouter · openrouter · alibaba/fp8/us-east-1"]}
+
+
+
+def test_only_unsettled_lines_are_reference_lines(tmp_path: Path) -> None:
+    """2026-10-27 decision 26-2: endpoint lines compare inside their tab; a model-level display price states no precision or
+    region, so it is a reference line in every tab of its tier and its own tab goes; each tab names its unit."""
+    state = {"series": {"a": _gateway("g1-2", "openrouter", OPENROUTER, "Alibaba", "0.20", **ALIBABA),
+                        "p": _gateway("p-2", "openrouter", OPENROUTER, "Alibaba", "0.60", service_tier="priority", **ALIBABA),
+                        "v": _gateway("v-2", "vercel", "vercel_models", "Vercel", "0.15", price_basis="displayed model quote")}}
+    _write(tmp_path, [_gateway_change("g1", ALIBABA, "0.30", "0.20")], state=state)
+    trend = _build(tmp_path)[2]["TREND"]["deepseek-v4-pro"]
+    tiers = trend["tiers"]
+    assert set(tiers) == {"fp8 · US", "fp8 · US · Priority"}
+    assert [bool(line.get("ref")) for line in tiers["fp8 · US"]] == [False, True]
+    assert not any(line.get("ref") for line in tiers["fp8 · US · Priority"])
+    assert trend["units"] == {"fp8 · US": "USD / 100만 토큰", "fp8 · US · Priority": "USD / 100만 토큰"}
+
+
+def test_status_lines_follow_the_comparison_table(tmp_path: Path) -> None:
+    """Decisions 8 and 26-2: the 공급사 비교 표 compares OpenRouter's -1 and -2 with a chip and leaves -3, -5 and -10 out, so
+    only those are reference lines here."""
+    state = {"series": {"a": _gateway("g1-2", "openrouter", OPENROUTER, "Alibaba", "0.20", **ALIBABA),
+                        "b": _gateway("b-2", "openrouter", OPENROUTER, "Baidu", "0.25",
+                                      **{**ALIBABA, "endpoint_tag": "baidu/fp8/us-east-1", "endpoint_status": "-2"}),
+                        "c": _gateway("c-2", "openrouter", OPENROUTER, "Crusoe", "0.15",
+                                      **{**ALIBABA, "endpoint_tag": "crusoe/fp8/us-east-1", "endpoint_status": "-5"})}}
+    _write(tmp_path, [_gateway_change("g1", ALIBABA, "0.30", "0.20")], state=state)
+    lines = _build(tmp_path)[2]["TREND"]["deepseek-v4-pro"]["series"]  # one tab (fp8 · US), so no tiers
+    assert {line["name"].rsplit(" · ", 1)[-1]: bool(line.get("ref")) for line in lines} == {
+        "alibaba/fp8/us-east-1": False, "baidu/fp8/us-east-1": False, "crusoe/fp8/us-east-1": True}
 
 
 def test_lines_over_the_limit_say_how_many_were_left_out(tmp_path: Path) -> None:
@@ -658,7 +692,7 @@ def test_lines_over_the_limit_say_how_many_were_left_out(tmp_path: Path) -> None
     _write(tmp_path, [_gateway_change("g1", endpoints["p7"], "0.30", "0.20")], state=state)
     trend = _build(tmp_path)[2]["TREND"]["deepseek-v4-pro"]
     assert [line["name"] for line in trend["series"]] == [f"OpenRouter · openrouter · p{n}/fp8" for n in (0, 1, 2, 3, 4, 7)]  # the changed endpoint stays
-    assert ("선이 6개를 넘어 뺀 선 2개: Standard: OpenRouter · openrouter · p5/fp8, Standard: OpenRouter · openrouter · p6/fp8."
+    assert ("선이 6개를 넘어 뺀 선 2개: fp8 · Standard: OpenRouter · openrouter · p5/fp8, fp8 · Standard: OpenRouter · openrouter · p6/fp8."
             in trend["note"])
 
 
@@ -669,3 +703,227 @@ def test_event_without_optional_fields(tmp_path: Path) -> None:
     code, _, data = _build(tmp_path)
     [card] = data["EVENTS"]
     assert (code, card["t7"], card["chg"], card["sum"], card["flag"], data["SRC"]) == (0, "한시 할인", [], "할인 · 종료일 미확인", "공식 확인 전", {})
+
+
+# ---- 상세페이지: 종류별 정교화 (status, checks, type candidates, clue, grouped rows) ----
+
+def test_card_carries_status_and_checks(tmp_path: Path) -> None:
+    claim = _claim("p9", "price_change", "openai_news", "Prices go up.", model_id="gpt-6-sol", route="openai_direct", claim_kind="price_increase",
+                   dates={"published": "2026-10-03", "note": ""},
+                   gaps=[{"field": "observed_price", "class": "check_first", "reason": "x", "next_check": "y"},
+                         {"field": "letsur_usage", "class": "check_first", "reason": "no LETSUR usage or contract input"}])
+    _write(tmp_path, [claim])
+    card = _build(tmp_path)[2]["EVENTS"][0]
+    assert card["st"] == "candidate" and card["clue"] is True
+    assert card["chk"] == [["first", build.GAP_KO["observed_price"]]]  # letsur_usage is said once elsewhere, not per card
+
+
+def test_observed_change_is_not_a_clue_and_counts_rows(tmp_path: Path) -> None:
+    event = _observed("o9", "price_change", "1.00", "1.20", unchanged_items=[
+        {"billing_item": "output", "amount": "5.00", "conditions": {"service_tier": "standard"}, "observation_id": "u1"}],
+        next_checks=["confirm the official source still shows the new value on the next run"])
+    _write(tmp_path, [event])
+    card = _build(tmp_path)[2]["EVENTS"][0]
+    assert card["st"] == "confirmed" and "clue" not in card
+    assert card["n"] == [1, 1]
+    assert ["next", build.NEXT_KO["confirm the official source still shows the new value on the next run"]] in card["chk"]
+
+
+def test_undecided_type_lists_its_candidates(tmp_path: Path) -> None:
+    claim = _claim("a9", None, "vercel_changelog", "Now available on AI Gateway.", route="vercel_ai_gateway", subtags=["add"],
+                   type_candidates=["route_change", "model_release"], claim_kind="availability",
+                   dates={"maker_first_release_date": None, "route_added_date": "2026-10-12", "published": "2026-10-12", "note": ""})
+    _write(tmp_path, [claim])
+    card = _build(tmp_path)[2]["EVENTS"][0]
+    assert card["t7"] == "공급 경로 변경" and card["tc"] == ["모델 출시", "공급 경로 변경"]
+
+
+def test_condition_price_change_has_its_own_type(tmp_path: Path) -> None:
+    event = _observed("c9", "condition_price_change", "0.20", "0.10", item="cache_read",
+                      condition={"key": "cache_read_multiplier", "before": {"value": "0.1", "unit": "x base input price"},
+                                 "after": {"value": "0.05", "unit": "x base input price"}},
+                      change={"delta": "-0.10", "pct": "-50.00", "price_delta": "-0.10", "price_pct": "-50.00"},
+                      subtags=["billing.cache_read_multiplier"])
+    _write(tmp_path, [event])
+    card = _build(tmp_path)[2]["EVENTS"][0]
+    assert card["t7"] == "조건·가격 변경" and card["sub"] == "과금 · 캐시"
+    assert [row[0] for row in card["chg"]] == ["캐시 읽기 배율", "캐시 읽기"]
+
+
+def test_rows_are_grouped_by_condition_and_deduplicated(tmp_path: Path) -> None:
+    def endpoint(event_id, before, after, length, tag):
+        event = _observed(event_id, "price_change", before, after, route="openrouter")
+        event["conditions"] = {"service_tier": "standard", "context_length": length, "endpoint_tag": tag}
+        return event
+    events = [endpoint("e1", "2.50", "1.20", "1048576", "Decart/fast"), endpoint("e2", "0.69", "0.55", "262144", "Inceptron/fp4")]
+    twin = endpoint("e3", "2.50", "1.20", "1048576", "Decart/fast")  # the same price read again
+    _write(tmp_path, events + [twin])
+    cards = _build(tmp_path)[2]["EVENTS"]
+    card = next(c for c in cards if len(c["chg"]) >= 2)
+    assert len(card["chg"]) == 2
+    assert [group for group, _ in card["cg"]] == ["컨텍스트 1M · Decart/fast", "컨텍스트 256K · Inceptron/fp4"]
+
+
+def test_size_ko() -> None:
+    assert [build.size_ko(v) for v in ("1048576", "262144", "131072", "4096", "1000")] == ["1M", "256K", "128K", "4K", "1000"]
+
+
+def test_condition_values_keep_source_text_except_tier_and_region():
+    """2026-10-27 decision 26-1: values as the source wrote them; tiers and regions get names; status 0 and price basis hidden."""
+    assert build.value_text("quantization", "fp4") == "fp4"
+    assert build.value_text("endpoint_tag", "inference-net/fast") == "inference-net/fast"
+    assert build.value_text("endpoint_model_slug", "z-ai/glm-5.2-20260616") == "z-ai/glm-5.2-20260616"
+    assert build.value_text("service_tier", "priority") == "Priority"
+    assert build.value_text("region", "us") == "US"
+    assert build.value_text("endpoint_status", "0") == ""
+    assert build.value_text("endpoint_status", "-2") == "성능 저하"
+    assert build.value_text("price_basis", "endpoint_default_conditions") == ""
+    assert build.condition_name("region") == "지역"
+
+
+def test_undated_feed_card_takes_its_article_day_and_signal_cards_their_last_seen_day(tmp_path):
+    """2026-10-27 decisions 19 and 26-3: a feed card with no date takes its entry's publication day; a signal the newest
+    signals run still shows was last observed that run's day."""
+    run = tmp_path / "signals" / "runs" / "20261027T051505Z-abc"
+    run.mkdir(parents=True)
+    (run / "signals.csv").write_text(
+        "source_key,entry_url,entry_title,published_at_utc,quote\n"
+        "modelpricewatch_news,https://modelpricewatch.com/models/openai-gpt-5-6-luna/,"
+        "GPT-5.6 Luna (OpenAI) — price down: $2.25 → $0.45/Mtok blended,2026-08-01T00:00:00Z,x\n"
+        "openrouter_endpoints_glm_5_2,,,,\"DeepInfra (deepinfra/fp4): pricing.discount=0.25; input 0.45 / output 1.44\"\n",
+        encoding="utf-8")
+    feed = build.feed_days(tmp_path)
+    clue = {"sources": [{"quote": "GPT-5.6 Luna (OpenAI) - price down: $2.25 → $0.45/Mtok blended"}],
+            "evidence_refs": [{"url": "https://modelpricewatch.com/models/openai-gpt-5-6-luna/", "run_id": "20261016T070332Z-x"}]}
+    assert build.article_day(clue, feed) == "2026-08-01"
+    discount = {"source_key": "openrouter_endpoints_glm_5_2",
+                "sources": [{"source_key": "openrouter_endpoints_glm_5_2",
+                             "quote": "DeepInfra (deepinfra/fp4): pricing.discount=0.25; input 0.50 / output 1.60"}],
+                "evidence_refs": [{"run_id": "20261016T070332Z-x"}]}
+    assert build.seen_day([discount], feed) == "2026-10-27"
+    gone = dict(discount, sources=[{"source_key": "openrouter_endpoints_glm_5_2", "quote": "Other (other/fp8): pricing.discount=0.1"}])
+    assert build.seen_day([gone], feed) == "2026-10-16"
+
+
+def test_undated_card_shows_its_basis_in_the_list_and_the_whole_reason_on_hover_and_in_the_detail(tmp_path):
+    """2026-10-25 decision 12 wording, 10/27 placement: the 58px list cell shows 관측 (or 게시) over the card's day; the
+    whole '적용일 미공지 · M/D 관측' is the cell's tooltip and the detail's date."""
+    _write(tmp_path, [_gateway_change("g1", ALIBABA, "0.30", "0.20")])
+    _, page, data = _build(tmp_path)
+    [card] = data["EVENTS"]
+    assert "eff" not in card
+    assert (card["effSeen"], card["effShort"]) == ("관측", f"적용일 미공지 · {build.md(card['cd'])} 관측")
+    assert '<span class="dl2"${!e.eff && e.effShort ? ` title="${esc(e.effShort)}"` : ""}>' in page
+    assert ': e.effSeen ? `<small class="tn">${md(e.cd)}</small>` : ""' in page
+    assert 'esc([e.effShort, e.effNote].filter(Boolean).join(" · ") || "미확인")' in page
+
+
+def test_type_chips_show_only_the_picked_types(tmp_path):
+    """2026-10-27 박건 request: a pressed type chip shows only its type (more chips add types); none pressed shows all."""
+    _write(tmp_path, [])
+    page = _build(tmp_path)[1]
+    assert "const kindShown = e => !listOn.size || listOn.has(e.kind);" in page
+    assert "listOn.has(k) ? listOn.delete(k) : listOn.add(k);" in page
+    assert 'b.setAttribute("aria-pressed", listOn.has(b.dataset.kind));' in page
+    assert "listOff" not in page
+
+
+def test_next_step_lines_read_label_colon_text(tmp_path):
+    """2026-10-27 박건 request: '확인 : …' and '대응 : …' under 다음 할 일, not '먼저 확인 · …' and '대응 방향 · …'."""
+    _write(tmp_path, [])
+    page = _build(tmp_path)[1]
+    assert "subs.push(`확인 : ${x}`)" in page and "subs.push(`대응 : ${g.pre" in page
+    assert "먼저 확인 · ${x}" not in page and "대응 방향 · ${g.pre" not in page
+    # the bold line too, and 현재 사용 경로 (relation() in build.py) the same way
+    assert "`현재 경로 유지 : ${e.ch} 새 단가는 비교용으로 기록`" in page and '"이미 쓰는 경로 : 기록만"' in page
+    assert build.relation({"model_id": "m", "route": ""}, {"records": [{"model_id": "m", "route_id": "openrouter"}], "is_demo": False})[
+        "relShort"] == "경로 표기 없음 : 사용 경로 확인 필요"
+
+
+def test_a_discount_that_runs_out_into_an_announced_price_links_the_cards():
+    """2026-10-27 결정(1번 가안): the announced change and the discounts link to each other; on LETSUR's route the discount
+    card gets the price after it as an estimate and a 주의 line, and so does the announced change."""
+    cards = [{"id": "up", "mid": "m", "t7": "예정 변경", "eff": "2027-01-01", "sum": "12개 항목 단가 1/1부터 인상 예정"},
+             {"id": "vercel", "mid": "m", "t7": "한시 할인", "eff": "2026-12-31", "sum": "50% 할인 · 12/31까지"},
+             {"id": "or", "mid": "m", "t7": "한시 할인", "sum": "할인 · 종료일 미확인"},
+             {"id": "other", "mid": "n", "t7": "한시 할인", "sum": "x"}]
+    groups = {"up": [{"route": "google_direct"}], "vercel": [{"route": "vercel_ai_gateway"}], "or": [{"route": "openrouter"}],
+              "other": [{"route": "vercel_ai_gateway"}]}
+    promo = [{"route": route, "direct": "google_direct", "start": "2027-01-01", "standard": True, "after": "$1.50 / $7.50 / $0.15",
+              "times": "2"} for route in ("openrouter", "vercel_ai_gateway")]
+    tables = {"m": {"groups": [], "promo": promo}}
+    routes = {"records": [{"model_id": "m", "route_id": "vercel_ai_gateway"}], "is_demo": True}
+    build.link_promotions(cards, groups, tables, routes)
+    up, vercel, other_route, other = cards
+    assert "promo" not in tables["m"]
+    assert up["link"] == ["vercel", "50% 할인 · 12/31까지"] and vercel["link"] == other_route["link"] == ["up", "12개 항목 단가 1/1부터 인상 예정"]
+    assert up["risk"] == "렛서 가정 경로(Vercel)도 12/31에 할인이 끝나 1/1부터 같은 가격이 될 수 있음(추정)"
+    assert vercel["postEst"] == "할인 끝난 뒤 Standard $1.50 / $7.50 / $0.15 (추정 · Google 1/1 가격 기준)"
+    assert vercel["risk"] == "1/1부터 지금 가격의 두 배가 될 수 있음(추정)"
+    assert "postEst" not in other_route and "risk" not in other_route and "link" not in other
+
+
+def test_template_says_when_a_linked_card_is_not_on_the_page(tmp_path):
+    """2026-10-27 decision 26-6: a #card id the page lacks opens the top card with a notice, cleared once a card is chosen."""
+    _write(tmp_path, [])
+    page = _build(tmp_path)[1]
+    assert "if (!EVENTS.some(e => e.id === state.sel)) missingLink = state.sel;" in page
+    assert "링크한 카드(#${esc(missingLink)})를 이 페이지에서 찾지 못했습니다." in page
+    assert "state.sel = id; missingLink = \"\";" in page
+
+
+def test_each_feed_entry_gets_its_own_source_chip():
+    """2026-10-27 decision 20: one chip per feed entry with its own link; one chip per run showed one notice on every card."""
+    def notice(url: str, locator: str) -> dict:
+        return {"model_id": "gpt-5.6-sol", "route": "vercel_ai_gateway", "source_key": "vercel_changelog",
+                "evidence_refs": [{"source_key": "vercel_changelog", "run_id": "20261016T070332Z-x", "url": url, "locator": locator}]}
+    sources = build.Sources()
+    first = build.register(notice("https://vercel.com/changelog/a", "feed/entry[1]"), sources)[0][1]
+    second = build.register(notice("https://vercel.com/changelog/b", "feed/entry[2]"), sources)[0][1]
+    again = build.register(notice("https://vercel.com/changelog/a", "feed/entry[1]"), sources)[0][1]
+    entries = sources.entries()
+    assert first != second and again == first
+    assert entries[first]["url"].endswith("/a") and entries[second]["url"].endswith("/b")
+
+
+def test_a_tracker_note_joins_the_route_card_of_its_group_only_when_days_apart_at_most_three():
+    """2026-10-27 decision 26-3: a route-less note joins its group's one routed card when their days are close; a note the
+    engine grouped two months away stays on its own card. The merged card keeps the routed member as representative."""
+    def note(eid, day, route="", role="member"):
+        return {"event_id": eid, "group_key": "grp_x", "group_role": role, "route": route, "dates": {"published": day}}
+    groups = {"routed": [note("v", "2026-07-30", "vercel_ai_gateway")], "near": [note("m", "2026-08-01", role="representative")]}
+    build.merge_notes(groups, {})
+    assert list(groups) == ["routed"] and [e["event_id"] for e in groups["routed"]] == ["v", "m"]
+    assert build.representative(groups["routed"])["event_id"] == "v"
+    groups = {"routed": [note("o", "2026-10-17", "openrouter")], "far": [note("m", "2026-08-16", role="representative")]}
+    build.merge_notes(groups, {})
+    assert set(groups) == {"routed", "far"}
+
+
+@pytest.mark.parametrize(("card", "action", "applicability"), [
+    # an ended discount on the route LETSUR uses: 기록만
+    ({"t7": "한시 할인", "st": "confirmed", "ps": "ended", "eff": "2026-09-18", "relKey": "use", "chg": []}, "RECORD", "APPLIES"),
+    # a confirmed observed decrease on another route: compare the route
+    ({"t7": "가격 변경", "st": "confirmed", "relKey": "other", "chg": [["입력 토큰", "$0.30", "$0.20"]]}, "REVIEW", "NOT APPLIES"),
+    # the same increase on another route: keep the current route
+    ({"t7": "가격 변경", "st": "confirmed", "relKey": "other", "chg": [["입력 토큰", "$0.20", "$0.30"]]}, "RECORD", "NOT APPLIES"),
+    # a note with no values and no route: check first
+    ({"t7": "가격 변경", "st": "candidate", "clue": True, "relKey": "unk", "chg": []}, "VERIFY", "UNKNOWN"),
+    # a candidate with values on the route LETSUR uses: keep watching
+    ({"t7": "가격 변경", "st": "candidate", "relKey": "use", "chg": [["입력 토큰", "$0.30", "$0.20"]]}, "MONITOR", "APPLIES"),
+])
+def test_cards_judgement_matches_the_pages_rules(card, action, applicability):
+    """2026-10-27 decision 26-4: cards.json repeats template.html's actionKey and applicabilityOf for the Slack bot."""
+    judged = build.judge(card, "2026-10-27")
+    assert (judged["action"], judged["applicability"]) == (action, applicability)
+
+
+def test_build_writes_cards_json_next_to_the_page(tmp_path):
+    _write(tmp_path, [_scheduled("s1", "input", "0.75", "1.50", "0.75")])
+    _, _, data = _build(tmp_path, args=["--internal-routes", str(DEMO_ROUTES)])
+    doc = json.loads((tmp_path / "site" / "cards.json").read_text(encoding="utf-8"))
+    [card] = doc["cards"]
+    assert doc["schema"] == 1 and doc["base_day"] == data["TODAY"]
+    assert card["id"] == data["EVENTS"][0]["id"] and card["events"] == data["ID"][card["id"]]
+    assert card["action"] in ("REVIEW", "VERIFY", "MONITOR", "RECORD") and card["deadline"] == data["EVENTS"][0].get("eff")
+    assert doc["names"]["items"]["input"] == "입력 토큰" and doc["names"]["conditions"]["quantization"] == "정밀도"
