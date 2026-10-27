@@ -886,6 +886,21 @@ def test_list_rows_lead_with_the_model(tmp_path):
     assert '${esc(e.m)} · ${esc(e.ch)}</span></span>' not in page
 
 
+def test_tab_names_are_short_and_the_comparison_line_keeps_the_source_words():
+    """2026-10-27 박건 request: long Bedrock and OpenAI wording pushed the tab row out of the panel."""
+    def key(**conditions):
+        return json.dumps(conditions, sort_keys=True, ensure_ascii=False), "1M tokens"
+    low = key(context_band="272K input tokens or fewer", inference_option="Global CRIS", region_group="Commercial Regions",
+              service_tier="standard", cache_write_ttl="30m")
+    rule = key(long_context_multiplier="Prompts with >272K input tokens are priced at 2x input and 1.5x output for the full request.",
+               service_tier="standard")
+    assert build.tab_names([low, rule]) == {low: "캐시 30분 · 입력 272K 이하 · Global CRIS · Standard",
+                                            rule: "272K 초과 요청 입력 2배·출력 1.5배 · Standard"}
+    assert "Commercial Regions" in build.tab_conditions([low])[low]
+    assert [build.tab_value("input_token_band", v) for v in ("<=200K", ">200K", "more than 272K input tokens")] == [
+        "입력 200K 이하", "입력 200K 초과", "입력 272K 초과"]
+
+
 def test_template_says_when_a_linked_card_is_not_on_the_page(tmp_path):
     """2026-10-27 decision 26-6: a #card id the page lacks opens the top card with a notice, cleared once a card is chosen."""
     _write(tmp_path, [])

@@ -1098,6 +1098,8 @@ def model_trend(model_id: str, cards: list[dict], groups: dict[str, list[dict]],
     entry = {"name": model_id, "unit": " · ".join(dict.fromkeys(f"USD / {unit_ko(tab[1])}" if tab[1] else "USD" for tab in tabs)),
              "real": True, "note": " ".join(facts), "badge": [f"변화 {len(cards)}건", ""],
              "measures": [html.escape(MEASURE_KO.get(item, item)) for item in measures], "notes": notes}
+    full = tab_conditions(list(tabs))
+    entry["conds"] = {names[tab]: full[tab] for tab in tabs}  # tab name -> its conditions in the source's words
     if len(drawn) == 1:
         entry["series"] = next(iter(drawn.values()))
     else:
@@ -1127,22 +1129,52 @@ def points(line, measures, count, memo) -> tuple[list, str | None]:
     return pts, (min(untils) if not drawn and len(untils) == 1 and None not in untils else None)
 
 
+TAB_QUIET = {"currency_basis", "input_modalities", "region_group", "rate_period"}  # scope notes: only the comparison line says them
+
+
+def tab_order(conditions: dict) -> list[str]:
+    """Precision, region, the other conditions, then tier."""
+    rest = sorted(name for name in conditions if name not in ("precision", "region", "service_tier"))
+    return [name for name in ("precision", "region") if name in conditions] + rest + (["service_tier"] if "service_tier" in conditions else [])
+
+
+def tab_text(conditions: dict, name: str) -> str:
+    return str(conditions[name]) if name == "precision" else value_text(name, conditions[name])
+
+
+def tab_value(name: str, text: str) -> str:
+    """Short words for the long values direct routes state (Bedrock, OpenAI, Vertex, Anthropic), so the tab row fits the
+    panel (2026-10-27 박건 요청); the comparison line above the graph keeps the source's words (tab_conditions)."""
+    if found := re.fullmatch(r"(\d+K) input tokens or fewer|<=\s*(\d+K)", text, re.I):
+        return f"입력 {found.group(1) or found.group(2)} 이하"
+    if found := re.fullmatch(r"more than (\d+K) input tokens|>\s*(\d+K)", text, re.I):
+        return f"입력 {found.group(1) or found.group(2)} 초과"
+    if name in ("cache_write_ttl", "cache_duration") and (found := re.fullmatch(r"(\d+)(m|h)", text)):
+        return f"캐시 {found.group(1)}{'분' if found.group(2) == 'm' else '시간'}"
+    if found := re.search(r">\s*(\d+K) input tokens are priced at ([\d.]+)x input and ([\d.]+)x output", text):
+        return f"{found.group(1)} 초과 요청 입력 {found.group(2)}배·출력 {found.group(3)}배"
+    return text
+
+
+def tab_conditions(keys) -> dict:
+    """Each tab's conditions in the source's words, for the comparison line above the graph and the tab's tooltip."""
+    full = {}
+    for key in keys:
+        conditions = json.loads(key[0])
+        full[key] = " · ".join(part for part in (tab_text(conditions, name) for name in tab_order(conditions)) if part) or "조건 없음"
+    return full
+
+
 def tab_names(keys) -> dict:
     """'fp4 · Standard', 'fp8 · US' (a region tab drops Standard), 'Standard' alone where no precision is stated: precision,
     region, other conditions, then tier, written as the comparison table writes them (2026-10-27 decisions 21, 26-1).
-    Names that would clash spell out keys and unit instead."""
-    def ordered(conditions):
-        rest = sorted(name for name in conditions if name not in ("precision", "region", "service_tier"))
-        return [name for name in ("precision", "region") if name in conditions] + rest + (["service_tier"] if "service_tier" in conditions else [])
-
-    def text(conditions, name):
-        return str(conditions[name]) if name == "precision" else value_text(name, conditions[name])
-
+    Scope notes (TAB_QUIET) stay out and long source wording is shortened (tab_value). Names that would clash spell out
+    keys and unit instead."""
     def short(key):
         conditions = json.loads(key[0])
-        regional = text(conditions, "region") in REGION_NAMES.values() if "region" in conditions else False
-        parts = [text(conditions, name) for name in ordered(conditions)
-                 if not (name == "service_tier" and regional and text(conditions, name) == "Standard")]
+        regional = tab_text(conditions, "region") in REGION_NAMES.values() if "region" in conditions else False
+        parts = [tab_value(name, tab_text(conditions, name)) for name in tab_order(conditions) if name not in TAB_QUIET
+                 and not (name == "service_tier" and regional and tab_text(conditions, name) == "Standard")]
         return " · ".join(part for part in parts if part) or "조건 없음"
 
     names = {key: short(key) for key in keys}
@@ -1150,7 +1182,7 @@ def tab_names(keys) -> dict:
     for key, name in names.items():
         if name in clash:
             conditions = json.loads(key[0])
-            names[key] = " · ".join([f"{k} {text(conditions, k)}" for k in ordered(conditions)] + [unit_ko(key[1]) or "단위 없음"])
+            names[key] = " · ".join([f"{k} {tab_text(conditions, k)}" for k in tab_order(conditions)] + [unit_ko(key[1]) or "단위 없음"])
     return names
 
 

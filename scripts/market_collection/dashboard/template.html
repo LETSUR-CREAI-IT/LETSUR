@@ -378,6 +378,8 @@ td small{display:block;font-size:11.5px;color:var(--muted)}
 .seg button{height:26px;padding:0 11px;border:0;background:var(--surface);font-size:12.5px;cursor:pointer;color:var(--body)}
 .seg button+button{border-left:1px solid var(--line-strong)}
 .seg button[aria-pressed="true"]{background:var(--ink);color:var(--surface);font-weight:650}
+.seg.ttabs{flex-wrap:wrap;gap:4px;max-width:100%;margin-left:0;border:0;border-radius:0;overflow:visible}  /* 가격 조건 탭: 패널 폭에서 줄바꿈(2026-10-27) */
+.seg.ttabs button,.seg.ttabs button+button{border:1px solid var(--line-strong);border-radius:8px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .lg{display:flex;flex-wrap:wrap;gap:4px 14px;margin:4px 0 0;font-size:12px;color:var(--body)}
 .lg span{display:inline-flex;align-items:center;gap:7px}
 .lg i{display:inline-block;width:14px;height:0;border-top:2.5px solid currentColor;border-radius:2px}
@@ -1009,7 +1011,8 @@ function comparableSeries(series){
 }
 function comparisonKeyText(M, mi, tier){
   const unit = (M.units && tier && M.units[tier]) || M.unit;
-  return [`모델 ${M.name}`, `항목 ${M.measures[mi]}`, `단위 ${unit}`, `가격 조건 ${tier || "기본"}`].join(" · ");
+  const conds = (M.conds && (tier ? M.conds[tier] : Object.values(M.conds)[0])) || tier || "기본";  // 탭 이름은 짧게, 여기는 원문 그대로
+  return [`모델 ${M.name}`, `항목 ${M.measures[mi]}`, `단위 ${unit}`, `가격 조건 ${conds}`].join(" · ");
 }
 const addDays = (d, n) => new Date(dt(d) + n * 864e5).toISOString().slice(0, 10);
 const money2 = v => { let s = v.toFixed(3); s = s.replace(/0$/, ""); return "$" + s; };
@@ -1052,7 +1055,7 @@ function renderPrice(){
   const chips = TREND_GROUPS.map(([g, ks]) => `<div class="mgrp"><span>${g}</span>${ks.map(k => `<button type="button" class="mchip" data-model="${esc(k)}" aria-pressed="${k === trendModel}">${esc(TREND[k].name)}<small class="${TREND[k].badge[1]}">${esc(TREND[k].badge[0])}</small></button>`).join("")}</div>`).join("");
   el.innerHTML = `<div class="th"><h2>단가 추이</h2><span class="mname">${esc(M.name)}</span><span class="unit">${esc(M.unit)}${M.real ? " · 실제" : " · 시연 데이터"}</span>
       <span class="tctl"><span class="rng" role="group" aria-label="기간">${T_RANGES.map(([k, l]) => `<button type="button" data-rng="${k}" aria-pressed="${k === trendRange}">${l}</button>`).join("")}</span>
-      ${tierKeys.length ? `<span class="seg" role="group" aria-label="등급">${tierKeys.map(k => `<button type="button" data-tier="${esc(k)}" aria-pressed="${k === tier}">${esc(k)}</button>`).join("")}</span>` : ""}
+      ${tierKeys.length ? `<span class="seg ttabs" role="group" aria-label="가격 조건">${tierKeys.map(k => `<button type="button" data-tier="${esc(k)}" aria-pressed="${k === tier}" title="${esc((M.conds || {})[k] || k)}">${esc(k)}</button>`).join("")}</span>` : ""}
       ${M.measures.length > 1 ? `<span class="seg" role="group" aria-label="단가 종류">${M.measures.map((m, i) => `<button type="button" data-meas="${i}" aria-pressed="${i === mi}">${m}</button>`).join("")}</span>` : ""}</span></div>
     <div class="cmpbar"><b>비교 조건</b><span>${esc(comparisonKeyText(M, mi, tier))}</span>${cmp.excluded.length ? `<span class="cmpwarn">엄격 비교에서 참고 선 ${cmp.excluded.length}개 뺌</span>` : onlyRef ? `<span class="cmpwarn">같은 조건으로 확인된 선이 없어 참고 선을 그대로 보임</span>` : ""}
       <span class="cmpmode" role="group" aria-label="비교 모드"><button type="button" data-cmp="strict" aria-pressed="${trendCompare === "strict"}">엄격 비교</button><button type="button" data-cmp="all" aria-pressed="${trendCompare === "all"}">전체 관측</button></span></div>
