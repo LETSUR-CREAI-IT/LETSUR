@@ -416,6 +416,14 @@ def representative(members: list[dict]) -> dict:
     return next((event for event in pool if event.get("group_role") == "representative"), pool[0])
 
 
+def endpoint_discount(event: dict) -> bool:
+    """OpenRouter's per-endpoint 'discounted right now' value (pricing.discount in its endpoints API): no start, end or earlier
+    price, and the rate moves day to day. Not a card; the 공급사 비교 표 shows today's rate on that endpoint's row
+    (2026-10-27 결정, 가안: 12 such cards said only '할인 · 종료일 미확인')."""
+    return event.get("event_type") == "limited_discount" and any(
+        str(ref.get("locator") or "").endswith("pricing.discount") for ref in event.get("evidence_refs") or [] if isinstance(ref, dict))
+
+
 GROUP_WINDOW_DAYS = 3  # the engine's grouping window (events/engine.py, 2026-10-19 decision)
 
 
@@ -1391,7 +1399,7 @@ def collect(root: Path, today: str, routes: dict | None) -> tuple[dict, str]:
     if problems:
         return empty(today, collected(report)), banner("fail", "오늘 생성 실패", " · ".join(problems))
     groups: dict[str, list[dict]] = {}
-    for event in sorted((e for e in doc["events"] if isinstance(e, dict)), key=lambda e: str(e.get("event_id") or "")):
+    for event in sorted((e for e in doc["events"] if isinstance(e, dict) and not endpoint_discount(e)), key=lambda e: str(e.get("event_id") or "")):
         cid = "g_" + hashlib.sha256(json.dumps(card_key(event), ensure_ascii=False).encode("utf-8")).hexdigest()[:12]
         groups.setdefault(cid, []).append(event)
     feed = feed_days(root)

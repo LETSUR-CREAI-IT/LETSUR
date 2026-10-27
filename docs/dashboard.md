@@ -67,6 +67,8 @@ python3 -B -m scripts.market_collection.dashboard --root data/market_collection 
 
 ### 카드 묶음과 순서
 
+- OpenRouter 엔드포인트 할인 신호(근거 위치가 엔드포인트 API의 `pricing.discount`인 한시 할인)는 카드로 만들지 않는다(2026-10-27 결정, `endpoint_discount()`). 시작일·종료일·이전 가격이 없고 할인율이 날마다 바뀌어 '할인 · 종료일 미확인' 카드만 쌓였다(10/27 12장). 오늘의 할인율은 공급사 비교 표 그 엔드포인트 행의 비고('할인 N% · 기간 미공지')에 나온다. 이벤트 기록(events.json)에는 그대로 있다. 채널 공지에서 온 할인은 그대로 카드다.
+
 - 이벤트 여러 건이 카드 1장이 될 수 있다. 묶음 키는 모델 + 경로 + 유형 + 하위 태그 + 날짜다.
   - 날짜: 적용일·종료일·제공일(`dates.effective_from`, `dates.end_date`, `period_end.date`, `dates.route_added_date`), 없으면 공지 게시일(`dates.published`의 날짜, UTC), 없으면 관측일(KST).
   - `group_key`가 있으면 `group_key` + 경로로 묶고, `group_role`이 `representative`인 이벤트를 대표로 쓴다.

@@ -241,6 +241,21 @@ def test_discount_with_only_an_end_phrase(tmp_path: Path) -> None:
     assert card["chg"] == [["단가", {"unk": 1, "t": "공개 안 됨"}, {"unk": 1, "t": "할인가 공개 안 됨"}, ["50%", "공지"], "", "unk", ["s1"]]]
 
 
+def test_openrouter_endpoint_discount_signals_are_not_cards(tmp_path: Path) -> None:
+    """2026-10-27 결정(가안): OpenRouter's per-endpoint pricing.discount makes no card (the 공급사 비교 표 shows today's rate);
+    a discount from a channel notice still does."""
+    signal = _claim("od1", "limited_discount", "openrouter_endpoints_glm_5_2",
+                    "StreamLake (streamlake/fp8): pricing.discount=0.5; input 0.3 / output 0.9 USD per 1M tokens (discount applied)",
+                    route="openrouter", claim_kind="discount")
+    signal["evidence_refs"][0]["locator"] = "data.endpoints[3].pricing.discount"
+    notice = _claim("d2", "limited_discount", "vercel_changelog", "Half price for a limited time.", route="vercel_ai_gateway",
+                    claim_kind="discount", change={"discount_pct": "50", "discount_pct_basis": "stated", "discounted_amount": None})
+    _write(tmp_path, [signal, notice])
+    cards = _build(tmp_path)[2]["EVENTS"]
+    assert [card["ch"].split(" · ")[0] for card in cards] == ["Vercel"]
+    assert build.endpoint_discount(signal) and not build.endpoint_discount(notice)
+
+
 def test_group_key_makes_one_card_per_route(tmp_path: Path) -> None:
     def member(event_id: str, route: str, role: str, **fields) -> dict:
         return _event(event_id, "limited_discount", route=route, claim_kind="discount", group_key="gk-1", group_role=role,
