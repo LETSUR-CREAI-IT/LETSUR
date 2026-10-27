@@ -315,8 +315,9 @@ def test_list_filter_chips_are_the_types_the_builder_emits(tmp_path: Path) -> No
     (_claim("p1", "price_change", "openai_news", "Prices go up.", model_id="gpt-6-sol", route="openai_direct", claim_kind="price_increase",
             dates={"published": "2026-10-03T09:00:00Z", "effective_from": None, "note": ""}), "2026-10-03"),
     (_observed("o1", "price_change", "1.00", "1.20", change={"delta": "0.20", "pct": "20.00", "direction": "up", "note": ""}), "2026-10-05"),
+    # no date of its own and no feed entry to date it: the last day its evidence was collected (2026-10-27 decision 19)
     (_claim("n1", "scheduled_change", "vercel_changelog", "Prices change.", route="vercel_ai_gateway", claim_kind="announced_future_rate",
-            dates={"published": None, "effective_from": None, "note": ""}), None),
+            dates={"published": None, "effective_from": None, "note": ""}), "2026-10-05"),
 ])
 def test_card_date_is_the_date_the_card_is_filed_under(tmp_path: Path, event: dict, cd: str | None) -> None:
     _write(tmp_path, [event])
@@ -395,8 +396,10 @@ def test_template_files_a_card_as_past_by_its_last_observed_day(tmp_path: Path) 
     _write(tmp_path, [])
     page = _build(tmp_path)[1]
     [rule] = re.findall(r"^const isPast = (.*?);(?: //.*)?$", page, re.M)
-    # past once the later of cd and ld is before the viewed day (ld only on groups); a card with no date at all counts as past
-    assert rule == "e => { const day = [e.cd, e.ld].filter(Boolean).sort().pop(); return !day || day < VIEW_DAY; }"
+    # past once the later of cd and ld is 7 or more days before the page's base day (ld only on groups; 2026-10-27 decision 19);
+    # a card with no date at all counts as past
+    assert rule == "e => { const day = [e.cd, e.ld].filter(Boolean).sort().pop(); return !day || days(day) <= -PAST_DAYS; }"
+    assert "const PAST_DAYS = 7;" in page
 
 
 def test_observed_condition_change(tmp_path: Path) -> None:
@@ -755,3 +758,27 @@ def test_condition_values_keep_source_text_except_tier_and_region():
     assert build.value_text("endpoint_status", "-2") == "성능 저하"
     assert build.value_text("price_basis", "endpoint_default_conditions") == ""
     assert build.condition_name("region") == "지역"
+
+
+def test_undated_feed_card_takes_its_article_day_and_signal_cards_their_last_seen_day(tmp_path):
+    """2026-10-27 decisions 19 and 26-3: a feed card with no date takes its entry's publication day; a signal the newest
+    signals run still shows was last observed that run's day."""
+    run = tmp_path / "signals" / "runs" / "20261027T051505Z-abc"
+    run.mkdir(parents=True)
+    (run / "signals.csv").write_text(
+        "source_key,entry_url,entry_title,published_at_utc,quote\n"
+        "modelpricewatch_news,https://modelpricewatch.com/models/openai-gpt-5-6-luna/,"
+        "GPT-5.6 Luna (OpenAI) — price down: $2.25 → $0.45/Mtok blended,2026-08-01T00:00:00Z,x\n"
+        "openrouter_endpoints_glm_5_2,,,,\"DeepInfra (deepinfra/fp4): pricing.discount=0.25; input 0.45 / output 1.44\"\n",
+        encoding="utf-8")
+    feed = build.feed_days(tmp_path)
+    clue = {"sources": [{"quote": "GPT-5.6 Luna (OpenAI) - price down: $2.25 → $0.45/Mtok blended"}],
+            "evidence_refs": [{"url": "https://modelpricewatch.com/models/openai-gpt-5-6-luna/", "run_id": "20261016T070332Z-x"}]}
+    assert build.article_day(clue, feed) == "2026-08-01"
+    discount = {"source_key": "openrouter_endpoints_glm_5_2",
+                "sources": [{"source_key": "openrouter_endpoints_glm_5_2",
+                             "quote": "DeepInfra (deepinfra/fp4): pricing.discount=0.25; input 0.50 / output 1.60"}],
+                "evidence_refs": [{"run_id": "20261016T070332Z-x"}]}
+    assert build.seen_day([discount], feed) == "2026-10-27"
+    gone = dict(discount, sources=[{"source_key": "openrouter_endpoints_glm_5_2", "quote": "Other (other/fp8): pricing.discount=0.1"}])
+    assert build.seen_day([gone], feed) == "2026-10-16"

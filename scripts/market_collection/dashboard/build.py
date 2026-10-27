@@ -21,6 +21,7 @@ yesterday's page never stays up as if it were current. Mapping rules: docs/dashb
 from __future__ import annotations
 
 import argparse
+import csv
 import hashlib
 import html
 import json
@@ -283,6 +284,63 @@ def last_observed_day(members: list[dict]) -> str:
     """
     moments = filter(None, (kst(part(e, "after").get("observed_at_utc")) for e in members))
     return max(map(day_of, moments), default="") if len(members) > 1 else ""
+
+
+def plain_title(text: str) -> str:
+    """Feed titles and the quotes cut from them, compared regardless of dash style, spacing and case."""
+    return re.sub(r"\s+", " ", re.sub(r"\s*[—–-]\s*", " - ", text)).strip().lower()
+
+
+def said_key(quote: str) -> str:
+    """What a signal says, without the prices that follow ';' in an endpoint discount line."""
+    return plain_title(str(quote or "").split(";")[0])
+
+
+def feed_days(root: Path) -> dict:
+    """The newest signals run: publication day of each feed entry by URL ("days": [(plain title, day)]), what it still
+    says ("seen": {(source_key, said_key)}) and the day it ran ("day").
+
+    Events made from a feed entry before the engine kept dates.published carry no date at all; the feed still lists
+    the entry with its date, and the newest signals run keeps it (2026-10-27 decision: a feed card's date is its article's).
+    A signal the newest run still shows, such as a running endpoint discount, was last observed that day.
+    """
+    out: dict = {"days": {}, "seen": set(), "day": ""}
+    runs = sorted((root / "signals" / "runs").glob("*/signals.csv"))
+    if not runs:
+        return out
+    moment = run_time(runs[-1].parent.name)
+    out["day"] = day_of(moment) if moment else ""
+    with runs[-1].open(encoding="utf-8", newline="") as handle:
+        for row in csv.DictReader(handle):
+            day = iso((row.get("published_at_utc") or "")[:10])
+            if day and row.get("entry_url"):
+                out["days"].setdefault(row["entry_url"], []).append((plain_title(row.get("entry_title") or ""), day))
+            out["seen"].add((row.get("source_key") or "", said_key(row.get("quote") or "")))
+    return out
+
+
+def article_day(event: dict, feed: dict) -> str:
+    """The publication day of the feed entry an undated event was made from: its URL alone, or URL and title."""
+    said = [plain_title(str(s.get("quote") or "")) for s in event.get("sources") or [] if isinstance(s, dict)]
+    for ref in event.get("evidence_refs") or []:
+        entries = feed.get("days", {}).get(ref.get("url") or "", []) if isinstance(ref, dict) else []
+        days = {day for _, day in entries}
+        if len(days) == 1:
+            return days.pop()
+        for title, day in entries:
+            if title and any(quote.startswith(title) for quote in said):
+                return day
+    return ""
+
+
+def seen_day(members: list[dict], feed: dict) -> str:
+    """The last observation day of a card with no date of its own: the newest signals run when it still says what a member
+    said, else the newest day a member's evidence was collected (KST)."""
+    if feed.get("day") and any((s.get("source_key") or e.get("source_key") or "", said_key(s.get("quote") or "")) in feed["seen"]
+                               for e in members for s in e.get("sources") or [] if isinstance(s, dict)):
+        return feed["day"]
+    moments = filter(None, (run_time(ref.get("run_id")) for e in members for ref in e.get("evidence_refs") or [] if isinstance(ref, dict)))
+    return max(map(day_of, moments), default="")
 
 
 def card_key(event: dict) -> list:
@@ -718,9 +776,14 @@ def has_values(members: list[dict]) -> bool:
                or stated_discount(e) is not None or number(part(e, "change").get("discounted_amount")) is not None for e in members)
 
 
-def build_card(card_id: str, members: list[dict], sources: Sources, routes: dict | None) -> dict:
+def build_card(card_id: str, members: list[dict], sources: Sources, routes: dict | None, feed: dict | None = None) -> dict:
     """One EVENTS entry; members share model, route, type, subtags and date (or a group_key)."""
     rep = representative(members)
+    feed = feed or {}
+    # A card with no date of its own is dated by its feed entry's publication day, else by its last observation day
+    # (2026-10-27 decisions 19 and 26-3); the list filter reads cd.
+    pub = published_day(rep) or article_day(rep, feed)
+    when = card_date(rep) or max((day for day in (article_day(e, feed) for e in members) if day), default="") or seen_day(members, feed)
     q1 = undecided_release(rep)
     t7 = T7.get(rep.get("event_type")) or ("공급 경로 변경" if q1 else None)
     subtags = list(dict.fromkeys(str(tag) for e in members for tag in e.get("subtags") or []))
@@ -762,7 +825,7 @@ def build_card(card_id: str, members: list[dict], sources: Sources, routes: dict
             "chgHead": table_head(t7, members), "chg": [row["row"] for row in rows], "cond": compare_line(members, rep, ch, t7), "ev": ev}
     phrase = next((part(e, "dates")["end_phrase"] for e in members if part(e, "dates").get("end_phrase")), None) if t7 == "한시 할인" else None
     for key, value in (("effLabel", label if t7 else ""), ("sub", sub), ("flag", flag_text(members)), ("eff", eff), ("effQual", qual),
-                       ("effNote", f"원문 “{phrase}”" if phrase and not eff else ""), ("cd", card_date(rep)), ("ld", last_observed_day(members))):
+                       ("effNote", f"원문 “{phrase}”" if phrase and not eff else ""), ("cd", when), ("ld", last_observed_day(members))):
         if value:
             card[key] = value
     rate = next((r for r in map(stated_discount, members) if r is not None), None)
@@ -782,8 +845,8 @@ def build_card(card_id: str, members: list[dict], sources: Sources, routes: dict
     states = {e.get("period_state") for e in members} - {None}
     if t7 == "한시 할인" and len(states) == 1:
         card["ps"] = states.pop()
-    if published_day(rep):
-        card["pub"] = published_day(rep)
+    if pub:
+        card["pub"] = pub
     card["n"] = [sum(1 for row in rows if not row["same"]), sum(1 for row in rows if row["same"])]
     if any(row["parts"][0] for row in rows):
         card["cg"] = [row["parts"] for row in rows]  # [condition group, item] per chg row, for the grouped 바뀐 내용 table
@@ -1076,7 +1139,8 @@ def collect(root: Path, today: str, routes: dict | None) -> tuple[dict, str]:
 
     order = sorted(groups, key=order_key)
     sources = Sources()
-    cards = [build_card(cid, groups[cid], sources, routes) for cid in order]
+    feed = feed_days(root)
+    cards = [build_card(cid, groups[cid], sources, routes, feed) for cid in order]
     data = {"TODAY": today, "SRC": sources.entries(), "ID": {cid: [e.get("event_id") for e in groups[cid]] for cid in order},
             "EVENTS": cards, "MODELS": models(cards, routes), "TREND": trend(cards, groups, state, doc.get("gaps") or []),
             "COLLECTED": collected(report)}
