@@ -124,9 +124,38 @@ def stage(event):
     """Place in LETSUR's order of judgement as the 3rd team's written report states it (2026-10-28 가안, LETSUR's own
     answer not seen yet): 0 selling stops (model end, route removal), 1 the cost changes, 2 anything else."""
     kind = event.get("event_type")
+    if kind == "collection_failure":
+        return 3  # 수집 점검 (2026-10-28): after every market change
     if kind == "model_end" or (kind == "route_change" and "remove" in (event.get("subtags") or [])):
         return 0
     return 1 if kind in ("price_change", "scheduled_change", "limited_discount", "condition_price_change") else 2
+
+
+# 2026-10-28 (결정 기록 29절, 렛서 답변): a price cut is sent right away from 10% on. Price rises and discount ends can raise
+# the cost, so they are judged apart from cuts and sent whatever their size. A cut under 10% with a large saving needs
+# usage data to be told apart, so for now it is seen on the dashboard only.
+DECREASE_MIN_PCT = Decimal(10)
+
+
+def _decimal(value):
+    try:
+        result = Decimal(str(value))
+    except (InvalidOperation, ValueError):
+        return None
+    return result if result.is_finite() else None
+
+
+def small_decrease(event):
+    """A price cut, or a limited discount, smaller than DECREASE_MIN_PCT percent."""
+    change = event.get("change") or {}
+    if event.get("event_type") == "limited_discount":
+        rate = _decimal(change.get("discount_pct"))
+        return rate is not None and rate < DECREASE_MIN_PCT
+    pct = _decimal(change.get("pct"))
+    if pct is None:
+        before, after = _decimal((event.get("before") or {}).get("amount")), _decimal((event.get("after") or {}).get("amount"))
+        pct = (after - before) / before * 100 if before and after is not None else None
+    return pct is not None and pct < 0 and -pct < DECREASE_MIN_PCT
 
 
 def observed(event):
@@ -150,9 +179,20 @@ def new_change(event, today):
     if stage(event) == 0:
         wanted = event_eligible(event)
     else:
-        wanted = stage(event) == 1 and event.get("status") == "confirmed" and deadline(event)[0] is None
+        wanted = (stage(event) == 1 and event.get("status") == "confirmed" and deadline(event)[0] is None and
+                  not small_decrease(event))
     seen = observed(event)
     return wanted and seen is not None and 0 <= (today - seen).days <= NEW_DAYS
+
+
+def health_events(failing):
+    """수집 점검 (2026-10-28 박건 제안): the dashboard's health.failing, the sources failing in the newest run, as events the
+    pipeline stores, sends once and lets people acknowledge (delivery.attempt drops members missing from the events
+    table). One failure streak is one event, health:<source>:<first failed run>; a new streak is a new alert."""
+    return [{"event_id": f"health:{item['key']}:{item['sinceRun']}", "event_type": "collection_failure",
+             "model_id": item.get("model") or None, "route": item.get("route") or None, "status": "confirmed",
+             "source_key": item["key"], "error": item.get("error") or "", "since": item.get("since") or "",
+             "sources": [{"url": item["url"]}] if item.get("url") else []} for item in failing or []]
 
 
 def delivered(db, channel, event_id, signature):
@@ -343,6 +383,9 @@ def prepare(db, today, channel, urgent_days=5, judged=None):
         # 2026-10-28 가안: besides the urgent ones, a new change on a route LETSUR uses (or may use) goes out once.
         if row["urgent"]:
             alert = "urgent"
+        elif (event.get("event_type") == "collection_failure" and row["seen_day"] == today.isoformat() and
+              not delivered(db, channel, row["id"], row["signature"])):
+            alert = "health"  # 수집 점검: still failing in today's input; sent once per failure streak
         elif (match.get("applicability") in ("APPLIES", "UNKNOWN") and new_change(event, today) and
               not delivered(db, channel, row["id"], row["signature"])):
             alert = "new"
@@ -360,7 +403,12 @@ def prepare(db, today, channel, urgent_days=5, judged=None):
             "conditions": event.get("conditions") or {},
             "deadline": day.isoformat() if day else None, "schedule_label": label,
             "date_basis": basis, "days": (day - today).days if day else None,
-            "stage": stage(event), "alert": alert, "items": []})
+            "stage": stage(event), "alert": alert,
+            # 2026-10-28 (결정 기록 29절 렛서 답변): whether LETSUR uses the route, what to check first, the source pages
+            "usage": match.get("usage"), "check": match.get("check"),
+            "links": match.get("links") or [s["url"] for s in event.get("sources") or []
+                                            if isinstance(s, dict) and isinstance(s.get("url"), str) and s["url"].startswith("https://")][:2],
+            "items": []})
         if alert == "urgent":
             card["alert"] = "urgent"
         sent = db.execute("""SELECT 1 FROM simulated_deliveries
@@ -378,6 +426,7 @@ def prepare(db, today, channel, urgent_days=5, judged=None):
             "gaps": event.get("gaps") or [], "next_checks": event.get("next_checks") or [],
             "missing_in_current_input": row["seen_day"] != today.isoformat(), "dashboard_card": match.get("card"),
             "delivery_kind": "changed" if changed else "reminder" if previous else "initial",
+            "event_type": event.get("event_type"), "error": event.get("error"), "since": event.get("since"),
             "alert": alert, "already_simulated_today": bool(sent)})
     cards = list(groups.values())
     for card in cards:
@@ -398,9 +447,11 @@ def render(report):
     for number, card in enumerate(report["cards"], 1):
         days = card["days"]
         new = "새로 확인된 변화 · 한 번만 알림" if card.get("alert") == "new" else None
-        schedule = (new or "일정 재확인 필요 · 기존 긴급 상태 유지") if days is None else (
+        since = next((item.get("since") for item in card["items"] if item.get("since")), "")
+        schedule = (f"수집 점검 · {since}부터 실패" if since else "수집 점검 · 최근 수집 실패") if card.get("alert") == "health" else (
+            (new or "일정 재확인 필요 · 기존 긴급 상태 유지") if days is None else (
             f"{card['schedule_label']}일 {abs(days)}일 경과" if days < 0 else
-            f"오늘 {card['schedule_label']}" if days == 0 else f"{card['schedule_label']}까지 {days}일")
+            f"오늘 {card['schedule_label']}" if days == 0 else f"{card['schedule_label']}까지 {days}일"))
         if new and days is not None:
             schedule += " · " + new
         lines.extend([f"{number}. {card['model']} / {card['route']}", schedule])
@@ -408,9 +459,17 @@ def render(report):
             lines.append("※ 종료 연도는 게시일에서 파생한 날짜입니다.")
         if card["conditions"]:
             lines.append("조건: " + encode(card["conditions"]))
+        if card.get("usage"):
+            lines.append(f"렛서 사용 : {card['usage']}")
+        if card.get("check"):
+            lines.append(f"확인할 것 : {card['check']}")
+        for link in card.get("links") or []:
+            lines.append(f"근거 : {link}")
         for item in card["items"]:
             before, after = item["before"] or {}, item["after"] or {}
-            if before.get("amount") is not None and after.get("amount") is not None:
+            if item.get("event_type") == "collection_failure":
+                lines.append(f"  오류 : {item.get('error') or '내용 없음'}")
+            elif before.get("amount") is not None and after.get("amount") is not None:
                 lines.append(f"  {name(names, 'items', item['billing_item'])}: {before['amount']} → {after['amount']} {after.get('currency','')} / {name(names, 'units', after.get('unit',''))}")
             elif item["change"].get("discount_pct") is not None:
                 lines.append(f"  할인율: {item['change']['discount_pct']}%")

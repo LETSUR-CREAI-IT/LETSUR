@@ -21,7 +21,7 @@ class DashboardCardsTests(unittest.TestCase):
         self.assertEqual(judged["base_day"], "2026-10-26")
         self.assertEqual(judged["events"]["demo-input"], {
             "card": "g_0000000000a1", "action": "REVIEW", "applicability": "APPLIES", "model": "가상 모델 A",
-            "route": "가상 공급 경로"})
+            "route": "가상 공급 경로", "usage": None, "check": None, "links": []})
         self.assertEqual(judged["events"]["demo-output"]["card"], "g_0000000000a1")
         self.assertEqual(judged["events"]["demo-discount"]["action"], "RECORD")
         self.assertEqual(judged["names"]["routes"]["google_direct"], "Google · google_direct")
@@ -74,7 +74,8 @@ class DashboardCardsTests(unittest.TestCase):
         doc["names"]["items"]["input"] = ""
         judged = parse(doc)
         self.assertEqual(judged["events"]["demo-input"], {
-            "card": "g_0000000000a1", "action": "SNOOZE", "applicability": "APPLIES", "model": None, "route": None})
+            "card": "g_0000000000a1", "action": "SNOOZE", "applicability": "APPLIES", "model": None, "route": None,
+            "usage": None, "check": None, "links": []})
         self.assertEqual(judged["names"]["units"], {})
         self.assertNotIn("input", judged["names"]["items"])
         del doc["names"]
@@ -105,6 +106,22 @@ class DashboardCardsTests(unittest.TestCase):
         self.assertEqual(condition_value(names, "endpoint_status", "0"), "")
         self.assertEqual(condition_value(names, "endpoint_tag", "novita/fp8"), "novita/fp8")
         self.assertEqual(condition_value({}, "service_tier", "priority"), "priority")
+
+
+    def test_usage_check_links_and_failing_sources_are_kept(self):
+        # 2026-10-28 (결정 기록 29절 렛서 답변): what the message adds, and health.failing for the 수집 점검 alert
+        doc = cards_document()
+        doc["cards"][0].update(usage="이 경로로 사용 중 (가정)", check="렛서 계정에서 확인",
+                               links=["https://ai.google.dev/pricing", "http://plain.example", "https://user:pw@x.example", "https://a b"])
+        doc["health"] = {"failing": [{"key": "src_a", "sinceRun": "20261027T051408Z-x", "model": "m", "route": "r", "error": "e",
+                                      "since": "2026-10-27", "url": "https://src.example/p"}, {"key": "", "sinceRun": "x"}, "bad"]}
+        judged = parse(doc)
+        event = judged["events"]["demo-input"]
+        self.assertEqual((event["usage"], event["check"], event["links"]),
+                         ("이 경로로 사용 중 (가정)", "렛서 계정에서 확인", ["https://ai.google.dev/pricing"]))
+        self.assertEqual(judged["health"], [{"key": "src_a", "sinceRun": "20261027T051408Z-x", "model": "m", "route": "r",
+                                             "error": "e", "since": "2026-10-27", "url": "https://src.example/p"}])
+        self.assertEqual(parse(cards_document())["health"], [])
 
 
 class FromSourceTests(unittest.TestCase):

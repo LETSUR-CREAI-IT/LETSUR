@@ -6,7 +6,7 @@ import sqlite3
 import tempfile
 import unittest
 
-from alerts import connect, sync, prepare, acknowledge, render, simulated_success, digest, material
+from alerts import connect, sync, prepare, acknowledge, render, simulated_success, digest, material, health_events, small_decrease
 from dashboard_cards import parse
 
 
@@ -454,6 +454,60 @@ class AlertTests(unittest.TestCase):
         sync(self.db, {"events": [self.document["events"][0], stop]}, self.today, 5)
         report = prepare(self.db, self.today, "test")
         self.assertEqual([(c["stage"], c["days"]) for c in report["cards"]], [(0, 4), (1, 3)])
+
+
+    def test_a_price_cut_under_ten_percent_is_not_a_new_change(self):
+        # 2026-10-28 (결정 기록 29절 렛서 답변): cuts are sent from 10%, rises whatever their size, discounts from 10%
+        self.assertTrue(small_decrease({"event_type": "price_change", "change": {"pct": "-9.99"}}))
+        self.assertFalse(small_decrease({"event_type": "price_change", "change": {"pct": "-10"}}))
+        self.assertFalse(small_decrease({"event_type": "price_change", "change": {"pct": "2"}}))
+        self.assertTrue(small_decrease({"event_type": "price_change", "before": {"amount": "1"}, "after": {"amount": "0.95"}}))
+        self.assertTrue(small_decrease({"event_type": "limited_discount", "change": {"discount_pct": 5}}))
+        self.assertFalse(small_decrease({"event_type": "limited_discount", "change": {"discount_pct": 50}}))
+        for number, (change, expected) in enumerate(((({"pct": "-5"}), []), ({"pct": "-35"}, ["demo-no-date"]), ({"pct": "3"}, ["demo-no-date"]))):
+            with self.subTest(change=change):
+                db = connect(Path(self.tmp.name) / f"cut{number}.sqlite")
+                try:
+                    sync(db, self.new_change_document(change=change), self.today, 5)
+                    report = prepare(db, self.today, "test", judged=parse(self.cards_document()))
+                    self.assertEqual([i["event_id"] for c in report["cards"] for i in c["items"]], expected)
+                finally:
+                    db.close()
+
+    def test_a_failing_source_is_sent_once_after_the_market_changes(self):
+        # 수집 점검 (2026-10-28 박건 제안): health.failing becomes an event of today, sent once, after the market cards
+        failing = [{"key": "src_a", "sinceRun": "20261024T050000Z-x", "model": "가상 모델 A", "route": "가상 공급 경로",
+                    "error": "ValueError: page changed", "since": "2026-10-24", "url": "https://src.example/p"}]
+        judged = parse(self.cards_document())
+        sync(self.db, self.document, self.today, 5)
+        sync(self.db, {"events": health_events(failing)}, self.today, 5)
+        report = prepare(self.db, self.today, "test", judged=judged)
+        self.assertEqual([c["alert"] for c in report["cards"]], ["urgent", "health"])
+        health = report["cards"][-1]
+        self.assertEqual((health["items"][0]["event_id"], health["links"]), ("health:src_a:20261024T050000Z-x", ["https://src.example/p"]))
+        text = render(report)
+        self.assertIn("수집 점검 · 2026-10-24부터 실패", text)
+        self.assertIn("오류 : ValueError: page changed", text)
+        simulated_success(self.db, report)
+        tomorrow = self.today + timedelta(days=1)
+        sync(self.db, {"events": health_events(failing)}, tomorrow, 5)
+        self.assertNotIn("health", [c["alert"] for c in prepare(self.db, tomorrow, "test", judged=judged)["cards"]])
+        # a streak that was never sent is not sent once it is no longer in today's input either
+        db = connect(Path(self.tmp.name) / "stale.sqlite")
+        try:
+            sync(db, {"events": health_events(failing)}, self.today, 5)
+            self.assertEqual(prepare(db, tomorrow, "test", judged=judged)["cards"], [])
+        finally:
+            db.close()
+
+    def test_the_message_says_whether_letsur_uses_the_route_and_what_to_check(self):
+        # 2026-10-28 (결정 기록 29절 렛서 답변): 현재 이용 중인 경로인지, 근거 링크와 추가 확인 사항
+        sync(self.db, self.document, self.today, 5)
+        document = self.cards_document()
+        document["cards"][0].update(usage="이 경로로 사용 중 (가정)", check="렛서 계정에서 확인", links=["https://src.example/p"])
+        text = render(prepare(self.db, self.today, "test", judged=parse(document)))
+        for line in ("렛서 사용 : 이 경로로 사용 중 (가정)", "확인할 것 : 렛서 계정에서 확인", "근거 : https://src.example/p"):
+            self.assertIn(line, text)
 
 
 if __name__ == "__main__":

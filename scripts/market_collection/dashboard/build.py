@@ -471,6 +471,40 @@ def mark_volatile(cards: list[dict]) -> None:
                 card["vg"] = vg
 
 
+def reverted(events: list[dict]) -> set[str]:
+    """되돌아간 가격 (2026-10-28, 결정 기록 29절 렛서 답변: 원래 가격으로 돌아온 건은 지금도 바뀐 것처럼 보이지 않게): ids of
+    observed price changes whose series, read in observation order, last stands at the price the change started from.
+    A series is one model, route, source, billing item and compared conditions; the last change of a series is never
+    reverted (nothing came after it), and a change that was changed again to another price is not reverted."""
+    series: dict[str, list[dict]] = {}
+    for event in events:
+        before, after = number(part(event, "before").get("amount")), number(part(event, "after").get("amount"))
+        when = part(event, "dates").get("observed_after_utc")
+        if event.get("event_type") != "price_change" or before is None or after is None or before == after or not when:
+            continue
+        key = json.dumps([event.get("model_id"), event.get("route"), event.get("source_key"), event.get("billing_item"),
+                          compared(event.get("conditions"))], sort_keys=True, ensure_ascii=False)
+        series.setdefault(key, []).append(event)
+    out: set[str] = set()
+    for changes in series.values():
+        changes.sort(key=lambda event: str(part(event, "dates")["observed_after_utc"]))
+        last = number(part(changes[-1], "after").get("amount"))
+        out.update(str(event.get("event_id")) for event in changes[:-1] if number(part(event, "before").get("amount")) == last)
+    return out
+
+
+def mark_reverted(cards: list[dict], groups: dict[str, list[dict]], gone: set[str]) -> None:
+    """rv/rn on a card: how many of its changed prices went back to where they started, of how many changed. A card whose
+    prices all went back is 해소됨 (template actionKey and judge() make it RECORD); some is 일부 해소."""
+    for card in cards:
+        priced = [event for event in groups[card["id"]] if event.get("event_type") == "price_change"
+                  and number(part(event, "before").get("amount")) is not None and number(part(event, "after").get("amount")) is not None
+                  and number(part(event, "before").get("amount")) != number(part(event, "after").get("amount"))]
+        back = sum(1 for event in priced if str(event.get("event_id")) in gone)
+        if back:
+            card["rv"], card["rn"] = back, len(priced)
+
+
 def relation(rep: dict, routes: dict | None) -> dict:
     """relKey, relShort and relDemo for the card's model and route from the --internal-routes file.
 
@@ -1229,6 +1263,64 @@ def collected(report: dict | None) -> dict:
     return {"runs": sorted(runs)}
 
 
+HEALTH_DAYS = 14  # 수집 상태 탭의 최근 실패 기록 기간
+
+
+def health(root: Path, report: dict | None, state: dict | None, today: str) -> dict:
+    """수집 상태 (2026-10-28 박건 제안, 결정 기록 29절 렛서 답변: 수집 실패는 '변화 없음'과 구분하고 아침에 먼저 보이게). From the
+    newest processed run's sources.csv: when it ran, how many sources, which fail now. The engine's source_failed gaps
+    (one per failed run; their active flag is not kept up to date) give how long a failure has lasted: it started at the
+    earliest run of the unbroken failed runs that ends at the newest run. Failures of the last HEALTH_DAYS days that
+    are not failing now say whether the source is fine again or left the registry (not in the newest run). Gaps of
+    parser_fingerprint_mismatch count, per source, prices not yet checked again against their raw page (원문 재검증 필요)."""
+    out = {"run": None, "days": HEALTH_DAYS, "total": 0, "ok": 0, "failing": [], "recent": [], "recheck": []}
+    run = compare.latest_run(root, report)
+    rows: list[dict] = []
+    if run:
+        with (run / "sources.csv").open(encoding="utf-8", newline="") as handle:
+            rows = [row for row in csv.DictReader(handle) if row.get("source_key")]
+        out["run"] = {"id": run.name, "at": minute(run_time(run.name)) if run_time(run.name) else run.name}
+    runs = sorted({str(r) for r in ((state or {}).get("processed_runs") or []) + ((report or {}).get("processed_runs") or [])} | ({run.name} if run else set()))
+    gaps = [gap for gap in (state or {}).get("gaps") or [] if isinstance(gap, dict)]
+    failed: dict[str, dict[str, dict]] = {}
+    for gap in gaps:
+        if gap.get("kind") == "source_failed" and gap.get("source_key") and gap.get("run_id"):
+            failed.setdefault(str(gap["source_key"]), {})[str(gap["run_id"])] = gap
+    newest = {row["source_key"]: row for row in rows}
+    bad = lambda row: row.get("fetch_status") != "ok" or row.get("parse_status") != "ok"
+    day = lambda run_id: day_of(run_time(run_id)) if run_time(run_id) else ""
+    out["total"], out["ok"] = len(rows), sum(1 for row in rows if not bad(row))
+    for row in rows:
+        if not bad(row):
+            continue
+        streak = [run.name]
+        for earlier in reversed(runs[:runs.index(run.name)]):
+            if earlier not in failed.get(row["source_key"], {}):
+                break
+            streak.append(earlier)
+        out["failing"].append({"key": row["source_key"], "model": row.get("model_id") or "", "route": row.get("route") or "", "ch": route_label(row.get("route") or ""),
+                               "error": row.get("error") or f"{row.get('fetch_status')} / {row.get('parse_status')}",
+                               "since": day(streak[-1]), "sinceRun": streak[-1], "runs": len(streak), "url": row.get("requested_url") or ""})
+    start = (date.fromisoformat(today) - timedelta(days=HEALTH_DAYS)).isoformat()
+    for key, by_run in failed.items():
+        if key in newest and bad(newest[key]):
+            continue
+        recent = sorted(run_id for run_id in by_run if day(run_id) >= start)
+        if recent:
+            last = by_run[recent[-1]]
+            out["recent"].append({"key": key, "model": last.get("model_id") or "", "route": last.get("route") or "", "ch": route_label(last.get("route") or ""),
+                                  "error": last.get("error") or "", "first": day(recent[0]), "last": day(recent[-1]),
+                                  "runs": len(recent), "now": "ok" if key in newest else "gone"})
+    out["recent"].sort(key=lambda item: (item["last"], item["key"]), reverse=True)
+    recheck: dict[str, int] = {}
+    for gap in gaps:
+        if gap.get("kind") == "parser_fingerprint_mismatch" and gap.get("source_key"):
+            recheck[str(gap["source_key"])] = recheck.get(str(gap["source_key"]), 0) + 1
+    out["recheck"] = [{"key": key, "model": (newest.get(key) or {}).get("model_id") or "", "ch": route_label((newest.get(key) or {}).get("route") or ""),
+                       "n": n} for key, n in sorted(recheck.items(), key=lambda pair: (-pair[1], pair[0]))]
+    return out
+
+
 def models(cards: list[dict], routes: dict | None) -> dict:
     return {mid: {"prov": maker(mid) if maker(mid) != "unknown" else "", "kind": KIND_KO.get(MODEL_MODALITIES.get(mid), ""),
                   **model_use(mid, routes)}
@@ -1285,7 +1377,8 @@ def record_problem(record) -> str:
 
 
 def empty(today: str, runs: dict) -> dict:
-    return {"TODAY": today, "SRC": {}, "ID": {}, "EVENTS": [], "MODELS": {}, "TREND": {}, "COLLECTED": runs, "COMPARE": {}}
+    return {"TODAY": today, "SRC": {}, "ID": {}, "EVENTS": [], "MODELS": {}, "TREND": {}, "COLLECTED": runs, "COMPARE": {},
+            "HEALTH": {"run": None, "total": 0, "ok": 0, "failing": [], "recent": [], "recheck": []}}
 
 
 def render(template: str, data: dict, status: str) -> str:
@@ -1327,6 +1420,7 @@ def judge(card: dict, today: str) -> dict:
     changed = [row for row in rows if (len(row) > 3 and row[3]) or row[1] != row[2]]
     clue = bool(card.get("clue")) and t7 not in ("공급 경로 변경", "모델 출시", "제공 종료")
     ended = t7 == "한시 할인" and (card.get("ps") == "ended" or (card.get("ps") != "active" and bool(eff) and days(eff) < 0))
+    gone = bool(card.get("rv")) and card.get("rv") == card.get("rn")  # template isReverted: every changed price went back
     added = (t7 == "공급 경로 변경" and "중단" not in sub) or t7 == "모델 출시"
     price_unk = any(PRICE_WORDS.search(re.sub(r"<[^>]+>", "", js_text(row[0]))) and flagged(row[2]) for row in rows)
     rel = card.get("relKey") or "unk"
@@ -1364,7 +1458,7 @@ def judge(card: dict, today: str) -> dict:
 
     if t7 is None or clue or (card.get("flag") and not st) or st == "conflicted" or price_unk:
         action = "VERIFY"
-    elif ended:
+    elif ended or gone:
         action = "RECORD"
     elif rel == "unk":
         action = "VERIFY"
@@ -1377,15 +1471,28 @@ def judge(card: dict, today: str) -> dict:
 
 def judgements(data: dict, groups: dict[str, list[dict]]) -> dict:
     """cards.json: per card its events, 추천 행동, 적용 배지, deadline and display names, plus the name tables the page
-    uses, so the Slack bot filters (decision 26-4), links to the card (26-6) and writes names as the page does (26-7)."""
+    uses, so the Slack bot filters (decision 26-4), links to the card (26-6) and writes names as the page does (26-7).
+    2026-10-28 (결정 기록 29절 렛서 답변: 알림에 현재 이용 중인 경로인지, 근거 링크와 추가 확인 사항): each card also carries
+    usage (현재 사용 경로 as the page writes it), check (its first 확인할 것) and links (up to two https source pages), and
+    health.failing lists the sources failing in the newest run for the bot's 수집 점검 alert."""
     routes = {e.get("route"): route_label(e.get("route")) for members in groups.values() for e in members if e.get("route")}
+
+    def links(card: dict) -> list[str]:
+        found = (data["SRC"].get(sid, {}).get("url") or "" for sid, _ in card.get("ev") or [])
+        return list(dict.fromkeys(url for url in found if url.startswith("https://")))[:2]
+
     return {"schema": 1, "base_day": data["TODAY"],
             "names": {"routes": routes, "items": ITEM_KO, "conditions": CONDITION_KO, "tiers": TIER_NAMES, "regions": REGION_NAMES,
                       "status": STATUS_KO, "units": UNIT_KO},
             "cards": [{"id": card["id"], "events": data["ID"].get(card["id"], []), **judge(card, data["TODAY"]),
                        "deadline": card.get("eff") or None, "deadline_label": card.get("effLabel") or None,
                        "model": card.get("m") or card.get("mid"), "route": card.get("ch"), "type": card.get("t7"),
-                       "summary": card.get("sum"), "conditions": card.get("cond") or []} for card in data["EVENTS"]]}
+                       "summary": card.get("sum"), "conditions": card.get("cond") or [],
+                       "usage": card.get("relShort") or card.get("rel") or None, "check": (card.get("chk") or [[None, None]])[0][1],
+                       "links": links(card)} for card in data["EVENTS"]],
+            "health": {"run": (data.get("HEALTH") or {}).get("run"),
+                       "failing": [{key: item[key] for key in ("key", "model", "route", "ch", "error", "since", "sinceRun", "url")}
+                                   for item in (data.get("HEALTH") or {}).get("failing") or []]}}
 
 
 def link_promotions(cards: list[dict], groups: dict[str, list[dict]], tables: dict, routes: dict | None) -> None:
@@ -1465,9 +1572,10 @@ def collect(root: Path, today: str, routes: dict | None) -> tuple[dict, str]:
     sources = Sources()
     cards = [build_card(cid, groups[cid], sources, routes, feed) for cid in order]
     mark_volatile(cards)
+    mark_reverted(cards, groups, reverted([e for e in doc["events"] if isinstance(e, dict)]))
     data = {"TODAY": today, "SRC": sources.entries(), "ID": {cid: [e.get("event_id") for e in groups[cid]] for cid in order},
             "EVENTS": cards, "MODELS": models(cards, routes), "TREND": trend(cards, groups, state, doc.get("gaps") or []),
-            "COLLECTED": collected(report)}
+            "COLLECTED": collected(report), "HEALTH": health(root, report, state, today)}
     # 공급사 비교 표 per LLM model with a card (compare.py; reads the newest processed run under <root>/runs)
     data["COMPARE"] = compare.tables(root, [card["mid"] for card in cards], [e for e in doc["events"] if isinstance(e, dict)],
                                      doc.get("gaps") or [], state, report, routes, today)

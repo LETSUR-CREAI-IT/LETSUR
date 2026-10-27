@@ -6,6 +6,7 @@ The bot follows the dashboard's judgement and its names; the rules and the name 
 import json
 import re
 from pathlib import Path
+from urllib.parse import urlsplit
 
 SCHEMA = 1
 CARD_ID = re.compile(r"[A-Za-z0-9_-]{1,64}")  # becomes the #fragment of the dashboard link
@@ -20,6 +21,17 @@ class CardsError(ValueError):
 
 def _text(value):
     return value if isinstance(value, str) and value else None
+
+
+def _links(value):
+    """https pages without credentials or spaces, at most two: they become the message's 근거 button."""
+    out = []
+    for link in value if isinstance(value, list) else []:
+        if isinstance(link, str) and link.startswith("https://") and not any(ch.isspace() for ch in link):
+            parts = urlsplit(link)
+            if parts.hostname and not parts.username and not parts.password:
+                out.append(link)
+    return out[:2]
 
 
 def parse(document):
@@ -42,13 +54,21 @@ def parse(document):
         for member in members:
             if member in events:
                 raise CardsError("duplicate_event")
+            # usage, check and links: 2026-10-28 (결정 기록 29절 렛서 답변), shown in the message when present
             events[member] = {"card": identity, "action": action, "applicability": _text(card.get("applicability")),
-                              "model": _text(card.get("model")), "route": _text(card.get("route"))}
+                              "model": _text(card.get("model")), "route": _text(card.get("route")),
+                              "usage": _text(card.get("usage")), "check": _text(card.get("check")), "links": _links(card.get("links"))}
     tables = document.get("names", {})
     if not isinstance(tables, dict) or any(not isinstance(tables.get(table, {}), dict) for table in TABLES):
         raise CardsError("names")
     names = {table: {key: value for key, value in tables.get(table, {}).items() if _text(value)} for table in TABLES}
-    return {"base_day": document.get("base_day"), "names": names, "events": events}
+    # health.failing: sources failing in the newest run, for the 수집 점검 alert (2026-10-28). Optional; bad items are skipped.
+    health = document.get("health") if isinstance(document.get("health"), dict) else {}
+    failing = [{"key": item["key"], "sinceRun": item["sinceRun"], "model": _text(item.get("model")) or "",
+                "route": _text(item.get("route")) or "", "error": _text(item.get("error")) or "", "since": _text(item.get("since")) or "",
+                "url": (_links([item.get("url")]) or [""])[0]}
+               for item in health.get("failing") or [] if isinstance(item, dict) and _text(item.get("key")) and _text(item.get("sinceRun"))]
+    return {"base_day": document.get("base_day"), "names": names, "events": events, "health": failing}
 
 
 def name(names, table, key):

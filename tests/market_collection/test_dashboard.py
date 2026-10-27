@@ -6,6 +6,7 @@ event has in events.json. The built page's data slots are read back as JSON.
 
 from __future__ import annotations
 
+import csv
 import json
 import re
 from datetime import datetime, timezone
@@ -1019,3 +1020,76 @@ def test_build_writes_cards_json_next_to_the_page(tmp_path):
     assert card["id"] == data["EVENTS"][0]["id"] and card["events"] == data["ID"][card["id"]]
     assert card["action"] in ("REVIEW", "VERIFY", "MONITOR", "RECORD") and card["deadline"] == data["EVENTS"][0].get("eff")
     assert doc["names"]["items"]["input"] == "입력 토큰" and doc["names"]["conditions"]["quantization"] == "정밀도"
+
+
+def test_a_price_series_that_went_back_resolves_the_change(tmp_path: Path) -> None:
+    """2026-10-28 (결정 기록 29절 렛서 답변: 원래 가격으로 돌아온 건은 지금도 바뀐 것처럼 보이지 않게). A change whose series,
+    read in observation order, last stands at the price it started from is reverted; a card whose changed prices all went
+    back is RECORD in cards.json (judge) as in the page (actionKey)."""
+    up = _observed("e-up", "price_change", "1.00", "2.00")
+    back = _observed("e-back", "price_change", "2.00", "1.00")
+    back["dates"]["observed_after_utc"] = "2026-10-06T07:00:00Z"
+    again = _observed("e-again", "price_change", "1.00", "2.00")
+    again["dates"]["observed_after_utc"] = "2026-10-07T07:00:00Z"
+    other = _observed("e-other", "price_change", "3.00", "4.00", item="output")
+    assert build.reverted([up, back, other]) == {"e-up"}  # the last change of a series is never reverted
+    assert build.reverted([up, back, again]) == {"e-back"}  # up's price is in effect again; back's is not
+    _write(tmp_path, [up, back])
+    _, page, data = _build(tmp_path)
+    cards = {data["ID"][card["id"]][0]: card for card in data["EVENTS"]}
+    assert (cards["e-up"].get("rv"), cards["e-up"].get("rn")) == (1, 1) and "rv" not in cards["e-back"]
+    judged = {card["events"][0]: card for card in json.loads((tmp_path / "site" / "cards.json").read_text(encoding="utf-8"))["cards"]}
+    assert judged["e-up"]["action"] == "RECORD" and judged["e-back"]["action"] != "RECORD"
+    assert "const isReverted = e => !!e.rv && e.rv === e.rn;" in page and 'if (isReverted(e)) return "record";' in page
+
+
+def test_health_reads_the_newest_run_and_the_failure_gaps(tmp_path: Path) -> None:
+    """수집 상태 (2026-10-28): failing now comes from the newest run (the gaps' active flag is stale), the streak from the
+    source_failed gaps of the runs before it; earlier failures say whether the source is fine again or left the registry."""
+    runs = ["20261020T050000Z-a", "20261021T050000Z-b", "20261022T050000Z-c"]
+    folder = tmp_path / "root" / "runs" / runs[-1]
+    folder.mkdir(parents=True)
+    with (folder / "sources.csv").open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=["run_id", "source_key", "model_id", "route", "requested_url", "fetch_status", "parse_status", "error"])
+        writer.writeheader()
+        writer.writerow({"run_id": runs[-1], "source_key": "down", "model_id": "m1", "route": "openrouter", "requested_url": "https://x.example/a",
+                         "fetch_status": "ok", "parse_status": "failed", "error": "ValueError: layout changed"})
+        for key in ("fine", "back"):
+            writer.writerow({"run_id": runs[-1], "source_key": key, "model_id": "m0", "route": "openrouter", "requested_url": "",
+                             "fetch_status": "ok", "parse_status": "ok", "error": ""})
+    gaps = [{"kind": "source_failed", "source_key": "down", "run_id": runs[1], "model_id": "m1", "route": "openrouter", "error": "x", "active": True},
+            {"kind": "source_failed", "source_key": "back", "run_id": runs[0], "model_id": "m2", "route": "openrouter", "error": "old", "active": True},
+            {"kind": "source_failed", "source_key": "gone", "run_id": runs[1], "model_id": "m3", "route": "fal", "error": "gone err", "active": True},
+            {"kind": "parser_fingerprint_mismatch", "source_key": "fine"}, {"kind": "parser_fingerprint_mismatch", "source_key": "fine"}]
+    health = build.health(tmp_path / "root", {"status": "ok", "processed_runs": runs}, {"processed_runs": runs, "gaps": gaps}, "2026-10-22")
+    assert (health["total"], health["ok"], health["run"]["id"]) == (3, 2, runs[-1])
+    assert health["failing"] == [{"key": "down", "model": "m1", "route": "openrouter", "ch": build.route_label("openrouter"),
+                                  "error": "ValueError: layout changed", "since": "2026-10-21", "sinceRun": runs[1], "runs": 2,
+                                  "url": "https://x.example/a"}]
+    assert [(r["key"], r["now"], r["first"], r["last"], r["runs"]) for r in health["recent"]] == [
+        ("gone", "gone", "2026-10-21", "2026-10-21", 1), ("back", "ok", "2026-10-20", "2026-10-20", 1)]
+    assert health["recheck"] == [{"key": "fine", "model": "m0", "ch": build.route_label("openrouter"), "n": 2}]
+
+
+def test_cards_json_carries_usage_check_links_and_failing_sources() -> None:
+    """2026-10-28 (결정 기록 29절 렛서 답변: 알림에 현재 이용 중인 경로인지, 근거 링크와 추가 확인 사항)."""
+    data = {"TODAY": "2026-10-28", "ID": {"g1": ["e1"]}, "SRC": {"s1": {"url": "https://src.example/p"}, "s2": {"url": "http://plain.example"}},
+            "EVENTS": [{"id": "g1", "t7": "가격 변경", "relKey": "use", "relShort": "이 경로로 사용 중 (가정)", "m": "m", "ch": "c",
+                        "chk": [["first", "렛서 계정에서 확인"]], "ev": [["s1", "q"], ["s2", "q"], ["s1", "q2"]], "chg": []}],
+            "HEALTH": {"run": {"id": "r", "at": "t"}, "failing": [{"key": "k", "model": "m", "route": "r", "ch": "R", "error": "e",
+                                                                  "since": "2026-10-28", "sinceRun": "r1", "runs": 1, "url": "https://u.example"}]}}
+    judged = build.judgements(data, {"g1": []})
+    card = judged["cards"][0]
+    assert (card["usage"], card["check"], card["links"]) == ("이 경로로 사용 중 (가정)", "렛서 계정에서 확인", ["https://src.example/p"])
+    assert judged["health"]["failing"] == [{"key": "k", "model": "m", "route": "r", "ch": "R", "error": "e", "since": "2026-10-28",
+                                            "sinceRun": "r1", "url": "https://u.example"}]
+
+
+def test_template_has_the_health_screen(tmp_path: Path) -> None:
+    """수집 상태 화면 (2026-10-28 박건 제안): a third header tab, #health opens it, failing sources show on 변화 too."""
+    _write(tmp_path, [])
+    page = _build(tmp_path)[1]
+    assert '<button type="button" role="tab" data-ptab="health" aria-selected="false">수집 상태</button>' in page
+    assert 'if (h === "health") startHealth = true;' in page and "function renderHealth(){" in page
+    assert re.search(r"^const HEALTH = \{.*\};$", page, re.M) and 'body:not([data-page="health"]) .hpage{display:none}' in page
+    assert '<button type="button" data-ptab="health">수집 상태 보기 →</button>' in page

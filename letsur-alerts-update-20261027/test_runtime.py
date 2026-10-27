@@ -175,6 +175,23 @@ run_cycle(sys.argv[1],json.loads(Path(sys.argv[2]).read_text()),date(2026,10,27)
         self.assertEqual(changed['report']['event_count'], 1)
         self.assertEqual(len(self.calls), 3)
 
+    def test_a_failing_source_in_cards_json_is_sent_once_and_can_be_delivered(self):
+        # 수집 점검 (2026-10-28): run_cycle stores health.failing as events of the day, so delivery.attempt keeps them
+        cards = json.loads((ROOT / 'fixtures_cards.json').read_text(encoding='utf-8'))
+        cards['health'] = {'failing': [{'key': 'src_a', 'sinceRun': '20261024T050000Z-x', 'model': '가상 모델 A', 'route': 'r',
+                                        'error': 'ValueError: page changed', 'since': '2026-10-24', 'url': 'https://src.example/p'}]}
+        link = 'https://dashboard.example/LETSUR/'
+        result = run_cycle(self.db, self.document, DAY, 'CTEST', self.send, link, judged=parse(cards))
+        self.assertEqual(result['sent_messages'], 1)
+        with closing(connect(self.db)) as db:
+            first = db.execute('SELECT payload FROM delivery_outbox').fetchone()[0]
+        self.assertIn('수집 점검 1개', first)
+        self.assertIn('https://src.example/p', first)
+        run_cycle(self.db, self.document, DAY + timedelta(days=1), 'CTEST', self.send, link, judged=parse(cards))
+        with closing(connect(self.db)) as db:
+            payloads = [row[0] for row in db.execute('SELECT payload FROM delivery_outbox')]
+        self.assertEqual(sum('수집 점검' in payload for payload in payloads), 1)
+
     def test_dashboard_judgement_decides_what_is_sent_and_where_the_button_goes(self):
         cards = json.loads((ROOT / 'fixtures_cards.json').read_text(encoding='utf-8'))
         link = 'https://dashboard.example/LETSUR/'
