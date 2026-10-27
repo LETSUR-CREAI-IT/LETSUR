@@ -3,7 +3,7 @@ import argparse
 import hashlib
 import json
 import sqlite3
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
 
@@ -11,6 +11,10 @@ from dashboard_cards import name
 
 # Decision 26-4 (2026-10-27): an unacknowledged alert is last sent 7 days after its deadline, from the 8th day on it stops.
 OVERDUE_DAYS = 7
+# 2026-10-28 가안: a change first seen more than 7 days ago gets no new-change alert, so a new rule or a fresh database
+# does not send old changes all at once.
+NEW_DAYS = 7
+KST = timezone(timedelta(hours=9))
 
 
 def encode(value):
@@ -114,6 +118,50 @@ def event_eligible(event):
         ):
             return False
     return True
+
+
+def stage(event):
+    """Place in LETSUR's order of judgement as the 3rd team's written report states it (2026-10-28 가안, LETSUR's own
+    answer not seen yet): 0 selling stops (model end, route removal), 1 the cost changes, 2 anything else."""
+    kind = event.get("event_type")
+    if kind == "model_end" or (kind == "route_change" and "remove" in (event.get("subtags") or [])):
+        return 0
+    return 1 if kind in ("price_change", "scheduled_change", "limited_discount", "condition_price_change") else 2
+
+
+def observed(event):
+    """KST day a change was first seen: its first observation after the change, else the notice's publication day."""
+    dates = event.get("dates") or {}
+    raw = dates.get("observed_after_utc") or dates.get("published")
+    if not isinstance(raw, str) or not raw:
+        return None
+    try:
+        if len(raw) == 10:
+            return date.fromisoformat(raw)
+        moment = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+        return (moment if moment.tzinfo else moment.replace(tzinfo=timezone.utc)).astimezone(KST).date()
+    except ValueError:
+        return None
+
+
+def new_change(event, today):
+    """2026-10-28 가안: a change sent once when it is first seen, before any deadline: a stop of selling the urgent
+    path would warn about later, or a confirmed cost change without a schedule date (already happened, never urgent)."""
+    if stage(event) == 0:
+        wanted = event_eligible(event)
+    else:
+        wanted = stage(event) == 1 and event.get("status") == "confirmed" and deadline(event)[0] is None
+    seen = observed(event)
+    return wanted and seen is not None and 0 <= (today - seen).days <= NEW_DAYS
+
+
+def delivered(db, channel, event_id, signature):
+    """Whether this version of an event already went out on some day: a local preview marked sent, or a real Slack send
+    (delivery.py's delivered_events, absent until delivery.setup runs)."""
+    tables = {row[0] for row in db.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+    return any(db.execute(f"SELECT 1 FROM {table} WHERE channel=? AND event_id=? AND signature=?",
+                          (channel, event_id, signature)).fetchone()
+               for table in ("simulated_deliveries", "delivered_events") if table in tables)
 
 
 def connect(path):
@@ -269,8 +317,9 @@ def grouping(event):
 
 
 def prepare(db, today, channel, urgent_days=5, judged=None):
-    """Cards of the unacknowledged urgent events. judged is the run's cards.json as dashboard_cards.parse returns it;
-    None means no dashboard judgement, only the rules here (and the 7-day limit)."""
+    """Cards of the unacknowledged urgent events and new changes. judged is the run's cards.json as dashboard_cards.parse
+    returns it; None means no dashboard judgement, only the rules here (and the 7-day limit), and no new-change alerts
+    since only the dashboard knows whether LETSUR uses the route."""
     check_urgent_days(urgent_days)
     check_day(db, today)
     # No collection is needed for the clock to move from D-6 to D-5.
@@ -286,21 +335,34 @@ def prepare(db, today, channel, urgent_days=5, judged=None):
                 db.execute("UPDATE events SET urgent=1 WHERE id=?", (row["id"],))
     names = judged["names"] if judged else {}
     groups = {}
-    for row in db.execute("SELECT * FROM events WHERE urgent=1 ORDER BY id"):
+    for row in db.execute("SELECT * FROM events ORDER BY id").fetchall():
         if row["ack_signature"] == row["signature"]:
             continue
         event = json.loads(row["payload"])
-        day, label, basis = deadline(event)
         match = (judged["events"].get(row["id"]) if judged else None) or {}
-        # Decision 26-4: a dashboard RECORD card is not an alert (NOT APPLIES still is), and an alert stops on the 8th day after its deadline.
-        if (day is not None and (today - day).days > OVERDUE_DAYS) or match.get("action") == "RECORD":
+        # 2026-10-28 가안: besides the urgent ones, a new change on a route LETSUR uses (or may use) goes out once.
+        if row["urgent"]:
+            alert = "urgent"
+        elif (match.get("applicability") in ("APPLIES", "UNKNOWN") and new_change(event, today) and
+              not delivered(db, channel, row["id"], row["signature"])):
+            alert = "new"
+        else:
+            continue
+        day, label, basis = deadline(event)
+        # Decision 26-4: a dashboard RECORD card is not an alert, and an alert stops on the 8th day after its deadline.
+        # 2026-10-28 가안: nor is a NOT APPLIES card, a change on a route LETSUR does not use (26-4 still sent those).
+        if ((day is not None and (today - day).days > OVERDUE_DAYS) or match.get("action") == "RECORD" or
+                match.get("applicability") == "NOT APPLIES"):
             continue
         key = digest(grouping(event))
         card = groups.setdefault(key, {"card_id": key, "model": match.get("model") or event.get("model_id"),
             "route": match.get("route") or name(names, "routes", event.get("route")),
             "conditions": event.get("conditions") or {},
             "deadline": day.isoformat() if day else None, "schedule_label": label,
-            "date_basis": basis, "days": (day - today).days if day else None, "items": []})
+            "date_basis": basis, "days": (day - today).days if day else None,
+            "stage": stage(event), "alert": alert, "items": []})
+        if alert == "urgent":
+            card["alert"] = "urgent"
         sent = db.execute("""SELECT 1 FROM simulated_deliveries
             WHERE channel=? AND day=? AND event_id=? AND signature=?""",
             (channel, today.isoformat(), row["id"], row["signature"])).fetchone()
@@ -316,12 +378,13 @@ def prepare(db, today, channel, urgent_days=5, judged=None):
             "gaps": event.get("gaps") or [], "next_checks": event.get("next_checks") or [],
             "missing_in_current_input": row["seen_day"] != today.isoformat(), "dashboard_card": match.get("card"),
             "delivery_kind": "changed" if changed else "reminder" if previous else "initial",
-            "already_simulated_today": bool(sent)})
+            "alert": alert, "already_simulated_today": bool(sent)})
     cards = list(groups.values())
     for card in cards:
         card["items"] = [item for item in card["items"] if not item["already_simulated_today"]]
     cards = [card for card in cards if card["items"]]
-    cards.sort(key=lambda c: (c["days"] is None, c["days"] or 0, c["card_id"]))
+    # 2026-10-28 가안: in LETSUR's order, a stop of selling before a cost change, then the nearer deadline.
+    cards.sort(key=lambda c: (c["stage"], c["days"] is None, c["days"] or 0, c["card_id"]))
     return {"mode": "OFFLINE_ONLY", "as_of": today.isoformat(), "channel": channel,
             "card_count": len(cards), "event_count": sum(len(c["items"]) for c in cards), "names": names, "cards": cards}
 
@@ -334,9 +397,12 @@ def render(report):
         return "\n".join(lines + ["발송 대상 없음. Slack에서는 메시지를 생략합니다.", ""])
     for number, card in enumerate(report["cards"], 1):
         days = card["days"]
-        schedule = "일정 재확인 필요 · 기존 긴급 상태 유지" if days is None else (
+        new = "새로 확인된 변화 · 한 번만 알림" if card.get("alert") == "new" else None
+        schedule = (new or "일정 재확인 필요 · 기존 긴급 상태 유지") if days is None else (
             f"{card['schedule_label']}일 {abs(days)}일 경과" if days < 0 else
             f"오늘 {card['schedule_label']}" if days == 0 else f"{card['schedule_label']}까지 {days}일")
+        if new and days is not None:
+            schedule += " · " + new
         lines.extend([f"{number}. {card['model']} / {card['route']}", schedule])
         if card["date_basis"] == "derived_from_publication":
             lines.append("※ 종료 연도는 게시일에서 파생한 날짜입니다.")

@@ -43,11 +43,15 @@ def _clip(value, limit):
 
 def _schedule(card):
     days, label = card.get("days"), card.get("schedule_label", "일정")
+    # 2026-10-28 가안: a new change goes out once, not as a daily reminder.
+    new = "새로 확인된 변화 · 한 번만 알림" if card.get("alert") == "new" else None
     if days is None:
-        return "일정 재확인 필요 · 기존 긴급 상태 유지"
+        return new or "일정 재확인 필요 · 기존 긴급 상태 유지"
     if days < 0:
-        return f"{label}일 {abs(days)}일 경과"
-    return f"오늘 {label}" if days == 0 else f"{label}까지 {days}일"
+        text = f"{label}일 {abs(days)}일 경과"
+    else:
+        text = f"오늘 {label}" if days == 0 else f"{label}까지 {days}일"
+    return f"{text} · {new}" if new else text
 
 
 def _dashboard_cards(card):
@@ -152,7 +156,9 @@ def message_batches(db, report, *, dashboard_url=None, max_blocks=40):
         _token_table(db)
         for start in range(0, len(cards), per_message):
             part = cards[start:start + per_message]
-            header = f"렛서 긴급 알림 · {report['as_of']} · 미확인 사건 {len(report['cards'])}개"
+            new = sum(card.get("alert") == "new" for card in report["cards"])
+            header = (f"렛서 알림 · {report['as_of']} · 긴급 {len(report['cards']) - new}개 · 새 변화 {new}개" if new else
+                      f"렛서 긴급 알림 · {report['as_of']} · 미확인 사건 {len(report['cards'])}개")
             blocks = [{"type": "section", "text": {"type": "plain_text", "text": header}}]
             for card in part:
                 token = _snapshot_token(db, report["channel"], card)

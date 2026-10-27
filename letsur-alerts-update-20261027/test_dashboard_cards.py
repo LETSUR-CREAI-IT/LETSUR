@@ -20,7 +20,8 @@ class DashboardCardsTests(unittest.TestCase):
         judged = parse(cards_document())
         self.assertEqual(judged["base_day"], "2026-10-26")
         self.assertEqual(judged["events"]["demo-input"], {
-            "card": "g_0000000000a1", "action": "REVIEW", "model": "가상 모델 A", "route": "가상 공급 경로"})
+            "card": "g_0000000000a1", "action": "REVIEW", "applicability": "APPLIES", "model": "가상 모델 A",
+            "route": "가상 공급 경로"})
         self.assertEqual(judged["events"]["demo-output"]["card"], "g_0000000000a1")
         self.assertEqual(judged["events"]["demo-discount"]["action"], "RECORD")
         self.assertEqual(judged["names"]["routes"]["google_direct"], "Google · google_direct")
@@ -73,7 +74,7 @@ class DashboardCardsTests(unittest.TestCase):
         doc["names"]["items"]["input"] = ""
         judged = parse(doc)
         self.assertEqual(judged["events"]["demo-input"], {
-            "card": "g_0000000000a1", "action": "SNOOZE", "model": None, "route": None})
+            "card": "g_0000000000a1", "action": "SNOOZE", "applicability": "APPLIES", "model": None, "route": None})
         self.assertEqual(judged["names"]["units"], {})
         self.assertNotIn("input", judged["names"]["items"])
         del doc["names"]

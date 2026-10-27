@@ -209,7 +209,8 @@ python3 -B -m scripts.market_collection.dashboard --root data/market_collection 
   - RECORD: 끝난 한시 할인, 제안이 기존 조건 유지.
   - MONITOR: 값은 있으나 공식 확인 전(`st` candidate).
   - REVIEW: 나머지(고객 할인·경로 추가·변경 검토).
-- 목록 정렬: 추천 순(기본, Suggested Action → 급한 순), 적용일 순(급한 순 → Suggested Action), 유형별(이전 화면의 종류 묶음). 유형 칩과 "지난 변화 보기" 거르기는 그대로 겹친다.
+- 목록 정렬: 추천 순(기본, 렛서 판단 단계 → 급한 순 → Suggested Action), 적용일 순(급한 순 → Suggested Action), 유형별(이전 화면의 종류 묶음). 유형 칩과 "지난 변화 보기" 거르기는 그대로 겹친다. 처음 열 때 고르는 카드도 추천 순 맨 위 카드다.
+- 렛서 판단 단계(2026-10-28 가안, template.html `tierOf`): 3팀 서면보고에 적힌 렛서 판단 순서(지금 쓰는 판매처 → 판매 중단 위험과 기한 → 같은 조건의 비용 증감 → 대신 쓸 판매처 → 보안·계약상 빼야 할 곳)를 따른다. 렛서 경로(APPLIES)의 판매 중단(제공 종료, 경로 중단) → 렛서 경로의 비용 증감(가격 변경, 예정 변경, 한시 할인, 조건·가격 변경) → 렛서 경로의 그 밖 → 사용 경로 모름(UNKNOWN) → 다른 경로의 대신 쓸 만한 변화(`dirOf`가 good: 인하, 할인, 경로 추가) → 다른 경로의 그 밖 → 렛서가 쓰지 않는 모델 → RECORD 순이다. 렛서 답변 원문은 확인 전이고, 보안·계약 기준은 렛서 신뢰 공급사 목록이 없어 비워 두었다. 10/27 자료 기본 목록 19장에서는 gemini-3.8-flash Vercel 할인 카드(APPLIES)가 4번째에서 1번째로 오르고, 다른 경로의 인상 카드 2장이 인하 카드 뒤로 간다.
 - 달력 날짜: 카드 하나가 날짜 여러 개를 낼 수 있다.
   - 적용(`effective`): `eff`. 한시 할인·제공 종료·경로 중단의 `eff`는 종료(`end`)로 표시한다.
   - 예정 변경은 `eff` 전날을 "현재 단가 마지막 날"(종료, 해석 날짜 점선)로 더한다.
@@ -401,5 +402,5 @@ python3 -B -m scripts.market_collection.dashboard --root data/market_collection 
 - build.py는 `index.html` 옆에 `cards.json`을 쓴다. Pages 아티팩트에 함께 실리고 공개 주소에서도 읽힌다.
 - 내용: `schema`(1), `base_day`(페이지 기준일), `names`(경로 이름 `routes`, 항목 `items`, 조건 `conditions`, 등급 `tiers`, 지역 `regions`, 상태 `status`, 단위 `units`), `cards`(카드마다 `id`, 사건 id 목록 `events`, 추천 행동 `action`, 적용 배지 `applicability`, 가정 여부 `assumed`, 마감 `deadline`과 `deadline_label`, `model`, `route`, `type`, `summary`, 비교 조건 줄 `conditions`).
 - `action`·`applicability`는 template.html의 `actionKey`·`suggestOf`·`dirOf`·`applicabilityOf`를 build.py의 `judge()`가 그대로 다시 계산한 값이다. 둘 중 하나를 고치면 다른 쪽도 같이 고친다. 10/27 실제 데이터 69장에서 두 쪽의 값이 모두 같았다(내장 브라우저에서 페이지의 JS 판정과 대조).
-- 슬랙봇은 이 파일로 RECORD 카드를 빼고(NOT APPLIES는 빼지 않음), 카드 id로 바로 가기 링크를 만들고, 이름은 `names`에서 가져다 쓴다.
+- 슬랙봇은 이 파일로 RECORD 카드와 NOT APPLIES 카드를 빼고(NOT APPLIES 제외는 2026-10-28 가안, 그 전에는 보냈다), 새로 확인된 변화의 한 번 알림 대상(APPLIES·UNKNOWN)을 고르고, 카드 id로 바로 가기 링크를 만들고, 이름은 `names`에서 가져다 쓴다. 알림 기준은 `letsur-alerts-update-20261027/README.md`에 있다.
 - 목록 날짜 칸: 적용일·종료일이 없는 카드는 D-day 자리에 `effSeen`("관측", 피드 글이면 "게시")을 점선 칸으로, 그 아래에 카드 날짜(`cd`)를 적는다. 사유와 날짜를 함께 적은 `effShort` 문구 전체("적용일 미공지 · 10/20 관측")는 그 칸의 마우스 설명과 상세(날짜 칸, 요약 줄)에 나온다. 문구는 2026-10-25 잠정 결정 12절, 이 배치는 10/27 결정이다. 58px 칸에 문구 전체를 넣으면 옆 칩을 덮는다.

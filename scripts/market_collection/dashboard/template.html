@@ -1167,8 +1167,21 @@ function renderFilter(){
   const hid = showPast ? 0 : EVENTS.filter(e => kindShown(e) && isPast(e)).length;
   box.querySelector(".lhid").textContent = hid ? `지난 변화 ${hid}건 숨김` : "";
 }
-// 정렬: 추천 순(Suggested Action → 급한 순) · 적용일 순(급한 순 → Suggested Action) · 유형별(종류 묶음 안에서 급한 순)
-function queueCmp(a, b){ return state.queueSort === "date" ? cmpU(a, b) || actOrder(a) - actOrder(b) : actOrder(a) - actOrder(b) || cmpU(a, b); }
+// 정렬: 추천 순(렛서 판단 단계 → 급한 순 → Suggested Action) · 적용일 순(급한 순 → Suggested Action) · 유형별(종류 묶음 안에서 급한 순)
+// 렛서 판단 단계(2026-10-28 가안): 3팀 서면보고에 적힌 렛서 판단 순서(지금 쓰는 판매처 → 판매 중단 위험과 기한 → 같은 조건의 비용 증감
+// → 대신 쓸 판매처 → 보안·계약상 빼야 할 곳)를 따른다. 원문은 확인 전이고, 보안·계약 기준은 렛서 신뢰 공급사 목록이 없어 비워 둔다.
+// 0 렛서 경로의 판매 중단 · 1 렛서 경로의 비용 증감 · 2 렛서 경로의 그 밖 · 3 사용 경로 모름 · 4 다른 경로의 대신 쓸 만한 변화(인하·할인·경로 추가)
+// · 5 다른 경로의 그 밖 · 6 렛서가 쓰지 않는 모델 · 7 기록(RECORD)
+function tierOf(e){
+  if (actionKey(e) === "record") return 7;
+  const r = relOf(e), t = EV7[e.id];
+  if (r === "use") return t === "제공 종료" || (t === "공급 경로 변경" && /중단/.test(EV7SUB[e.id] || "")) ? 0 : ["가격 변경", "예정 변경", "한시 할인", "조건·가격 변경"].includes(t) ? 1 : 2;
+  if (r === "unk") return 3;
+  if (r === "other") return dirOf(e) === "good" ? 4 : 5;
+  return 6;
+}
+function recCmp(a, b){ return tierOf(a) - tierOf(b) || cmpU(a, b) || actOrder(a) - actOrder(b); }
+function queueCmp(a, b){ return state.queueSort === "date" ? cmpU(a, b) || actOrder(a) - actOrder(b) : recCmp(a, b); }
 function queueRow(e){ return `<li>
     <button type="button" class="row${e.done ? " done" : ""}" data-id="${esc(e.id)}" aria-current="${state.sel === e.id}">
       <span class="dl2"${!e.eff && e.effShort ? ` title="${esc(e.effShort)}"` : ""}>${ddHtml(e)}${e.eff ? `<small class="tn">${md(e.eff)}${e.effQual ? ` <b class="qt" title="${esc(e.effQual)}">해석</b>` : ""}</small>` : e.effSeen ? `<small class="tn">${md(e.cd)}</small>` : ""}</span>
@@ -1177,7 +1190,7 @@ function queueRow(e){ return `<li>
 function renderQueue(){
   const list = EVENTS.filter(e => kindShown(e) && (showPast || !isPast(e)));
   // 선택은 거르기와 무관하다: 주소의 #id나 캘린더에서 고른 카드는 목록에서 숨겨져도 상세에 남는다. 처음 고를 때만 보이는 카드를 먼저 본다.
-  if (!state.sel || !EVENTS.some(e => e.id === state.sel)) state.sel = (list.length ? list : EVENTS).slice().sort((a, b) => actOrder(a) - actOrder(b) || cmpU(a, b))[0]?.id;
+  if (!state.sel || !EVENTS.some(e => e.id === state.sel)) state.sel = (list.length ? list : EVENTS).slice().sort(recCmp)[0]?.id;
   renderFilter();
   document.getElementById("qsort").value = state.queueSort;
   document.getElementById("lt").textContent = `전체 변화 ${list.length}`;

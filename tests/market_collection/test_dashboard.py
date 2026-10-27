@@ -417,6 +417,21 @@ def test_template_files_a_card_as_past_by_its_last_observed_day(tmp_path: Path) 
     assert "const PAST_DAYS = 7;" in page
 
 
+def test_template_recommended_order_puts_letsur_routes_first(tmp_path: Path) -> None:
+    """2026-10-28 가안: 추천 순 follows LETSUR's order of judgement as the 3rd team's report states it. Read off the built page
+    like the rule above; the browser check covers the order on real data."""
+    _write(tmp_path, [])
+    page = _build(tmp_path)[1]
+    tier = page[page.index("function tierOf(e){"):page.index("function recCmp")]
+    # RECORD last, then LETSUR's route: a stop of selling, a cost change, the rest; then unknown, other routes, unused models
+    assert 'if (actionKey(e) === "record") return 7;' in tier
+    assert ('if (r === "use") return t === "제공 종료" || (t === "공급 경로 변경" && /중단/.test(EV7SUB[e.id] || "")) ? 0 : '
+            '["가격 변경", "예정 변경", "한시 할인", "조건·가격 변경"].includes(t) ? 1 : 2;') in tier
+    assert 'if (r === "unk") return 3;' in tier and 'if (r === "other") return dirOf(e) === "good" ? 4 : 5;' in tier
+    assert "function recCmp(a, b){ return tierOf(a) - tierOf(b) || cmpU(a, b) || actOrder(a) - actOrder(b); }" in page
+    assert ': recCmp(a, b); }' in page and ".slice().sort(recCmp)[0]?.id" in page
+
+
 def test_observed_condition_change(tmp_path: Path) -> None:
     def stated(value: str) -> dict:
         return {"value": value, "unit": "x base input price", "basis": "stated", "locator": f"cache {value}"}

@@ -12,7 +12,7 @@
     "units": {"1M tokens": "100만 토큰", "1000 tokens": "1,000 토큰"}
   },
   "cards": [
-    {"id": "g_0000000000a1", "events": ["demo-input", "demo-output"], "action": "REVIEW", "applicability": "NOT APPLIES", "assumed": true, "deadline": "2026-10-29", "deadline_label": "적용일", "model": "가상 모델 A", "route": "가상 공급 경로", "type": "예정 변경", "summary": "2개 항목 단가 10/29부터 인상 예정", "conditions": [["경로", "가상 공급 경로"]]},
+    {"id": "g_0000000000a1", "events": ["demo-input", "demo-output"], "action": "REVIEW", "applicability": "APPLIES", "assumed": true, "deadline": "2026-10-29", "deadline_label": "적용일", "model": "가상 모델 A", "route": "가상 공급 경로", "type": "예정 변경", "summary": "2개 항목 단가 10/29부터 인상 예정", "conditions": [["경로", "가상 공급 경로"]]},
     {"id": "g_0000000000b1", "events": ["demo-discount"], "action": "RECORD", "applicability": "NOT APPLIES", "assumed": true, "deadline": "2026-10-24", "deadline_label": "할인 종료일", "model": "가상 모델 B", "route": "가상 공급 경로", "type": "한시 할인", "summary": "50% 할인 · 10/24까지", "conditions": [["경로", "가상 공급 경로"]]},
     {"id": "g_0000000000c1", "events": ["demo-no-date"], "action": "VERIFY", "applicability": "UNKNOWN", "assumed": false, "deadline": null, "deadline_label": "적용일", "model": "가상 모델 C", "route": "가상 공급 경로", "type": "가격 변경", "summary": "단가 변경 언급 · 관측값 확인 전", "conditions": [["경로", "가상 공급 경로"]]}
   ]

@@ -296,15 +296,22 @@ class AlertTests(unittest.TestCase):
         report = prepare(self.db, today or self.today, "test", judged=parse(document or self.cards_document()))
         return sorted(i["event_id"] for c in report["cards"] for i in c["items"])
 
-    def test_record_cards_are_not_alerts_but_not_applies_cards_still_are(self):
+    def test_record_cards_are_not_alerts(self):
         sync(self.db, self.document, self.today, 5)
         self.assertEqual(prepare(self.db, self.today, "test")["event_count"], 3)
-        # fixtures_cards.json: the card of both prices is REVIEW and NOT APPLIES, the card of the discount is RECORD
+        # fixtures_cards.json: the card of both prices is REVIEW and APPLIES, the card of the discount is RECORD
         self.assertEqual(self.judged_ids(), ["demo-input", "demo-output"])
 
-    def test_only_the_record_action_is_excluded_whatever_the_badge(self):
+    def test_not_applies_cards_are_not_alerts(self):
+        # 2026-10-28 가안: a change on a route LETSUR does not use is left to the dashboard (decision 26-4 still sent it).
         sync(self.db, self.document, self.today, 5)
-        for action, badge, expected in (("REVIEW", "NOT APPLIES", 3), ("VERIFY", "UNKNOWN", 3),
+        document = self.cards_document()
+        document["cards"][0]["applicability"] = "NOT APPLIES"
+        self.assertEqual(self.judged_ids(document), [])
+
+    def test_only_the_record_action_and_the_not_applies_badge_are_excluded(self):
+        sync(self.db, self.document, self.today, 5)
+        for action, badge, expected in (("REVIEW", "NOT APPLIES", 0), ("VERIFY", "UNKNOWN", 3),
                                         ("MONITOR", "APPLIES", 3), ("RECORD", "APPLIES", 0)):
             with self.subTest(action=action, badge=badge):
                 document = self.cards_document()
@@ -388,6 +395,65 @@ class AlertTests(unittest.TestCase):
         self.assertIn("출력 토큰: 4 → 6 USD / 100만 토큰", text)
         self.assertNotIn("1M tokens", text)
         self.assertIn("input: 1 → 2 USD / 1M tokens", render(prepare(self.db, self.today, "test")))
+
+    def new_change_document(self, **changes):
+        """demo-no-date, a confirmed price change with no deadline, first seen the day before self.today (KST)."""
+        event = copy.deepcopy(self.document["events"][3])
+        event["dates"] = {"observed_after_utc": "2026-10-25T05:00:00Z"}
+        event.update(changes)
+        return {"events": [event]}
+
+    def test_a_new_cost_change_on_a_route_letsur_may_use_goes_out_once(self):
+        # 2026-10-28 가안: a confirmed price change has no deadline and never becomes urgent, so it goes out once instead.
+        # fixtures_cards.json puts demo-no-date in an UNKNOWN card.
+        sync(self.db, self.new_change_document(), self.today, 5)
+        judged = parse(self.cards_document())
+        report = prepare(self.db, self.today, "test", judged=judged)
+        self.assertEqual([(c["alert"], [i["event_id"] for i in c["items"]]) for c in report["cards"]],
+                         [("new", ["demo-no-date"])])
+        self.assertIn("새로 확인된 변화 · 한 번만 알림", render(report))
+        simulated_success(self.db, report)
+        self.assertEqual(prepare(self.db, self.today + timedelta(days=1), "test", judged=judged)["cards"], [])
+
+    def test_a_new_change_needs_the_dashboard_a_letsur_route_and_a_recent_confirmed_observation(self):
+        cases = {
+            "no cards.json": (self.new_change_document(), None),
+            "NOT APPLIES": (self.new_change_document(), "NOT APPLIES"),
+            "seen 8 days ago": (self.new_change_document(dates={"observed_after_utc": "2026-10-18T05:00:00Z"}), "APPLIES"),
+            "not confirmed": (self.new_change_document(status="candidate"), "APPLIES"),
+        }
+        for number, (label, (document, badge)) in enumerate(cases.items()):
+            with self.subTest(label):
+                db = connect(Path(self.tmp.name) / f"case{number}.sqlite")
+                try:
+                    sync(db, document, self.today, 5)
+                    judged = None
+                    if badge:
+                        cards = self.cards_document()
+                        cards["cards"][2]["applicability"] = badge
+                        judged = parse(cards)
+                    self.assertEqual(prepare(db, self.today, "test", judged=judged)["cards"], [])
+                finally:
+                    db.close()
+
+    def test_a_stop_of_selling_goes_out_when_first_seen_and_again_from_five_days_before(self):
+        event = copy.deepcopy(self.document["events"][0])  # demo-input, in the APPLIES card of fixtures_cards.json
+        event.update(event_type="model_end", dates={"effective_from": "2026-11-20", "published": "2026-10-26"})
+        sync(self.db, {"events": [event]}, self.today, 5)
+        judged = parse(self.cards_document())
+        first = prepare(self.db, self.today, "test", judged=judged)
+        self.assertEqual([(c["alert"], c["days"]) for c in first["cards"]], [("new", 25)])
+        simulated_success(self.db, first)
+        self.assertEqual(prepare(self.db, date(2026, 10, 27), "test", judged=judged)["cards"], [])
+        later = prepare(self.db, date(2026, 11, 15), "test", judged=judged)
+        self.assertEqual([(c["alert"], c["days"]) for c in later["cards"]], [("urgent", 5)])
+
+    def test_a_stop_of_selling_comes_before_a_cost_change_whatever_the_deadline(self):
+        stop = copy.deepcopy(self.document["events"][0])
+        stop.update(event_id="demo-stop", event_type="model_end", dates={"effective_from": "2026-10-30"})
+        sync(self.db, {"events": [self.document["events"][0], stop]}, self.today, 5)
+        report = prepare(self.db, self.today, "test")
+        self.assertEqual([(c["stage"], c["days"]) for c in report["cards"]], [(0, 4), (1, 3)])
 
 
 if __name__ == "__main__":

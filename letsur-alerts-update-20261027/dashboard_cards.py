@@ -42,7 +42,7 @@ def parse(document):
         for member in members:
             if member in events:
                 raise CardsError("duplicate_event")
-            events[member] = {"card": identity, "action": action,
+            events[member] = {"card": identity, "action": action, "applicability": _text(card.get("applicability")),
                               "model": _text(card.get("model")), "route": _text(card.get("route"))}
     tables = document.get("names", {})
     if not isinstance(tables, dict) or any(not isinstance(tables.get(table, {}), dict) for table in TABLES):
