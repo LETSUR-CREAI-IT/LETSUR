@@ -407,7 +407,36 @@ def card_key(event: dict) -> list:
 
 
 def representative(members: list[dict]) -> dict:
-    return next((event for event in members if event.get("group_role") == "representative"), members[0])
+    """The engine's representative, taken among members with a route when a card holds route-less notes too (merge_notes)."""
+    pool = [event for event in members if event.get("route")] or members
+    return next((event for event in pool if event.get("group_role") == "representative"), pool[0])
+
+
+GROUP_WINDOW_DAYS = 3  # the engine's grouping window (events/engine.py, 2026-10-19 decision)
+
+
+def merge_notes(groups: dict[str, list[dict]], feed: dict) -> None:
+    """A route-less card the engine grouped with exactly one routed card joins it when their days are at most
+    GROUP_WINDOW_DAYS apart: a tracker's note of the same change becomes evidence on the route's card (2026-10-27
+    decision 26-3). Notes taken from feeds before the engine kept dates were grouped without one, so the group alone is
+    not proof of one change (an 8/16 note sat with a 10/17 observation)."""
+    def days(cid):
+        found = (card_date(event) or article_day(event, feed) for event in groups[cid])
+        return [date.fromisoformat(day) for day in found if day and iso(day)]
+
+    by_group: dict[str, list[str]] = {}
+    for cid, members in groups.items():
+        if members[0].get("group_key"):
+            by_group.setdefault(members[0]["group_key"], []).append(cid)
+    for cids in by_group.values():
+        routed = [cid for cid in cids if any(event.get("route") for event in groups[cid])]
+        if len(routed) != 1:
+            continue
+        there = days(routed[0])
+        for cid in cids:
+            here = days(cid) if cid not in routed else []
+            if here and there and min(abs((a - b).days) for a in here for b in there) <= GROUP_WINDOW_DAYS:
+                groups[routed[0]].extend(groups.pop(cid))
 
 
 def relation(rep: dict, routes: dict | None) -> dict:
@@ -1222,6 +1251,8 @@ def collect(root: Path, today: str, routes: dict | None) -> tuple[dict, str]:
     for event in sorted((e for e in doc["events"] if isinstance(e, dict)), key=lambda e: str(e.get("event_id") or "")):
         cid = "g_" + hashlib.sha256(json.dumps(card_key(event), ensure_ascii=False).encode("utf-8")).hexdigest()[:12]
         groups.setdefault(cid, []).append(event)
+    feed = feed_days(root)
+    merge_notes(groups, feed)
 
     def order_key(cid):
         rep = representative(groups[cid])
@@ -1229,7 +1260,6 @@ def collect(root: Path, today: str, routes: dict | None) -> tuple[dict, str]:
 
     order = sorted(groups, key=order_key)
     sources = Sources()
-    feed = feed_days(root)
     cards = [build_card(cid, groups[cid], sources, routes, feed) for cid in order]
     data = {"TODAY": today, "SRC": sources.entries(), "ID": {cid: [e.get("event_id") for e in groups[cid]] for cid in order},
             "EVENTS": cards, "MODELS": models(cards, routes), "TREND": trend(cards, groups, state, doc.get("gaps") or []),

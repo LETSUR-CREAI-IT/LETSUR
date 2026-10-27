@@ -70,6 +70,7 @@ python3 -B -m scripts.market_collection.dashboard --root data/market_collection 
 - 이벤트 여러 건이 카드 1장이 될 수 있다. 묶음 키는 모델 + 경로 + 유형 + 하위 태그 + 날짜다.
   - 날짜: 적용일·종료일·제공일(`dates.effective_from`, `dates.end_date`, `period_end.date`, `dates.route_added_date`), 없으면 공지 게시일(`dates.published`의 날짜, UTC), 없으면 관측일(KST).
   - `group_key`가 있으면 `group_key` + 경로로 묶고, `group_role`이 `representative`인 이벤트를 대표로 쓴다.
+  - 경로 없는 카드(가격 추적 사이트 글 같은 단서)는 같은 `group_key`의 경로 카드가 하나뿐이고 두 카드의 날짜(카드 날짜, 없으면 피드 글 게시일)가 3일(`GROUP_WINDOW_DAYS`) 안이면 그 경로 카드에 들어가 근거가 된다(`merge_notes`, 2026-10-27 결정 26-3). 이때 대표는 경로가 있는 구성원 중에서 고른다. 날짜를 지키는 까닭은, 엔진이 날짜 없이 받은 옛 피드 글을 두 달 뒤 관측 변화와 한 묶음으로 엮은 경우가 있어서다(예: 8/16 글과 10/17 관측). 10/27 데이터에서는 GPT-5.6 Luna·Terra 글 2장이 Vercel 7/30 공지 카드에 들어갔다.
 - 카드 id는 `g_` + 묶음 키 SHA256 앞 12자리다. `ID`에 카드별 원래 `event_id` 목록을 둔다.
 - `EVENTS`는 날짜·모델·경로·유형 순으로 넣고, 화면 정렬은 템플릿 규칙을 따른다.
 

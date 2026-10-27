@@ -811,3 +811,17 @@ def test_each_feed_entry_gets_its_own_source_chip():
     entries = sources.entries()
     assert first != second and again == first
     assert entries[first]["url"].endswith("/a") and entries[second]["url"].endswith("/b")
+
+
+def test_a_tracker_note_joins_the_route_card_of_its_group_only_when_days_apart_at_most_three():
+    """2026-10-27 decision 26-3: a route-less note joins its group's one routed card when their days are close; a note the
+    engine grouped two months away stays on its own card. The merged card keeps the routed member as representative."""
+    def note(eid, day, route="", role="member"):
+        return {"event_id": eid, "group_key": "grp_x", "group_role": role, "route": route, "dates": {"published": day}}
+    groups = {"routed": [note("v", "2026-07-30", "vercel_ai_gateway")], "near": [note("m", "2026-08-01", role="representative")]}
+    build.merge_notes(groups, {})
+    assert list(groups) == ["routed"] and [e["event_id"] for e in groups["routed"]] == ["v", "m"]
+    assert build.representative(groups["routed"])["event_id"] == "v"
+    groups = {"routed": [note("o", "2026-10-17", "openrouter")], "far": [note("m", "2026-08-16", role="representative")]}
+    build.merge_notes(groups, {})
+    assert set(groups) == {"routed", "far"}
