@@ -282,11 +282,14 @@ def relation(rep: dict, routes: dict | None) -> dict:
     """relKey, relShort and relDemo for the card's model and route from the --internal-routes file.
 
     A model with no record stays unconfirmed: no record does not mean LETSUR does not use it.
+    A card with no route stays unconfirmed too: its source never said which route changed (2026-10-27 decision).
     endpoint_id only adds detail when the route matches."""
     records = [record for record in (routes or {}).get("records", []) if record["model_id"] == rep.get("model_id")]
     if not records:
         return {"relKey": "unk", "relShort": "사용 경로 확인 필요", "relDemo": False}
     route, used = rep.get("route") or "", list(dict.fromkeys(record["route_id"] for record in records if record["route_id"]))
+    if not route and used:
+        return {"relKey": "unk", "relShort": "경로 표기 없음 · 사용 경로 확인 필요", "relDemo": False}
     if route in used:
         endpoints = dict.fromkeys(record["endpoint_id"] for record in records if record["route_id"] == route and record.get("endpoint_id"))
         key, short = "use", " · ".join(["이 경로로 사용 중", *(f"endpoint {endpoint}" for endpoint in endpoints)])
