@@ -1081,7 +1081,9 @@ const modelName = k => TREND[k] ? TREND[k].name : k;
 const modelBadge = k => { const n = EVENTS.filter(e => e.mid === k).length; return TREND[k] ? TREND[k].badge : [n ? `변화 ${n}건` : "변화 없음", ""]; };
 const MODEL_GROUPS = [...new Set(MODEL_IDS.map(makerOf))].sort((a, b) => (a === "기타") - (b === "기타") || a.localeCompare(b))
   .map(g => [g, MODEL_IDS.filter(k => makerOf(k) === g).sort((a, b) => modelName(a).localeCompare(modelName(b), undefined, {numeric: true}))]);
-let trendModel = (MODEL_GROUPS[0] || ["", []])[1][0], trendMeasure = 0, trendTier = "Standard";
+// 처음 여는 모델: 목록 순서에서 변화 카드와 그래프가 둘 다 있는 첫 모델. 카드 없는 모델이 목록 앞에 와도 빈 그래프로 시작하지 않게 한다(2026-10-28).
+const MODEL_ORDER = MODEL_GROUPS.flatMap(([, ks]) => ks), hasCard = k => EVENTS.some(e => e.mid === k);
+let trendModel = MODEL_ORDER.find(k => TREND[k] && hasCard(k)) || MODEL_ORDER.find(hasCard) || MODEL_ORDER[0], trendMeasure = 0, trendTier = "Standard";
 // 비교 모드: 탭은 정밀도·지역·등급까지 나뉘어 한 탭 안의 선은 공급처가 달라도 같은 조건이다. 엄격 비교는 그 선만, 전체 관측은 조건이 정해지지 않은
 // 참고 선(ref: 표시 최소가 같은 대표가, 비교 표가 상태로 빼는 엔드포인트)도 함께 본다(2026-10-27 결정 26-2).
 let trendCompare = "strict";
