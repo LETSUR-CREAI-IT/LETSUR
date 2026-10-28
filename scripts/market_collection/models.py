@@ -96,6 +96,38 @@ AZURE_RETAIL_GPT5_MODELS = ("gpt-5", "gpt-5-mini", "gpt-5-nano", "gpt-5-codex", 
 AZURE_RETAIL_OPENAI_MODELS = ("gpt-4o", "gpt-4o-mini", "gpt-4.1", "gpt-4.1-mini", "gpt-4.1-nano", "o1", "o3", "o3-mini", "o3-pro",
                               "o4-mini")
 
+# Models LETSUR calls on Anthropic's and OpenAI's own routes, read from the makers' pages (2026-10-28).
+# (model, row title on Anthropic's price page); the ids are the Claude API ids on Anthropic's model pages. Haiku 5.5
+# is priced by prompt length, so its one title stands for two rows.
+ANTHROPIC_DIRECT_MODELS = (
+    ("claude-opus-4-6", "Claude Opus 4.6"),
+    ("claude-opus-5", "Claude Opus 5"),
+    ("claude-fable-5", "Claude Fable 5"),
+    ("claude-opus-4-8", "Claude Opus 4.8"),
+    ("claude-opus-4-7", "Claude Opus 4.7"),
+    ("claude-sonnet-4-6", "Claude Sonnet 4.6"),
+    ("claude-haiku-5-5", "Claude Haiku 5.5"),
+    ("claude-opus-4-5-20251101", "Claude Opus 4.5"),
+    ("claude-sonnet-4-5-20250929", "Claude Sonnet 4.5"),
+)
+
+# (model, title and URL slug of the OpenAI page that prices it). The two dated snapshots have no page of their own (404):
+# the page of the base model lists them. gpt-5.6 is an alias: its URL redirects to the GPT-5.6 Sol page, which says so.
+OPENAI_DIRECT_MODELS = (
+    ("gpt-5.5-pro", "GPT-5.5 Pro", "gpt-5.5-pro"),
+    ("gpt-5.2-pro", "GPT-5.2 Pro", "gpt-5.2-pro"),
+    ("gpt-6.1-terra", "GPT-6.1 Terra", "gpt-6.1-terra"),
+    ("gpt-5.5-pro-2026-04-23", "GPT-5.5 Pro", "gpt-5.5-pro"),
+    ("gpt-5.5-2026-04-23", "GPT-5.5", "gpt-5.5"),
+    ("gpt-5.6", "GPT-5.6 Sol", "gpt-5.6"),
+)
+
+# Embeddings priced on OpenAI's model pages; Azure sells the same three ids.
+OPENAI_EMBEDDING_MODELS = ("text-embedding-3-large", "text-embedding-3-small", "text-embedding-ada-002")
+
+# OpenAI's page for it states no price; its token rates are on the pricing page.
+GPT_IMAGE_2_MODEL = "gpt-image-2"
+
 SUNBURST_MODEL = "gpt-image-2.5-sunburst"
 
 SUNBURST_FAL_MODEL = "openai/gpt-image-2.5/sunburst/text-to-image"
@@ -117,4 +149,8 @@ MODEL_MODALITIES = {
     **{model: "llm" for model, *_ in BROKER_API_MODELS},
     **{model: "llm" for model in AZURE_RETAIL_GPT5_MODELS + AZURE_RETAIL_OPENAI_MODELS},
     SUNBURST_MODEL: "image", FLARE_MODEL: "image", SEEDANCE_MODEL: "video",
+    **{model: "llm" for model, _ in ANTHROPIC_DIRECT_MODELS},
+    **{model: "llm" for model, *_ in OPENAI_DIRECT_MODELS},
+    **{model: "llm" for model in OPENAI_EMBEDDING_MODELS},
+    GPT_IMAGE_2_MODEL: "image",
 }

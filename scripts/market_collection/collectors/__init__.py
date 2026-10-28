@@ -4,6 +4,7 @@ from __future__ import annotations
 from scripts.market_collection.core import SourceSpec
 from scripts.market_collection.sources import source_specs
 from . import google, openai, anthropic, openrouter, vercel, aws_bedrock, azure_foundry, fal, byteplus, google_vertex, azure_databricks, image25_api, image25_supplement, azure_retail_llm, azure_retail_models
+from . import anthropic_models, openai_models
 
 SUPPLIERS = {
     "google_direct": google, "openai_direct": openai, "openai": openai,
@@ -24,6 +25,10 @@ def parser_module(spec: SourceSpec):
         return azure_retail_llm
     if spec.parser in azure_retail_models.PARSERS:  # likewise its own module
         return azure_retail_models
+    if spec.parser in anthropic_models.PARSERS:  # likewise for the Anthropic and OpenAI pages of the models LETSUR calls directly
+        return anthropic_models
+    if spec.parser in openai_models.PARSERS:
+        return openai_models
     module = SUPPLIERS.get(spec.route)
     if module is None:
         raise ValueError("unhandled source route")

@@ -69,7 +69,8 @@ def meter(data, name):
 
 def test_twenty_three_specs_on_two_fixed_pages_after_the_existing_ones():
     assert list(SPECS) == list(EXPECTED) and set(azure_retail_models.METERS) == set(EXPECTED)
-    assert source_specs()[-23:] == list(SPECS.values())
+    start = source_specs().index(next(iter(SPECS.values())))
+    assert source_specs()[start:start + 23] == list(SPECS.values())
     assert all(s.source_key == "azure_retail_" + _key(s.model_id) and (s.route, s.task) == ("azure_foundry", "text_generation")
                for s in SPECS.values())
     assert [s.url for s in SPECS.values()] == [_AZURE_GPT_PRICING] * 13 + [_AZURE_OPENAI_PRICING] * 10

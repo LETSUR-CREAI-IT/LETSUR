@@ -44,7 +44,8 @@ def test_registry_adds_98_distinct_sources_for_52_models_after_existing_ones():
     assert len(specs) == 98 and len({s.source_key for s in specs}) == 98
     # The first 36 (2026-10-17) cover the 18 page-sourced LLM models; the 34 gateway-only models (2026-10-28) follow.
     assert len({s.model_id for s in specs[:36]}) == 18 and len({s.model_id for s in specs}) == 52
-    assert source_specs()[-128:-30] == specs  # the 7 + 23 Azure retail GPT specs (2026-10-28) come after them
+    start = source_specs().index(specs[0])
+    assert source_specs()[start:start + 98] == specs  # the seven Azure retail GPT specs (2026-10-28) come after them
     assert {s.route for s in specs} == {"openrouter", "vercel_ai_gateway"}
 
 
