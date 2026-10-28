@@ -531,7 +531,8 @@ def relation(rep: dict, routes: dict | None) -> dict:
     A model with no record stays unconfirmed: no record does not mean LETSUR does not use it.
     A card with no route stays unconfirmed too: its source never said which route changed (2026-10-27 decision).
     endpoint_id only adds detail when the route matches. The mark after relShort is the basis of the record on the
-    card's route, else of all the model's records (route_basis); relSet is there for settings only."""
+    card's route, else of all the model's records (route_basis); relSet and relObs are there for exactly settings and
+    exactly observed (a mix has neither: its mark says both)."""
     records = [record for record in (routes or {}).get("records", []) if record["model_id"] == rep.get("model_id")]
     if not records:
         return {"relKey": "unk", "relShort": "사용 경로 확인 필요", "relDemo": False}
@@ -547,7 +548,7 @@ def relation(rep: dict, routes: dict | None) -> dict:
         key, short = "none", "미도입"
     basis = route_basis(rep.get("model_id"), routes, route)
     return {"relKey": key, "relShort": short + BASIS_MARK.get(basis, ""), "relDemo": basis == "demo",
-            **({"relSet": True} if basis == "settings" else {})}
+            **({"relSet": True} if basis == "settings" else {}), **({"relObs": True} if basis == "observed" else {})}
 
 
 def model_use(model_id: str, routes: dict | None) -> dict:

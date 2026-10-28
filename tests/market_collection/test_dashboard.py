@@ -622,32 +622,34 @@ def _astra_records() -> dict:
 
 
 @pytest.mark.parametrize(("route", "relation"), [
-    ("azure_foundry", ("use", "이 경로로 사용 중 (호출 확인)", False, False)),  # its own record: observed, no 설정 chip
-    ("openai_direct", ("use", "이 경로로 사용 중 (렛서 설정)", False, True)),  # its own record: settings
-    ("vercel_ai_gateway", ("other", "모델 제공 중 : OpenAI · openai_direct, Microsoft · azure_foundry 경로로 사용 (렛서 설정·호출 확인)", False, False)),
+    ("azure_foundry", ("use", "이 경로로 사용 중 (호출 확인)", False, False, True)),  # its own record: observed (relObs, no relSet)
+    ("openai_direct", ("use", "이 경로로 사용 중 (렛서 설정)", False, True, False)),  # its own record: settings
+    ("vercel_ai_gateway", ("other", "모델 제공 중 : OpenAI · openai_direct, Microsoft · azure_foundry 경로로 사용 (렛서 설정·호출 확인)", False, False, False)),
 ])
 def test_a_route_with_a_record_shows_that_records_mark(route: str, relation: tuple) -> None:
     """2026-10-28 박건 결정: a card on a route with a record takes that record's mark (settings: 렛서 설정, observed: 호출 확인);
-    a card on any other route takes the mark of all the model's records, both when they differ."""
+    a card on any other route takes the mark of all the model's records, both when they differ. relation is relKey, relShort,
+    relDemo, relSet and relObs: each flag is there for exactly its own basis, so a mix has neither."""
     found = build.relation({"model_id": "gpt-6-astra", "route": route}, _astra_records())
-    assert (found["relKey"], found["relShort"], found["relDemo"], found.get("relSet", False)) == relation
+    assert (found["relKey"], found["relShort"], found["relDemo"], found.get("relSet", False), found.get("relObs", False)) == relation
     assert build.model_use("gpt-6-astra", _astra_records()) == {
         "use": "OpenAI · openai_direct, Microsoft · azure_foundry 경로로 사용 (렛서 설정·호출 확인)"}
 
 
 @pytest.mark.parametrize(("records", "relation"), [
     ([_record("openrouter", basis="settings"), _record("vercel_ai_gateway", basis="settings")],
-     ("other", "모델 제공 중 : OpenRouter · openrouter, Vercel · vercel_ai_gateway 경로로 사용 (렛서 설정)", True)),
+     ("other", "모델 제공 중 : OpenRouter · openrouter, Vercel · vercel_ai_gateway 경로로 사용 (렛서 설정)", True, False)),
     ([_record("openrouter", basis="observed"), _record("vercel_ai_gateway", basis="observed")],
-     ("other", "모델 제공 중 : OpenRouter · openrouter, Vercel · vercel_ai_gateway 경로로 사용 (호출 확인)", False)),
+     ("other", "모델 제공 중 : OpenRouter · openrouter, Vercel · vercel_ai_gateway 경로로 사용 (호출 확인)", False, True)),
     ([_record("openrouter", basis="settings"), _record("vercel_ai_gateway", basis="observed")],
-     ("other", "모델 제공 중 : OpenRouter · openrouter, Vercel · vercel_ai_gateway 경로로 사용 (렛서 설정·호출 확인)", False)),
-    ([_record(None, basis="observed")], ("none", "미도입 (호출 확인)", False)),  # not adopted: the model level too
+     ("other", "모델 제공 중 : OpenRouter · openrouter, Vercel · vercel_ai_gateway 경로로 사용 (렛서 설정·호출 확인)", False, False)),
+    ([_record(None, basis="observed")], ("none", "미도입 (호출 확인)", False, True)),  # not adopted: the model level too
 ])
 def test_a_route_without_a_record_shows_the_mark_of_all_the_models_records(records: list, relation: tuple) -> None:
-    """relation is relKey, relShort and relSet (the 설정 chip: only when every record of the model is settings)."""
+    """relation is relKey, relShort, relSet and relObs (the 설정 and 호출 확인 chips: only when every record of the model has that basis)."""
     found = build.relation({"model_id": "gemini-3.8-flash", "route": "google_direct"}, {"is_demo": False, "records": records})
-    assert (found["relKey"], found["relShort"], found["relDemo"], "relSet" in found) == (relation[0], relation[1], False, relation[2])
+    assert (found["relKey"], found["relShort"], found["relDemo"], "relSet" in found, "relObs" in found) == (
+        relation[0], relation[1], False, relation[2], relation[3])
 
 
 def test_observed_is_a_valid_basis_and_any_other_is_not() -> None:
@@ -670,15 +672,16 @@ def test_committed_routes_mark_each_route_and_leave_glm_52_unknown(tmp_path: Pat
     _, _, data = _build(tmp_path, args=["--internal-routes", str(DEMO_ROUTES)])
     assert data["STATUS"] == ""
     found = {(card["m"], card["ch"].split(" · ")[-1]): card for card in data["EVENTS"]}
-    assert {key: (card["relKey"], card["relShort"], card["relDemo"], card.get("relSet", False)) for key, card in found.items()} == {
-        ("gpt-6-astra", "azure_foundry"): ("use", "이 경로로 사용 중 (호출 확인)", False, False),
-        ("gpt-6-astra", "openai_direct"): ("use", "이 경로로 사용 중 (렛서 설정)", False, True),
-        ("gpt-6-astra", "vercel_ai_gateway"): ("other", "모델 제공 중 : OpenAI · openai_direct, Microsoft · azure_foundry 경로로 사용 (렛서 설정·호출 확인)", False, False),
-        ("gpt-5.6-sol", "azure_foundry"): ("use", "이 경로로 사용 중 (호출 확인)", False, False),
-        ("claude-opus-5-5", "anthropic_direct"): ("use", "이 경로로 사용 중 (호출 확인)", False, False),
-        ("claude-opus-5-5", "vercel_ai_gateway"): ("other", "모델 제공 중 : Anthropic · anthropic_direct 경로로 사용 (호출 확인)", False, False),
-        ("claude-fable-5-1", "anthropic_direct"): ("use", "이 경로로 사용 중 (렛서 설정)", False, True),
-        ("glm-5.2", "vercel_ai_gateway"): ("unk", "사용 경로 확인 필요", False, False),
+    assert {key: (card["relKey"], card["relShort"], card["relDemo"], card.get("relSet", False), card.get("relObs", False))
+            for key, card in found.items()} == {
+        ("gpt-6-astra", "azure_foundry"): ("use", "이 경로로 사용 중 (호출 확인)", False, False, True),
+        ("gpt-6-astra", "openai_direct"): ("use", "이 경로로 사용 중 (렛서 설정)", False, True, False),
+        ("gpt-6-astra", "vercel_ai_gateway"): ("other", "모델 제공 중 : OpenAI · openai_direct, Microsoft · azure_foundry 경로로 사용 (렛서 설정·호출 확인)", False, False, False),
+        ("gpt-5.6-sol", "azure_foundry"): ("use", "이 경로로 사용 중 (호출 확인)", False, False, True),
+        ("claude-opus-5-5", "anthropic_direct"): ("use", "이 경로로 사용 중 (호출 확인)", False, False, True),
+        ("claude-opus-5-5", "vercel_ai_gateway"): ("other", "모델 제공 중 : Anthropic · anthropic_direct 경로로 사용 (호출 확인)", False, False, True),
+        ("claude-fable-5-1", "anthropic_direct"): ("use", "이 경로로 사용 중 (렛서 설정)", False, True, False),
+        ("glm-5.2", "vercel_ai_gateway"): ("unk", "사용 경로 확인 필요", False, False, False),
     }
     assert data["MODELS"]["gpt-6-astra"]["use"] == "OpenAI · openai_direct, Microsoft · azure_foundry 경로로 사용 (렛서 설정·호출 확인)"
     assert data["MODELS"]["claude-opus-5-5"]["use"] == "Anthropic · anthropic_direct 경로로 사용 (호출 확인)"
@@ -706,6 +709,18 @@ def test_the_discount_warning_names_the_basis_of_the_route_it_is_about(records: 
               "times": "2"} for route in ("openrouter", "vercel_ai_gateway")]
     build.link_promotions(cards, groups, {"m": {"groups": [], "promo": promo}}, {"records": records, "is_demo": False})
     assert cards[0]["risk"] == risk
+
+
+def test_template_marks_a_called_route_like_a_registered_one(tmp_path: Path) -> None:
+    """2026-10-28: relObs (the route one API call went through) gets the same badge chip, 현재 사용 경로 tag and 제안 근거 note as
+    relSet, and the models table header no longer calls the routes a demo assumption (relDemo keeps its own wording)."""
+    _write(tmp_path, [])
+    page = _build(tmp_path)[1]
+    assert 'e.relObs ? {chip: "호출 확인", note: "10/28 렛서 API 호출 1회로 확인한 경로 · 다른 경로도 쓸 수 있음"}' in page
+    assert 'e.relObs ? " (렛서 관계는 10/28 렛서 API 호출로 확인한 경로 기준)"' in page
+    assert '<span class="tg" title="10/28 렛서 API 호출 1회로 확인한 경로 · 다른 경로도 쓸 수 있음">호출 확인</span>' in page
+    assert "<span>렛서 사용 경로는 9/23 설정 답변과 10/28 호출 확인 기준</span>" in page and "렛서 사용 여부는 시연용 가정" not in page
+    assert 'e.relDemo ? {chip: "가정", note: "시연용 가정"}' in page and '" (렛서 관계는 시연용 가정)"' in page
 
 
 @pytest.mark.parametrize(("doc", "reason"), [

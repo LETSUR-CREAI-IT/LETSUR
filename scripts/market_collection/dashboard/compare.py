@@ -685,10 +685,13 @@ def dropped(state: dict | None, run_id: str, run_obs: list[dict], statuses: list
 
 # ---- assembly ----------------------------------------------------------------------------------------------------------
 
-def assumed_route(model_id: str, routes: dict | None) -> tuple[str, str] | None:
-    """(route, endpoint) LETSUR is recorded to use for the model, or None (no record, or not offered)."""
-    records = [r for r in (routes or {}).get("records", []) if r.get("model_id") == model_id and r.get("route_id")]
-    return (records[0]["route_id"], records[0].get("endpoint_id") or "") if records else None
+RECORD_CHIP = {"settings": "렛서 설정", "observed": "호출 확인"}  # by the record's basis, as on the cards (build.py route_basis)
+
+
+def assumed_routes(model_id: str, routes: dict | None) -> list[tuple[str, str, str | None]]:
+    """(route, endpoint, basis) of every record that says LETSUR uses a route for the model; none when it has no record or is not offered."""
+    return [(r["route_id"], r.get("endpoint_id") or "", r.get("basis")) for r in (routes or {}).get("records", [])
+            if r.get("model_id") == model_id and r.get("route_id")]
 
 
 def is_assumed(row: dict, target: tuple[str, str] | None) -> bool:
@@ -699,6 +702,15 @@ def is_assumed(row: dict, target: tuple[str, str] | None) -> bool:
     if target[1]:
         return row["who"][1] == target[1]
     return row["route"] not in GATEWAYS or (bool(row["provider"]) and row["provider"] == norm(maker(row["model"])))
+
+
+def assumed_chip(row: dict, targets: list[tuple[str, str, str | None]], demo: bool) -> str:
+    """The chip of the first record whose route the row is (is_assumed), "" when none: the record's basis, else 가정 in a demo file,
+    else 사용 경로. Every record marks its own route, so gpt-6-astra's OpenAI direct row and its Azure row each say their own basis."""
+    for route, endpoint, basis in targets:
+        if is_assumed(row, (route, endpoint)):
+            return RECORD_CHIP.get(basis) or ("가정" if demo else "사용 경로")
+    return ""
 
 
 def group_name(precision: str, region: str, tier: str, band: str, subtypes: list[str]) -> str:
@@ -747,11 +759,11 @@ def ratio_text(prices: dict, base: dict) -> str:
     return "기본 가격 대비 " + " · ".join(f"{ITEM_KO[i]} {plain(r)}배" for i, r in ratios.items())
 
 
-def describe(row: dict, rows: list[dict], history: History, now: datetime, demo: bool) -> None:
+def describe(row: dict, rows: list[dict], history: History, now: datetime) -> None:
     """Note, chips, fill-only flag and 적용 기간 of one row."""
     notes, chips = [], []
     if row.get("assumed"):
-        chips.append(["가정" if demo else "사용 경로", "as"])
+        chips.append([row["assumed"], "as"])
     if row["why"] or row.get("gone"):  # listed under the table without a group title: say which conditions it carries
         notes.append(" · ".join(filter(None, (row["tier"] if row["tier"] != "Standard" else "", row["region"],
                                               f"입력 {row['band']} 초과" if row["band"] else ""))))
@@ -902,12 +914,12 @@ def build_tables(root: Path, model_ids: list[str], events: list[dict], gaps: lis
         rows = model_rows(model_id, current, unknown, extras, peaks, suspect, failed, gone)
         if not rows:
             continue
-        target = assumed_route(model_id, routes)
+        targets = assumed_routes(model_id, routes)
         for row in rows:
-            row["assumed"] = is_assumed(row, target)
+            row["assumed"] = assumed_chip(row, targets, demo)
             discount_cells(row, rows, ITEMS, notices, today)
         for row in rows:
-            describe(row, rows, history, now, demo)
+            describe(row, rows, history, now)
         items = tuple(i for i in ITEMS if any(r["prices"].get(i) is not None for r in rows)) or ITEMS
         compared = [r for r in rows if not r["why"] and not r.get("gone")]
         excluded = sorted((r for r in rows if r["why"] or r.get("gone")), key=row_order)
