@@ -44,6 +44,12 @@ def test_exact_names_win_over_family_and_longer_versions_do_not_match_shorter():
     assert labels("Seedance 2.0 mini is 60% off") == []
 
 
+def test_gateway_only_models_match_by_title_and_gateway_ids():
+    assert labels("Qwen3.7 Max and alibaba/qwen3.7-plus are on AI Gateway") == [("Qwen 3.7 Max", "exact"), ("Qwen 3.7 Plus", "exact")]
+    assert labels("MiniMax M2.5 and x-ai/grok-4.20 pricing") == [("Grok 4.20", "exact"), ("MiniMax M2.5", "exact")]
+    assert labels("Muse Wonder is 50% off") == [("Muse Wonder", "exact")]
+
+
 def test_claim_terms_skip_comparisons_and_keep_kinds():
     assert claims_in("Both models work at a lower price than GPT-6 Astra.")[0] == []
     assert claims_in("OpenAI lowered list pricing for GPT-5.6 Sol.")[0] == ["price_decrease"]

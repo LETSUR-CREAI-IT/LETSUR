@@ -28,6 +28,47 @@ BROKER_CATALOG_MODELS = (
     ("kimi-k3", "Kimi K3", "MoonshotAI: Kimi K3", "moonshotai/kimi-k3", "moonshotai/kimi-k3"),
 )
 
+# Models LETSUR serves through OpenRouter or Vercel AI Gateway, collected only from the two endpoint APIs (2026-10-28):
+# (model, title, OpenRouter id, Vercel id); None where that gateway does not list the model.
+# qwen3.5-plus has no OpenRouter id: OpenRouter lists only qwen/qwen3.5-plus-02-15 and qwen/qwen3.5-plus-20260420,
+# and which one LETSUR's OpenRouter route calls is not known.
+BROKER_API_MODELS = (
+    ("deepseek-v4-flash", "DeepSeek V4 Flash", "deepseek/deepseek-v4-flash", "deepseek/deepseek-v4-flash"),
+    ("deepseek-v4-flash-0731", "DeepSeek V4 Flash 0731", "deepseek/deepseek-v4-flash-0731", "deepseek/deepseek-v4-flash-0731"),
+    ("deepseek-v4-pro-0813", "DeepSeek V4 Pro 0813", "deepseek/deepseek-v4-pro-0813", "deepseek/deepseek-v4-pro-0813"),
+    ("deepseek-v4.1-flash-1017", "DeepSeek V4.1 Flash 1017", "deepseek/deepseek-v4.1-flash-1017", "deepseek/deepseek-v4.1-flash-1017"),
+    ("gemini-2.5-flash-lite", "Gemini 2.5 Flash Lite", "google/gemini-2.5-flash-lite", "google/gemini-2.5-flash-lite"),
+    ("glm-4.5", "GLM 4.5", "z-ai/glm-4.5", "zai/glm-4.5"),
+    ("glm-4.5-air", "GLM 4.5 Air", "z-ai/glm-4.5-air", "zai/glm-4.5-air"),
+    ("glm-4.6", "GLM 4.6", "z-ai/glm-4.6", "zai/glm-4.6"),
+    ("glm-5-turbo", "GLM 5 Turbo", "z-ai/glm-5-turbo", "zai/glm-5-turbo"),
+    ("glm-5.1", "GLM 5.1", "z-ai/glm-5.1", "zai/glm-5.1"),
+    ("grok-4.20", "Grok 4.20", "x-ai/grok-4.20", None),
+    ("grok-4.3", "Grok 4.3", "x-ai/grok-4.3", "spacexai/grok-4.3"),
+    ("grok-4.6", "Grok 4.6", "x-ai/grok-4.6", "spacexai/grok-4.6"),
+    ("kimi-k2-thinking", "Kimi K2 Thinking", "moonshotai/kimi-k2-thinking", None),
+    ("kimi-k2.5", "Kimi K2.5", "moonshotai/kimi-k2.5", "moonshotai/kimi-k2.5"),
+    ("kimi-k2.6", "Kimi K2.6", "moonshotai/kimi-k2.6", "moonshotai/kimi-k2.6"),
+    ("kimi-k2.7-code", "Kimi K2.7 Code", "moonshotai/kimi-k2.7-code", "moonshotai/kimi-k2.7-code"),
+    ("kimi-k3.1-pro", "Kimi K3.1 Pro", "moonshotai/kimi-k3.1-pro", "moonshotai/kimi-k3.1-pro"),
+    ("minimax-m2", "MiniMax M2", "minimax/minimax-m2", "minimax/minimax-m2"),
+    ("minimax-m2.1", "MiniMax M2.1", "minimax/minimax-m2.1", "minimax/minimax-m2.1"),
+    ("minimax-m2.5", "MiniMax M2.5", "minimax/minimax-m2.5", "minimax/minimax-m2.5"),
+    ("minimax-m2.7", "MiniMax M2.7", "minimax/minimax-m2.7", "minimax/minimax-m2.7"),
+    ("minimax-m3", "MiniMax M3", "minimax/minimax-m3", "minimax/minimax-m3"),
+    ("muse-spark-1.2", "Muse Spark 1.2", "meta/muse-spark-1.2", "meta/muse-spark-1.2"),
+    ("muse-spark-1.3", "Muse Spark 1.3", "meta/muse-spark-1.3", "meta/muse-spark-1.3"),
+    ("muse-wonder-1.0", "Muse Wonder", None, "meta/muse-wonder-1.0"),
+    ("qwen3-coder-flash", "Qwen3 Coder Flash", "qwen/qwen3-coder-flash", None),
+    ("qwen3-coder-next", "Qwen3 Coder Next", "qwen/qwen3-coder-next", "alibaba/qwen3-coder-next"),
+    ("qwen3.5-plus", "Qwen 3.5 Plus", None, "alibaba/qwen3.5-plus"),
+    ("qwen3.6-plus", "Qwen 3.6 Plus", "qwen/qwen3.6-plus", "alibaba/qwen3.6-plus"),
+    ("qwen3.7-flash", "Qwen 3.7 Flash", "qwen/qwen3.7-flash", "alibaba/qwen3.7-flash"),
+    ("qwen3.7-max", "Qwen 3.7 Max", "qwen/qwen3.7-max", "alibaba/qwen3.7-max"),
+    ("qwen3.7-plus", "Qwen 3.7 Plus", "qwen/qwen3.7-plus", "alibaba/qwen3.7-plus"),
+    ("qwen3.8-max", "Qwen 3.8 Max", None, "alibaba/qwen3.8-max"),
+)
+
 _AWS_OPENAI = (
     ("gpt-6-astra", "gpt-6-astra", "GPT-6 Astra"),
     ("gpt-6-sol", "gpt-6-sol", "GPT-6 Sol"),
@@ -66,5 +107,6 @@ MODEL_MODALITIES = {
     **{model: "llm" for model in (GOOGLE_LLM_MODEL, ASTRA_MODEL, FABLE_MODEL)},
     **{model: "llm" for model, _, _ in STANDARD_LLM_MODELS},
     **{model: "llm" for model, *_ in BROKER_CATALOG_MODELS},
+    **{model: "llm" for model, *_ in BROKER_API_MODELS},
     SUNBURST_MODEL: "image", FLARE_MODEL: "image", SEEDANCE_MODEL: "video",
 }

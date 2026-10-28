@@ -30,7 +30,9 @@ ROUTE_PUBLISHERS = {
 # known family needs no edit here.
 FAMILY_MAKERS = (("gemini", "Google"), ("veo", "Google"), ("gpt", "OpenAI"), ("claude", "Anthropic"),
                  ("ideogram", "Ideogram"), ("seedance", "ByteDance"), ("deepseek", "DeepSeek"),
-                 ("glm", "Z.ai"), ("kimi", "Moonshot AI"))
+                 ("glm", "Z.ai"), ("kimi", "Moonshot AI"),
+                 # OpenRouter names the Grok upstream xAI although its model names say SpaceXAI.
+                 ("grok", "xAI"), ("minimax", "MiniMax"), ("muse", "Meta"), ("qwen", "Alibaba"))
 # Signal feeds: publisher and the route a channel notice speaks for.
 SIGNAL_PUBLISHERS = {"vercel_changelog": ("Vercel", "vercel_ai_gateway"), "openai_news": ("OpenAI", "")}
 SIGNAL_ROLES = {"channel_notice": "notice", "supplier_notice": "notice", "developer_blog": "blog",

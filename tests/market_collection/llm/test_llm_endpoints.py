@@ -1,10 +1,14 @@
 import copy
+import hashlib
 import json
+from pathlib import Path
 
 import pytest
 
-from scripts.market_collection.collectors import llm_endpoints as L
+from scripts.market_collection.collectors import llm_endpoints as L, parse_source
 from scripts.market_collection.core import SourceSpec, _validate_parse
+from scripts.market_collection.events.catalog import maker
+from scripts.market_collection.models import BROKER_API_MODELS
 from scripts.market_collection.sources import llm_endpoint_source_specs, source_specs
 
 OR_SPEC = SourceSpec("openrouter_llm_endpoints_x", "llm", "glm-5.2", "openrouter", "text_generation",
@@ -35,12 +39,54 @@ def by_set(conditions):
     return grouped
 
 
-def test_registry_adds_36_distinct_sources_for_18_models_after_existing_ones():
+def test_registry_adds_98_distinct_sources_for_52_models_after_existing_ones():
     specs = llm_endpoint_source_specs()
-    assert len(specs) == 36 and len({s.source_key for s in specs}) == 36
-    assert len({s.model_id for s in specs}) == 18
-    assert source_specs()[-43:-7] == specs  # the seven Azure retail GPT specs (2026-10-28) come after them
+    assert len(specs) == 98 and len({s.source_key for s in specs}) == 98
+    # The first 36 (2026-10-17) cover the 18 page-sourced LLM models; the 34 gateway-only models (2026-10-28) follow.
+    assert len({s.model_id for s in specs[:36]}) == 18 and len({s.model_id for s in specs}) == 52
+    assert source_specs()[-105:-7] == specs  # the seven Azure retail GPT specs (2026-10-28) come after them
     assert {s.route for s in specs} == {"openrouter", "vercel_ai_gateway"}
+
+
+def test_gateway_only_models_have_a_source_only_on_each_gateway_that_lists_them():
+    specs = llm_endpoint_source_specs()[36:]
+    assert {s.model_id for s in specs} == {row[0] for row in BROKER_API_MODELS} and len(BROKER_API_MODELS) == 34
+    assert [s.route for s in specs].count("openrouter") == 31 and [s.route for s in specs].count("vercel_ai_gateway") == 31
+    assert {(s.route, s.parser, s.task) for s in specs} == {("openrouter", "openrouter_endpoints_llm", "text_generation"),
+                                                             ("vercel_ai_gateway", "vercel_endpoints_llm", "text_generation")}
+    routes = {}
+    for s in specs:
+        routes.setdefault(s.model_id, set()).add(s.route)
+    # OpenRouter lists no muse-wonder-1.0 or qwen3.8-max, and only dated qwen3.5-plus ids (LETSUR's one is unknown).
+    assert {m for m, r in routes.items() if r == {"vercel_ai_gateway"}} == {"muse-wonder-1.0", "qwen3.8-max", "qwen3.5-plus"}
+    assert {m for m, r in routes.items() if r == {"openrouter"}} == {"grok-4.20", "kimi-k2-thinking", "qwen3-coder-flash"}
+    urls = {s.source_key: s.url for s in specs}
+    for key, url in (
+        ("openrouter_llm_endpoints_deepseek_v4_1_flash_1017", "https://openrouter.ai/api/v1/models/deepseek/deepseek-v4.1-flash-1017/endpoints"),
+        ("vercel_llm_endpoints_gemini_2_5_flash_lite", "https://ai-gateway.vercel.sh/v1/models/google/gemini-2.5-flash-lite/endpoints"),
+        ("openrouter_llm_endpoints_glm_4_5_air", "https://openrouter.ai/api/v1/models/z-ai/glm-4.5-air/endpoints"),
+        ("vercel_llm_endpoints_glm_4_5_air", "https://ai-gateway.vercel.sh/v1/models/zai/glm-4.5-air/endpoints"),
+        ("openrouter_llm_endpoints_grok_4_3", "https://openrouter.ai/api/v1/models/x-ai/grok-4.3/endpoints"),
+        ("vercel_llm_endpoints_grok_4_3", "https://ai-gateway.vercel.sh/v1/models/spacexai/grok-4.3/endpoints"),
+        ("openrouter_llm_endpoints_kimi_k2_thinking", "https://openrouter.ai/api/v1/models/moonshotai/kimi-k2-thinking/endpoints"),
+        ("vercel_llm_endpoints_minimax_m2_5", "https://ai-gateway.vercel.sh/v1/models/minimax/minimax-m2.5/endpoints"),
+        ("openrouter_llm_endpoints_muse_spark_1_3", "https://openrouter.ai/api/v1/models/meta/muse-spark-1.3/endpoints"),
+        ("vercel_llm_endpoints_muse_wonder_1_0", "https://ai-gateway.vercel.sh/v1/models/meta/muse-wonder-1.0/endpoints"),
+        ("openrouter_llm_endpoints_qwen3_7_max", "https://openrouter.ai/api/v1/models/qwen/qwen3.7-max/endpoints"),
+        ("vercel_llm_endpoints_qwen3_7_max", "https://ai-gateway.vercel.sh/v1/models/alibaba/qwen3.7-max/endpoints"),
+        ("vercel_llm_endpoints_qwen3_5_plus", "https://ai-gateway.vercel.sh/v1/models/alibaba/qwen3.5-plus/endpoints"),
+    ):
+        assert urls[key] == url
+    # Endpoint APIs only: no catalog-page (missing_*) or other source for these models.
+    assert [s for s in source_specs() if s.model_id in routes] == specs
+
+
+def test_gateway_only_model_families_have_makers():
+    assert {model: maker(model) for model in ("deepseek-v4-flash", "gemini-2.5-flash-lite", "glm-4.5", "grok-4.20", "kimi-k2-thinking",
+                                              "minimax-m3", "muse-wonder-1.0", "qwen3.8-max")} == {
+        "deepseek-v4-flash": "DeepSeek", "gemini-2.5-flash-lite": "Google", "glm-4.5": "Z.ai", "grok-4.20": "xAI",
+        "kimi-k2-thinking": "Moonshot AI", "minimax-m3": "MiniMax", "muse-wonder-1.0": "Meta", "qwen3.8-max": "Alibaba"}
+    assert "unknown" not in {maker(row[0]) for row in BROKER_API_MODELS}
 
 
 def test_openrouter_endpoint_rows_are_per_upstream_and_stated():
@@ -224,3 +270,54 @@ def test_openrouter_cache_write_ttl_reason_is_provider_dependent_not_undocumente
     write = next(p for p in prices if p["billing_item"] == "cache_write")
     row = keyed(conditions, write)["cache_write_ttl"]
     assert row["status"] == "unknown" and "provider dependent" in row["value"] and "names no TTL" not in row["value"]
+
+
+ENDPOINT_FIXTURES = Path(__file__).parent / "fixtures" / "endpoints"
+
+
+def real(name):
+    """A real endpoint response (tests/market_collection/llm/fixtures/endpoints/provenance.json) and its registered spec."""
+    record = next(p for p in json.loads((ENDPOINT_FIXTURES / "provenance.json").read_text()) if p["fixture"] == name)
+    body = (ENDPOINT_FIXTURES / name).read_bytes()
+    assert hashlib.sha256(body).hexdigest() == record["raw_sha256"] and len(body) == record["raw_bytes"]
+    spec = next(s for s in source_specs() if s.source_key == record["source_key"])
+    assert spec.url == record["source_url"]
+    return spec, _validate_parse(spec, "s", *parse_source(spec, body, "s"))
+
+
+def test_real_openrouter_day_and_hour_overrides_stay_separate_conditions():
+    """deepseek-v4-pro-0813, 2026-10-28: DeepSeek's own endpoint prices weekends and weekday UTC hours by utc_days overrides."""
+    _, (prices, conditions) = real("openrouter-deepseek-v4-pro-0813.json")
+    groups = by_set(conditions)
+    windows = {}
+    for p in prices:
+        group = groups[p["condition_set_id"]]
+        if p["upstream_provider"] == "DeepSeek" and p["billing_item"] == "input" and "utc_days" in group:
+            windows[(group["utc_days"]["value"], group.get("utc_start", {}).get("value"), group.get("utc_end", {}).get("value"))] = p["amount"]
+    weekdays = "monday,tuesday,wednesday,thursday,friday"
+    assert windows == {("saturday,sunday", None, None): "0.66", (weekdays, "0", "100"): "0.66", (weekdays, "100", "400"): "1.32",
+                       (weekdays, "400", "600"): "0.66", (weekdays, "600", "1000"): "1.32", (weekdays, "1000", "0"): "0.66"}
+    base = [p for p in prices if p["upstream_provider"] == "DeepSeek" and p["billing_item"] == "input" and "override" not in p["condition_set_id"]]
+    assert [p["amount"] for p in base] == ["1.32"] and "utc_days" not in groups[base[0]["condition_set_id"]]
+    # A non-zero discount stays a raw condition; whether the listed price is before or after it is unknown.
+    novita = next(p for p in prices if p["upstream_provider"] == "Novita" and p["billing_item"] == "input")
+    assert novita["amount"] == "0.99" and groups[novita["condition_set_id"]]["endpoint_discount"]["value"] == "0.25"
+    assert groups[novita["condition_set_id"]]["discount_application"]["status"] == "unknown"
+
+
+def test_real_vercel_per_call_search_fields_and_tier_prices_are_not_token_rows():
+    """grok-4.3, 2026-10-28: xai also lists web_search, x_search_post/x_search_user per call and a priority price in service_tiers."""
+    _, (prices, conditions) = real("vercel-grok-4.3.json")
+    assert {p["billing_item"] for p in prices} == {"input", "output", "cache_read"}
+    xai = [p for p in prices if p["upstream_provider"] == "xai"]
+    assert sorted(p["amount"] for p in xai if p["billing_item"] == "input") == ["1.25", "2.5"]  # the two context tiers only
+    groups = by_set(conditions)
+    assert all(groups[p["condition_set_id"]]["service_tier"]["status"] == "unknown" for p in prices)
+    assert all(groups[p["condition_set_id"]]["service_tier_applicability"]["status"] == "unknown" for p in xai)
+
+
+def test_real_vercel_endpoint_with_nonzero_status_keeps_prices_but_status_unknown():
+    """minimax-m2, 2026-10-28: the only upstream reports status 1 (and a deprecated_at, which the parser does not read)."""
+    _, (prices, conditions) = real("vercel-minimax-m2.json")
+    assert {(p["billing_item"], p["amount"]) for p in prices} == {("input", "0.3"), ("output", "1.2"), ("cache_read", "0.03"), ("cache_write", "0.375")}
+    assert {(r["value"], r["status"]) for r in conditions if r["condition_key"] == "endpoint_status"} == {("1", "unknown")}
