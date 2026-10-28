@@ -1071,7 +1071,7 @@ const COLLECTED = /*DATA:COLLECTED*/;
 // 수집 상태(build.py health, 2026-10-28): 마지막 수집, 실패 중인 출처, 최근 실패 기록, 원문 재검증 필요
 const HEALTH = /*DATA:HEALTH*/;
 // 모델별 가격 화면의 모델 목록(2026-10-28 박건 요청): 만든 회사별로 묶고 회사·모델 이름순. 회사는 모델 id 앞부분으로 정한다.
-const MAKERS = [["qwen", "Alibaba"], ["claude", "Anthropic"], ["seedance", "ByteDance"], ["byteplus-seedance", "ByteDance"], ["deepseek", "DeepSeek"], ["gemini", "Google"], ["kling", "Kuaishou"], ["muse", "Meta"], ["minimax", "MiniMax"], ["kimi", "Moonshot AI"], ["gpt", "OpenAI"], ["o1", "OpenAI"], ["o3", "OpenAI"], ["o4", "OpenAI"], ["text-embedding", "OpenAI"], ["grok", "xAI"], ["glm", "Z.AI"]];
+const MAKERS = [["qwen", "Alibaba"], ["claude", "Anthropic"], ["seedance", "ByteDance"], ["byteplus-seedance", "ByteDance"], ["deepseek", "DeepSeek"], ["gemini", "Google"], ["kling", "Kling AI"], ["muse", "Meta"], ["minimax", "MiniMax"], ["kimi", "Moonshot AI"], ["gpt", "OpenAI"], ["o1", "OpenAI"], ["o3", "OpenAI"], ["o4", "OpenAI"], ["text-embedding", "OpenAI"], ["grok", "xAI"], ["glm", "Z.AI"]];
 const makerOf = k => (MAKERS.find(([p]) => k.startsWith(p)) || ["", "기타"])[1];
 // 변화 카드가 없는 모델도 넣는다(2026-10-28): 최신 수집이 관측한 모델마다 가격 추이(TREND)나 현재 가격 표(COMPARE)가 있다. 조건이 정해지지
 // 않은 관측뿐인 모델은 선으로 그릴 값이 없어 표만 있다. 표의 형식은 아래 '공급사 비교 표' 절에 적었다.

@@ -26,6 +26,7 @@ ROUTE_PUBLISHERS = {
     "vercel_ai_gateway": "Vercel", "vercel": "Vercel", "fal": "fal", "aws_bedrock": "AWS",
     "azure_foundry": "Microsoft", "azure_databricks": "Databricks", "BytePlus ModelArk": "BytePlus",
     "zai_direct": "Z.ai",
+    "kling_direct": "Kling AI",
 }
 # Model family prefix -> maker. Families, not model IDs, so a new model of a
 # known family needs no edit here.
@@ -36,7 +37,7 @@ FAMILY_MAKERS = (("gemini", "Google"), ("veo", "Google"), ("gpt", "OpenAI"), ("c
                  ("grok", "xAI"), ("minimax", "MiniMax"), ("muse", "Meta"), ("qwen", "Alibaba"),
                  # OpenAI's o-series and embedding models, Kling and LETSUR's "byteplus-" Seedance ids (2026-10-28).
                  ("o1", "OpenAI"), ("o3", "OpenAI"), ("o4", "OpenAI"), ("text-embedding", "OpenAI"),
-                 ("kling", "Kuaishou"), ("byteplus-seedance", "ByteDance"))
+                 ("kling", "Kling AI"), ("byteplus-seedance", "ByteDance"))
 # Signal feeds: publisher and the route a channel notice speaks for.
 SIGNAL_PUBLISHERS = {"vercel_changelog": ("Vercel", "vercel_ai_gateway"), "openai_news": ("OpenAI", "")}
 # Channel API signal parsers: the route whose own endpoint listing they read.

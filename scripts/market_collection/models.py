@@ -239,6 +239,17 @@ SEEDANCE_FAL_ID = "bytedance/seedance-2.5/text-to-video"
 
 BYTEPLUS_ID = "dreamina-seedance-2-5-260628"
 
+# Video models LETSUR serves without a route it has stated (2026-10-28), by LETSUR's ids: (model, task).
+KLING_VIDEO_MODELS = (
+    ("kling-v3-text-to-video", "text-to-video"), ("kling-v3-image-to-video", "image-to-video"), ("kling-v3-omni-video", "omni-video"),
+    ("kling-v4-text-to-video", "text-to-video"), ("kling-v4-image-to-video", "image-to-video"), ("kling-v4-omni-video", "omni-video"),
+)
+
+SEEDANCE_VARIANT_MODELS = (("byteplus-seedance-2.5-reference-to-video", "reference-to-video"), ("byteplus-seedance-2.5-video-to-video", "video-to-video"))
+
+# Kling's own price table names a model, not an endpoint; it has no Kling 4.0 row (only an unpriced preview, 2026-10-28).
+KLING_PRICE_ROWS = {"kling-v3-text-to-video": "Kling 3.0", "kling-v3-image-to-video": "Kling 3.0", "kling-v3-omni-video": "Kling 3.0 Omni"}
+
 MODEL_MODALITIES = {
     **{model: "llm" for model in (GOOGLE_LLM_MODEL, ASTRA_MODEL, FABLE_MODEL)},
     **{model: "llm" for model, _, _ in STANDARD_LLM_MODELS},
@@ -253,4 +264,5 @@ MODEL_MODALITIES = {
     **{model: "llm" for model, *_ in OPENAI_DIRECT_MODELS},
     **{model: "llm" for model in OPENAI_EMBEDDING_MODELS},
     GPT_IMAGE_2_MODEL: "image",
+    **{model: "video" for model, _ in KLING_VIDEO_MODELS + SEEDANCE_VARIANT_MODELS},
 }

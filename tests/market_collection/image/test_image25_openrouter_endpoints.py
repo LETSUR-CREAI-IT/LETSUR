@@ -26,8 +26,8 @@ def test_registry_is_additive_and_fixture_hashes_match():
     specs=source_specs()
     old=without_retired(json.loads((F/'registry111.json').read_text()))
     assert [asdict(s) for s in specs[:len(old)]] == old
-    assert len(specs)==366 and len({s.model_id for s in specs})==115
-    assert len({(s.model_id,s.route) for s in specs})==306
+    assert len(specs)==386 and len({s.model_id for s in specs})==123
+    assert len({(s.model_id,s.route) for s in specs})==321
     for p in json.loads((F/'provenance.json').read_text()):
         assert hashlib.sha256((F/(p['variant']+'.json')).read_bytes()).hexdigest()==p['raw_sha256']
 

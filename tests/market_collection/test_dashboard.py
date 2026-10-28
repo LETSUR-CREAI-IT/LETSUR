@@ -810,7 +810,7 @@ def test_model_list_groups_the_gateway_models_under_their_makers_and_stays_a_box
     page = _build(tmp_path)[1]
     makers = _makers(page)
     assert dict(makers) == {"qwen": "Alibaba", "claude": "Anthropic", "seedance": "ByteDance", "byteplus-seedance": "ByteDance",
-                            "deepseek": "DeepSeek", "gemini": "Google", "kling": "Kuaishou", "muse": "Meta", "minimax": "MiniMax",
+                            "deepseek": "DeepSeek", "gemini": "Google", "kling": "Kling AI", "muse": "Meta", "minimax": "MiniMax",
                             "kimi": "Moonshot AI", "gpt": "OpenAI", "o1": "OpenAI", "o3": "OpenAI", "o4": "OpenAI",
                             "text-embedding": "OpenAI", "grok": "xAI", "glm": "Z.AI"}
     assert all(_maker_of(makers, f"{prefix}-x") == company for prefix, company in makers)

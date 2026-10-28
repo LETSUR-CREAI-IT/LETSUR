@@ -6,7 +6,7 @@ import tempfile
 from pathlib import Path
 
 from scripts.market_collection.adapters import video
-from scripts.market_collection.models import BYTEPLUS_ID
+from scripts.market_collection.models import BYTEPLUS_ID, KLING_VIDEO_MODELS, SEEDANCE_VARIANT_MODELS
 from scripts.market_collection.core import _validate_parse, live
 from tests.market_collection.byteplus_page import BYTEPLUS, FORMULA, WITH_VIDEO, byteplus_page
 
@@ -43,13 +43,15 @@ class VideoAdapterTests(unittest.TestCase):
         return {c["condition_key"]: c["value"] for c in conditions if c["condition_set_id"] == f"s1:byteplus_{group}"}
 
     def test_registry_routes_and_identifiers(self):
-        self.assertEqual(len(self.specs), 4)
-        self.assertEqual({s.route for s in self.specs.values()}, {"fal", "BytePlus ModelArk", "vercel_ai_gateway"})
-        self.assertEqual({s.task for s in self.specs.values()}, {"text-to-video"})
+        # Seedance 2.5 text-to-video; the Kling and Seedance variant sources (2026-10-28) are in test_kling_seedance.py.
+        seedance = [s for s in self.specs.values() if s.model_id == "seedance-2.5"]
+        self.assertEqual((len(seedance), len(self.specs)), (4, 24))
+        self.assertEqual({s.route for s in seedance}, {"fal", "BytePlus ModelArk", "vercel_ai_gateway"})
+        self.assertEqual({s.task for s in seedance}, {"text-to-video"})
 
     def test_veo_is_not_collected(self):
         # Google ended the Gemini API Veo 3.1 preview on 2026-10-22; LETSUR's model list has no Veo (2026-10-28).
-        self.assertEqual({spec.model_id for spec in self.specs.values()}, {"seedance-2.5"})
+        self.assertEqual({spec.model_id for spec in self.specs.values()}, {"seedance-2.5", *(model for model, _ in KLING_VIDEO_MODELS + SEEDANCE_VARIANT_MODELS)})
 
     def test_fal_rate_estimates_and_conflict(self):
         prices, conditions = self.parse("fal_seedance_25_t2v", FAL)
