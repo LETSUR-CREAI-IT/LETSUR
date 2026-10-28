@@ -9,3 +9,14 @@ __pycache__/
 .local/
 data/market_collection/
 *.log
+
+# Secrets: Slack tokens, LETSUR API keys and other credentials stay on each person's computer (public repository)
+.env
+.env.*
+!.env.example
+*.env
+secrets.env
+
+# Slack bot local runtime packages, cache, state databases and previews (letsur-alerts-update-20261027/RUNNING.md)
+letsur-alerts-update-20261027/.runtime/
+letsur-alerts-update-20261027/output/
