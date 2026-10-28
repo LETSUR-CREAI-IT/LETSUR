@@ -1,0 +1,2553 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Gemini Developer API pricing (trimmed)</title></head>
+<body>
+<div class="models-section">
+    <div class="heading-group">
+        <h2 id="gemini-4-argon" data-text="Gemini 4 Argon" tabindex="-1">Gemini 4 Argon</h2>
+        <em><a href="/gemini-api/docs/models/gemini-4-argon"><code translate="no" dir="ltr">gemini-4-argon</code></a></em>
+    </div>
+    <p>
+        <a href="https://aistudio.google.com/prompts/new_chat?model=gemini-4-argon" class="button button-primary ais">Try it in Google AI Studio</a>
+    </p>
+</div>
+
+<p>Our flagship reasoning model, built for complex software engineering, deep mathematical and scientific problem solving, autonomous multi-step agents, and long-decode generation up to 1M tokens.</p>
+<aside class="note"><strong>Note:</strong><span> Gemini 4 Argon is not available on the Free tier. Every token the model processes is counted and billed, including thinking tokens and internal tool system instructions and function declarations when using grounding.</span></aside><div><devsite-selector data-ds-scope="code-sample">
+<section><h3 id="standard" data-text="Standard" tabindex="-1">Standard</h3><table class="pricing-table">
+  <colgroup>
+    <col>
+    <col class="free-tier">
+    <col class="paid-tier">
+  </colgroup>
+  <thead>
+    <tr>
+      <th></th>
+      <th scope="col">Free Tier</th>
+      <th scope="col">Paid Tier, per 1M tokens in USD</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Input price</td>
+      <td>Not available</td>
+      <td>$2.00 through November 30, 2026.<br>$4.00 starting December 1, 2026.</td>
+    </tr>
+    <tr>
+      <td>Output price (including thinking tokens)</td>
+      <td>Not available</td>
+      <td>$10.00 through November 30, 2026.<br>$20.00 starting December 1, 2026.</td>
+    </tr>
+    <tr>
+      <td>Context caching price</td>
+      <td>Not available</td>
+      <td>$0.10 through November 30, 2026.<br>$0.20 starting December 1, 2026.<br>Implicit caching only (explicit caching is not supported).</td>
+    </tr>
+    <tr>
+      <td>Grounding with Google Search<sup>*</sup></td>
+      <td>Not available</td>
+      <td>5,000 free search requests per month (shared across all Gemini 3 and newer models), then $14 per 1,000 requests.</td>
+    </tr>
+    <tr>
+      <td>Grounding with Google Maps</td>
+      <td>Not available</td>
+      <td>5,000 requests per month (free, shared across all Gemini 3 and newer models), then $14 / 1,000 search queries.</td>
+    </tr>
+    <tr>
+      <td>Used to improve our products</td>
+      <td>Not available</td>
+      <td><a href="/gemini-api/terms">No</a></td>
+    </tr>
+  </tbody>
+</table></section>
+<section><h3 id="batch" data-text="Batch" tabindex="-1">Batch</h3><table class="pricing-table">
+  <colgroup>
+    <col>
+    <col class="free-tier">
+    <col class="paid-tier">
+  </colgroup>
+  <thead>
+    <tr>
+      <th></th>
+      <th scope="col">Free Tier</th>
+      <th scope="col">Paid Tier, per 1M tokens in USD</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Input price</td>
+      <td>Not available</td>
+      <td>$1.00 through November 30, 2026.<br>$2.00 starting December 1, 2026.</td>
+    </tr>
+    <tr>
+      <td>Output price (including thinking tokens)</td>
+      <td>Not available</td>
+      <td>$5.00 through November 30, 2026.<br>$10.00 starting December 1, 2026.</td>
+    </tr>
+    <tr>
+      <td>Context caching price</td>
+      <td>Not available</td>
+      <td>$0.05 through November 30, 2026.<br>$0.10 starting December 1, 2026.<br>Implicit caching only (explicit caching is not supported).</td>
+    </tr>
+    <tr>
+      <td>Used to improve our products</td>
+      <td>Not available</td>
+      <td><a href="/gemini-api/terms">No</a></td>
+    </tr>
+  </tbody>
+</table></section>
+<section><h3 id="flex" data-text="Flex" tabindex="-1">Flex</h3><table class="pricing-table">
+  <colgroup>
+    <col>
+    <col class="free-tier">
+    <col class="paid-tier">
+  </colgroup>
+  <thead>
+    <tr>
+      <th></th>
+      <th scope="col">Free Tier</th>
+      <th scope="col">Paid Tier, per 1M tokens in USD</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Input price</td>
+      <td>Not available</td>
+      <td>$1.00 through November 30, 2026.<br>$2.00 starting December 1, 2026.</td>
+    </tr>
+    <tr>
+      <td>Output price (including thinking tokens)</td>
+      <td>Not available</td>
+      <td>$5.00 through November 30, 2026.<br>$10.00 starting December 1, 2026.</td>
+    </tr>
+    <tr>
+      <td>Context caching price</td>
+      <td>Not available</td>
+      <td>$0.05 through November 30, 2026.<br>$0.10 starting December 1, 2026.<br>Implicit caching only (explicit caching is not supported).</td>
+    </tr>
+    <tr>
+      <td>Used to improve our products</td>
+      <td>Not available</td>
+      <td><a href="/gemini-api/terms">No</a></td>
+    </tr>
+  </tbody>
+</table></section>
+<section><h3 id="priority" data-text="Priority" tabindex="-1">Priority</h3><table class="pricing-table">
+  <colgroup>
+    <col>
+    <col class="free-tier">
+    <col class="paid-tier">
+  </colgroup>
+  <thead>
+    <tr>
+      <th></th>
+      <th scope="col">Free Tier</th>
+      <th scope="col">Paid Tier, per 1M tokens in USD</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Input price</td>
+      <td>Not available</td>
+      <td>$3.60 through November 30, 2026.<br>$7.20 starting December 1, 2026.</td>
+    </tr>
+    <tr>
+      <td>Output price (including thinking tokens)</td>
+      <td>Not available</td>
+      <td>$18.00 through November 30, 2026.<br>$36.00 starting December 1, 2026.</td>
+    </tr>
+    <tr>
+      <td>Context caching price</td>
+      <td>Not available</td>
+      <td>$0.18 through November 30, 2026.<br>$0.36 starting December 1, 2026.<br>Implicit caching only (explicit caching is not supported).</td>
+    </tr>
+    <tr>
+      <td>Grounding with Google Search<sup>*</sup></td>
+      <td>Not available</td>
+      <td>5,000 free search requests per month (shared across all Gemini 3 and newer models), then $14 per 1,000 requests.</td>
+    </tr>
+    <tr>
+      <td>Grounding with Google Maps</td>
+      <td>Not available</td>
+      <td>5,000 requests per month (free, shared across all Gemini 3 and newer models), then $14 / 1,000 search queries.</td>
+    </tr>
+    <tr>
+      <td>Used to improve our products</td>
+      <td>Not available</td>
+      <td><a href="/gemini-api/terms">No</a></td>
+    </tr>
+  </tbody>
+</table></section>
+<section><h3 id="contributor" data-text="Contributor" tabindex="-1">Contributor</h3><aside class="note"><strong>Note:</strong><span> The Gemini API Contributor Tier is offered as a private preview on an
+invite-only basis. Speed and reliability are equivalent to
+<a href="/gemini-api/docs/optimization">Standard Tier inference</a>. Eligible users will
+be invited by email and see a callout in AI Studio.</span></aside>
+<table class="pricing-table">
+  <colgroup>
+    <col>
+    <col class="free-tier">
+    <col class="paid-tier">
+  </colgroup>
+  <thead>
+    <tr>
+      <th></th>
+      <th scope="col">Free Tier</th>
+      <th scope="col">Paid Tier, per 1M tokens in USD</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Input price</td>
+      <td>Not available</td>
+      <td>$1.00 through November 30, 2026.<br>$2.00 starting December 1, 2026.</td>
+    </tr>
+    <tr>
+      <td>Output price (including thinking tokens)</td>
+      <td>Not available</td>
+      <td>$5.00 through November 30, 2026.<br>$10.00 starting December 1, 2026.</td>
+    </tr>
+    <tr>
+      <td>Context caching price</td>
+      <td>Not available</td>
+      <td>$0.05 through November 30, 2026.<br>$0.10 starting December 1, 2026.<br>Implicit caching only (explicit caching is not supported).</td>
+    </tr>
+    <tr>
+      <td>Used to improve our products</td>
+      <td>Not available</td>
+      <td><a href="/gemini-api/docs/logs-policy#contributor-tier">Yes</a></td>
+    </tr>
+  </tbody>
+</table></section>
+</devsite-selector></div>
+<p><sup>*</sup> A customer-submitted request to Gemini may result in one or more
+queries to Google Search. You will be charged for each individual search query
+performed.</p>
+
+<div class="models-section">
+    <div class="heading-group">
+        <h2 id="gemini-3.8-flash" data-text="Gemini 3.8 Flash" tabindex="-1">Gemini 3.8 Flash</h2>
+        <em><a href="/gemini-api/docs/models/gemini-3.8-flash"><code translate="no" dir="ltr">gemini-3.8-flash</code></a></em>
+    
+    </div>
+    <p>
+        <a href="https://aistudio.google.com/prompts/new_chat?model=gemini-3.8-flash" class="button button-primary ais">Try it in Google AI Studio</a>
+    </p>
+</div>
+
+<p>Our most intelligent Flash model, engineered for long-horizon software engineering, autonomous agents, and complex enterprise workflows.</p>
+<div><devsite-selector data-ds-scope="code-sample">
+<section><h3 id="standard_1" data-text="Standard" tabindex="-1">Standard</h3><table class="pricing-table">
+  <colgroup>
+    <col>
+    <col class="free-tier">
+    <col class="paid-tier">
+  </colgroup>
+  <thead>
+    <tr>
+      <th></th>
+      <th scope="col">Free Tier</th>
+      <th scope="col">Paid Tier, per 1M tokens in USD</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Input price</td>
+      <td>Free of charge</td>
+      <td>$0.75 through December 31, 2026.<br>$1.50 starting January 1, 2027.</td>
+    </tr>
+    <tr>
+      <td>Output price (including thinking tokens)</td>
+      <td>Free of charge</td>
+      <td>$3.75 through December 31, 2026.<br>$7.50 starting January 1, 2027.</td>
+    </tr>
+    <tr>
+      <td>Context caching price</td>
+      <td>Free of charge</td>
+      <td>$0.075 through December 31, 2026.<br>$0.15 starting January 1, 2027.<br>$0.50 / 1,000,000 tokens per hour (storage price) through December 31, 2026.<br>$1.00 / 1,000,000 tokens per hour (storage price) starting January 1, 2027.</td>
+    </tr>
+    <tr>
+      <td>Grounding with Google Search<sup>*</sup></td>
+      <td>Not available</td>
+      <td>5,000 free search requests per month (shared across all Gemini 3 and newer models), then $14 per 1,000 requests.</td>
+    </tr>
+    <tr>
+      <td>Grounding with Google Maps</td>
+      <td>Not available</td>
+      <td>5,000 requests per month (free, shared across all Gemini 3 and newer models), then $14 / 1,000 search queries.</td>
+    </tr>
+    <tr>
+      <td>Used to improve our products</td>
+      <td><a href="/gemini-api/terms">Yes</a></td>
+      <td><a href="/gemini-api/terms">No</a></td>
+    </tr>
+  </tbody>
+</table></section>
+<section><h3 id="batch_1" data-text="Batch" tabindex="-1">Batch</h3><table class="pricing-table">
+  <colgroup>
+    <col>
+    <col class="free-tier">
+    <col class="paid-tier">
+  </colgroup>
+  <thead>
+    <tr>
+      <th></th>
+      <th scope="col">Free Tier</th>
+      <th scope="col">Paid Tier, per 1M tokens in USD</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Input price</td>
+      <td>Not available</td>
+      <td>$0.375 through December 31, 2026.<br>$0.75 starting January 1, 2027.</td>
+    </tr>
+    <tr>
+      <td>Output price (including thinking tokens)</td>
+      <td>Not available</td>
+      <td>$1.875 through December 31, 2026.<br>$3.75 starting January 1, 2027.</td>
+    </tr>
+    <tr>
+      <td>Context caching price</td>
+      <td>Not available</td>
+      <td>$0.0375 through December 31, 2026.<br>$0.075 starting January 1, 2027.<br>$0.50 / 1,000,000 tokens per hour (storage price) through December 31, 2026.<br>$1.00 / 1,000,000 tokens per hour (storage price) starting January 1, 2027.</td>
+    </tr>
+    <tr>
+      <td>Used to improve our products</td>
+      <td><a href="/gemini-api/terms">Yes</a></td>
+      <td><a href="/gemini-api/terms">No</a></td>
+    </tr>
+  </tbody>
+</table></section>
+<section><h3 id="flex_1" data-text="Flex" tabindex="-1">Flex</h3><table class="pricing-table">
+  <colgroup>
+    <col>
+    <col class="free-tier">
+    <col class="paid-tier">
+  </colgroup>
+  <thead>
+    <tr>
+      <th></th>
+      <th scope="col">Free Tier</th>
+      <th scope="col">Paid Tier, per 1M tokens in USD</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Input price</td>
+      <td>Not available</td>
+      <td>$0.375 through December 31, 2026.<br>$0.75 starting January 1, 2027.</td>
+    </tr>
+    <tr>
+      <td>Output price (including thinking tokens)</td>
+      <td>Not available</td>
+      <td>$1.875 through December 31, 2026.<br>$3.75 starting January 1, 2027.</td>
+    </tr>
+    <tr>
+      <td>Context caching price</td>
+      <td>Not available</td>
+      <td>$0.0375 through December 31, 2026.<br>$0.075 starting January 1, 2027.<br>$0.50 / 1,000,000 tokens per hour (storage price) through December 31, 2026.<br>$1.00 / 1,000,000 tokens per hour (storage price) starting January 1, 2027.</td>
+    </tr>
+    <tr>
+      <td>Used to improve our products</td>
+      <td><a href="/gemini-api/terms">Yes</a></td>
+      <td><a href="/gemini-api/terms">No</a></td>
+    </tr>
+  </tbody>
+</table></section>
+<section><h3 id="priority_1" data-text="Priority" tabindex="-1">Priority</h3><table class="pricing-table">
+  <colgroup>
+    <col>
+    <col class="free-tier">
+    <col class="paid-tier">
+  </colgroup>
+  <thead>
+    <tr>
+      <th></th>
+      <th scope="col">Free Tier</th>
+      <th scope="col">Paid Tier, per 1M tokens in USD</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Input price</td>
+      <td>Free of charge</td>
+      <td>$1.35 through December 31, 2026.<br>$2.70 starting January 1, 2027.</td>
+    </tr>
+    <tr>
+      <td>Output price (including thinking tokens)</td>
+      <td>Free of charge</td>
+      <td>$6.75 through December 31, 2026.<br>$13.50 starting January 1, 2027.</td>
+    </tr>
+    <tr>
+      <td>Context caching price</td>
+      <td>Free of charge</td>
+      <td>$0.135 through December 31, 2026.<br>$0.27 starting January 1, 2027.<br>$0.50 / 1,000,000 tokens per hour (storage price) through December 31, 2026.<br>$1.00 / 1,000,000 tokens per hour (storage price) starting January 1, 2027.</td>
+    </tr>
+    <tr>
+      <td>Grounding with Google Search<sup>*</sup></td>
+      <td>Not available<sup>**</sup></td>
+      <td>5,000 free search requests per month (shared across all Gemini 3 and newer models), then $14 per 1,000 requests.</td>
+    </tr>
+    <tr>
+      <td>Grounding with Google Maps</td>
+      <td>Not available<sup>**</sup></td>
+      <td>5,000 requests per month (free, shared across all Gemini 3 and newer models), then $14 / 1,000 search queries.</td>
+    </tr>
+    <tr>
+      <td>Used to improve our products</td>
+      <td><a href="/gemini-api/terms">Yes</a></td>
+      <td><a href="/gemini-api/terms">No</a></td>
+    </tr>
+  </tbody>
+</table></section>
+<section><h3 id="contributor_1" data-text="Contributor" tabindex="-1">Contributor</h3><aside class="note"><strong>Note:</strong><span> The Gemini API Contributor Tier is offered as a private preview on an
+invite-only basis. Speed and reliability are equivalent to
+<a href="/gemini-api/docs/optimization">Standard Tier inference</a>. Eligible users will
+be invited by email and see a callout in AI Studio.</span></aside>
+<table class="pricing-table">
+  <colgroup>
+    <col>
+    <col class="free-tier">
+    <col class="paid-tier">
+  </colgroup>
+  <thead>
+    <tr>
+      <th></th>
+      <th scope="col">Free Tier</th>
+      <th scope="col">Paid Tier, per 1M tokens in USD</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Input price</td>
+      <td>Free of charge</td>
+      <td>$0.375 through December 31, 2026.<br>$0.75 starting January 1, 2027.</td>
+    </tr>
+    <tr>
+      <td>Output price (including thinking tokens)</td>
+      <td>Free of charge</td>
+      <td>$1.875 through December 31, 2026.<br>$3.75 starting January 1, 2027.</td>
+    </tr>
+    <tr>
+      <td>Context caching price</td>
+      <td>Free of charge</td>
+      <td>$0.0375 through December 31, 2026.<br>$0.075 starting January 1, 2027.<br>$0.50 / 1,000,000 tokens per hour (storage price) through December 31, 2026.<br>$1.00 / 1,000,000 tokens per hour (storage price) starting January 1, 2027.</td>
+    </tr>
+    <tr>
+      <td>Used to improve our products</td>
+      <td><a href="/gemini-api/terms">Yes</a></td>
+      <td><a href="/gemini-api/docs/logs-policy#contributor-tier">Yes</a></td>
+    </tr>
+  </tbody>
+</table></section>
+</devsite-selector></div>
+
+<div class="models-section">
+    <div class="heading-group">
+        <h2 id="gemini-3.6-flash" data-text="Gemini 3.6 Flash" tabindex="-1">Gemini 3.6 Flash</h2>
+        <em><a href="/gemini-api/docs/models/gemini-3.6-flash"><code translate="no" dir="ltr">gemini-3.6-flash</code></a></em>
+    
+    </div>
+    <p>
+        <a href="https://aistudio.google.com/prompts/new_chat?model=gemini-3.6-flash" class="button button-primary ais">Try it in Google AI Studio</a>
+    </p>
+</div>
+
+<p>Our previous generation Flash model, balancing speed and multimodal capabilities across general agentic and everyday tasks.</p>
+<div><devsite-selector data-ds-scope="code-sample">
+<section><h3 id="standard_2" data-text="Standard" tabindex="-1">Standard</h3><table class="pricing-table">
+  <colgroup>
+    <col>
+    <col class="free-tier">
+    <col class="paid-tier">
+  </colgroup>
+  <thead>
+    <tr>
+      <th></th>
+      <th scope="col">Free Tier</th>
+      <th scope="col">Paid Tier, per 1M tokens in USD</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Input price</td>
+      <td>Free of charge</td>
+      <td>$0.75 through December 31, 2026.<br>$1.50 starting January 1, 2027.</td>
+    </tr>
+    <tr>
+      <td>Output price (including thinking tokens)</td>
+      <td>Free of charge</td>
+      <td>$3.75 through December 31, 2026.<br>$7.50 starting January 1, 2027.</td>
+    </tr>
+    <tr>
+      <td>Context caching price</td>
+      <td>Free of charge</td>
+      <td>$0.075 through December 31, 2026.<br>$0.15 starting January 1, 2027.<br>$0.50 / 1,000,000 tokens per hour (storage price) through December 31, 2026.<br>$1.00 / 1,000,000 tokens per hour (storage price) starting January 1, 2027.</td>
+    </tr>
+    <tr>
+      <td>Grounding with Google Search<sup>*</sup></td>
+      <td>Not available<sup>**</sup></td>
+      <td>5,000 free search requests per month (shared across all Gemini 3 and newer models), then $14 per 1,000 requests.</td>
+    </tr>
+    <tr>
+      <td>Grounding with Google Maps</td>
+      <td>Not available<sup>**</sup></td>
+      <td>5,000 requests per month (free, shared across all Gemini 3 and newer models), then $14 / 1,000 search queries.</td>
+    </tr>
+    <tr>
+      <td>Used to improve our products</td>
+      <td><a href="/gemini-api/terms">Yes</a></td>
+      <td><a href="/gemini-api/terms">No</a></td>
+    </tr>
+  </tbody>
+</table></section>
+<section><h3 id="batch_2" data-text="Batch" tabindex="-1">Batch</h3><table class="pricing-table">
+  <colgroup>
+    <col>
+    <col class="free-tier">
+    <col class="paid-tier">
+  </colgroup>
+  <thead>
+    <tr>
+      <th></th>
+      <th scope="col">Free Tier</th>
+      <th scope="col">Paid Tier, per 1M tokens in USD</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Input price</td>
+      <td>Not available</td>
+      <td>$0.375 through December 31, 2026.<br>$0.75 starting January 1, 2027.</td>
+    </tr>
+    <tr>
+      <td>Output price (including thinking tokens)</td>
+      <td>Not available</td>
+      <td>$1.875 through December 31, 2026.<br>$3.75 starting January 1, 2027.</td>
+    </tr>
+    <tr>
+      <td>Context caching price</td>
+      <td>Not available</td>
+      <td>$0.0375 through December 31, 2026.<br>$0.075 starting January 1, 2027.<br>$0.50 / 1,000,000 tokens per hour (storage price) through December 31, 2026.<br>$1.00 / 1,000,000 tokens per hour (storage price) starting January 1, 2027.</td>
+    </tr>
+    <tr>
+      <td>Grounding with Google Search<sup>*</sup></td>
+      <td>Not available<sup>**</sup></td>
+      <td>5,000 free search requests per month (shared across all Gemini 3 and newer models), then $14 per 1,000 requests.</td>
+    </tr>
+    <tr>
+      <td>Grounding with Google Maps</td>
+      <td>Not available<sup>**</sup></td>
+      <td>5,000 requests per month (free, shared across all Gemini 3 and newer models), then $14 / 1,000 search queries.</td>
+    </tr>
+    <tr>
+      <td>Used to improve our products</td>
+      <td><a href="/gemini-api/terms">Yes</a></td>
+      <td><a href="/gemini-api/terms">No</a></td>
+    </tr>
+  </tbody>
+</table></section>
+<section><h3 id="flex_2" data-text="Flex" tabindex="-1">Flex</h3><table class="pricing-table">
+  <colgroup>
+    <col>
+    <col class="free-tier">
+    <col class="paid-tier">
+  </colgroup>
+  <thead>
+    <tr>
+      <th></th>
+      <th scope="col">Free Tier</th>
+      <th scope="col">Paid Tier, per 1M tokens in USD</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Input price</td>
+      <td>Not available</td>
+      <td>$0.375 through December 31, 2026.<br>$0.75 starting January 1, 2027.</td>
+    </tr>
+    <tr>
+      <td>Output price (including thinking tokens)</td>
+      <td>Not available</td>
+      <td>$1.875 through December 31, 2026.<br>$3.75 starting January 1, 2027.</td>
+    </tr>
+    <tr>
+      <td>Context caching price</td>
+      <td>Not available</td>
+      <td>$0.0375 through December 31, 2026.<br>$0.075 starting January 1, 2027.<br>$0.50 / 1,000,000 tokens per hour (storage price) through December 31, 2026.<br>$1.00 / 1,000,000 tokens per hour (storage price) starting January 1, 2027.</td>
+    </tr>
+    <tr>
+      <td>Grounding with Google Search<sup>*</sup></td>
+      <td>Not available<sup>**</sup></td>
+      <td>5,000 free search requests per month (shared across all Gemini 3 and newer models), then $14 per 1,000 requests.</td>
+    </tr>
+    <tr>
+      <td>Grounding with Google Maps</td>
+      <td>Not available<sup>**</sup></td>
+      <td>5,000 requests per month (free, shared across all Gemini 3 and newer models), then $14 / 1,000 search queries.</td>
+    </tr>
+    <tr>
+      <td>Used to improve our products</td>
+      <td><a href="/gemini-api/terms">Yes</a></td>
+      <td><a href="/gemini-api/terms">No</a></td>
+    </tr>
+  </tbody>
+</table></section>
+<section><h3 id="priority_2" data-text="Priority" tabindex="-1">Priority</h3><table class="pricing-table">
+  <colgroup>
+    <col>
+    <col class="free-tier">
+    <col class="paid-tier">
+  </colgroup>
+  <thead>
+    <tr>
+      <th></th>
+      <th scope="col">Free Tier</th>
+      <th scope="col">Paid Tier, per 1M tokens in USD</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Input price</td>
+      <td>Free of charge</td>
+      <td>$1.35 through December 31, 2026.<br>$2.70 starting January 1, 2027.</td>
+    </tr>
+    <tr>
+      <td>Output price (including thinking tokens)</td>
+      <td>Free of charge</td>
+      <td>$6.75 through December 31, 2026.<br>$13.50 starting January 1, 2027.</td>
+    </tr>
+    <tr>
+      <td>Context caching price</td>
+      <td>Free of charge</td>
+      <td>$0.135 through December 31, 2026.<br>$0.27 starting January 1, 2027.<br>$0.50 / 1,000,000 tokens per hour (storage price) through December 31, 2026.<br>$1.00 / 1,000,000 tokens per hour (storage price) starting January 1, 2027.</td>
+    </tr>
+    <tr>
+      <td>Grounding with Google Search<sup>*</sup></td>
+      <td>Not available<sup>**</sup></td>
+      <td>5,000 free search requests per month (shared across all Gemini 3 and newer models), then $14 per 1,000 requests.</td>
+    </tr>
+    <tr>
+      <td>Grounding with Google Maps</td>
+      <td>Not available<sup>**</sup></td>
+      <td>5,000 requests per month (free, shared across all Gemini 3 and newer models), then $14 / 1,000 search queries.</td>
+    </tr>
+    <tr>
+      <td>Used to improve our products</td>
+      <td><a href="/gemini-api/terms">Yes</a></td>
+      <td><a href="/gemini-api/terms">No</a></td>
+    </tr>
+  </tbody>
+</table></section>
+</devsite-selector></div>
+<p><sup>*</sup> A customer-submitted request to Gemini may result in one or more
+queries to Google Search. You will be charged for each individual search query
+performed.</p>
+
+<p><sup>**</sup> Can be tested in Google AI Studio.</p>
+
+<div class="models-section">
+    <div class="heading-group">
+        <span id="gemini-3.8-live-extended-thinking"></span>
+        <span id="gemini-3.1-flash-live-preview"></span>
+        <h2 id="gemini-3.8-live" data-text="Gemini 3.8 Live, Gemini 3.8 Live Extended Thinking, and Gemini 3.1 Flash Live Preview" tabindex="-1">Gemini 3.8 Live, Gemini 3.8 Live Extended Thinking, and Gemini 3.1 Flash Live Preview</h2>
+        <em><a href="/gemini-api/docs/models/gemini-3.8-live"><code translate="no" dir="ltr">gemini-3.8-live</code></a>, <a href="/gemini-api/docs/models/gemini-3.8-live-extended-thinking"><code translate="no" dir="ltr">gemini-3.8-live-extended-thinking</code></a>, and <a href="/gemini-api/docs/models/gemini-3.1-flash-live-preview"><code translate="no" dir="ltr">gemini-3.1-flash-live-preview</code></a></em>
+    </div>
+    <p>
+        <a href="https://aistudio.google.com/live?model=gemini-3.8-live" class="button button-primary ais">Try it in Google AI Studio</a>
+    </p>
+</div>
+
+<p>Our low-latency, audio-to-audio models optimized for real-time voice agents and
+live dialogue, including background reasoning support with Extended Thinking.</p>
+<div><devsite-selector data-ds-scope="code-sample">
+<section><h3 id="standard_3" data-text="Standard" tabindex="-1">Standard</h3><table class="pricing-table">
+  <colgroup>
+    <col>
+    <col class="free-tier">
+    <col class="paid-tier">
+  </colgroup>
+  <thead>
+    <tr>
+      <th></th>
+      <th scope="col">Free Tier</th>
+      <th scope="col">Paid Tier, per 1M tokens in USD</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Input price</td>
+      <td>Free of charge</td>
+      <td>$0.75 (text)<br>$3.00 or $0.005/min (audio)<br>$1.00 or $0.002/min (image/video)</td>
+    </tr>
+    <tr>
+      <td>Output price (including thinking tokens)</td>
+      <td>Free of charge</td>
+      <td>$4.50 (text)<br>$12.00 or $0.018/min (audio)</td>
+    </tr>
+    <tr>
+      <td>Grounding with Google Search<sup>*</sup></td>
+      <td>Supported</td>
+      <td>5,000 free search requests per month (shared across all Gemini 3 and newer models), then $14 per 1,000 requests.</td>
+    </tr>
+    <tr>
+      <td>Used to improve our products</td>
+      <td><a href="/gemini-api/terms">Yes</a></td>
+      <td><a href="/gemini-api/terms">No</a></td>
+    </tr>
+  </tbody>
+</table></section>
+</devsite-selector></div>
+<p><sup>*</sup> A customer-submitted request to Gemini may result in one or more
+queries to Google Search. You will be charged for each individual search query
+performed.</p>
+
+<div class="models-section">
+    <div class="heading-group">
+        <h2 id="gemini-3.5-flash-lite" data-text="Gemini 3.5 Flash-Lite" tabindex="-1">Gemini 3.5 Flash-Lite</h2>
+        <em><a href="/gemini-api/docs/models/gemini-3.5-flash-lite"><code translate="no" dir="ltr">gemini-3.5-flash-lite</code></a></em>
+    
+    </div>
+    <p>
+        <a href="https://aistudio.google.com/prompts/new_chat?model=gemini-3.5-flash-lite" class="button button-primary ais">Try it in Google AI Studio</a>
+    </p>
+</div>
+
+<p>A cost-efficient model, optimized for high-volume agentic tasks,
+translation, and simple data processing.</p>
+<div><devsite-selector data-ds-scope="code-sample">
+<section><h3 id="standard_7" data-text="Standard" tabindex="-1">Standard</h3><table class="pricing-table">
+  <colgroup>
+    <col>
+    <col class="free-tier">
+    <col class="paid-tier">
+  </colgroup>
+  <thead>
+    <tr>
+      <th></th>
+      <th scope="col">Free Tier</th>
+      <th scope="col">Paid Tier, per 1M tokens in USD</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Input price</td>
+      <td>Free of charge</td>
+      <td>$0.30 (text / image / video / audio)</td>
+    </tr>
+    <tr>
+      <td>Output price (including thinking tokens)</td>
+      <td>Free of charge</td>
+      <td>$2.50</td>
+    </tr>
+    <tr>
+      <td>Context caching price</td>
+      <td>Not available</td>
+      <td>$0.03<br>$1.00 / 1,000,000 tokens per hour (storage price)</td>
+    </tr>
+    <tr>
+      <td>Grounding with Google Search<sup>*</sup></td>
+      <td>Not available<sup>**</sup></td>
+      <td>5,000 free search requests per month (shared across all Gemini 3 and newer models), then $14 per 1,000 requests.</td>
+    </tr>
+    <tr>
+      <td>Grounding with Google Maps</td>
+      <td>Not available<sup>**</sup></td>
+      <td>5,000 requests per month (free, shared across all Gemini 3 and newer models), then $14 / 1,000 search queries.</td>
+    </tr>
+    <tr>
+      <td>Used to improve our products</td>
+      <td><a href="/gemini-api/terms">Yes</a></td>
+      <td><a href="/gemini-api/terms">No</a></td>
+    </tr>
+  </tbody>
+</table></section>
+<section><h3 id="batch_3" data-text="Batch" tabindex="-1">Batch</h3><table class="pricing-table">
+  <colgroup>
+    <col>
+    <col class="free-tier">
+    <col class="paid-tier">
+  </colgroup>
+  <thead>
+    <tr>
+      <th></th>
+      <th scope="col">Free Tier</th>
+      <th scope="col">Paid Tier, per 1M tokens in USD</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Input price</td>
+      <td>Free of charge</td>
+      <td>$0.15 (text / image / video / audio)</td>
+    </tr>
+    <tr>
+      <td>Output price (including thinking tokens)</td>
+      <td>Free of charge</td>
+      <td>$1.25</td>
+    </tr>
+    <tr>
+      <td>Context caching price</td>
+      <td>Not available</td>
+      <td>$0.02<br>$1.00 / 1,000,000 tokens per hour (storage price)</td>
+    </tr>
+    <tr>
+      <td>Grounding with Google Search<sup>*</sup></td>
+      <td>Not available<sup>**</sup></td>
+      <td>5,000 free search requests per month (shared across all Gemini 3 and newer models), then $14 per 1,000 requests.</td>
+    </tr>
+    <tr>
+      <td>Grounding with Google Maps</td>
+      <td>Not available<sup>**</sup></td>
+      <td>5,000 requests per month (free, shared across all Gemini 3 and newer models), then $14 / 1,000 search queries.</td>
+    </tr>
+    <tr>
+      <td>Used to improve our products</td>
+      <td><a href="/gemini-api/terms">Yes</a></td>
+      <td><a href="/gemini-api/terms">No</a></td>
+    </tr>
+  </tbody>
+</table></section>
+<section><h3 id="flex_3" data-text="Flex" tabindex="-1">Flex</h3><table class="pricing-table">
+  <colgroup>
+    <col>
+    <col class="free-tier">
+    <col class="paid-tier">
+  </colgroup>
+  <thead>
+    <tr>
+      <th></th>
+      <th scope="col">Free Tier</th>
+      <th scope="col">Paid Tier, per 1M tokens in USD</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Input price</td>
+      <td>Free of charge</td>
+      <td>$0.15 (text / image / video / audio)</td>
+    </tr>
+    <tr>
+      <td>Output price (including thinking tokens)</td>
+      <td>Free of charge</td>
+      <td>$1.25</td>
+    </tr>
+    <tr>
+      <td>Context caching price</td>
+      <td>Not available</td>
+      <td>$0.02<br>$1.00 / 1,000,000 tokens per hour (storage price)</td>
+    </tr>
+    <tr>
+      <td>Grounding with Google Search<sup>*</sup></td>
+      <td>Not available<sup>**</sup></td>
+      <td>5,000 free search requests per month (shared across all Gemini 3 and newer models), then $14 per 1,000 requests.</td>
+    </tr>
+    <tr>
+      <td>Grounding with Google Maps</td>
+      <td>Not available<sup>**</sup></td>
+      <td>5,000 requests per month (free, shared across all Gemini 3 and newer models), then $14 / 1,000 search queries.</td>
+    </tr>
+    <tr>
+      <td>Used to improve our products</td>
+      <td><a href="/gemini-api/terms">Yes</a></td>
+      <td><a href="/gemini-api/terms">No</a></td>
+    </tr>
+  </tbody>
+</table></section>
+<section><h3 id="priority_3" data-text="Priority" tabindex="-1">Priority</h3><table class="pricing-table">
+  <colgroup>
+    <col>
+    <col class="free-tier">
+    <col class="paid-tier">
+  </colgroup>
+  <thead>
+    <tr>
+      <th></th>
+      <th scope="col">Free Tier</th>
+      <th scope="col">Paid Tier, per 1M tokens in USD</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Input price</td>
+      <td>Free of charge</td>
+      <td>$0.54 (text / image / video / audio)</td>
+    </tr>
+    <tr>
+      <td>Output price (including thinking tokens)</td>
+      <td>Free of charge</td>
+      <td>$4.50</td>
+    </tr>
+    <tr>
+      <td>Context caching price</td>
+      <td>Not available</td>
+      <td>$0.05<br>$1.00 / 1,000,000 tokens per hour (storage price)</td>
+    </tr>
+    <tr>
+      <td>Grounding with Google Search<sup>*</sup></td>
+      <td>Not available<sup>**</sup></td>
+      <td>5,000 free search requests per month (shared across all Gemini 3 and newer models), then $14 per 1,000 requests.</td>
+    </tr>
+    <tr>
+      <td>Grounding with Google Maps</td>
+      <td>Not available<sup>**</sup></td>
+      <td>5,000 requests per month (free, shared across all Gemini 3 and newer models), then $14 / 1,000 search queries.</td>
+    </tr>
+    <tr>
+      <td>Used to improve our products</td>
+      <td><a href="/gemini-api/terms">Yes</a></td>
+      <td><a href="/gemini-api/terms">No</a></td>
+    </tr>
+  </tbody>
+</table></section>
+<section><h3 id="contributor_2" data-text="Contributor" tabindex="-1">Contributor</h3><aside class="note"><strong>Note:</strong><span> The Gemini API Contributor Tier is offered as a private preview on an
+invite-only basis. Speed and reliability are equivalent to
+<a href="/gemini-api/docs/optimization">Standard Tier inference</a>. Eligible users will
+be invited by email and see a callout in AI Studio.</span></aside>
+<table class="pricing-table">
+  <colgroup>
+    <col>
+    <col class="free-tier">
+    <col class="paid-tier">
+  </colgroup>
+  <thead>
+    <tr>
+      <th></th>
+      <th scope="col">Free Tier</th>
+      <th scope="col">Paid Tier, per 1M tokens in USD</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Input price</td>
+      <td>Free of charge</td>
+      <td>$0.15 (text / image / video / audio)</td>
+    </tr>
+    <tr>
+      <td>Output price (including thinking tokens)</td>
+      <td>Free of charge</td>
+      <td>$1.25</td>
+    </tr>
+    <tr>
+      <td>Context caching price</td>
+      <td>Not available</td>
+      <td>$0.015<br>$1.00 / 1,000,000 tokens per hour (storage price)</td>
+    </tr>
+    <tr>
+      <td>Used to improve our products</td>
+      <td><a href="/gemini-api/terms">Yes</a></td>
+      <td><a href="/gemini-api/docs/logs-policy#contributor-tier">Yes</a></td>
+    </tr>
+  </tbody>
+</table></section>
+</devsite-selector></div>
+<p><sup>*</sup> A customer-submitted request to Gemini may result in one or more
+queries to Google Search. You will be charged for each individual search query
+performed.</p>
+
+<p><sup>**</sup> Can be tested in Google AI Studio.</p>
+
+<p><sup>**</sup> Can be tested in Google AI Studio.</p>
+
+<div class="models-section">
+    <div class="heading-group">
+        <h2 id="gemini-3.1-flash-lite" data-text="Gemini 3.1 Flash-Lite" tabindex="-1">Gemini 3.1 Flash-Lite</h2>
+        <em><a href="/gemini-api/docs/models/gemini-3.1-flash-lite"><code translate="no" dir="ltr">gemini-3.1-flash-lite</code></a></em>
+    
+    </div>
+    <p>
+        <a href="https://aistudio.google.com/prompts/new_chat?model=gemini-3.1-flash-lite" class="button button-primary ais">Try it in Google AI Studio</a>
+    </p>
+</div>
+
+<p>A cost-efficient model, optimized for high-volume agentic tasks,
+translation, and simple data processing.</p>
+<div><devsite-selector data-ds-scope="code-sample">
+<section><h3 id="standard_8" data-text="Standard" tabindex="-1">Standard</h3><table class="pricing-table">
+  <colgroup>
+    <col>
+    <col class="free-tier">
+    <col class="paid-tier">
+  </colgroup>
+  <thead>
+    <tr>
+      <th></th>
+      <th scope="col">Free Tier</th>
+      <th scope="col">Paid Tier, per 1M tokens in USD</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Input price</td>
+      <td>Free of charge</td>
+      <td>$0.25 (text / image / video)<br>$0.50 (audio)</td>
+    </tr>
+    <tr>
+      <td>Output price (including thinking tokens)</td>
+      <td>Free of charge</td>
+      <td>$1.50</td>
+    </tr>
+    <tr>
+      <td>Context caching price</td>
+      <td>Not available</td>
+      <td>$0.025 (text / image / video)<br>$0.05 (audio)<br>$1.00 / 1,000,000 tokens per hour (storage price)</td>
+    </tr>
+    <tr>
+      <td>Grounding with Google Search<sup>*</sup></td>
+      <td>Not available<sup>**</sup></td>
+      <td>5,000 free search requests per month (shared across all Gemini 3 and newer models), then $14 per 1,000 requests.</td>
+    </tr>
+    <tr>
+      <td>Grounding with Google Maps</td>
+      <td>Not available<sup>**</sup></td>
+      <td>5,000 requests per month (free, shared across all Gemini 3 and newer models), then $14 / 1,000 search queries.</td>
+    </tr>
+    <tr>
+      <td>Used to improve our products</td>
+      <td><a href="/gemini-api/terms">Yes</a></td>
+      <td><a href="/gemini-api/terms">No</a></td>
+    </tr>
+  </tbody>
+</table></section>
+<section><h3 id="batch_4" data-text="Batch" tabindex="-1">Batch</h3><table class="pricing-table">
+  <colgroup>
+    <col>
+    <col class="free-tier">
+    <col class="paid-tier">
+  </colgroup>
+  <thead>
+    <tr>
+      <th></th>
+      <th scope="col">Free Tier</th>
+      <th scope="col">Paid Tier, per 1M tokens in USD</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Input price</td>
+      <td>Free of charge</td>
+      <td>$0.125 (text / image / video)<br>$0.25 (audio)</td>
+    </tr>
+    <tr>
+      <td>Output price (including thinking tokens)</td>
+      <td>Free of charge</td>
+      <td>$0.75</td>
+    </tr>
+    <tr>
+      <td>Context caching price</td>
+      <td>Not available</td>
+      <td>$0.0125 (text / image / video)<br>$0.025 (audio)<br>$0.50 / 1,000,000 tokens per hour (storage price)</td>
+    </tr>
+    <tr>
+      <td>Grounding with Google Search<sup>*</sup></td>
+      <td>Not available<sup>**</sup></td>
+      <td>5,000 free search requests per month (shared across all Gemini 3 and newer models), then $14 per 1,000 requests.</td>
+    </tr>
+    <tr>
+      <td>Grounding with Google Maps</td>
+      <td>Not available<sup>**</sup></td>
+      <td>5,000 requests per month (free, shared across all Gemini 3 and newer models), then $14 / 1,000 search queries.</td>
+    </tr>
+    <tr>
+      <td>Used to improve our products</td>
+      <td><a href="/gemini-api/terms">Yes</a></td>
+      <td><a href="/gemini-api/terms">No</a></td>
+    </tr>
+  </tbody>
+</table></section>
+<section><h3 id="flex_4" data-text="Flex" tabindex="-1">Flex</h3><table class="pricing-table">
+  <colgroup>
+    <col>
+    <col class="free-tier">
+    <col class="paid-tier">
+  </colgroup>
+  <thead>
+    <tr>
+      <th></th>
+      <th scope="col">Free Tier</th>
+      <th scope="col">Paid Tier, per 1M tokens in USD</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Input price</td>
+      <td>Free of charge</td>
+      <td>$0.125 (text / image / video)<br>$0.25 (audio)</td>
+    </tr>
+    <tr>
+      <td>Output price (including thinking tokens)</td>
+      <td>Free of charge</td>
+      <td>$0.75</td>
+    </tr>
+    <tr>
+      <td>Context caching price</td>
+      <td>Not available</td>
+      <td>$0.0125 (text / image / video)<br>$0.025 (audio)<br>$0.50 / 1,000,000 tokens per hour (storage price)</td>
+    </tr>
+    <tr>
+      <td>Grounding with Google Search<sup>*</sup></td>
+      <td>Not available<sup>**</sup></td>
+      <td>5,000 free search requests per month (shared across all Gemini 3 and newer models), then $14 per 1,000 requests.</td>
+    </tr>
+    <tr>
+      <td>Grounding with Google Maps</td>
+      <td>Not available<sup>**</sup></td>
+      <td>5,000 requests per month (free, shared across all Gemini 3 and newer models), then $14 / 1,000 search queries.</td>
+    </tr>
+    <tr>
+      <td>Used to improve our products</td>
+      <td><a href="/gemini-api/terms">Yes</a></td>
+      <td><a href="/gemini-api/terms">No</a></td>
+    </tr>
+  </tbody>
+</table></section>
+<section><h3 id="priority_4" data-text="Priority" tabindex="-1">Priority</h3><table class="pricing-table">
+  <colgroup>
+    <col>
+    <col class="free-tier">
+    <col class="paid-tier">
+  </colgroup>
+  <thead>
+    <tr>
+      <th></th>
+      <th scope="col">Free Tier</th>
+      <th scope="col">Paid Tier, per 1M tokens in USD</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Input price</td>
+      <td>Free of charge</td>
+      <td>$0.45 (text / image / video)<br>$0.90 (audio)</td>
+    </tr>
+    <tr>
+      <td>Output price (including thinking tokens)</td>
+      <td>Free of charge</td>
+      <td>$2.70</td>
+    </tr>
+    <tr>
+      <td>Context caching price</td>
+      <td>Not available</td>
+      <td>$0.045 (text / image / video)<br>$0.09 (audio)<br>$1.80 / 1,000,000 tokens per hour (storage price)</td>
+    </tr>
+    <tr>
+      <td>Grounding with Google Search<sup>*</sup></td>
+      <td>Not available<sup>**</sup></td>
+      <td>5,000 free search requests per month (shared across all Gemini 3 and newer models), then $14 per 1,000 requests.</td>
+    </tr>
+    <tr>
+      <td>Grounding with Google Maps</td>
+      <td>Not available<sup>**</sup></td>
+      <td>5,000 requests per month (free, shared across all Gemini 3 and newer models), then $14 / 1,000 search queries.</td>
+    </tr>
+    <tr>
+      <td>Used to improve our products</td>
+      <td><a href="/gemini-api/terms">Yes</a></td>
+      <td><a href="/gemini-api/terms">No</a></td>
+    </tr>
+  </tbody>
+</table></section>
+</devsite-selector></div>
+<p><sup>*</sup> A customer-submitted request to Gemini may result in one or more
+queries to Google Search. You will be charged for each individual search query
+performed.</p>
+
+<p><sup>**</sup> Can be tested in Google AI Studio.</p>
+
+<div class="models-section">
+    <div class="heading-group">
+        <h2 id="gemini-3.1-pro-preview" data-text="Gemini 3.1 Pro Preview" tabindex="-1">Gemini 3.1 Pro Preview</h2>
+        <em><a href="/gemini-api/docs/models/gemini-3.1-pro-preview"><code translate="no" dir="ltr">gemini-3.1-pro-preview</code></a> and <a href="/gemini-api/docs/models/gemini-3.1-pro-preview#gemini-31-pro-preview-customtools"><code translate="no" dir="ltr">gemini-3.1-pro-preview-customtools</code></a></em>
+    
+    </div>
+    <p>
+        <a href="https://aistudio.google.com/prompts/new_chat?model=gemini-3.1-pro-preview" class="button button-primary ais">Try it in Google AI Studio</a>
+    </p>
+</div>
+
+<p>Our 3rd generation Pro model, built for multimodal understanding,
+agentic capabilities, and vibe-coding.</p>
+<div><devsite-selector data-ds-scope="code-sample">
+<section><h3 id="standard_10" data-text="Standard" tabindex="-1">Standard</h3><table class="pricing-table">
+  <colgroup>
+    <col>
+    <col class="free-tier">
+    <col class="paid-tier">
+  </colgroup>
+  <thead>
+    <tr>
+      <th></th>
+      <th scope="col">Free Tier</th>
+      <th scope="col">Paid Tier, per 1M tokens in USD</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Input price</td>
+      <td>Not available</td>
+      <td>$2.00, prompts <= 200k tokens<br>$4.00, prompts > 200k tokens</td>
+    </tr>
+    <tr>
+      <td>Output price (including thinking tokens)</td>
+      <td>Not available</td>
+      <td>$12.00, prompts <= 200k tokens<br>$18.00, prompts > 200k</td>
+    </tr>
+    <tr>
+      <td>Context caching price</td>
+      <td>Not available</td>
+      <td>$0.20, prompts <= 200k tokens<br>$0.40, prompts > 200k<br>$4.50 / 1,000,000 tokens per hour (storage price)</td>
+    </tr>
+    <tr>
+      <td>Grounding with Google Search<sup>*</sup></td>
+      <td>Not available<sup>**</sup></td>
+      <td>5,000 free search requests per month (shared across all Gemini 3 and newer models), then $14 per 1,000 requests.</td>
+    </tr>
+    <tr>
+      <td>Grounding with Google Maps</td>
+      <td>Not available<sup>**</sup></td>
+      <td>5,000 requests per month (free, shared across all Gemini 3 and newer models), then $14 / 1,000 search queries.</td>
+    </tr>
+    <tr>
+      <td>Used to improve our products</td>
+      <td>N/A</td>
+      <td><a href="/gemini-api/terms">No</a></td>
+    </tr>
+  </tbody>
+</table></section>
+<section><h3 id="batch_5" data-text="Batch" tabindex="-1">Batch</h3><table class="pricing-table">
+  <colgroup>
+    <col>
+    <col class="free-tier">
+    <col class="paid-tier">
+  </colgroup>
+  <thead>
+    <tr>
+      <th></th>
+      <th scope="col">Free Tier</th>
+      <th scope="col">Paid Tier, per 1M tokens in USD</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Input price</td>
+      <td>Not available</td>
+      <td>$1.00, prompts <= 200k tokens<br>$2.00, prompts > 200k tokens</td>
+    </tr>
+    <tr>
+      <td>Output price (including thinking tokens)</td>
+      <td>Not available</td>
+      <td>$6.00, prompts <= 200k tokens<br>$9.00, prompts > 200k</td>
+    </tr>
+    <tr>
+      <td>Context caching price</td>
+      <td>Not available</td>
+      <td><em>Same as Standard</em><br>
+        $0.20, prompts <= 200k tokens<br>$0.40, prompts > 200k<br>$4.50 / 1,000,000 tokens per hour (storage price)
+      </td>
+    </tr>
+    <tr>
+      <td>Grounding with Google Search<sup>*</sup></td>
+      <td>Not available<sup>**</sup></td>
+      <td>5,000 free search requests per month (shared across all Gemini 3 and newer models), then $14 per 1,000 requests.</td>
+    </tr>
+    <tr>
+      <td>Grounding with Google Maps</td>
+      <td>Not available<sup>**</sup></td>
+      <td>5,000 requests per month (free, shared across all Gemini 3 and newer models), then $14 / 1,000 search queries.</td>
+    </tr>
+    <tr>
+      <td>Used to improve our products</td>
+      <td><a href="/gemini-api/terms">Yes</a></td>
+      <td><a href="/gemini-api/terms">No</a></td>
+    </tr>
+  </tbody>
+</table></section>
+<section><h3 id="flex_5" data-text="Flex" tabindex="-1">Flex</h3><table class="pricing-table">
+  <colgroup>
+    <col>
+    <col class="free-tier">
+    <col class="paid-tier">
+  </colgroup>
+  <thead>
+    <tr>
+      <th></th>
+      <th scope="col">Free Tier</th>
+      <th scope="col">Paid Tier, per 1M tokens in USD</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Input price</td>
+      <td>Not available</td>
+      <td>$1.00, prompts <= 200k tokens<br>$2.00, prompts > 200k tokens</td>
+    </tr>
+    <tr>
+      <td>Output price (including thinking tokens)</td>
+      <td>Not available</td>
+      <td>$6.00, prompts <= 200k tokens<br>$9.00, prompts > 200k</td>
+    </tr>
+    <tr>
+      <td>Context caching price</td>
+      <td>Not available</td>
+      <td><em>Same as Standard</em><br>
+        $0.20, prompts <= 200k tokens<br>$0.40, prompts > 200k<br>$4.50 / 1,000,000 tokens per hour (storage price)
+      </td>
+    </tr>
+    <tr>
+      <td>Grounding with Google Search<sup>*</sup></td>
+      <td>Not available<sup>**</sup></td>
+      <td>5,000 free search requests per month (shared across all Gemini 3 and newer models), then $14 per 1,000 requests.</td>
+    </tr>
+    <tr>
+      <td>Grounding with Google Maps</td>
+      <td>Not available<sup>**</sup></td>
+      <td>5,000 requests per month (free, shared across all Gemini 3 and newer models), then $14 / 1,000 search queries.</td>
+    </tr>
+    <tr>
+      <td>Used to improve our products</td>
+      <td><a href="/gemini-api/terms">Yes</a></td>
+      <td><a href="/gemini-api/terms">No</a></td>
+    </tr>
+  </tbody>
+</table></section>
+<section><h3 id="priority_5" data-text="Priority" tabindex="-1">Priority</h3><table class="pricing-table">
+  <colgroup>
+    <col>
+    <col class="free-tier">
+    <col class="paid-tier">
+  </colgroup>
+  <thead>
+    <tr>
+      <th></th>
+      <th scope="col">Free Tier</th>
+      <th scope="col">Paid Tier, per 1M tokens in USD</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Input price</td>
+      <td>Not available</td>
+      <td>$3.60, prompts <= 200k tokens<br>$7.20, prompts > 200k tokens</td>
+    </tr>
+    <tr>
+      <td>Output price (including thinking tokens)</td>
+      <td>Not available</td>
+      <td>$21.60, prompts <= 200k tokens<br>$32.40, prompts > 200k</td>
+    </tr>
+    <tr>
+      <td>Context caching price</td>
+      <td>Not available</td>
+      <td>$0.36, prompts <= 200k tokens<br>$0.72, prompts > 200k<br>$8.10 / 1,000,000 tokens per hour (storage price)</td>
+    </tr>
+    <tr>
+      <td>Grounding with Google Search<sup>*</sup></td>
+      <td>Not available<sup>**</sup></td>
+      <td>5,000 free search requests per month (shared across all Gemini 3 and newer models), then $14 per 1,000 requests.</td>
+    </tr>
+    <tr>
+      <td>Grounding with Google Maps</td>
+      <td>Not available<sup>**</sup></td>
+      <td>5,000 requests per month (free, shared across all Gemini 3 and newer models), then $14 / 1,000 search queries.</td>
+    </tr>
+    <tr>
+      <td>Used to improve our products</td>
+      <td><a href="/gemini-api/terms">Yes</a></td>
+      <td><a href="/gemini-api/terms">No</a></td>
+    </tr>
+  </tbody>
+</table></section>
+<section><h3 id="contributor_3" data-text="Contributor" tabindex="-1">Contributor</h3><aside class="note"><strong>Note:</strong><span> The Gemini API Contributor Tier is offered as a private preview on an
+invite-only basis. Speed and reliability are equivalent to
+<a href="/gemini-api/docs/optimization">Standard Tier inference</a>. Eligible users will
+be invited by email and see a callout in AI Studio.</span></aside>
+<table class="pricing-table">
+  <colgroup>
+    <col>
+    <col class="free-tier">
+    <col class="paid-tier">
+  </colgroup>
+  <thead>
+    <tr>
+      <th></th>
+      <th scope="col">Free Tier</th>
+      <th scope="col">Paid Tier, per 1M tokens in USD</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Input price</td>
+      <td>Not available</td>
+      <td>$1.00, prompts <= 200k tokens<br>$2.00, prompts > 200k tokens</td>
+    </tr>
+    <tr>
+      <td>Output price (including thinking tokens)</td>
+      <td>Not available</td>
+      <td>$6.00, prompts <= 200k tokens<br>$9.00, prompts > 200k tokens</td>
+    </tr>
+    <tr>
+      <td>Context caching price</td>
+      <td>Not available</td>
+      <td>$0.10, prompts <= 200k tokens<br>$0.20, prompts > 200k tokens<br>$4.50 / 1,000,000 tokens per hour (storage price)</td>
+    </tr>
+    <tr>
+      <td>Used to improve our products</td>
+      <td>N/A</td>
+      <td><a href="/gemini-api/docs/logs-policy#contributor-tier">Yes</a></td>
+    </tr>
+  </tbody>
+</table></section>
+</devsite-selector></div>
+<p><sup>*</sup> A customer-submitted request to Gemini may result in one or more
+queries to Google Search. You will be charged for each individual search query
+performed.</p>
+
+<p><sup>**</sup> Can be tested in Google AI Studio.</p>
+
+<div class="models-section">
+    <div class="heading-group">
+        <h2 id="gemini-nano-banana-2.1" data-text="Gemini Nano Banana 2.1 🍌" tabindex="-1">Gemini Nano Banana 2.1 🍌</h2>
+        <em><a href="/gemini-api/docs/models/gemini-nano-banana-2.1"><code translate="no" dir="ltr">gemini-nano-banana-2.1</code></a></em>
+    </div>
+    <p>
+        <a href="https://aistudio.google.com/prompts/new_chat?model=gemini-nano-banana-2.1" class="button button-primary ais">Try it in Google AI Studio</a>
+    </p>
+</div>
+
+<p>An update to Nano Banana 2 (Gemini 3.1 Flash Image), built for high-efficiency
+image generation and conversational editing with improved visual quality,
+multi-turn character consistency, accurate text rendering, and search-grounded
+generation across 1K, 2K, and 4K resolutions.</p>
+<div><devsite-selector data-ds-scope="code-sample">
+<section><h3 id="standard_11" data-text="Standard" tabindex="-1">Standard</h3><table class="pricing-table">
+  <colgroup>
+    <col>
+    <col class="free-tier">
+    <col class="paid-tier">
+  </colgroup>
+  <thead>
+    <tr>
+      <th></th>
+      <th scope="col">Free Tier</th>
+      <th scope="col">Paid Tier, per 1M tokens in USD</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Input price</td>
+      <td>Not available</td>
+      <td>$1.50 (text/image/video)</td>
+    </tr>
+    <tr>
+      <td>Output price</td>
+      <td>Not available</td>
+      <td>$7.50 (text and thinking)<br>
+        $30.00 (images)<br>
+        Equivalent to $0.0336 per 1K image<sup>*</sup>,<br>
+        $0.0504 per 2K image<sup>*</sup>,<br>
+        and $0.113 per 4K image<sup>*</sup>.
+      </td>
+    </tr>
+    <tr>
+      <td>Grounding with Google Web and Image Search<sup>**</sup></td>
+      <td>Not available</td>
+      <td>5,000 free search requests per month (shared across all Gemini 3 and newer models), then $14 per 1,000 requests for text and image-based grounding.</td>
+    </tr>
+    <tr>
+      <td>Used to improve our products</td>
+      <td><a href="/gemini-api/terms">Yes</a></td>
+      <td><a href="/gemini-api/terms">No</a></td>
+    </tr>
+  </tbody>
+</table></section>
+<section><h3 id="batch_6" data-text="Batch" tabindex="-1">Batch</h3><table class="pricing-table">
+  <colgroup>
+    <col>
+    <col class="free-tier">
+    <col class="paid-tier">
+  </colgroup>
+  <thead>
+    <tr>
+      <th></th>
+      <th scope="col">Free Tier</th>
+      <th scope="col">Paid Tier, per 1M tokens in USD</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Input price</td>
+      <td>Not available</td>
+      <td>$0.75 (text/image/video)</td>
+    </tr>
+    <tr>
+      <td>Output price</td>
+      <td>Not available</td>
+      <td>$3.75 (text and thinking)<br>
+        $15.00 (images)<br>
+        Equivalent to $0.0168 per 1K image<sup>*</sup>,<br>
+        $0.0252 per 2K image<sup>*</sup>,<br>
+        and $0.0567 per 4K image<sup>*</sup>.
+      </td>
+    </tr>
+    <tr>
+      <td>Used to improve our products</td>
+      <td><a href="/gemini-api/terms">Yes</a></td>
+      <td><a href="/gemini-api/terms">No</a></td>
+    </tr>
+  </tbody>
+</table></section>
+</devsite-selector></div>
+<p><sup>*</sup> Image output is priced at $30 per 1,000,000 tokens (Standard) and
+$15 per 1,000,000 tokens (Batch). Output images at 1K (1024x1024px) consume 1120
+tokens and are equivalent to $0.0336 per image. Output images at 2K
+(2048x2048px) consume 1680 tokens and are equivalent to $0.0504 per image.
+Output images at 4K (4096x4096px) consume 3780 tokens and are equivalent to
+$0.113 per image.</p>
+
+<p><sup>**</sup> A customer-submitted request to Gemini may result in one or more
+queries to Google Search. You will be charged for each individual search query
+performed. Retrieved context (text or images) provided by Grounding with Google
+Search is not charged as input tokens.</p>
+
+<div class="models-section">
+    <div class="heading-group">
+        <h2 id="gemini-3.1-flash-image" data-text="Gemini 3.1 Flash Image (Nano Banana 2) 🍌" tabindex="-1">Gemini 3.1 Flash Image (Nano Banana 2) 🍌</h2>
+        <em><a href="/gemini-api/docs/models/gemini-3.1-flash-image"><code translate="no" dir="ltr">gemini-3.1-flash-image</code></a></em>
+    
+    </div>
+    <p>
+        <a href="https://aistudio.google.com/prompts/new_chat?model=gemini-3.1-flash-image" class="button button-primary ais">Try it in Google AI Studio</a>
+    </p>
+</div>
+
+<p>Designed for speed and efficiency, the Gemini 3.1 Flash Image generation model is
+effective for quick, interactive responses and high throughput.</p>
+<div><devsite-selector data-ds-scope="code-sample">
+<section><h3 id="standard_12" data-text="Standard" tabindex="-1">Standard</h3><table class="pricing-table">
+  <colgroup>
+    <col>
+    <col class="free-tier">
+    <col class="paid-tier">
+  </colgroup>
+  <thead>
+    <tr>
+      <th></th>
+      <th scope="col">Free Tier</th>
+      <th scope="col">Paid Tier, per 1M tokens in USD</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Input price</td>
+      <td>Not available</td>
+      <td>$0.50 (text/image)</td>
+    </tr>
+    <tr>
+      <td>Output price</td>
+      <td>Not available</td>
+      <td>$3 (text and thinking)<br>
+        $60.00 (images)<br>
+        Equivalent to $0.045 per 0.5K image<sup>*</sup><br>
+        $0.067 per 1K image<sup>*</sup>,
+        $0.101 per 2K image<sup>*</sup>,
+        and $0.151 per 4K image<sup>*</sup>.
+      </td>
+    </tr>
+    <tr>
+      <td>Grounding with Google Web and Image Search<sup>**</sup></td>
+      <td>Not available<sup>***</sup></td>
+      <td>5,000 free search requests per month (shared across all Gemini 3 and newer models), then $14 per 1,000 requests for text and image-based grounding.</td>
+    </tr>
+    <tr>
+      <td>Used to improve our products</td>
+      <td><a href="/gemini-api/terms">Yes</a></td>
+      <td><a href="/gemini-api/terms">No</a></td>
+    </tr>
+  </tbody>
+</table></section>
+<section><h3 id="batch_7" data-text="Batch" tabindex="-1">Batch</h3><table class="pricing-table">
+  <colgroup>
+    <col>
+    <col class="free-tier">
+    <col class="paid-tier">
+  </colgroup>
+  <thead>
+    <tr>
+      <th></th>
+      <th scope="col">Free Tier</th>
+      <th scope="col">Paid Tier, per 1M tokens in USD</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Input price</td>
+      <td>Not available</td>
+      <td>$0.25 (text, image)</td>
+    </tr>
+    <tr>
+      <td>Output price</td>
+      <td>Not available</td>
+      <td>$1.50 (text and thinking)<br>
+        $30.00 (images)<br>
+        Equivalent to $0.022 per 0.5K image<sup>*</sup><br>
+        $0.034 per 1K image<sup>*</sup>,<br>
+        $0.050 per 2K image<sup>*</sup>,<br>
+        and $0.076 per 4K image<sup>*</sup>.
+      </td>
+    </tr>
+    <tr>
+      <td>Used to improve our products</td>
+      <td><a href="/gemini-api/terms">Yes</a></td>
+      <td><a href="/gemini-api/terms">No</a></td>
+    </tr>
+  </tbody>
+</table></section>
+</devsite-selector></div>
+<p><sup>*</sup> Image output is priced at $60 per 1,000,000 tokens.
+Output images at 0.5K (512px) consume 747 tokens and are equivalent to $0.045 per
+image. Output images at 1K (1024x1024px) consume 1120 tokens and are equivalent
+to $0.067 per image. Output images at 2K (2048x2048px) consume 1680 tokens and
+are equivalent to $0.101 per image. Output images at 4K (4096x4096px) consume
+2520 tokens and are equivalent to $0.151 per image.</p>
+
+<p><sup>**</sup> A customer-submitted request to Gemini may result in one or more
+queries to Google Search. You will be charged for each individual search query
+performed. Retrieved context (text or images) provided by Grounding with Google
+Search is not charged as input tokens.</p>
+
+<p><sup>***</sup> Can be tested in Google AI Studio.</p>
+
+<div class="models-section">
+    <div class="heading-group">
+        <h2 id="gemini-3-flash-preview" data-text="Gemini 3 Flash Preview" tabindex="-1">Gemini 3 Flash Preview</h2>
+        <em><a href="/gemini-api/docs/models/gemini-3-flash-preview"><code translate="no" dir="ltr">gemini-3-flash-preview</code></a></em>
+    
+    </div>
+    <p>
+        <a href="https://aistudio.google.com?model=gemini-3-flash-preview" class="button button-primary ais">Try it in Google AI Studio</a>
+    </p>
+</div>
+
+<p>Our legacy Flash model, providing baseline speed and intelligence.</p>
+<div><devsite-selector data-ds-scope="code-sample">
+<section><h3 id="standard_17" data-text="Standard" tabindex="-1">Standard</h3><table class="pricing-table">
+  <colgroup>
+    <col>
+    <col class="free-tier">
+    <col class="paid-tier">
+  </colgroup>
+  <thead>
+    <tr>
+      <th></th>
+      <th scope="col">Free Tier</th>
+      <th scope="col">Paid Tier, per 1M tokens in USD</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Input price</td>
+      <td>Free of charge</td>
+      <td>$0.50 (text / image / video)<br>$1.00 (audio)</td>
+    </tr>
+    <tr>
+      <td>Output price (including thinking tokens)</td>
+      <td>Free of charge</td>
+      <td>$3.00</td>
+    </tr>
+    <tr>
+      <td>Context caching price</td>
+      <td>Free of charge</td>
+      <td>$0.05 (text / image / video)<br>$0.10 (audio)<br>$1.00 / 1,000,000 tokens per hour (storage price)</td>
+    </tr>
+    <tr>
+      <td>Grounding with Google Search<sup>*</sup></td>
+      <td>Not available<sup>**</sup></td>
+      <td>5,000 free search requests per month (shared across all Gemini 3 and newer models), then $14 per 1,000 requests.</td>
+    </tr>
+    <tr>
+      <td>Grounding with Google Maps</td>
+      <td>Not available<sup>**</sup></td>
+      <td>5,000 requests per month (free, shared across all Gemini 3 and newer models), then $14 / 1,000 search queries.</td>
+    </tr>
+    <tr>
+      <td>Used to improve our products</td>
+      <td><a href="/gemini-api/terms">Yes</a></td>
+      <td><a href="/gemini-api/terms">No</a></td>
+    </tr>
+  </tbody>
+</table></section>
+<section><h3 id="batch_12" data-text="Batch" tabindex="-1">Batch</h3><table class="pricing-table">
+  <colgroup>
+    <col>
+    <col class="free-tier">
+    <col class="paid-tier">
+  </colgroup>
+  <thead>
+    <tr>
+      <th></th>
+      <th scope="col">Free Tier</th>
+      <th scope="col">Paid Tier, per 1M tokens in USD</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Input price</td>
+      <td>Not available</td>
+      <td>$0.25 (text / image / video)<br>$0.50 (audio)</td>
+    </tr>
+    <tr>
+      <td>Output price (including thinking tokens)</td>
+      <td>Not available</td>
+      <td>$1.50</td>
+    </tr>
+    <tr>
+      <td>Context caching price</td>
+      <td>Not available</td>
+      <td><em>Same as Standard</em><br>
+        $0.05 (text / image / video)<br>
+        $0.10 (audio)<br>
+        $1.00 / 1,000,000 tokens per hour (storage price)
+      </td>
+    </tr>
+    <tr>
+      <td>Grounding with Google Search<sup>*</sup></td>
+      <td>Not available<sup>**</sup></td>
+      <td>5,000 free search requests per month (shared across all Gemini 3 and newer models), then $14 per 1,000 requests.</td>
+    </tr>
+    <tr>
+      <td>Grounding with Google Maps</td>
+      <td>Not available<sup>**</sup></td>
+      <td>5,000 requests per month (free, shared across all Gemini 3 and newer models), then $14 / 1,000 search queries.</td>
+    </tr>
+    <tr>
+      <td>Used to improve our products</td>
+      <td><a href="/gemini-api/terms">Yes</a></td>
+      <td><a href="/gemini-api/terms">No</a></td>
+    </tr>
+  </tbody>
+</table></section>
+<section><h3 id="flex_8" data-text="Flex" tabindex="-1">Flex</h3><table class="pricing-table">
+  <colgroup>
+    <col>
+    <col class="free-tier">
+    <col class="paid-tier">
+  </colgroup>
+  <thead>
+    <tr>
+      <th></th>
+      <th scope="col">Free Tier</th>
+      <th scope="col">Paid Tier, per 1M tokens in USD</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Input price</td>
+      <td>Not available</td>
+      <td>$0.25 (text / image / video)<br>$0.50 (audio)</td>
+    </tr>
+    <tr>
+      <td>Output price (including thinking tokens)</td>
+      <td>Not available</td>
+      <td>$1.50</td>
+    </tr>
+    <tr>
+      <td>Context caching price</td>
+      <td>Not available</td>
+      <td><em>Same as Standard</em><br>
+        $0.05 (text / image / video)<br>
+        $0.10 (audio)<br>
+        $1.00 / 1,000,000 tokens per hour (storage price)
+      </td>
+    </tr>
+    <tr>
+      <td>Grounding with Google Search<sup>*</sup></td>
+      <td>Not available<sup>**</sup></td>
+      <td>5,000 free search requests per month (shared across all Gemini 3 and newer models), then $14 per 1,000 requests.</td>
+    </tr>
+    <tr>
+      <td>Grounding with Google Maps</td>
+      <td>Not available<sup>**</sup></td>
+      <td>5,000 requests per month (free, shared across all Gemini 3 and newer models), then $14 / 1,000 search queries.</td>
+    </tr>
+    <tr>
+      <td>Used to improve our products</td>
+      <td><a href="/gemini-api/terms">Yes</a></td>
+      <td><a href="/gemini-api/terms">No</a></td>
+    </tr>
+  </tbody>
+</table></section>
+<section><h3 id="priority_8" data-text="Priority" tabindex="-1">Priority</h3><table class="pricing-table">
+  <colgroup>
+    <col>
+    <col class="free-tier">
+    <col class="paid-tier">
+  </colgroup>
+  <thead>
+    <tr>
+      <th></th>
+      <th scope="col">Free Tier</th>
+      <th scope="col">Paid Tier, per 1M tokens in USD</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Input price</td>
+      <td>Free of charge</td>
+      <td>$0.90 (text / image / video)<br>$1.80 (audio)</td>
+    </tr>
+    <tr>
+      <td>Output price (including thinking tokens)</td>
+      <td>Free of charge</td>
+      <td>$5.40</td>
+    </tr>
+    <tr>
+      <td>Context caching price</td>
+      <td>Free of charge</td>
+      <td>$0.09 (text / image / video)<br>$0.18 (audio)<br>$1.80 / 1,000,000 tokens per hour (storage price)</td>
+    </tr>
+    <tr>
+      <td>Grounding with Google Search<sup>*</sup></td>
+      <td>Not available<sup>**</sup></td>
+      <td>5,000 free search requests per month (shared across all Gemini 3 and newer models), then $14 per 1,000 requests.</td>
+    </tr>
+    <tr>
+      <td>Grounding with Google Maps</td>
+      <td>Not available<sup>**</sup></td>
+      <td>5,000 requests per month (free, shared across all Gemini 3 and newer models), then $14 / 1,000 search queries.</td>
+    </tr>
+    <tr>
+      <td>Used to improve our products</td>
+      <td><a href="/gemini-api/terms">Yes</a></td>
+      <td><a href="/gemini-api/terms">No</a></td>
+    </tr>
+  </tbody>
+</table></section>
+</devsite-selector></div>
+<p><sup>*</sup> A customer-submitted request to Gemini may result in one or more
+queries to Google Search. You will be charged for each individual search query
+performed.</p>
+
+<p><sup>**</sup> Can be tested in Google AI Studio.</p>
+
+<div class="models-section">
+    <div class="heading-group">
+        <h2 id="gemini-3-pro-image" data-text="Gemini 3 Pro Image (Nano Banana Pro) 🍌" tabindex="-1">Gemini 3 Pro Image (Nano Banana Pro) 🍌</h2>
+        <em><a href="/gemini-api/docs/models/gemini-3-pro-image"><code translate="no" dir="ltr">gemini-3-pro-image</code></a></em>
+    
+    </div>
+    <p>
+        <a href="https://aistudio.google.com/prompts/new_chat?model=gemini-3-pro-image" class="button button-primary ais">Try it in Google AI Studio</a>
+    </p>
+</div>
+
+<p>Our native image generation model, optimized for speed, flexibility, and
+contextual understanding. <strong>Text input and output</strong> is priced the same as
+<a href="#gemini-3.1-pro-preview">Gemini 3.1 Pro</a>.</p>
+<div><devsite-selector data-ds-scope="code-sample">
+<section><h3 id="standard_18" data-text="Standard" tabindex="-1">Standard</h3><table class="pricing-table">
+  <colgroup>
+    <col>
+    <col class="free-tier">
+    <col class="paid-tier">
+  </colgroup>
+  <thead>
+    <tr>
+      <th></th>
+      <th scope="col">Free Tier</th>
+      <th scope="col">Paid Tier, per 1M tokens in USD</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Input price</td>
+      <td>Not available</td>
+      <td>$2.00 (text/image),<br>
+      equivalent to $0.0011 per image<sup>*</sup></td>
+    </tr>
+    <tr>
+      <td>Output price</td>
+      <td>Not available</td>
+      <td>$12.00 (text and thinking)<br>
+        $120.00 (images)<br>
+        Equivalent to $0.134 per 1K/2K image<sup>**</sup><br>
+        and $0.24 per 4K image<sup>**</sup>
+      </td>
+    </tr>
+    <tr>
+      <td>Grounding with Google Search<sup>***</sup></td>
+      <td>Not available<sup>****</sup></td>
+      <td>5,000 free search requests per month (shared across all Gemini 3 and newer models), then $14 per 1,000 requests.</td>
+    </tr>
+    <tr>
+      <td>Used to improve our products</td>
+      <td>Not available</td>
+      <td><a href="/gemini-api/terms">No</a></td>
+    </tr>
+  </tbody>
+</table></section>
+<section><h3 id="batch_13" data-text="Batch" tabindex="-1">Batch</h3><table class="pricing-table">
+  <colgroup>
+    <col>
+    <col class="free-tier">
+    <col class="paid-tier">
+  </colgroup>
+  <thead>
+    <tr>
+      <th></th>
+      <th scope="col">Free Tier</th>
+      <th scope="col">Paid Tier, per 1M tokens in USD</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Input price</td>
+      <td>Not available</td>
+      <td>$1.00 (text),<br>$0.0006 (image)<sup>*</sup></td>
+    </tr>
+    <tr>
+      <td>Output price</td>
+      <td>Not available</td>
+      <td>$6.00 (text and thinking)<br>
+        $0.067 per 1K/2K image<sup>**</sup><br>
+        $0.12 per 4K image<sup>**</sup>
+      </td>
+    </tr>
+    <tr>
+      <td>Used to improve our products</td>
+      <td>Not available</td>
+      <td><a href="/gemini-api/terms">No</a></td>
+    </tr>
+  </tbody>
+</table></section>
+<section><h3 id="flex_9" data-text="Flex" tabindex="-1">Flex</h3><table class="pricing-table">
+  <colgroup>
+    <col>
+    <col class="free-tier">
+    <col class="paid-tier">
+  </colgroup>
+  <thead>
+    <tr>
+      <th></th>
+      <th scope="col">Free Tier</th>
+      <th scope="col">Paid Tier, per 1M tokens in USD</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Input price</td>
+      <td>Not available</td>
+      <td>$1.00 (text),<br>$0.0006 (image)<sup>*</sup></td>
+    </tr>
+    <tr>
+      <td>Output price</td>
+      <td>Not available</td>
+      <td>$6.00 (text and thinking)<br>
+        $0.067 per 1K/2K image<sup>**</sup><br>
+        $0.12 per 4K image<sup>**</sup>
+      </td>
+    </tr>
+    <tr>
+      <td>Used to improve our products</td>
+      <td>Not available</td>
+      <td><a href="/gemini-api/terms">No</a></td>
+    </tr>
+  </tbody>
+</table></section>
+<section><h3 id="priority_9" data-text="Priority" tabindex="-1">Priority</h3><table class="pricing-table">
+  <colgroup>
+    <col>
+    <col class="free-tier">
+    <col class="paid-tier">
+  </colgroup>
+  <thead>
+    <tr>
+      <th></th>
+      <th scope="col">Free Tier</th>
+      <th scope="col">Paid Tier, per 1M tokens in USD</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Input price</td>
+      <td>Not available</td>
+      <td>$3.60 (text/image)</td>
+    </tr>
+    <tr>
+      <td>Output price</td>
+      <td>Not available</td>
+      <td>$21.60 (text and thinking)<br>
+        $216.00 (images)
+      </td>
+    </tr>
+    <tr>
+      <td>Grounding with Google Search<sup>***</sup></td>
+      <td>Not available<sup>****</sup></td>
+      <td>5,000 free search requests per month (shared across all Gemini 3 and newer models), then $14 per 1,000 requests.</td>
+    </tr>
+    <tr>
+      <td>Used to improve our products</td>
+      <td>Not available</td>
+      <td><a href="/gemini-api/terms">No</a></td>
+    </tr>
+  </tbody>
+</table></section>
+</devsite-selector></div>
+<p><sup>*</sup> Image input is set at 560 tokens or $0.0011 per image.</p>
+
+<p><sup>**</sup> Image output is priced at $120 per 1,000,000 tokens. Output
+images from 1024x1024px (1K) and up to 2048x2048px (2K) consume 1120 tokens and
+are equivalent to $0.134 per image. Output images up to 4096x4096px (4K) consume
+2000 tokens and are equivalent to $0.24 per image.</p>
+
+<p><sup>***</sup> A customer-submitted request to Gemini may result in one or more
+queries to Google Search. You will be charged for each individual search query
+performed.</p>
+
+<p><sup>****</sup> Can be tested in Google AI Studio.</p>
+
+<div class="models-section">
+    <div class="heading-group">
+        <h2 id="gemini-2.5-pro" data-text="Gemini 2.5 Pro" tabindex="-1">Gemini 2.5 Pro</h2>
+        <em><a href="/gemini-api/docs/models/gemini-2.5-pro"><code translate="no" dir="ltr">gemini-2.5-pro</code></a></em>
+    
+    </div>
+    <p>
+        <a href="https://aistudio.google.com?model=gemini-2.5-pro" class="button button-primary ais">Try it in Google AI Studio</a>
+    </p>
+</div>
+
+<p>A Pro model which excels at coding and complex reasoning tasks.</p>
+<div><devsite-selector data-ds-scope="code-sample">
+<section><h3 id="standard_19" data-text="Standard" tabindex="-1">Standard</h3><table class="pricing-table">
+  <colgroup>
+    <col>
+    <col class="free-tier">
+    <col class="paid-tier">
+  </colgroup>
+  <thead>
+    <tr>
+      <th></th>
+      <th scope="col">Free Tier</th>
+      <th scope="col">Paid Tier, per 1M tokens in USD</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Input price</td>
+      <td>Free of charge</td>
+      <td>$1.25, prompts <= 200k tokens<br>$2.50, prompts > 200k tokens</td>
+    </tr>
+    <tr>
+      <td>Output price (including thinking tokens)</td>
+      <td>Free of charge</td>
+      <td>$10.00, prompts <= 200k tokens<br>$15.00, prompts > 200k</td>
+    </tr>
+    <tr>
+      <td>Context caching price</td>
+      <td>Not available</td>
+      <td>$0.125, prompts <= 200k tokens<br>$0.25, prompts > 200k<br>$4.50 / 1,000,000 tokens per hour (storage price)</td>
+    </tr>
+    <tr>
+      <td>Grounding with Google Search</td>
+      <td>Not available</td>
+      <td>1,500 RPD (free), then $35 / 1,000 grounded prompts</td>
+    </tr>
+    <tr>
+      <td>Grounding with Google Maps</td>
+      <td>Not available</td>
+      <td>10,000 RPD (free), then $25 / 1,000 grounded prompts</td>
+    </tr>
+    <tr>
+      <td>Used to improve our products</td>
+      <td><a href="/gemini-api/terms">Yes</a></td>
+      <td><a href="/gemini-api/terms">No</a></td>
+    </tr>
+  </tbody>
+</table></section>
+<section><h3 id="batch_14" data-text="Batch" tabindex="-1">Batch</h3><table class="pricing-table">
+  <colgroup>
+    <col>
+    <col class="free-tier">
+    <col class="paid-tier">
+  </colgroup>
+  <thead>
+    <tr>
+      <th></th>
+      <th scope="col">Free Tier</th>
+      <th scope="col">Paid Tier, per 1M tokens in USD</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Input price</td>
+      <td>Not available</td>
+      <td>$0.625, prompts <= 200k tokens<br>$1.25, prompts > 200k tokens</td>
+    </tr>
+    <tr>
+      <td>Output price (including thinking tokens)</td>
+      <td>Not available</td>
+      <td>$5.00, prompts <= 200k tokens<br>$7.50, prompts > 200k</td>
+    </tr>
+    <tr>
+      <td>Context caching price</td>
+      <td>Not available</td>
+      <td>$0.125, prompts <= 200k tokens<br>$0.25, prompts > 200k<br>$4.50 / 1,000,000 tokens per hour (storage price)</td>
+    </tr>
+    <tr>
+      <td>Grounding with Google Search</td>
+      <td>Not available</td>
+      <td>1,500 RPD (free), then $35 / 1,000 grounded prompts</td>
+    </tr>
+    <tr>
+      <td>Grounding with Google Maps</td>
+      <td>Not available</td>
+      <td>Not available</td>
+    </tr>
+    <tr>
+      <td>Used to improve our products</td>
+      <td><a href="/gemini-api/terms">Yes</a></td>
+      <td><a href="/gemini-api/terms">No</a></td>
+    </tr>
+  </tbody>
+</table></section>
+<section><h3 id="flex_10" data-text="Flex" tabindex="-1">Flex</h3><table class="pricing-table">
+  <colgroup>
+    <col>
+    <col class="free-tier">
+    <col class="paid-tier">
+  </colgroup>
+  <thead>
+    <tr>
+      <th></th>
+      <th scope="col">Free Tier</th>
+      <th scope="col">Paid Tier, per 1M tokens in USD</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Input price</td>
+      <td>Not available</td>
+      <td>$0.625, prompts <= 200k tokens<br>$1.25, prompts > 200k tokens</td>
+    </tr>
+    <tr>
+      <td>Output price (including thinking tokens)</td>
+      <td>Not available</td>
+      <td>$5.00, prompts <= 200k tokens<br>$7.50, prompts > 200k</td>
+    </tr>
+    <tr>
+      <td>Context caching price</td>
+      <td>Not available</td>
+      <td>$0.125, prompts <= 200k tokens<br>$0.25, prompts > 200k<br>$4.50 / 1,000,000 tokens per hour (storage price)</td>
+    </tr>
+    <tr>
+      <td>Grounding with Google Search</td>
+      <td>Not available</td>
+      <td>1,500 RPD (free), then $35 / 1,000 grounded prompts</td>
+    </tr>
+    <tr>
+      <td>Grounding with Google Maps</td>
+      <td>Not available</td>
+      <td>Not available</td>
+    </tr>
+    <tr>
+      <td>Used to improve our products</td>
+      <td><a href="/gemini-api/terms">Yes</a></td>
+      <td><a href="/gemini-api/terms">No</a></td>
+    </tr>
+  </tbody>
+</table></section>
+<section><h3 id="priority_10" data-text="Priority" tabindex="-1">Priority</h3><table class="pricing-table">
+  <colgroup>
+    <col>
+    <col class="free-tier">
+    <col class="paid-tier">
+  </colgroup>
+  <thead>
+    <tr>
+      <th></th>
+      <th scope="col">Free Tier</th>
+      <th scope="col">Paid Tier, per 1M tokens in USD</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Input price</td>
+      <td>Free of charge</td>
+      <td>$2.25, prompts <= 200k tokens<br>$4.50, prompts > 200k tokens</td>
+    </tr>
+    <tr>
+      <td>Output price (including thinking tokens)</td>
+      <td>Free of charge</td>
+      <td>$18.00, prompts <= 200k tokens<br>$27.00, prompts > 200k</td>
+    </tr>
+    <tr>
+      <td>Context caching price</td>
+      <td>Not available</td>
+      <td>$0.225, prompts <= 200k tokens<br>$0.45, prompts > 200k<br>$8.10 / 1,000,000 tokens per hour (storage price)</td>
+    </tr>
+    <tr>
+      <td>Grounding with Google Search</td>
+      <td>Not available</td>
+      <td>1,500 RPD (free), then $35 / 1,000 grounded prompts</td>
+    </tr>
+    <tr>
+      <td>Grounding with Google Maps</td>
+      <td>Not available</td>
+      <td>10,000 RPD (free), then $25 / 1,000 grounded prompts</td>
+    </tr>
+    <tr>
+      <td>Used to improve our products</td>
+      <td><a href="/gemini-api/terms">Yes</a></td>
+      <td><a href="/gemini-api/terms">No</a></td>
+    </tr>
+  </tbody>
+</table></section>
+</devsite-selector></div>
+
+<div class="models-section">
+    <div class="heading-group">
+        <h2 id="gemini-2.5-flash" data-text="Gemini 2.5 Flash" tabindex="-1">Gemini 2.5 Flash</h2>
+        <em><a href="/gemini-api/docs/models/gemini-2.5-flash"><code translate="no" dir="ltr">gemini-2.5-flash</code></a></em>
+    
+    </div>
+    <p>
+        <a href="https://aistudio.google.com?model=gemini-2.5-flash" class="button button-primary ais">Try it in Google AI Studio</a>
+    </p>
+</div>
+
+<p>Our first hybrid reasoning model which supports a 1M token context window and
+has thinking budgets.</p>
+<div><devsite-selector data-ds-scope="code-sample">
+<section><h3 id="standard_20" data-text="Standard" tabindex="-1">Standard</h3><table class="pricing-table">
+  <colgroup>
+    <col>
+    <col class="free-tier">
+    <col class="paid-tier">
+  </colgroup>
+  <thead>
+    <tr>
+      <th></th>
+      <th scope="col">Free Tier</th>
+      <th scope="col">Paid Tier, per 1M tokens in USD</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Input price</td>
+      <td>Free of charge</td>
+      <td>$0.30 (text / image / video)<br>$1.00 (audio)</td>
+    </tr>
+    <tr>
+      <td>Output price (including thinking tokens)</td>
+      <td>Free of charge</td>
+      <td>$2.50</td>
+    </tr>
+    <tr>
+      <td>Context caching price</td>
+      <td>Not available</td>
+      <td>$0.03 (text / image / video)<br>$0.1 (audio)<br>$1.00 / 1,000,000 tokens per hour (storage price)</td>
+    </tr>
+    <tr>
+      <td>Grounding with Google Search</td>
+      <td>Free of charge, up to 500 RPD (limit shared with Flash-Lite RPD)</td>
+      <td>1,500 RPD (free, limit shared with Flash-Lite RPD), then $35 / 1,000 grounded prompts</td>
+    </tr>
+    <tr>
+      <td>Grounding with Google Maps</td>
+      <td>500 RPD</td>
+      <td>1,500 RPD (free), then $25 / 1,000 grounded prompts</td>
+    </tr>
+    <tr>
+      <td>Used to improve our products</td>
+      <td><a href="/gemini-api/terms">Yes</a></td>
+      <td><a href="/gemini-api/terms">No</a></td>
+    </tr>
+  </tbody>
+</table></section>
+<section><h3 id="batch_15" data-text="Batch" tabindex="-1">Batch</h3><table class="pricing-table">
+  <colgroup>
+    <col>
+    <col class="free-tier">
+    <col class="paid-tier">
+  </colgroup>
+  <thead>
+    <tr>
+      <th></th>
+      <th scope="col">Free Tier</th>
+      <th scope="col">Paid Tier, per 1M tokens in USD</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Input price</td>
+      <td>Not available</td>
+      <td>$0.15 (text / image / video)<br>$0.50 (audio)</td>
+    </tr>
+    <tr>
+      <td>Output price (including thinking tokens)</td>
+      <td>Not available</td>
+      <td>$1.25</td>
+    </tr>
+    <tr>
+      <td>Context caching price</td>
+      <td>Not available</td>
+      <td>$0.03 (text / image / video)<br>$0.1 (audio)<br>$1.00 / 1,000,000 tokens per hour (storage price)</td>
+    </tr>
+    <tr>
+      <td>Grounding with Google Search</td>
+      <td>Not available</td>
+      <td>1,500 RPD (free, limit shared with Flash-Lite RPD), then $35 / 1,000 grounded prompts</td>
+    </tr>
+    <tr>
+      <td>Grounding with Google Maps</td>
+      <td>Not available</td>
+      <td>Not available</td>
+    </tr>
+    <tr>
+      <td>Used to improve our products</td>
+      <td><a href="/gemini-api/terms">Yes</a></td>
+      <td><a href="/gemini-api/terms">No</a></td>
+    </tr>
+  </tbody>
+</table></section>
+<section><h3 id="flex_11" data-text="Flex" tabindex="-1">Flex</h3><table class="pricing-table">
+  <colgroup>
+    <col>
+    <col class="free-tier">
+    <col class="paid-tier">
+  </colgroup>
+  <thead>
+    <tr>
+      <th></th>
+      <th scope="col">Free Tier</th>
+      <th scope="col">Paid Tier, per 1M tokens in USD</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Input price</td>
+      <td>Not available</td>
+      <td>$0.15 (text / image / video)<br>$0.50 (audio)</td>
+    </tr>
+    <tr>
+      <td>Output price (including thinking tokens)</td>
+      <td>Not available</td>
+      <td>$1.25</td>
+    </tr>
+    <tr>
+      <td>Context caching price</td>
+      <td>Not available</td>
+      <td>$0.03 (text / image / video)<br>$0.1 (audio)<br>$1.00 / 1,000,000 tokens per hour (storage price)</td>
+    </tr>
+    <tr>
+      <td>Grounding with Google Search</td>
+      <td>Not available</td>
+      <td>1,500 RPD (free, limit shared with Flash-Lite RPD), then $35 / 1,000 grounded prompts</td>
+    </tr>
+    <tr>
+      <td>Grounding with Google Maps</td>
+      <td>Not available</td>
+      <td>Not available</td>
+    </tr>
+    <tr>
+      <td>Used to improve our products</td>
+      <td><a href="/gemini-api/terms">Yes</a></td>
+      <td><a href="/gemini-api/terms">No</a></td>
+    </tr>
+  </tbody>
+</table></section>
+<section><h3 id="priority_11" data-text="Priority" tabindex="-1">Priority</h3><table class="pricing-table">
+  <colgroup>
+    <col>
+    <col class="free-tier">
+    <col class="paid-tier">
+  </colgroup>
+  <thead>
+    <tr>
+      <th></th>
+      <th scope="col">Free Tier</th>
+      <th scope="col">Paid Tier, per 1M tokens in USD</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Input price</td>
+      <td>Free of charge</td>
+      <td>$0.54 (text / image / video)<br>$1.80 (audio)</td>
+    </tr>
+    <tr>
+      <td>Output price (including thinking tokens)</td>
+      <td>Free of charge</td>
+      <td>$4.50</td>
+    </tr>
+    <tr>
+      <td>Context caching price</td>
+      <td>Not available</td>
+      <td>$0.054 (text / image / video)<br>$0.18 (audio)<br>$1.80 / 1,000,000 tokens per hour (storage price)</td>
+    </tr>
+    <tr>
+      <td>Grounding with Google Search</td>
+      <td>Free of charge, up to 500 RPD (limit shared with Flash-Lite RPD)</td>
+      <td>1,500 RPD (free, limit shared with Flash-Lite RPD), then $35 / 1,000 grounded prompts</td>
+    </tr>
+    <tr>
+      <td>Grounding with Google Maps</td>
+      <td>500 RPD</td>
+      <td>1,500 RPD (free), then $25 / 1,000 grounded prompts</td>
+    </tr>
+    <tr>
+      <td>Used to improve our products</td>
+      <td><a href="/gemini-api/terms">Yes</a></td>
+      <td><a href="/gemini-api/terms">No</a></td>
+    </tr>
+  </tbody>
+</table></section>
+</devsite-selector></div>
+
+<div class="models-section">
+    <div class="heading-group">
+        <h2 id="gemini-2.5-flash-image" data-text="Gemini 2.5 Flash Image (Nano Banana) 🍌" tabindex="-1">Gemini 2.5 Flash Image (Nano Banana) 🍌</h2>
+        <em><a href="/gemini-api/docs/models/gemini-2.5-flash-image"><code translate="no" dir="ltr">gemini-2.5-flash-image</code></a></em>
+    
+    </div>
+    <p>
+        <a href="https://aistudio.google.com?model=gemini-2.5-flash-image" class="button button-primary ais">Try it in Google AI Studio</a>
+    </p>
+</div>
+
+<aside class="warning">
+  <b>Warning:</b> Gemini 2.5 Flash Image (<code translate="no" dir="ltr">gemini-2.5-flash-image</code>) is <a href="/gemini-api/docs/deprecations">deprecated</a> and will be shut down on October 2, 2026; migrate to <a href="/gemini-api/docs/models/gemini-3.1-flash-image">Gemini 3.1 Flash Image</a> or <a href="/gemini-api/docs/models/gemini-3.1-flash-lite-image">Gemini 3.1 Flash Lite Image</a> to avoid service disruption.
+</aside>
+
+<p>A native image generation model, optimized for speed, flexibility, and
+contextual understanding. Text input and output is priced the same as
+<a href="#gemini-2.5-flash">2.5 Flash</a>.</p>
+<div><devsite-selector data-ds-scope="code-sample">
+<section><h3 id="standard_22" data-text="Standard" tabindex="-1">Standard</h3><table class="pricing-table">
+  <colgroup>
+    <col>
+    <col class="free-tier">
+    <col class="paid-tier">
+  </colgroup>
+  <thead>
+    <tr>
+      <th></th>
+      <th scope="col">Free Tier</th>
+      <th scope="col">Paid Tier, per 1M tokens in USD</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Input price</td>
+      <td>Not available</td>
+      <td>$0.30 (text / image)</td>
+    </tr>
+    <tr>
+      <td>Output price</td>
+      <td>Not available</td>
+      <td>$0.039 per image*</td>
+    </tr>
+    <tr>
+      <td>Used to improve our products</td>
+      <td><a href="/gemini-api/terms">Yes</a></td>
+      <td><a href="/gemini-api/terms">No</a></td>
+    </tr>
+  </tbody>
+</table></section>
+<section><h3 id="batch_17" data-text="Batch" tabindex="-1">Batch</h3><table class="pricing-table">
+  <colgroup>
+    <col>
+    <col class="free-tier">
+    <col class="paid-tier">
+  </colgroup>
+  <thead>
+    <tr>
+      <th></th>
+      <th scope="col">Free Tier</th>
+      <th scope="col">Paid Tier, per 1M tokens in USD</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Input price</td>
+      <td>Not available</td>
+      <td>$0.15 (text / image)</td>
+    </tr>
+    <tr>
+      <td>Output price</td>
+      <td>Not available</td>
+      <td>$0.0195 per image*</td>
+    </tr>
+    <tr>
+      <td>Used to improve our products</td>
+      <td><a href="/gemini-api/terms">Yes</a></td>
+      <td><a href="/gemini-api/terms">No</a></td>
+    </tr>
+  </tbody>
+</table></section>
+<section><h3 id="flex_13" data-text="Flex" tabindex="-1">Flex</h3><table class="pricing-table">
+  <colgroup>
+    <col>
+    <col class="free-tier">
+    <col class="paid-tier">
+  </colgroup>
+  <thead>
+    <tr>
+      <th></th>
+      <th scope="col">Free Tier</th>
+      <th scope="col">Paid Tier, per 1M tokens in USD</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Input price</td>
+      <td>Not available</td>
+      <td>$0.15 (text / image)</td>
+    </tr>
+    <tr>
+      <td>Output price</td>
+      <td>Not available</td>
+      <td>$0.0195 per image*</td>
+    </tr>
+    <tr>
+      <td>Used to improve our products</td>
+      <td><a href="/gemini-api/terms">Yes</a></td>
+      <td><a href="/gemini-api/terms">No</a></td>
+    </tr>
+  </tbody>
+</table></section>
+<section><h3 id="priority_13" data-text="Priority" tabindex="-1">Priority</h3><table class="pricing-table">
+  <colgroup>
+    <col>
+    <col class="free-tier">
+    <col class="paid-tier">
+  </colgroup>
+  <thead>
+    <tr>
+      <th></th>
+      <th scope="col">Free Tier</th>
+      <th scope="col">Paid Tier, per 1M tokens in USD</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Input price</td>
+      <td>Not available</td>
+      <td>$0.54 (text / image)</td>
+    </tr>
+    <tr>
+      <td>Output price</td>
+      <td>Not available</td>
+      <td>$0.0702 per image*</td>
+    </tr>
+    <tr>
+      <td>Used to improve our products</td>
+      <td><a href="/gemini-api/terms">Yes</a></td>
+      <td><a href="/gemini-api/terms">No</a></td>
+    </tr>
+  </tbody>
+</table></section>
+</devsite-selector></div>
+<p>[*] Image output is priced at $30 per 1,000,000 tokens. Output images up to
+1024x1024px consume 1290 tokens and are equivalent to $0.039 per image.</p>
+</body>
+</html>

@@ -19,7 +19,7 @@ FILES = {
     "openrouter_sunburst": "openrouter.html",
     "vercel_sunburst": "vercel.html",
 }
-SPECS = {spec.source_key: spec for spec in source_specs()}
+SPECS = {spec.source_key: spec for spec in source_specs() if spec.parser != "google_model_pricing"}
 
 
 def _body(key: str) -> bytes:

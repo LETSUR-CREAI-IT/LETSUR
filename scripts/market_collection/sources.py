@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from scripts.market_collection.core import SourceSpec, CollectionError
 from scripts.market_collection.models import (GOOGLE_LLM_MODEL, ASTRA_MODEL, FABLE_MODEL, STANDARD_LLM_MODELS, BROKER_CATALOG_MODELS, BROKER_API_MODELS, _AWS_OPENAI, _AWS_ANTHROPIC, _AZURE_MODELS, _AZURE_RETAIL_MODELS, SUNBURST_MODEL, FLARE_MODEL, SEEDANCE_MODEL, MODEL_MODALITIES)
+from scripts.market_collection.models import GOOGLE_DIRECT_MODELS, GOOGLE_IMAGE_MODELS
 
 def _targets() -> dict[str, tuple[str, str, str, str, str]]:
     targets = {
@@ -113,6 +114,13 @@ def azure_retail_llm_source_specs() -> list[SourceSpec]:
             for model in _AZURE_RETAIL_MODELS]
 
 
+def google_model_source_specs() -> list[SourceSpec]:
+    # One section of the Gemini API pricing page (the page google_gemini_38_flash reads) per model, picked by h2 id = model id.
+    return [SourceSpec(f"google_{_key(model)}", modality, model, "google_direct", task, "https://ai.google.dev/gemini-api/docs/pricing", "google_model_pricing")
+            for modality, task, models in (("llm", "text_generation", GOOGLE_DIRECT_MODELS), ("image", "text-to-image", GOOGLE_IMAGE_MODELS))
+            for model, _ in models]
+
+
 def image_source_specs() -> list[SourceSpec]:
     # Ideogram 4.5 is not collected: LETSUR's model list has no Ideogram (2026-10-28).
     sources = (
@@ -152,6 +160,7 @@ def video_source_specs() -> list[SourceSpec]:
 
 def source_specs() -> list[SourceSpec]:
     specs = llm_source_specs() + image_source_specs() + video_source_specs() + image25_api_source_specs() + image25_openrouter_endpoint_source_specs() + image25_supplement_source_specs() + llm_endpoint_source_specs() + azure_retail_llm_source_specs()
+    specs += google_model_source_specs()
     for spec in specs:
         if MODEL_MODALITIES.get(spec.model_id) != spec.modality:
             raise CollectionError(f"source model/modality mismatch: {spec.source_key}")
