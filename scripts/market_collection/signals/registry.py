@@ -11,7 +11,7 @@ import re
 from dataclasses import dataclass
 
 from scripts.market_collection.core import CollectionError, _validate_url
-from scripts.market_collection.models import BROKER_API_MODELS, BROKER_CATALOG_MODELS, GOOGLE_BROKER_MODEL, GOOGLE_LLM_MODEL
+from scripts.market_collection.models import BROKER_API_MODELS, BROKER_CATALOG_MODELS, GATEWAY_EMBEDDING_MODELS, GATEWAY_MORE_MODELS, GOOGLE_BROKER_MODEL, GOOGLE_LLM_MODEL
 from scripts.market_collection.sources import _targets
 
 # channel_notice/supplier_notice: the company's own announcements.
@@ -45,7 +45,7 @@ def _gateway_models() -> list[tuple[str, str, str | None, str | None]]:
     models = [(model, title, gateway_id, gateway_id) for model, (title, _, _, _, gateway_id) in _targets().items()]
     models.append((GOOGLE_LLM_MODEL, "Gemini 3.8 Flash", GOOGLE_BROKER_MODEL, GOOGLE_BROKER_MODEL))
     models.extend((model, title, openrouter_id, vercel_id) for model, title, _, openrouter_id, vercel_id in BROKER_CATALOG_MODELS)
-    models.extend(BROKER_API_MODELS)
+    models.extend(BROKER_API_MODELS + GATEWAY_MORE_MODELS + GATEWAY_EMBEDDING_MODELS)
     return models
 
 

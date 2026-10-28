@@ -91,6 +91,81 @@ GOOGLE_IMAGE_MODELS = (
     ("gemini-3.1-flash-image", "Gemini 3.1 Flash Image"),
 )
 
+# More models LETSUR serves whose OpenRouter and Vercel AI Gateway prices are read from the two endpoint APIs (2026-10-28), in the
+# shape of BROKER_API_MODELS; the makers' own prices come from other sources. Every id below answered with priced endpoints.
+# - claude-opus-4-5-20251101 and claude-sonnet-4-5-20250929 are LETSUR's dated ids; both gateways list only the undated model
+#   (anthropic/claude-opus-4.5, anthropic/claude-sonnet-4.5), so that is the id read here.
+# - gpt-5-codex has no OpenRouter id: its endpoint list there is empty. gpt-5.1 and gemini-3-flash-preview have no Vercel id: its
+#   endpoint API still answers for both (as "GPT 5.1 Thinking" and "Gemini 3 Flash"), but its model list does not carry them.
+# - gpt-5.6 is not read: openai/gpt-5.6 is an OpenRouter alias whose listing names gpt-5.6-sol, and Vercel has no such id.
+GATEWAY_MORE_MODELS = (
+    ("gpt-5.4-mini", "GPT-5.4 Mini", "openai/gpt-5.4-mini", "openai/gpt-5.4-mini"),
+    ("gpt-5.1-codex", "GPT-5.1-Codex", "openai/gpt-5.1-codex", "openai/gpt-5.1-codex"),
+    ("o4-mini", "o4-mini", "openai/o4-mini", "openai/o4-mini"),
+    ("o3", "o3", "openai/o3", "openai/o3"),
+    ("gpt-4o", "GPT-4o", "openai/gpt-4o", "openai/gpt-4o"),
+    ("gpt-5.1-codex-mini", "GPT-5.1-Codex-Mini", "openai/gpt-5.1-codex-mini", "openai/gpt-5.1-codex-mini"),
+    ("o3-mini", "o3-mini", "openai/o3-mini", "openai/o3-mini"),
+    ("o1", "o1", "openai/o1", "openai/o1"),
+    ("gpt-4.1-nano", "GPT-4.1 Nano", "openai/gpt-4.1-nano", "openai/gpt-4.1-nano"),
+    ("gpt-5-mini", "GPT-5 Mini", "openai/gpt-5-mini", "openai/gpt-5-mini"),
+    ("gpt-5.2", "GPT-5.2", "openai/gpt-5.2", "openai/gpt-5.2"),
+    ("gpt-5", "GPT-5", "openai/gpt-5", "openai/gpt-5"),
+    ("gpt-4o-mini", "GPT-4o-mini", "openai/gpt-4o-mini", "openai/gpt-4o-mini"),
+    ("gpt-5-codex", "GPT-5-Codex", None, "openai/gpt-5-codex"),
+    ("gpt-5.4-nano", "GPT-5.4 Nano", "openai/gpt-5.4-nano", "openai/gpt-5.4-nano"),
+    ("gpt-5-nano", "GPT-5 Nano", "openai/gpt-5-nano", "openai/gpt-5-nano"),
+    ("gpt-5.1", "GPT-5.1", "openai/gpt-5.1", None),
+    ("gpt-5.4", "GPT-5.4", "openai/gpt-5.4", "openai/gpt-5.4"),
+    ("o3-pro", "o3-pro", "openai/o3-pro", "openai/o3-pro"),
+    ("gpt-4.1", "GPT-4.1", "openai/gpt-4.1", "openai/gpt-4.1"),
+    ("gpt-5.5", "GPT-5.5", "openai/gpt-5.5", "openai/gpt-5.5"),
+    ("gpt-4.1-mini", "GPT-4.1 Mini", "openai/gpt-4.1-mini", "openai/gpt-4.1-mini"),
+    ("gpt-5.5-pro", "GPT-5.5 Pro", "openai/gpt-5.5-pro", "openai/gpt-5.5-pro"),
+    ("gpt-5.2-pro", "GPT-5.2 Pro", "openai/gpt-5.2-pro", "openai/gpt-5.2-pro"),
+    ("gpt-6.1-terra", "GPT-6.1 Terra", "openai/gpt-6.1-terra", "openai/gpt-6.1-terra"),
+    ("claude-opus-4-6", "Claude Opus 4.6", "anthropic/claude-opus-4.6", "anthropic/claude-opus-4.6"),
+    ("claude-opus-5", "Claude Opus 5", "anthropic/claude-opus-5", "anthropic/claude-opus-5"),
+    ("claude-fable-5", "Claude Fable 5", "anthropic/claude-fable-5", "anthropic/claude-fable-5"),
+    ("claude-opus-4-8", "Claude Opus 4.8", "anthropic/claude-opus-4.8", "anthropic/claude-opus-4.8"),
+    ("claude-opus-4-7", "Claude Opus 4.7", "anthropic/claude-opus-4.7", "anthropic/claude-opus-4.7"),
+    ("claude-sonnet-4-6", "Claude Sonnet 4.6", "anthropic/claude-sonnet-4.6", "anthropic/claude-sonnet-4.6"),
+    ("claude-haiku-5-5", "Claude Haiku 5.5", "anthropic/claude-haiku-5.5", "anthropic/claude-haiku-5.5"),
+    ("claude-opus-4-5-20251101", "Claude Opus 4.5", "anthropic/claude-opus-4.5", "anthropic/claude-opus-4.5"),
+    ("claude-sonnet-4-5-20250929", "Claude Sonnet 4.5", "anthropic/claude-sonnet-4.5", "anthropic/claude-sonnet-4.5"),
+    ("gemini-3.5-flash", "Gemini 3.5 Flash", "google/gemini-3.5-flash", "google/gemini-3.5-flash"),
+    ("gemini-3.1-pro-preview", "Gemini 3.1 Pro Preview", "google/gemini-3.1-pro-preview", "google/gemini-3.1-pro-preview"),
+    ("gemini-4-argon", "Gemini 4 Argon", "google/gemini-4-argon", "google/gemini-4-argon"),
+    ("gemini-3.1-flash-lite", "Gemini 3.1 Flash Lite", "google/gemini-3.1-flash-lite", "google/gemini-3.1-flash-lite"),
+    ("gemini-3.7-flash", "Gemini 3.7 Flash", "google/gemini-3.7-flash", "google/gemini-3.7-flash"),
+    ("gemini-3.5-flash-lite", "Gemini 3.5 Flash Lite", "google/gemini-3.5-flash-lite", "google/gemini-3.5-flash-lite"),
+    ("gemini-3.6-flash", "Gemini 3.6 Flash", "google/gemini-3.6-flash", "google/gemini-3.6-flash"),
+    ("gemini-3-flash-preview", "Gemini 3 Flash Preview", "google/gemini-3-flash-preview", None),
+    ("gemini-2.5-flash", "Gemini 2.5 Flash", "google/gemini-2.5-flash", "google/gemini-2.5-flash"),
+    ("gemini-2.5-pro", "Gemini 2.5 Pro", "google/gemini-2.5-pro", "google/gemini-2.5-pro"),
+    ("glm-4.7", "GLM 4.7", "z-ai/glm-4.7", "zai/glm-4.7"),
+    ("glm-5", "GLM 5", "z-ai/glm-5", "zai/glm-5"),
+    ("glm-5.3", "GLM 5.3", "z-ai/glm-5.3", "zai/glm-5.3"),
+    ("glm-5.3-flashx", "GLM 5.3 FlashX", "z-ai/glm-5.3-flashx", "zai/glm-5.3-flashx"),
+)
+
+# Embedding models, read with task "embedding". OpenRouter lists them in its separate embeddings catalog (not in /api/v1/models).
+# Both gateways give a prompt price and completion "0"; Vercel also gives context_length 0. The endpoint parser keeps all as written.
+GATEWAY_EMBEDDING_MODELS = (
+    ("text-embedding-3-large", "text-embedding-3-large", "openai/text-embedding-3-large", "openai/text-embedding-3-large"),
+    ("text-embedding-3-small", "text-embedding-3-small", "openai/text-embedding-3-small", "openai/text-embedding-3-small"),
+    ("text-embedding-ada-002", "text-embedding-ada-002", "openai/text-embedding-ada-002", "openai/text-embedding-ada-002"),
+)
+
+# Z.ai's own token prices (model, row label in the tables of https://docs.z.ai/guides/overview/pricing.md).
+ZAI_DIRECT_MODELS = (
+    ("glm-4.7", "GLM-4.7"),
+    ("glm-5", "GLM-5"),
+    ("glm-5.2", "GLM-5.2"),
+    ("glm-5.3", "GLM-5.3"),
+    ("glm-5.3-flashx", "GLM-5.3-FlashX"),
+)
+
 _AWS_OPENAI = (
     ("gpt-6-astra", "gpt-6-astra", "GPT-6 Astra"),
     ("gpt-6-sol", "gpt-6-sol", "GPT-6 Sol"),
@@ -172,6 +247,7 @@ MODEL_MODALITIES = {
     **{model: "llm" for model in AZURE_RETAIL_GPT5_MODELS + AZURE_RETAIL_OPENAI_MODELS},
     **{model: "llm" for model, _ in GOOGLE_DIRECT_MODELS},
     **{model: "image" for model, _ in GOOGLE_IMAGE_MODELS},
+    **{model: "llm" for model, *_ in GATEWAY_MORE_MODELS + GATEWAY_EMBEDDING_MODELS},
     SUNBURST_MODEL: "image", FLARE_MODEL: "image", SEEDANCE_MODEL: "video",
     **{model: "llm" for model, _ in ANTHROPIC_DIRECT_MODELS},
     **{model: "llm" for model, *_ in OPENAI_DIRECT_MODELS},

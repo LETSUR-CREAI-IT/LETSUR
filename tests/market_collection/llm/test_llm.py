@@ -30,8 +30,8 @@ class LlmAdapterTests(unittest.TestCase):
 
     def test_registry_is_fixed_and_distinct(self):
         validate_registry(llm.source_specs())
-        self.assertEqual(len(llm.source_specs()), 220)
-        self.assertEqual(len({spec.source_key for spec in self.specs.values()}), 89)  # parser keys: endpoints and Azure retail share theirs
+        self.assertEqual(len(llm.source_specs()), 324)
+        self.assertEqual(len({spec.source_key for spec in self.specs.values()}), 90)  # parser keys: endpoints, Azure retail and Z.ai share theirs
         self.assertEqual([spec.model_id for spec in llm.source_specs()[:3]], ["gemini-3.8-flash"] * 3)
         self.assertTrue({"gpt-6-astra", "claude-fable-5-1"}.issubset({spec.model_id for spec in llm.source_specs()}))
         for model, _, _ in STANDARD_LLM_MODELS:

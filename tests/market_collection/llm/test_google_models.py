@@ -216,7 +216,8 @@ def test_other_sections_are_never_read(model):
 @pytest.mark.parametrize("model", ["gemini-3.5-flash", "gemini-3.7-flash", "gemini-3-pro-image-preview", "gemini-3.1-flash-image-preview"])
 def test_a_model_without_its_own_section_is_not_collected_or_borrowed_from_a_neighbour(model):
     # The live page has no section for these four, only for gemini-3.5-flash-lite and the two image models without "-preview".
-    assert model not in SPECS and model not in MODEL_MODALITIES
+    # (gemini-3.5-flash and gemini-3.7-flash are read on the OpenRouter and Vercel endpoint APIs only.)
+    assert model not in SPECS and not any(s.model_id == model and s.route == "google_direct" for s in source_specs())
     spec = SourceSpec("x", "llm", model, "google_direct", "text_generation", SPECS["gemini-2.5-pro"].url, "google_model_pricing")
     with pytest.raises(ValueError, match="0 sections"):
         google_models.parse_source(spec, BODY, "s")

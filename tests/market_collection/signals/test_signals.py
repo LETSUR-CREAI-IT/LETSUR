@@ -1,5 +1,6 @@
 import csv
 import json
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -9,7 +10,7 @@ from scripts.market_collection.core import CollectionError
 from scripts.market_collection import signals
 from scripts.market_collection.signals import __main__ as cli
 from scripts.market_collection.signals.matching import claims_in, date_phrases, entry_signals, models_in, normalize
-from scripts.market_collection.models import BROKER_API_MODELS
+from scripts.market_collection.models import BROKER_API_MODELS, GATEWAY_EMBEDDING_MODELS, GATEWAY_MORE_MODELS
 from scripts.market_collection.signals.parsers import (SignalParseError, atom_entries, openrouter_endpoint_signals, rss_entries,
                                                        vercel_endpoint_signals)
 from scripts.market_collection.signals.registry import SignalSourceSpec, signal_sources, validate
@@ -144,9 +145,10 @@ def test_gateway_api_sources_cover_every_listed_model_of_both_gateways():
     by_parser: dict[str, list] = {}
     for spec in specs:
         by_parser.setdefault(spec.parser, []).append(spec)
-    # 2026-10-28: 4 feeds + OpenRouter 18 -> 49 (34 gateway-only models, 31 with an OpenRouter id) + Vercel 49
-    assert len(specs) == 102 and {parser: len(found) for parser, found in by_parser.items()} == {
-        "atom": 3, "rss": 1, "openrouter_endpoints": 49, "vercel_endpoints": 49}
+    # 2026-10-28: 4 feeds + OpenRouter 18 -> 49 (34 gateway-only models, 31 with an OpenRouter id) -> 99 (51 more, 50 with one)
+    # + Vercel 49 -> 98 (49 of the 51 more: gemini-3-flash-preview and gpt-5.1 are OpenRouter only)
+    assert len(specs) == 201 and {parser: len(found) for parser, found in by_parser.items()} == {
+        "atom": 3, "rss": 1, "openrouter_endpoints": 99, "vercel_endpoints": 98}
     assert all(spec.source_kind == "channel_api" and spec.model_id for parser in ("openrouter_endpoints", "vercel_endpoints")
                for spec in by_parser[parser])
     keys = {spec.source_key: spec for spec in specs}
@@ -160,10 +162,19 @@ def test_gateway_api_sources_cover_every_listed_model_of_both_gateways():
     for model, _, openrouter_id, vercel_id in BROKER_API_MODELS:
         key = model.replace("-", "_").replace(".", "_")
         assert (f"openrouter_endpoints_{key}" in keys) == bool(openrouter_id) and (f"vercel_endpoints_{key}" in keys) == bool(vercel_id)
-    # the 18 OpenRouter sources of before come first, the 31 of the gateway-only models after them
+    # the 18 OpenRouter sources of before come first, the 31 of the gateway-only models after them, then the 50 of the 51 more
     added = {model for model, *_ in BROKER_API_MODELS}
-    assert not {spec.model_id for spec in by_parser["openrouter_endpoints"][:18]} & added
-    assert {spec.model_id for spec in by_parser["openrouter_endpoints"][18:]} <= added
+    more = {model for model, *_ in GATEWAY_MORE_MODELS + GATEWAY_EMBEDDING_MODELS}
+    assert len(more) == 51 and not added & more
+    assert not {spec.model_id for spec in by_parser["openrouter_endpoints"][:18]} & (added | more)
+    assert {spec.model_id for spec in by_parser["openrouter_endpoints"][18:49]} <= added
+    assert {spec.model_id for spec in by_parser["openrouter_endpoints"][49:]} <= more
+    for model, _, openrouter_id, vercel_id in GATEWAY_MORE_MODELS + GATEWAY_EMBEDDING_MODELS:
+        key = re.sub(r"[^a-z0-9]+", "_", model)
+        assert (f"openrouter_endpoints_{key}" in keys) == bool(openrouter_id) and (f"vercel_endpoints_{key}" in keys) == bool(vercel_id)
+    assert keys["vercel_endpoints_claude_opus_4_5_20251101"].url == "https://ai-gateway.vercel.sh/v1/models/anthropic/claude-opus-4.5/endpoints"
+    assert keys["openrouter_endpoints_glm_5_3"].url == "https://openrouter.ai/api/v1/models/z-ai/glm-5.3/endpoints"
+    assert (keys["vercel_endpoints_text_embedding_3_large"].model_id, keys["vercel_endpoints_text_embedding_3_large"].model_label) == ("text-embedding-3-large", "text-embedding-3-large")
 
 
 def test_both_api_parsers_need_a_model_and_feeds_none():
