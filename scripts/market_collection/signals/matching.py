@@ -15,7 +15,8 @@ from scripts.market_collection.models import (BROKER_API_MODELS, BROKER_CATALOG_
                                               GOOGLE_LLM_MODEL, SEEDANCE_MODEL, SUNBURST_MODEL)
 from scripts.market_collection.models import (ANTHROPIC_DIRECT_MODELS, AZURE_RETAIL_GPT5_MODELS, AZURE_RETAIL_OPENAI_MODELS,
                                               GATEWAY_EMBEDDING_MODELS, GATEWAY_MORE_MODELS, GOOGLE_DIRECT_MODELS, GOOGLE_IMAGE_MODELS,
-                                              GPT_IMAGE_2_MODEL, OPENAI_DIRECT_MODELS, ZAI_DIRECT_MODELS)
+                                              GPT_IMAGE_2_MODEL, KLING_PRICE_ROWS, KLING_VIDEO_MODELS, OPENAI_DIRECT_MODELS,
+                                              SEEDANCE_VARIANT_MODELS, ZAI_DIRECT_MODELS)
 from scripts.market_collection.sources import _targets
 
 MAX_QUOTES = 2
@@ -73,6 +74,15 @@ def _exact_aliases() -> list[ModelAlias]:
         names.setdefault(model, [model])
     names["gpt-5.4-2026-03-05"] = names["gpt-5.4"] + ["gpt-5.4-2026-03-05"]  # a dated id: notices name the model, not the date
     names[GPT_IMAGE_2_MODEL] = ["GPT Image 2", GPT_IMAGE_2_MODEL]
+    # Kling names a model, not an endpoint ("Kling 3.0", "Kling 3.0 Omni"), so both of a version's endpoint models take the
+    # model's notices; fal calls Kling 3.0 Omni "O3". LETSUR's Seedance input variants are Seedance 2.5 with other inputs.
+    for model, _ in KLING_VIDEO_MODELS:
+        version = model.split("-")[1][1:]  # kling-v3-... -> 3
+        omni = model.endswith("omni-video")
+        names[model] = [KLING_PRICE_ROWS.get(model) or f"Kling {version}.0" + (" Omni" if omni else ""), model]
+        names[model] += [f"Kling O{version}"] if omni else [f"Kling {version}.0", f"Kling V{version}"]
+    for model, _ in SEEDANCE_VARIANT_MODELS:
+        names[model] = ["Seedance 2.5", model]
     return [ModelAlias(names[model][0], (model,), "exact", _compile(names[model])) for model in names]
 
 

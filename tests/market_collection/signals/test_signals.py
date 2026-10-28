@@ -70,6 +70,15 @@ def test_models_added_on_1028_match_and_a_name_inside_a_longer_model_name_is_tha
     assert labels("GPT-5.6 Sol is 50% off") == [("GPT-5.6 Sol", "exact")]
 
 
+def test_video_models_added_on_1028_match_by_the_names_their_sellers_use():
+    ids = lambda text: [alias.model_ids for alias in models_in(normalize(text))]
+    assert ids("Kling 3.0 is 50% off") == [("kling-v3-text-to-video",), ("kling-v3-image-to-video",)]
+    assert ids("Kling 3.0 Omni price cut") == ids("Kling O3 reference-to-video") == [("kling-v3-omni-video",)]
+    assert ids("Kling V4 launch pricing") == [("kling-v4-text-to-video",), ("kling-v4-image-to-video",)]
+    assert ids("Seedance 2.5 price increase") == [("seedance-2.5",), ("byteplus-seedance-2.5-reference-to-video",),
+                                                  ("byteplus-seedance-2.5-video-to-video",)]
+
+
 def test_a_model_name_before_a_variant_word_is_another_model():
     """Price tracker lines of 2026-10-28: o1-pro, GPT-5.2 Codex and GPT-5.2 Chat retired are not o1 or GPT-5.2 notices, and
     the DeepSeek V4 Flash Vision Exp notice is not DeepSeek V4 Flash's (decision 36), registered or not."""
