@@ -1,11 +1,25 @@
 {
   "is_demo": true,
   "purpose": "참고 이벤트 시연용 가상 현재 공급 경로. 실제 렛서 내부 공급 경로 연동 전 시뮬레이션.",
+  "basis_note": "basis가 settings인 기록은 렛서 QnA 답변(9/23) 질문 2의 '설정에 등록된 공급 경로'다(2026-10-28 박건 결정). 렛서는 설정에 경로가 있어도 지금 그 경로로 실제 트래픽이 흐르는지는 따로 확인해야 한다고 했다. basis가 없는 기록은 시연용 가정이다.",
   "records": [
     {
       "model_id": "gemini-3.8-flash",
+      "route_id": "google_direct",
+      "endpoint_id": null,
+      "basis": "settings"
+    },
+    {
+      "model_id": "gemini-3.8-flash",
+      "route_id": "openrouter",
+      "endpoint_id": null,
+      "basis": "settings"
+    },
+    {
+      "model_id": "gemini-3.8-flash",
       "route_id": "vercel_ai_gateway",
-      "endpoint_id": null
+      "endpoint_id": null,
+      "basis": "settings"
     },
     {
       "model_id": "claude-sonnet-5-5",
@@ -24,8 +38,15 @@
     },
     {
       "model_id": "claude-fable-5-1",
-      "route_id": "vercel_ai_gateway",
-      "endpoint_id": null
+      "route_id": "anthropic_direct",
+      "endpoint_id": null,
+      "basis": "settings"
+    },
+    {
+      "model_id": "claude-fable-5-1",
+      "route_id": "aws_bedrock",
+      "endpoint_id": null,
+      "basis": "settings"
     },
     {
       "model_id": "claude-opus-5-5",
@@ -74,8 +95,21 @@
     },
     {
       "model_id": "gpt-6-astra",
-      "route_id": "vercel_ai_gateway",
-      "endpoint_id": null
+      "route_id": "openai_direct",
+      "endpoint_id": null,
+      "basis": "settings"
+    },
+    {
+      "model_id": "gpt-image-2.5-flare",
+      "route_id": "openai",
+      "endpoint_id": null,
+      "basis": "settings"
+    },
+    {
+      "model_id": "gpt-image-2.5-sunburst",
+      "route_id": "openai",
+      "endpoint_id": null,
+      "basis": "settings"
     },
     {
       "model_id": "kimi-k3",
@@ -84,8 +118,15 @@
     },
     {
       "model_id": "seedance-2.5",
-      "route_id": "vercel_ai_gateway",
-      "endpoint_id": null
+      "route_id": "fal",
+      "endpoint_id": null,
+      "basis": "settings"
+    },
+    {
+      "model_id": "seedance-2.5",
+      "route_id": "BytePlus ModelArk",
+      "endpoint_id": null,
+      "basis": "settings"
     }
   ]
 }

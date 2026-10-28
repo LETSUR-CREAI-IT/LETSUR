@@ -140,7 +140,8 @@ python3 -B -m scripts.market_collection.dashboard --root data/market_collection 
 ### 렛서 관계 (`--internal-routes`)
 
 - 카드의 렛서 관계(`relKey`, `relShort`, `relDemo`)는 `--internal-routes` 파일로만 정한다. 엔진 `letsur_usage`는 지금 항상 `unknown`이라 쓰지 않는다. 옵션이 없으면 모든 카드가 `relKey: "unk"`, `relShort: "사용 경로 확인 필요"`, `relDemo: false`다(옵션이 생기기 전과 같은 결과).
-- 파일 형식: `{"is_demo": true 또는 false, "records": [{"model_id": "...", "route_id": "..." 또는 null, "endpoint_id": "..." 또는 null}, ...]}`. `endpoint_id`는 빠져도 된다. 그 밖의 키(`purpose` 등)는 읽지 않는다.
+- 파일 형식: `{"is_demo": true 또는 false, "records": [{"model_id": "...", "route_id": "..." 또는 null, "endpoint_id": "..." 또는 null, "basis": "settings" 또는 없음}, ...]}`. `endpoint_id`와 `basis`는 빠져도 된다. 그 밖의 키(`purpose`, `basis_note` 등)는 읽지 않는다.
+- `basis: "settings"`(2026-10-28 박건 결정): 렛서 QnA 답변(9/23) 질문 2의 '설정에 등록된 공급 경로'다. 한 모델의 레코드가 모두 settings면 그 모델 카드는 `relDemo: false`, `relSet: true`이고 `relShort` 끝에 " (렛서 설정)"을 붙인다(`route_basis`). 화면은 적용 배지에 "· 설정", 상세 "현재 사용 경로"에 '렛서 설정' 태그, 제안 근거에 "(렛서 관계는 9/23 답변의 렛서 설정 경로 기준, 실제 트래픽 미확인)"을 붙인다. 렛서는 설정에 경로가 있어도 실제 트래픽이 흐르는지는 따로 확인해야 한다고 했다. 레코드 하나라도 basis가 없으면 그 모델 전체를 시연용 가정으로 본다.
 - 카드의 모델(대표 이벤트 `model_id`)로 레코드를 찾고 카드 경로(대표 이벤트 `route`)와 `route_id`를 비교한다.
 
 | 그 모델의 레코드 | relKey | relShort |
@@ -169,13 +170,14 @@ python3 -B -m scripts.market_collection.dashboard --root data/market_collection 
 
 - `use`의 쓰는 경로는 카드 `other`와 같은 표기(게시자 · route_id)를 ", "로 잇는다. 카드 `other` 문구에서 "모델 제공 중 : "만 뺀 꼴이다. 예: "Vercel · vercel_ai_gateway 경로로 사용".
 - `use`의 endpoint: 경로가 있는 레코드의 `endpoint_id`를 " · endpoint <id>"로 뒤에 붙인다(예: "fal · fal 경로로 사용 · endpoint fal-ai/veo3.1"). 경로가 여럿이면 endpoint가 어느 경로의 것인지는 문구에 나오지 않는다.
-- `use`의 is_demo: true면 끝에 " (가정)"을 붙이고 false면 붙이지 않는다. 시연 파일로는 gemini-3.8-flash가 "Vercel · vercel_ai_gateway 경로로 사용 (가정)"이다.
+- `use`의 is_demo: true면 끝에 " (가정)"을 붙이고 false면 붙이지 않는다. 레코드가 모두 `basis: "settings"`인 모델은 " (렛서 설정)"을 붙인다. 시연 파일로는 gemini-3.8-flash가 "Google · google_direct, OpenRouter · openrouter, Vercel · vercel_ai_gateway 경로로 사용 (렛서 설정)"이다(10/28 전에는 "Vercel · vercel_ai_gateway 경로로 사용 (가정)").
 - 1011 원본 `MODELS` 예시("제공 중 · Vercel 경로 (가정)", "미도입 (가정)")와 달리 "제공 중 · "을 붙이지 않고 경로를 카드와 같은 표기로 쓴다.
 - 옵션이 없거나 파일을 쓸 수 없으면 어느 모델에도 `use`를 넣지 않는다(옵션이 생기기 전과 같은 결과).
-- 파일을 쓸 수 없으면 페이지는 그대로 만들고, 경고 배너에 파일 이름과 사유를 적고, 모든 카드를 `unk`로 둔다(exit 0). 시연 파일 문제로 일일 페이지가 멈추지 않게 하려는 것이다. 사유: 파일 없음, JSON으로 읽을 수 없음, `is_demo`가 true·false가 아님, `records`가 목록이 아님, 레코드에 `model_id`(빈 문자열 제외)나 `route_id` 키가 없음, `route_id`·`endpoint_id`가 빈 문자열이거나 문자열·null이 아님.
+- 파일을 쓸 수 없으면 페이지는 그대로 만들고, 경고 배너에 파일 이름과 사유를 적고, 모든 카드를 `unk`로 둔다(exit 0). 시연 파일 문제로 일일 페이지가 멈추지 않게 하려는 것이다. 사유: 파일 없음, JSON으로 읽을 수 없음, `is_demo`가 true·false가 아님, `records`가 목록이 아님, 레코드에 `model_id`(빈 문자열 제외)나 `route_id` 키가 없음, `route_id`·`endpoint_id`가 빈 문자열이거나 문자열·null이 아님, `basis`가 settings·null이 아님.
 - 템플릿 510행 데이터 출처 주석("렛서 사용 경로는 엔진 letsur_usage가 unknown이라 relKey "unk".")은 이 옵션 전 설명이고, 고치지 않고 두었다.
 - 시연 파일 `samples/market_collection/demo_internal_routes.json`: LETSUR-events `deliverables/event-json-handoff-20261009/demo_internal_routes.json`을 2026-10-21에 바이트 그대로 복사했다(617 bytes, SHA256 `f27733b9a9c01edb54a6b34b3b6ca4aadc4e785056bf2da1632fa3b212c51f0a`). `is_demo: true`와 `purpose`는 원본 그대로다. 실제 렛서 경로가 아니라 시연용 가정이다.
   - 레코드 4개: gemini-3.8-flash · vercel_ai_gateway, claude-sonnet-5-5 · anthropic_direct, veo-3.1-standard · fal(endpoint fal-ai/veo3.1), gpt-6.1-sol · null(미도입).
+  - 2026-10-28 박건 결정: 렛서 QnA 답변(9/23) 질문 2의 설정 등록 경로로 여섯 모델을 바꾸고 `basis: "settings"`를 달았다. gemini-3.8-flash(google_direct, openrouter, vercel_ai_gateway), claude-fable-5-1(anthropic_direct, aws_bedrock), gpt-6-astra(openai_direct), gpt-image-2.5-flare·sunburst(openai), seedance-2.5(fal, BytePlus ModelArk). 나머지는 시연용 가정 그대로다. 10/28 수집 자료 61장에서 바뀐 카드는 4장이다. gemini Google 1/1 인상 예정이 RECORD · NOT APPLIES에서 REVIEW · APPLIES(렛서 설정)가 되고, claude-fable-5-1·gpt-6-astra·seedance-2.5의 Vercel 경로 추가가 APPLIES에서 NOT APPLIES가 된다.
 - 실제 연동: 실제 렛서 사용 경로가 생기면 workflow `Build dashboard` 단계에서 `--internal-routes`를 빼거나(모든 카드가 "사용 경로 확인 필요"로 돌아간다), 같은 형식의 실제 경로 파일(`is_demo: false`)로 바꾼다. 시연 파일은 그때 지우면 된다.
 
 ### 상세페이지 필드 (박기범, 2026-10-26)
@@ -201,7 +203,7 @@ python3 -B -m scripts.market_collection.dashboard --root data/market_collection 
 
 기준: Notion "연우 메인페이지"의 메인페이지 정규화 규칙과 김연우 시안(렛서_대시보드_메인페이지_정규화_1027.html). 시안은 샘플 데이터용이라 같은 규칙을 실데이터 카드 필드로 다시 만들었다. 엔진 출력은 바꾸지 않고 화면에서 만든다(`act`는 계속 `pending`).
 
-- Applicability: `relKey`가 use면 APPLIES, unk면 UNKNOWN, other·none이면 NOT APPLIES. `relDemo`면 "· 가정"을 붙인다.
+- Applicability: `relKey`가 use면 APPLIES, unk면 UNKNOWN, other·none이면 NOT APPLIES. `relDemo`면 "· 가정", `relSet`(렛서 설정 경로)이면 "· 설정"을 붙인다.
 - Suggested Action: 상세 제안(`suggestOf`)과 같은 판단에서 나와 목록·달력·상세가 같은 값을 보인다. 상세 "다음 할 일" 옆에도 같은 배지를 둔다.
 - 목록 줄 제목은 모델 이름을 앞에 둔 "glm-5.3-flash 20개 항목 단가 인하 관측" 꼴이고, 아래 줄은 유형과 경로다(2026-10-27 박건 요청: 어떤 모델의 변화인지 주어가 보이게).
 - 상세 "다음 할 일" 아래 줄은 "확인 : …", "대응 : …", "주의 : …"처럼 라벨과 내용을 쌍점으로 잇는다(2026-10-27 박건 요청, 이전 "먼저 확인 · …", "대응 방향 · …"). "확인"에는 엔진의 다음 수집 확인(`next`)도 들어간다. 굵은 첫 줄(예: "현재 경로 유지 : Google · google_direct 새 단가는 비교용으로 기록", "고객 할인 : 할인 기간에만 한정해 검토, 판매가 기본값은 유지")과 "현재 사용 경로"(예: "모델 제공 중 : Vercel · vercel_ai_gateway 경로로 사용 (가정)")도 같은 꼴이다. "Vercel · vercel_ai_gateway"처럼 경로 이름 안의 "·"는 그대로다.

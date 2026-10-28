@@ -641,7 +641,7 @@ const BASE = (/[?&]base=(\d{4}-\d{2}-\d{2})/.exec(location.search) || [])[1];
 const TODAY = BASE || /*DATA:TODAY*/;
 const SRC = /*DATA:SRC*/;
 const ID = /*DATA:ID*/;
-// 필드: t7 7유형 · sub 하위 태그 · relKey use/other/none/unk · relDemo 가정 여부
+// 필드: t7 7유형 · sub 하위 태그 · relKey use/other/none/unk · relDemo 가정 여부 · relSet 렛서 설정 경로(9/23 답변) 여부
 // 목록 거르기: kind 유형 칩 키(7유형, 유형을 못 정했으면 "유형 미정") · cd 최근 7일 안인지 가르는 날짜(적용일·종료일·경로 추가일, 없으면 발표일·관측일, 그것도 없으면 피드 글의 게시일이나 마지막 관측일. 날짜가 없으면 키 자체가 없다) · ld 묶음 카드의 마지막 관측일(구성원 중 가장 늦게 관측된 날. 묶음이 아니거나 관측한 구성원이 없으면 키 자체가 없다)
 // 수정안: mid = events.json subject.model_id (그래프 연결 키) · effQual 해석한 날짜 · link 함께 볼 이벤트 [ID, 이유] · risk 다음 할 일에 붙는 주의
 // 수정안: 목록·캘린더 묶음은 type4 대신 7유형에서 한 표(T7GROUP)로 정함
@@ -938,7 +938,7 @@ function suggestHtml(e){
   const g = suggestOf(e), cf = CHECKFIRST[e.id] || [];
   return `<div class="sg"><div class="sgh"><span class="pre">${esc(g.pre || "")}</span><span class="resp ${g.resp}">${RESP[g.resp]}${g.note ? ` · ${esc(g.note)}` : ""}</span>${g.resp === "hold" ? "" : " 검토"}${e.done ? ` <span class="tg">결정됨 · ${esc(e.next)}</span>` : ""}${g.due ? ` <span class="due">${esc(g.due)}</span>` : ""}</div>
     <div class="sgw"><b>검토할 것</b> ${esc(g.text)}</div>
-    <div class="sgy">제안 근거 · ${esc(g.why)}${EV7[e.id] !== null && relOf(e) !== "unk" && e.relDemo ? " (렛서 관계는 시연용 가정)" : ""}</div></div>`;
+    <div class="sgy">제안 근거 · ${esc(g.why)}${EV7[e.id] !== null && relOf(e) !== "unk" && e.relDemo ? " (렛서 관계는 시연용 가정)" : EV7[e.id] !== null && relOf(e) !== "unk" && e.relSet ? " (렛서 관계는 9/23 답변의 렛서 설정 경로 기준, 실제 트래픽 미확인)" : ""}</div></div>`;
 }
 // 상단 원가 칩: 유리/불리 판정이 아니라 단가 방향 사실만 (▲ 인상 빨강 / ▼ 인하 파랑 / 회색)
 function costChip(e){
@@ -972,8 +972,12 @@ function typeHead(e){
 const CAL = byEv("cal");
 // ---- 메인페이지 정규화 (김연우 10/27 규칙, 상세 제안과 한 판단으로 합침) ----
 // Applicability: 이 이벤트의 경로가 렛서의 현재 사용 경로에 해당하는지(relKey). relDemo면 시연용 가정이라 "가정"을 붙인다.
+// relSet이면 렛서가 9/23 QnA 답변에서 알려 준 설정 등록 경로라 "설정"을 붙인다(실제 트래픽은 미확인, 2026-10-28 박건 결정).
 const APPSTAT = {use:{en:"APPLIES", ko:"적용", cls:"applies"}, unk:{en:"UNKNOWN", ko:"미확인", cls:"unknown"}, no:{en:"NOT APPLIES", ko:"비적용", cls:"not-applies"}};
 const applicabilityOf = e => { const r = relOf(e); return r === "use" ? APPSTAT.use : r === "unk" ? APPSTAT.unk : APPSTAT.no; };
+const relMark = e => e.relDemo ? {chip: "가정", note: "시연용 가정"} : e.relSet ? {chip: "설정", note: "렛서 설정 경로, 9/23 답변 · 실제 트래픽 미확인"} : null;
+const appChip = e => { const a = applicabilityOf(e), m = relMark(e);
+  return `<span class="qchip ${a.cls}" title="렛서 적용 ${a.ko}${m ? ` (${m.note})` : ""}">${a.en}${m && a !== APPSTAT.unk ? " · " + m.chip : ""}</span>`; };
 // Suggested Action: 담당자가 다음에 할 작업 구분(조달 결정이 아님). 상세의 제안(suggestOf)과 같은 판단에서 나와 목록·달력·상세가 같은 말을 한다.
 // VERIFY 유형·값·출처·렛서 적용이 아직 안 정해짐 → RECORD 끝난 할인, 제안이 "기존 조건 유지" → MONITOR 값은 있으나 공식 확인 전 → REVIEW 나머지(고객 할인·경로 검토)
 const QACTION = {review:{en:"REVIEW", ko:"검토", order:0}, verify:{en:"VERIFY", ko:"확인 필요", order:1}, monitor:{en:"MONITOR", ko:"관측 유지", order:2}, record:{en:"RECORD", ko:"기록", order:3}};
@@ -989,8 +993,8 @@ function actionKey(e){
   return g.resp === "hold" ? "verify" : g.resp === "keep" ? "record" : "review";
 }
 const actOrder = e => QACTION[actionKey(e)].order;
-const qchips = e => { const k = actionKey(e), a = applicabilityOf(e);
-  return `<span class="qchip ${k}" title="${QACTION[k].ko}">${QACTION[k].en}</span><span class="qchip ${a.cls}" title="렛서 적용 ${a.ko}${e.relDemo ? " (시연용 가정)" : ""}">${a.en}${e.relDemo && a !== APPSTAT.unk ? " · 가정" : ""}</span>${e.rv ? `<span class="qchip rvc" title="이후 수집에서 원래 가격으로 돌아온 항목 ${e.rv}/${e.rn}">${e.rv === e.rn ? "해소됨" : `일부 해소 ${e.rv}/${e.rn}`}</span>` : ""}`; };
+const qchips = e => { const k = actionKey(e);
+  return `<span class="qchip ${k}" title="${QACTION[k].ko}">${QACTION[k].en}</span>${appChip(e)}${e.rv ? `<span class="qchip rvc" title="이후 수집에서 원래 가격으로 돌아온 항목 ${e.rv}/${e.rn}">${e.rv === e.rn ? "해소됨" : `일부 해소 ${e.rv}/${e.rn}`}</span>` : ""}`; };
 // 달력 날짜: 한 이벤트에 날짜가 여럿일 수 있다. effective 적용·변경 / end 할인·경로·현재 단가가 끝나는 날 / next_check 다시 볼 날(팀 기준, 공지 날짜 아님)
 const DATE_KIND = {effective:"적용", end:"종료", next_check:"확인"};
 const calAddDays = (d, n) => new Date(dt(d) + n * 864e5).toISOString().slice(0, 10);
@@ -1271,11 +1275,11 @@ function bundled(list){ const seen = new Set();
   return list.flatMap(e => !e.vg ? [e] : seen.has(e.vg) ? [] : (seen.add(e.vg), [{vg: e.vg}])); }
 function vgSum(id){ const l = VG[id], days = l.map(e => e.cd).filter(Boolean).sort();
   return {l, e0: l[0], up: l.filter(e => dirOf(e) === "bad").length, down: l.filter(e => dirOf(e) === "good").length, res: l.filter(e => e.rv).length, from: days[0], to: days[days.length - 1]}; }
-function vgRow(b){ const {l, e0, up, down, res, from, to} = vgSum(b.vg), a = applicabilityOf(e0);
+function vgRow(b){ const {l, e0, up, down, res, from, to} = vgSum(b.vg);
   return `<li>
     <button type="button" class="row vg" data-id="${esc(b.vg)}" aria-current="${state.sel === b.vg}">
       <span class="dl2"><span class="dd none seen">${l.length}장</span><small class="tn">${md(from)}~</small><small class="tn">${md(to)}</small></span>
-      <span class="t"><span class="qbadges"><span class="qchip vgc">변동 잦음</span><span class="qchip ${a.cls}" title="렛서 적용 ${a.ko}${e0.relDemo ? " (시연용 가정)" : ""}">${a.en}${e0.relDemo && a !== APPSTAT.unk ? " · 가정" : ""}</span></span><b><span class="subj">${esc(e0.m)}</span> 가격이 자주 바뀜 · 인상 ${up} · 인하 ${down}${res ? ` · 되돌아감 ${res}` : ""}</b><span><span class="qs t7">가격 변경 묶음</span>${esc(e0.ch)}</span></span>
+      <span class="t"><span class="qbadges"><span class="qchip vgc">변동 잦음</span>${appChip(e0)}</span><b><span class="subj">${esc(e0.m)}</span> 가격이 자주 바뀜 · 인상 ${up} · 인하 ${down}${res ? ` · 되돌아감 ${res}` : ""}</b><span><span class="qs t7">가격 변경 묶음</span>${esc(e0.ch)}</span></span>
     </button></li>`; }
 const rowOf = x => x.vg && !x.id ? vgRow(x) : queueRow(x);
 function renderQueue(){
@@ -1363,7 +1367,7 @@ function renderDetail(){
     <h2 class="headline">${e.head || esc(e.sum)}</h2>
     ${e.rv ? `<p class="rvnote">${e.rv === e.rn ? `이후 수집에서 바뀐 가격 ${e.rn}개가 모두 원래 값으로 돌아왔습니다. 지금은 적용되지 않는 변화라 기록만 남깁니다(해소됨).` : `바뀐 가격 ${e.rn}개 중 ${e.rv}개가 이후 수집에서 원래 값으로 돌아왔습니다(일부 해소).`}</p>` : ""}
     <div class="decide"><div class="next"><div class="k">다음 할 일 <span class="qbadges" style="display:inline-flex">${qchips(e)}</span></div><div class="v">${nextHtml(e)}</div></div><div><div class="k">${esc(e.effLabel || "적용일")}</div><div class="v">${eff}</div></div>
-      <div><div class="k">현재 사용 경로${e.relDemo ? ` <span class="tg">가정</span>` : ""}</div><div class="v">${esc(e.relShort || e.rel)}</div></div></div>
+      <div><div class="k">현재 사용 경로${e.relDemo ? ` <span class="tg">가정</span>` : e.relSet ? ` <span class="tg" title="렛서 9/23 QnA 답변의 설정 등록 경로 · 실제 트래픽 미확인">렛서 설정</span>` : ""}</div><div class="v">${esc(e.relShort || e.rel)}</div></div></div>
     ${e.link && EVENTS.some(x => x.id === e.link[0]) ? (l => `<div class="lk"><span>함께 볼 이벤트</span><b>${esc(l.m)} · ${esc(l.ch)}</b><span>${esc(e.link[1])}</span><button type="button" data-id="${esc(l.id)}">열기 →</button></div>`)(EVENTS.find(x => x.id === e.link[0])) : ""}
     ${e.vg ? `<div class="lk"><span>변동 잦음 묶음</span><b>${esc(e.m)} · ${esc(e.ch)}</b><span>이 경로의 가격 변경 카드 ${VG[e.vg].length}장을 목록에서 한 줄로 묶었습니다</span><button type="button" data-id="${esc(e.vg)}">묶음 보기 →</button></div>` : ""}
     ${keyChange(e)}<div class="vgbtn">${TREND[e.mid] ? `<button type="button" class="tlink" data-trend="${esc(e.mid)}" data-tview="chart">${esc(TREND[e.mid].name)} 가격 추이 보기 →</button>` : ""}${COMPARE[e.mid] ? `<button type="button" class="tlink" data-trend="${esc(e.mid)}" data-tview="table">공급사 비교 표 보기 → <small>${compareMeta(e.mid)}</small></button>` : ""}</div>`;

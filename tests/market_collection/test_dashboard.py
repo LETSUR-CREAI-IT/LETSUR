@@ -586,12 +586,32 @@ def test_routes_that_are_not_a_demo_are_not_marked_as_assumed(tmp_path: Path) ->
 
 
 def test_committed_demo_routes(tmp_path: Path) -> None:
-    """The file the workflow passes: the demo assumes LETSUR takes Gemini 3.8 Flash through Vercel."""
+    """The file the workflow passes: Gemini 3.8 Flash takes LETSUR's registered routes from its 9/23 QnA answer
+    (Google direct, OpenRouter, Vercel; 2026-10-28 박건 결정), so a Google direct change applies, marked as LETSUR settings."""
     _write(tmp_path, [_scheduled("e1", "input", "0.75", "1.50", "0.75")])
     _, _, data = _build(tmp_path, args=["--internal-routes", str(DEMO_ROUTES)])
     [card] = data["EVENTS"]
-    assert (card["relKey"], card["relShort"], card["relDemo"]) == ("other", "모델 제공 중 : Vercel · vercel_ai_gateway 경로로 사용 (가정)", True)
-    assert data["MODELS"] == {"gemini-3.8-flash": {"prov": "Google", "kind": "LLM", "use": "Vercel · vercel_ai_gateway 경로로 사용 (가정)"}}
+    assert (card["relKey"], card["relShort"], card["relDemo"], card["relSet"]) == ("use", "이 경로로 사용 중 (렛서 설정)", False, True)
+    assert data["MODELS"] == {"gemini-3.8-flash": {"prov": "Google", "kind": "LLM",
+                                                   "use": "Google · google_direct, OpenRouter · openrouter, Vercel · vercel_ai_gateway 경로로 사용 (렛서 설정)"}}
+
+
+@pytest.mark.parametrize(("records", "relation"), [
+    ([_record("google_direct", basis="settings"), _record("vercel_ai_gateway", basis="settings")],
+     ("use", "이 경로로 사용 중 (렛서 설정)", False, True)),
+    ([_record("vercel_ai_gateway", basis="settings")],
+     ("other", "모델 제공 중 : Vercel · vercel_ai_gateway 경로로 사용 (렛서 설정)", False, True)),
+    # one record without basis keeps the whole model an assumption
+    ([_record("google_direct", basis="settings"), _record("vercel_ai_gateway")], ("use", "이 경로로 사용 중 (가정)", True, False)),
+])
+def test_registered_routes_are_marked_as_letsur_settings(tmp_path: Path, records: list, relation: tuple) -> None:
+    """2026-10-28 박건 결정: records with basis settings are LETSUR's registered routes (9/23 QnA answer), not assumptions."""
+    _write(tmp_path, [_scheduled("e1", "input", "0.75", "1.50", "0.75")])
+    _, _, data = _build(tmp_path, args=_routes(tmp_path, {"is_demo": True, "records": records}))
+    [card] = data["EVENTS"]
+    assert (card["relKey"], card["relShort"], card["relDemo"], card.get("relSet", False)) == relation
+    page = (tmp_path / "site" / "index.html").read_text(encoding="utf-8")
+    assert 'e.relSet ? {chip: "설정", note: "렛서 설정 경로, 9/23 답변 · 실제 트래픽 미확인"}' in page
 
 
 @pytest.mark.parametrize(("doc", "reason"), [
@@ -604,6 +624,7 @@ def test_committed_demo_routes(tmp_path: Path) -> None:
     ({"is_demo": True, "records": [_record("google_direct"), _record("", model_id="gpt-6.1-sol")]},
      "routes.json 형식이 다름 (records 2번째 route_id가 문자열이나 null이 아님)"),
     ({"is_demo": True, "records": [_record(None, endpoint_id=3)]}, "routes.json 형식이 다름 (records 1번째 endpoint_id가 문자열이나 null이 아님)"),
+    ({"is_demo": True, "records": [_record("google_direct", basis="confirmed")]}, "routes.json 형식이 다름 (records 1번째 basis가 settings나 null이 아님)"),
 ])
 def test_unusable_routes_file_still_writes_the_page(tmp_path: Path, doc, reason: str) -> None:
     _write(tmp_path, [_scheduled("e1", "input", "0.75", "1.50", "0.75")])
