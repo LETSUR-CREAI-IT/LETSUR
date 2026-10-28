@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from scripts.market_collection.core import SourceSpec, CollectionError
-from scripts.market_collection.models import (GOOGLE_LLM_MODEL, ASTRA_MODEL, FABLE_MODEL, STANDARD_LLM_MODELS, BROKER_CATALOG_MODELS, BROKER_API_MODELS, _AWS_OPENAI, _AWS_ANTHROPIC, _AZURE_MODELS, _AZURE_RETAIL_MODELS, SUNBURST_MODEL, FLARE_MODEL, SEEDANCE_MODEL, MODEL_MODALITIES)
+from scripts.market_collection.models import (GOOGLE_LLM_MODEL, ASTRA_MODEL, FABLE_MODEL, STANDARD_LLM_MODELS, BROKER_CATALOG_MODELS, BROKER_API_MODELS, _AWS_OPENAI, _AWS_ANTHROPIC, _AZURE_MODELS, _AZURE_RETAIL_MODELS, AZURE_RETAIL_GPT5_MODELS, AZURE_RETAIL_OPENAI_MODELS, SUNBURST_MODEL, FLARE_MODEL, SEEDANCE_MODEL, MODEL_MODALITIES)
 
 def _targets() -> dict[str, tuple[str, str, str, str, str]]:
     targets = {
@@ -103,7 +103,8 @@ def cloud_source_specs() -> list[SourceSpec]:
 _AZURE_IMAGE_PRICING = "https://prices.azure.com/api/retail/prices?$filter=contains(productName,'OpenAI')%20and%20contains(meterName,'2.5')%20and%20armRegionName%20eq%20'koreacentral'"
 
 
-# One fixed page of the Foundry Models GPT-6 and GPT-5 products in koreacentral, shared by the seven GPT specs.
+# One fixed page of the Foundry Models GPT-6 and GPT-5 products in koreacentral, shared by the seven GPT specs and the
+# GPT-5.x specs of azure_retail_models_source_specs().
 _AZURE_GPT_PRICING = "https://prices.azure.com/api/retail/prices?$filter=serviceName%20eq%20'Foundry%20Models'%20and%20armRegionName%20eq%20'koreacentral'%20and%20(productName%20eq%20'Azure%20OpenAI%20GPT6'%20or%20productName%20eq%20'Azure%20OpenAI%20GPT5')"
 
 
@@ -111,6 +112,17 @@ def azure_retail_llm_source_specs() -> list[SourceSpec]:
     # Since 2026-10-28 these replace the catalog-page specs azure_<model> of the same models (appended: the registry is additive).
     return [SourceSpec(f"azure_retail_{_key(model)}", "llm", model, "azure_foundry", "text_generation", _AZURE_GPT_PRICING, "azure_llm_retail")
             for model in _AZURE_RETAIL_MODELS]
+
+
+# One fixed page of the Foundry Models Azure OpenAI and Azure OpenAI Reasoning products in koreacentral (GPT-4o, GPT-4.1, o-series).
+_AZURE_OPENAI_PRICING = "https://prices.azure.com/api/retail/prices?$filter=serviceName%20eq%20'Foundry%20Models'%20and%20armRegionName%20eq%20'koreacentral'%20and%20(productName%20eq%20'Azure%20OpenAI'%20or%20productName%20eq%20'Azure%20OpenAI%20Reasoning')"
+
+
+def azure_retail_models_source_specs() -> list[SourceSpec]:
+    # The other Azure OpenAI models LETSUR serves (2026-10-28); the embedding models have no Global Standard meter in koreacentral.
+    pages = [(model, _AZURE_GPT_PRICING) for model in AZURE_RETAIL_GPT5_MODELS] + [(model, _AZURE_OPENAI_PRICING) for model in AZURE_RETAIL_OPENAI_MODELS]
+    return [SourceSpec(f"azure_retail_{_key(model)}", "llm", model, "azure_foundry", "text_generation", url, "azure_models_retail")
+            for model, url in pages]
 
 
 def image_source_specs() -> list[SourceSpec]:
@@ -151,7 +163,7 @@ def video_source_specs() -> list[SourceSpec]:
 
 
 def source_specs() -> list[SourceSpec]:
-    specs = llm_source_specs() + image_source_specs() + video_source_specs() + image25_api_source_specs() + image25_openrouter_endpoint_source_specs() + image25_supplement_source_specs() + llm_endpoint_source_specs() + azure_retail_llm_source_specs()
+    specs = llm_source_specs() + image_source_specs() + video_source_specs() + image25_api_source_specs() + image25_openrouter_endpoint_source_specs() + image25_supplement_source_specs() + llm_endpoint_source_specs() + azure_retail_llm_source_specs() + azure_retail_models_source_specs()
     for spec in specs:
         if MODEL_MODALITIES.get(spec.model_id) != spec.modality:
             raise CollectionError(f"source model/modality mismatch: {spec.source_key}")

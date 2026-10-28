@@ -31,7 +31,7 @@ def val(f, key):
 def test_ordered_registry_append_and_raw_provenance():
     old = without_retired(json.loads((F/'registry113.json').read_text()))
     specs = source_specs()
-    assert len(specs) == 208
+    assert len(specs) == 231
     assert [asdict(s) for s in specs[:len(old)]] == old
     for p in json.loads((F/'provenance.json').read_text()):
         assert hashlib.sha256((F/p['fixture']).read_bytes()).hexdigest() == p['raw_sha256'] == p['fixture_sha256']

@@ -46,10 +46,10 @@ def test_existing_specs_preserved_in_each_modality_order():
     current = {s.source_key: asdict(s) for s in source_specs()}
     assert [current[s['source_key']] for s in old] == old
     for modality in ('llm', 'image', 'video'):
-        assert [asdict(s) for s in source_specs() if s.modality == modality and s.parser not in NEW_PARSERS and not s.parser.endswith("endpoints_llm") and not s.source_key.startswith("image25_") and s.parser != "azure_llm_retail"] == [s for s in old if s['modality'] == modality]
+        assert [asdict(s) for s in source_specs() if s.modality == modality and s.parser not in NEW_PARSERS and not s.parser.endswith("endpoints_llm") and not s.source_key.startswith("image25_") and s.parser not in ("azure_llm_retail", "azure_models_retail")] == [s for s in old if s['modality'] == modality]
     assert len(NEW) == 5
-    assert len(source_specs()) == 208
-    assert len({(s.model_id, s.route) for s in source_specs()}) == 148
+    assert len(source_specs()) == 231
+    assert len({(s.model_id, s.route) for s in source_specs()}) == 171
     assert not any(s.route == 'openrouter' and s.modality == 'video' for s in source_specs())
 
 
