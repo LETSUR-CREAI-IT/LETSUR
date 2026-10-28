@@ -89,6 +89,13 @@ _AWS_ANTHROPIC = (
 _AZURE_MODELS = ("claude-fable-5-1",) + tuple(model for model, _, _ in _AWS_ANTHROPIC)
 _AZURE_RETAIL_MODELS = tuple(model for model, _, _ in _AWS_OPENAI)
 
+# GPT and o-series models LETSUR serves through Azure OpenAI (10/28 test calls), priced from Azure retail meters
+# (2026-10-28): the GPT-5.x ones on the GPT6/GPT5 product page, the others on the Azure OpenAI and Reasoning product page.
+AZURE_RETAIL_GPT5_MODELS = ("gpt-5", "gpt-5-mini", "gpt-5-nano", "gpt-5-codex", "gpt-5.1", "gpt-5.1-codex", "gpt-5.1-codex-mini",
+                            "gpt-5.2", "gpt-5.4", "gpt-5.4-2026-03-05", "gpt-5.4-mini", "gpt-5.4-nano", "gpt-5.5")
+AZURE_RETAIL_OPENAI_MODELS = ("gpt-4o", "gpt-4o-mini", "gpt-4.1", "gpt-4.1-mini", "gpt-4.1-nano", "o1", "o3", "o3-mini", "o3-pro",
+                              "o4-mini")
+
 SUNBURST_MODEL = "gpt-image-2.5-sunburst"
 
 SUNBURST_FAL_MODEL = "openai/gpt-image-2.5/sunburst/text-to-image"
@@ -108,5 +115,6 @@ MODEL_MODALITIES = {
     **{model: "llm" for model, _, _ in STANDARD_LLM_MODELS},
     **{model: "llm" for model, *_ in BROKER_CATALOG_MODELS},
     **{model: "llm" for model, *_ in BROKER_API_MODELS},
+    **{model: "llm" for model in AZURE_RETAIL_GPT5_MODELS + AZURE_RETAIL_OPENAI_MODELS},
     SUNBURST_MODEL: "image", FLARE_MODEL: "image", SEEDANCE_MODEL: "video",
 }
