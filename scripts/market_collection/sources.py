@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from scripts.market_collection.core import SourceSpec, CollectionError
 from scripts.market_collection.models import (GOOGLE_LLM_MODEL, ASTRA_MODEL, FABLE_MODEL, STANDARD_LLM_MODELS, BROKER_CATALOG_MODELS, BROKER_API_MODELS, _AWS_OPENAI, _AWS_ANTHROPIC, _AZURE_MODELS, _AZURE_RETAIL_MODELS, SUNBURST_MODEL, FLARE_MODEL, SEEDANCE_MODEL, MODEL_MODALITIES)
+from scripts.market_collection.models import ANTHROPIC_DIRECT_MODELS, OPENAI_DIRECT_MODELS, OPENAI_EMBEDDING_MODELS, GPT_IMAGE_2_MODEL
 
 def _targets() -> dict[str, tuple[str, str, str, str, str]]:
     targets = {
@@ -113,6 +114,19 @@ def azure_retail_llm_source_specs() -> list[SourceSpec]:
             for model in _AZURE_RETAIL_MODELS]
 
 
+def maker_direct_source_specs() -> list[SourceSpec]:
+    """Anthropic and OpenAI models LETSUR calls on the makers' own routes, priced from the makers' pages (2026-10-28)."""
+    specs = [SourceSpec(f"anthropic_{_key(model)}", "llm", model, "anthropic_direct", "text_generation", "https://platform.claude.com/docs/en/about-claude/pricing.md", f"anthropic_{_key(model)}")
+             for model, _ in ANTHROPIC_DIRECT_MODELS]
+    specs.extend(SourceSpec(f"openai_{_key(model)}", "llm", model, "openai_direct", "text_generation", f"https://developers.openai.com/api/docs/models/{slug}.md", f"openai_{_key(model)}")
+                 for model, _, slug in OPENAI_DIRECT_MODELS)
+    specs.extend(SourceSpec(f"openai_{_key(model)}", "llm", model, "openai_direct", "embedding", f"https://developers.openai.com/api/docs/models/{model}.md", f"openai_{_key(model)}")
+                 for model in OPENAI_EMBEDDING_MODELS)
+    # The gpt-image-2 model page lists no price, so its token rates are read from OpenAI's pricing page.
+    specs.append(SourceSpec(f"openai_{_key(GPT_IMAGE_2_MODEL)}", "image", GPT_IMAGE_2_MODEL, "openai", "text-to-image", "https://developers.openai.com/api/docs/pricing.md", f"openai_{_key(GPT_IMAGE_2_MODEL)}"))
+    return specs
+
+
 def image_source_specs() -> list[SourceSpec]:
     # Ideogram 4.5 is not collected: LETSUR's model list has no Ideogram (2026-10-28).
     sources = (
@@ -151,7 +165,7 @@ def video_source_specs() -> list[SourceSpec]:
 
 
 def source_specs() -> list[SourceSpec]:
-    specs = llm_source_specs() + image_source_specs() + video_source_specs() + image25_api_source_specs() + image25_openrouter_endpoint_source_specs() + image25_supplement_source_specs() + llm_endpoint_source_specs() + azure_retail_llm_source_specs()
+    specs = llm_source_specs() + image_source_specs() + video_source_specs() + image25_api_source_specs() + image25_openrouter_endpoint_source_specs() + image25_supplement_source_specs() + llm_endpoint_source_specs() + azure_retail_llm_source_specs() + maker_direct_source_specs()
     for spec in specs:
         if MODEL_MODALITIES.get(spec.model_id) != spec.modality:
             raise CollectionError(f"source model/modality mismatch: {spec.source_key}")
