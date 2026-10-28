@@ -255,6 +255,9 @@ def _byteplus_docs_source(spec: SourceSpec) -> bool:
             and (spec.source_key, spec.parser) in {
                 ("byteplus_seedance_25_t2v", "byteplus_pricing"),
                 ("byteplus_seedance_promotion_rules", "byteplus_campaign"),
+                # The same pricing page read for the video-input rates (2026-10-28).
+                ("byteplus_seedance_25_r2v", "byteplus_video_input"),
+                ("byteplus_seedance_25_v2v", "byteplus_video_input"),
             })
 
 

@@ -25,6 +25,7 @@ ROUTE_PUBLISHERS = {
     "anthropic_direct": "Anthropic", "ideogram_direct": "Ideogram", "openrouter": "OpenRouter",
     "vercel_ai_gateway": "Vercel", "vercel": "Vercel", "fal": "fal", "aws_bedrock": "AWS",
     "azure_foundry": "Microsoft", "azure_databricks": "Databricks", "BytePlus ModelArk": "BytePlus",
+    "kling_direct": "Kling AI",
 }
 # Model family prefix -> maker. Families, not model IDs, so a new model of a
 # known family needs no edit here.

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from scripts.market_collection.core import SourceSpec, CollectionError
-from scripts.market_collection.models import (GOOGLE_LLM_MODEL, ASTRA_MODEL, FABLE_MODEL, STANDARD_LLM_MODELS, BROKER_CATALOG_MODELS, BROKER_API_MODELS, _AWS_OPENAI, _AWS_ANTHROPIC, _AZURE_MODELS, _AZURE_RETAIL_MODELS, SUNBURST_MODEL, FLARE_MODEL, SEEDANCE_MODEL, MODEL_MODALITIES)
+from scripts.market_collection.models import (GOOGLE_LLM_MODEL, ASTRA_MODEL, FABLE_MODEL, STANDARD_LLM_MODELS, BROKER_CATALOG_MODELS, BROKER_API_MODELS, _AWS_OPENAI, _AWS_ANTHROPIC, _AZURE_MODELS, _AZURE_RETAIL_MODELS, SUNBURST_MODEL, FLARE_MODEL, SEEDANCE_MODEL, KLING_VIDEO_MODELS, SEEDANCE_VARIANT_MODELS, MODEL_MODALITIES)
 
 def _targets() -> dict[str, tuple[str, str, str, str, str]]:
     targets = {
@@ -151,7 +151,7 @@ def video_source_specs() -> list[SourceSpec]:
 
 
 def source_specs() -> list[SourceSpec]:
-    specs = llm_source_specs() + image_source_specs() + video_source_specs() + image25_api_source_specs() + image25_openrouter_endpoint_source_specs() + image25_supplement_source_specs() + llm_endpoint_source_specs() + azure_retail_llm_source_specs()
+    specs = llm_source_specs() + image_source_specs() + video_source_specs() + image25_api_source_specs() + image25_openrouter_endpoint_source_specs() + image25_supplement_source_specs() + llm_endpoint_source_specs() + azure_retail_llm_source_specs() + kling_seedance_source_specs()
     for spec in specs:
         if MODEL_MODALITIES.get(spec.model_id) != spec.modality:
             raise CollectionError(f"source model/modality mismatch: {spec.source_key}")
@@ -194,3 +194,41 @@ def image25_supplement_source_specs() -> list[SourceSpec]:
             specs.append(SourceSpec(f'image25_{kind}_{variant}_doc', 'image', model, route,
                                     'model-conditions', url, 'image25_'+kind))
     return specs
+
+
+_KLING_PRICING = "https://kling.ai/dev/pricing"
+_FAL_LLMS = "https://fal.ai/models/{}/llms.txt"
+_VERCEL_VIDEO_ENDPOINTS = "https://ai-gateway.vercel.sh/v1/models/{}/endpoints"
+_BYTEPLUS_PRICING = "https://docs.byteplus.com/id/docs/modelark/model-pricing?redirect=1"
+
+
+def kling_seedance_source_specs() -> list[SourceSpec]:
+    # LETSUR has not said which route serves these models (2026-10-28), so each public source that prices one is collected.
+    # fal splits a model by mode (standard/pro) and, for Kling 3.0 Omni, by video input, so one model has several fal pages.
+    # fal lists no priced Seedance 2.5 video-to-video endpoint and Vercel lists no Kling 4.0, Kling 3.0 Omni or Seedance video-to-video.
+    kling = ("kling_direct", _KLING_PRICING, "kling_pricing")
+    byteplus = ("BytePlus ModelArk", _BYTEPLUS_PRICING, "byteplus_video_input")
+    sources = (
+        ("kling_v3_t2v", "kling-v3-text-to-video", *kling),
+        ("kling_v3_i2v", "kling-v3-image-to-video", *kling),
+        ("kling_v3_omni", "kling-v3-omni-video", *kling),
+        ("fal_kling_v3_t2v_standard", "kling-v3-text-to-video", "fal", _FAL_LLMS.format("fal-ai/kling-video/v3/standard/text-to-video"), "fal_llms"),
+        ("fal_kling_v3_t2v_pro", "kling-v3-text-to-video", "fal", _FAL_LLMS.format("fal-ai/kling-video/v3/pro/text-to-video"), "fal_llms"),
+        ("fal_kling_v3_i2v_standard", "kling-v3-image-to-video", "fal", _FAL_LLMS.format("fal-ai/kling-video/v3/standard/image-to-video"), "fal_llms"),
+        ("fal_kling_v3_i2v_pro", "kling-v3-image-to-video", "fal", _FAL_LLMS.format("fal-ai/kling-video/v3/pro/image-to-video"), "fal_llms"),
+        ("fal_kling_v3_omni_standard", "kling-v3-omni-video", "fal", _FAL_LLMS.format("fal-ai/kling-video/o3/standard/reference-to-video"), "fal_llms"),
+        ("fal_kling_v3_omni_pro", "kling-v3-omni-video", "fal", _FAL_LLMS.format("fal-ai/kling-video/o3/pro/reference-to-video"), "fal_llms"),
+        ("fal_kling_v3_omni_video_standard", "kling-v3-omni-video", "fal", _FAL_LLMS.format("fal-ai/kling-video/o3/standard/video-to-video/reference"), "fal_llms"),
+        ("fal_kling_v3_omni_video_pro", "kling-v3-omni-video", "fal", _FAL_LLMS.format("fal-ai/kling-video/o3/pro/video-to-video/reference"), "fal_llms"),
+        ("fal_kling_v4_t2v", "kling-v4-text-to-video", "fal", _FAL_LLMS.format("kling/v4/text-to-video"), "fal_llms"),
+        ("fal_kling_v4_i2v", "kling-v4-image-to-video", "fal", _FAL_LLMS.format("kling/v4/image-to-video"), "fal_llms"),
+        ("fal_kling_v4_omni", "kling-v4-omni-video", "fal", _FAL_LLMS.format("kling/v4/reference-to-video"), "fal_llms"),
+        ("fal_seedance_25_r2v", "byteplus-seedance-2.5-reference-to-video", "fal", _FAL_LLMS.format("bytedance/seedance-2.5/reference-to-video"), "fal_llms"),
+        ("byteplus_seedance_25_r2v", "byteplus-seedance-2.5-reference-to-video", *byteplus),
+        ("byteplus_seedance_25_v2v", "byteplus-seedance-2.5-video-to-video", *byteplus),
+        ("vercel_kling_v3_t2v", "kling-v3-text-to-video", "vercel_ai_gateway", _VERCEL_VIDEO_ENDPOINTS.format("klingai/kling-v3.0-t2v"), "vercel_video_endpoints"),
+        ("vercel_kling_v3_i2v", "kling-v3-image-to-video", "vercel_ai_gateway", _VERCEL_VIDEO_ENDPOINTS.format("klingai/kling-v3.0-i2v"), "vercel_video_endpoints"),
+        ("vercel_seedance_25_r2v", "byteplus-seedance-2.5-reference-to-video", "vercel_ai_gateway", _VERCEL_VIDEO_ENDPOINTS.format("bytedance/seedance-2.5"), "vercel_video_endpoints"),
+    )
+    tasks = dict(KLING_VIDEO_MODELS + SEEDANCE_VARIANT_MODELS)
+    return [SourceSpec(key, "video", model, route, tasks[model], url, parser) for key, model, route, url, parser in sources]

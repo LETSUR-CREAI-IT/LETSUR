@@ -1,0 +1,155 @@
+[
+  {
+    "fixture": "kling-pricing.html",
+    "source_url": "https://kling.ai/dev/pricing",
+    "fetched_at_utc": "2026-10-28T14:53:57.116316+00:00",
+    "raw_sha256": "7f8b028b5b5bcdc7cdba206a1a75d8a16dbb163af19eff24913cd0b269ee59d9",
+    "raw_bytes": 281705,
+    "fixture_sha256": "49f9d20ee8fe0ec3856b1478838f8c724b58a12f31748864163e77741b9b87d9",
+    "method": "The page's exact devModelPageInfo configuration script element (every language, unchanged) in a minimal page; the other scripts and markup omitted."
+  },
+  {
+    "fixture": "fal_kling_v3_t2v_standard.md",
+    "source_url": "https://fal.ai/models/fal-ai/kling-video/v3/standard/text-to-video/llms.txt",
+    "fetched_at_utc": "2026-10-28T14:53:57.356599+00:00",
+    "raw_sha256": "e5c34164d3b9eb30e96776c7ffa5a2578282dd956f2c34781edf78c3bca691bb",
+    "raw_bytes": 6810,
+    "fixture_sha256": "74463cca3f8f00c6a168add2dac001ebb239abe0ef5c55ba006006a58292cfdb",
+    "method": "The llms.txt page up to (not including) its Output Schema heading: title, Overview, Pricing, API Information and Input Schema unchanged; output schema and usage examples omitted."
+  },
+  {
+    "fixture": "fal_kling_v3_t2v_pro.md",
+    "source_url": "https://fal.ai/models/fal-ai/kling-video/v3/pro/text-to-video/llms.txt",
+    "fetched_at_utc": "2026-10-28T14:53:57.464929+00:00",
+    "raw_sha256": "64dd39e2a1efc38d5be50a6b111928d39a0dc4fed86a80bcca1be02cefadff09",
+    "raw_bytes": 6600,
+    "fixture_sha256": "9129850641021e460b1976ba3945e80b62f6812af8a9720f48e4456abf44ef39",
+    "method": "The llms.txt page up to (not including) its Output Schema heading: title, Overview, Pricing, API Information and Input Schema unchanged; output schema and usage examples omitted."
+  },
+  {
+    "fixture": "fal_kling_v3_i2v_standard.md",
+    "source_url": "https://fal.ai/models/fal-ai/kling-video/v3/standard/image-to-video/llms.txt",
+    "fetched_at_utc": "2026-10-28T14:53:57.570947+00:00",
+    "raw_sha256": "5194e28efe46ce07cd7ffc3673a0363fe326c752ffcae5cba9fdee2c58f9a96c",
+    "raw_bytes": 8258,
+    "fixture_sha256": "9649ec0774e804fda52b738130543fa2dacd28c1365cc9ec0c6922b35d69cc4a",
+    "method": "The llms.txt page up to (not including) its Output Schema heading: title, Overview, Pricing, API Information and Input Schema unchanged; output schema and usage examples omitted."
+  },
+  {
+    "fixture": "fal_kling_v3_i2v_pro.md",
+    "source_url": "https://fal.ai/models/fal-ai/kling-video/v3/pro/image-to-video/llms.txt",
+    "fetched_at_utc": "2026-10-28T14:53:57.690429+00:00",
+    "raw_sha256": "0c5e9e08c7d8f9e4711a875333ac2bc159fc400397eec0a3b5dd6a800e41c814",
+    "raw_bytes": 8244,
+    "fixture_sha256": "7e70b1253a57d3d8bc65c11c8d57c67f4f4df452e02baffed395c9109eb4ca8d",
+    "method": "The llms.txt page up to (not including) its Output Schema heading: title, Overview, Pricing, API Information and Input Schema unchanged; output schema and usage examples omitted."
+  },
+  {
+    "fixture": "fal_kling_v3_omni_standard.md",
+    "source_url": "https://fal.ai/models/fal-ai/kling-video/o3/standard/reference-to-video/llms.txt",
+    "fetched_at_utc": "2026-10-28T14:53:57.772073+00:00",
+    "raw_sha256": "9033819076eac37cf307bf457c10ece9ac9eb8df4b208ddf95493a2485dc1ad4",
+    "raw_bytes": 6141,
+    "fixture_sha256": "252f7d4848883260c451f67b17c2e65e06d1d77eaa3dc691f8bd69d8305229bf",
+    "method": "The llms.txt page up to (not including) its Output Schema heading: title, Overview, Pricing, API Information and Input Schema unchanged; output schema and usage examples omitted."
+  },
+  {
+    "fixture": "fal_kling_v3_omni_pro.md",
+    "source_url": "https://fal.ai/models/fal-ai/kling-video/o3/pro/reference-to-video/llms.txt",
+    "fetched_at_utc": "2026-10-28T14:53:57.867341+00:00",
+    "raw_sha256": "2b4eb39fd97faf28065be26bb358b2720243b81bce2444ba6d1c87dbfb83bf8d",
+    "raw_bytes": 7230,
+    "fixture_sha256": "2a31e96490841c5738c4d05b959c00e1e782aaf68e9aa4724df07c61b2a09db7",
+    "method": "The llms.txt page up to (not including) its Output Schema heading: title, Overview, Pricing, API Information and Input Schema unchanged; output schema and usage examples omitted."
+  },
+  {
+    "fixture": "fal_kling_v3_omni_video_standard.md",
+    "source_url": "https://fal.ai/models/fal-ai/kling-video/o3/standard/video-to-video/reference/llms.txt",
+    "fetched_at_utc": "2026-10-28T14:53:57.940618+00:00",
+    "raw_sha256": "a6eec5811e8baf171fbcdab781d75a92a6b5d59ec3986c704ca566ffc68aff56",
+    "raw_bytes": 8147,
+    "fixture_sha256": "526ed0b0cb23d4d94f0f94c34a1b1c6c9e9a9e66482ac005eff3eace5cfde00d",
+    "method": "The llms.txt page up to (not including) its Output Schema heading: title, Overview, Pricing, API Information and Input Schema unchanged; output schema and usage examples omitted."
+  },
+  {
+    "fixture": "fal_kling_v3_omni_video_pro.md",
+    "source_url": "https://fal.ai/models/fal-ai/kling-video/o3/pro/video-to-video/reference/llms.txt",
+    "fetched_at_utc": "2026-10-28T14:53:58.138967+00:00",
+    "raw_sha256": "0295e9dfc9db2bc6ea2d61127f23062dbd60395b26bcc4eeac126924accee4a2",
+    "raw_bytes": 8119,
+    "fixture_sha256": "65df6f9269366e47b287e2a56eef3fed0bbb49bc366edfdf5bd888669186988f",
+    "method": "The llms.txt page up to (not including) its Output Schema heading: title, Overview, Pricing, API Information and Input Schema unchanged; output schema and usage examples omitted."
+  },
+  {
+    "fixture": "fal_kling_v4_t2v.md",
+    "source_url": "https://fal.ai/models/kling/v4/text-to-video/llms.txt",
+    "fetched_at_utc": "2026-10-28T14:53:58.219154+00:00",
+    "raw_sha256": "dbe206e20a72cdb3b0ad4cd1d032d1a548ed23a4475612231e51272b54620cc7",
+    "raw_bytes": 4716,
+    "fixture_sha256": "48c975900f4d59280fffc8d1bdaaeb6fb0f004af8b87dff8f0e4ae22bedb0248",
+    "method": "The llms.txt page up to (not including) its Output Schema heading: title, Overview, Pricing, API Information and Input Schema unchanged; output schema and usage examples omitted."
+  },
+  {
+    "fixture": "fal_kling_v4_i2v.md",
+    "source_url": "https://fal.ai/models/kling/v4/image-to-video/llms.txt",
+    "fetched_at_utc": "2026-10-28T14:53:58.293790+00:00",
+    "raw_sha256": "6a375c6cff8f58ad05a031d52b440dc9b750357acdd251bb9e3b1c889cb19e91",
+    "raw_bytes": 5712,
+    "fixture_sha256": "23228089d8ee48883ad6367fedec68f1c1694b9c3eb8ead5da33957d9f0e5f2b",
+    "method": "The llms.txt page up to (not including) its Output Schema heading: title, Overview, Pricing, API Information and Input Schema unchanged; output schema and usage examples omitted."
+  },
+  {
+    "fixture": "fal_kling_v4_omni.md",
+    "source_url": "https://fal.ai/models/kling/v4/reference-to-video/llms.txt",
+    "fetched_at_utc": "2026-10-28T14:53:58.378026+00:00",
+    "raw_sha256": "0fb09abecd8014cb5eb4b3c4393c173aacd3db11deed654729f784f019313858",
+    "raw_bytes": 6457,
+    "fixture_sha256": "736c61ecea4923da4d81f1371e4843f8e80c3d0d51cac3677c1b7fbdeff4264b",
+    "method": "The llms.txt page up to (not including) its Output Schema heading: title, Overview, Pricing, API Information and Input Schema unchanged; output schema and usage examples omitted."
+  },
+  {
+    "fixture": "fal_seedance_25_r2v.md",
+    "source_url": "https://fal.ai/models/bytedance/seedance-2.5/reference-to-video/llms.txt",
+    "fetched_at_utc": "2026-10-28T14:53:58.496913+00:00",
+    "raw_sha256": "cfcabf48a30a59a87fab7178b8583bb411cada7ff62a41f9f3a66f555303352d",
+    "raw_bytes": 9337,
+    "fixture_sha256": "4ad071816d624f62d46b60e61378e04f72b6ef2f497c31d3f21192fecf8fb58f",
+    "method": "The llms.txt page up to (not including) its Output Schema heading: title, Overview, Pricing, API Information and Input Schema unchanged; output schema and usage examples omitted."
+  },
+  {
+    "fixture": "byteplus-pricing.html",
+    "source_url": "https://docs.byteplus.com/id/docs/modelark/model-pricing?redirect=1",
+    "fetched_at_utc": "2026-10-28T14:53:58.621782+00:00",
+    "raw_sha256": "160164a5c0da1d92b5e360c45e3fc6ea9b4cf7dd76993bfdfab35885cd9a4707",
+    "raw_bytes": 887448,
+    "fixture_sha256": "78ebcae3f2c62f15a223b9c40c2cb6863eef3b7060bf9f33194e8cee30485803",
+    "method": "Router-state document keeping, unchanged, the root-zone lines stating the token unit, token formula and billed usage field, and the Input without video / Input with video tab zones of the Seedance 2.5 token-price tables with all their rows and cells; every other zone and line omitted."
+  },
+  {
+    "fixture": "vercel_kling_v3_t2v.json",
+    "source_url": "https://ai-gateway.vercel.sh/v1/models/klingai/kling-v3.0-t2v/endpoints",
+    "fetched_at_utc": "2026-10-28T14:53:59.791270+00:00",
+    "raw_sha256": "1ce3cd697635c670a0c0ac082d424734bec7eb5a141bb98478c83f031d5c7438",
+    "raw_bytes": 2656,
+    "fixture_sha256": "1ce3cd697635c670a0c0ac082d424734bec7eb5a141bb98478c83f031d5c7438",
+    "method": "The endpoint listing exactly as returned."
+  },
+  {
+    "fixture": "vercel_kling_v3_i2v.json",
+    "source_url": "https://ai-gateway.vercel.sh/v1/models/klingai/kling-v3.0-i2v/endpoints",
+    "fetched_at_utc": "2026-10-28T14:53:59.856213+00:00",
+    "raw_sha256": "1eba02c1de23f6c68b53c41fae8c0afc553cd0c596f9ef6f6f86aa5dc1077157",
+    "raw_bytes": 2908,
+    "fixture_sha256": "1eba02c1de23f6c68b53c41fae8c0afc553cd0c596f9ef6f6f86aa5dc1077157",
+    "method": "The endpoint listing exactly as returned."
+  },
+  {
+    "fixture": "vercel_seedance_25_r2v.json",
+    "source_url": "https://ai-gateway.vercel.sh/v1/models/bytedance/seedance-2.5/endpoints",
+    "fetched_at_utc": "2026-10-28T14:53:59.912524+00:00",
+    "raw_sha256": "8b922010cc40bc003d329c9f54c7c253417fb6d4d665fd46452573fc2e97714d",
+    "raw_bytes": 3484,
+    "fixture_sha256": "8b922010cc40bc003d329c9f54c7c253417fb6d4d665fd46452573fc2e97714d",
+    "method": "The endpoint listing exactly as returned."
+  }
+]

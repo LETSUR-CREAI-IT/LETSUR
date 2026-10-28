@@ -49,7 +49,7 @@ def meter(data, name):
 
 def test_seven_specs_share_one_fixed_page_and_replace_the_catalog_pages():
     assert list(SPECS) == list(EXPECTED)
-    assert source_specs()[-7:] == list(SPECS.values())
+    assert source_specs()[:208][-7:] == list(SPECS.values())  # last before the video specs appended on 2026-10-28
     assert {(s.route, s.task, s.url) for s in SPECS.values()} == {("azure_foundry", "text_generation", SPECS["gpt-6-sol"].url)}
     assert "armRegionName%20eq%20'koreacentral'" in SPECS["gpt-6-sol"].url
     old = {"azure_" + s.source_key.removeprefix("azure_retail_") for s in SPECS.values()}

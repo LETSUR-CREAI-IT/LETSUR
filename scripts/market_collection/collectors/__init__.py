@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from scripts.market_collection.core import SourceSpec
 from scripts.market_collection.sources import source_specs
-from . import google, openai, anthropic, openrouter, vercel, aws_bedrock, azure_foundry, fal, byteplus, google_vertex, azure_databricks, image25_api, image25_supplement, azure_retail_llm
+from . import google, openai, anthropic, openrouter, vercel, aws_bedrock, azure_foundry, fal, byteplus, google_vertex, azure_databricks, image25_api, image25_supplement, azure_retail_llm, kling, fal_llms, byteplus_video, vercel_video
 
 SUPPLIERS = {
     "google_direct": google, "openai_direct": openai, "openai": openai,
@@ -11,7 +11,7 @@ SUPPLIERS = {
     "vercel_ai_gateway": vercel, "vercel": vercel,
     "aws_bedrock": aws_bedrock, "azure_foundry": azure_foundry,
     "google_vertex": google_vertex, "azure_databricks": azure_databricks,
-    "fal": fal, "BytePlus ModelArk": byteplus,
+    "fal": fal, "BytePlus ModelArk": byteplus, "kling_direct": kling,
 }
 
 def parser_module(spec: SourceSpec):
@@ -22,6 +22,9 @@ def parser_module(spec: SourceSpec):
         return image25_api
     if spec.parser in azure_retail_llm.PARSERS:  # its own module, so the other Azure parsers keep their fingerprints
         return azure_retail_llm
+    for module in (fal_llms, byteplus_video, vercel_video):  # own modules too, so the fal, BytePlus and Vercel parsers keep theirs
+        if spec.parser in module.PARSERS:
+            return module
     module = SUPPLIERS.get(spec.route)
     if module is None:
         raise ValueError("unhandled source route")
