@@ -571,6 +571,17 @@ def test_provider_material_decides_precision_where_the_listing_is_silent():
     assert unclear["why"] == ["직접 확인 필요 (체크포인트 설명만)"]
 
 
+def test_gemini_image_models_get_a_table_with_an_image_output_column():
+    """2026-10-29: Gemini image models are priced per 1M tokens on every route read, so they get a table and image output
+    tokens a column; OpenAI's image models (read under OpenAI's own item names) keep no table, and an LLM row never has the
+    image column."""
+    row = lambda model, item: {"model_id": model, "currency": "USD", "unit": "1M tokens", "billing_item": item, "price_kind": "published_rate"}
+    assert compare.usable(row("gemini-3-pro-image-preview", "image_output")) and compare.usable(row("gemini-3-pro-image", "input"))
+    assert not compare.usable(row("gpt-image-2", "input")) and not compare.usable(row("gpt-image-2.5-sunburst", "Image tokens / Output"))
+    assert not compare.usable(row("gpt-6-sol", "image_output"))
+    assert compare.ITEM_KO["image_output"] == "이미지 출력" and compare.ITEMS == ("input", "output", "cache_read")
+
+
 def test_direct_route_conditions_map_to_tier_region_and_band():
     bedrock = lambda option, band="272K input tokens or fewer": _listing(
         "gpt-6-astra", "aws_bedrock", {"service_tier": "Standard", "region_group": "Commercial Regions", "inference_option": option, "context_band": band})

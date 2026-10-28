@@ -34,7 +34,12 @@ from scripts.market_collection.models import MODEL_MODALITIES
 
 KST = timezone(timedelta(hours=9))
 ITEMS = ("input", "output", "cache_read")  # price columns; cache writes stay out (their TTL is mostly unstated)
-ITEM_KO = {"input": "입력", "output": "출력", "cache_read": "캐시 읽기"}
+# Gemini image models are sold per token on every route read (Google, OpenRouter, Vercel), so they get a table with an image
+# output column (2026-10-29). OpenAI's image models are read under OpenAI's own item names ("Image tokens / Output"), which a
+# table of the gateways' rows alone would misrepresent, so they keep no table.
+IMAGE_ITEMS = ITEMS + ("image_output",)
+TABLE_IMAGE_FAMILY = "gemini"
+ITEM_KO = {"input": "입력", "output": "출력", "cache_read": "캐시 읽기", "image_output": "이미지 출력"}
 GATEWAYS = ("openrouter", "vercel_ai_gateway")
 TIERS = ("Standard", "Priority", "Ultrafast", "Flex", "Batch")
 TIER_OF = {"standard": "Standard", "default": "Standard", "priority": "Priority", "ultrafast": "Ultrafast", "flex": "Flex", "batch": "Batch"}
@@ -231,9 +236,16 @@ def unknown_values(run: dict) -> dict:
     return {row["observation_id"]: by_set.get((row["source_id"], row["condition_set_id"]), {}) for row in run["prices"]}
 
 
+def table_model(model_id: str) -> bool:
+    modality = MODEL_MODALITIES.get(model_id)
+    return modality == "llm" or (modality == "image" and model_id.startswith(TABLE_IMAGE_FAMILY))
+
+
 def usable(obs: dict) -> bool:
-    return (MODEL_MODALITIES.get(obs.get("model_id")) == "llm" and obs.get("currency") in ("USD", "") and obs.get("unit") in ("1M tokens", "")
-            and obs.get("billing_item") in ITEMS and obs.get("price_kind") in ("published_rate", "announced_future_rate"))
+    modality = MODEL_MODALITIES.get(obs.get("model_id"))
+    return (table_model(obs.get("model_id") or "") and obs.get("currency") in ("USD", "") and obs.get("unit") in ("1M tokens", "")
+            and obs.get("billing_item") in (IMAGE_ITEMS if modality == "image" else ITEMS)
+            and obs.get("price_kind") in ("published_rate", "announced_future_rate"))
 
 
 def offers(observations: list[dict], unknown: dict) -> list[dict]:
@@ -925,7 +937,7 @@ def hhmm(value) -> int:
 
 def tables(root: Path, model_ids: list[str], events: list[dict], gaps: list, state: dict | None, report: dict | None,
            routes: dict | None, today_iso: str) -> dict:
-    """COMPARE: one table per LLM model in model_ids, keyed by model id; empty when no processed core run can be read.
+    """COMPARE: one table per LLM or Gemini image model in model_ids, keyed by model id; empty when no processed core run can be read.
     An error here leaves the tables out (traceback on stderr) instead of turning the whole daily page into a failure page."""
     try:
         return build_tables(root, model_ids, events, gaps, state, report, routes, today_iso)
@@ -936,7 +948,7 @@ def tables(root: Path, model_ids: list[str], events: list[dict], gaps: list, sta
 
 def build_tables(root: Path, model_ids: list[str], events: list[dict], gaps: list, state: dict | None, report: dict | None,
                  routes: dict | None, today_iso: str) -> dict:
-    models = {m for m in model_ids if MODEL_MODALITIES.get(m) == "llm"}
+    models = {m for m in model_ids if table_model(m)}
     run_dir = latest_run(root, report) if models else None
     if run_dir is None:
         return {}
@@ -963,12 +975,13 @@ def build_tables(root: Path, model_ids: list[str], events: list[dict], gaps: lis
         if not rows:
             continue
         targets = assumed_routes(model_id, routes)
+        columns = IMAGE_ITEMS if MODEL_MODALITIES[model_id] == "image" else ITEMS
         for row in rows:
             row["assumed"] = assumed_chip(row, targets, demo)
-            discount_cells(row, rows, ITEMS, notices, today)
+            discount_cells(row, rows, columns, notices, today)
         for row in rows:
             describe(row, rows, history, now)
-        items = tuple(i for i in ITEMS if any(r["prices"].get(i) is not None for r in rows)) or ITEMS
+        items = tuple(i for i in columns if any(r["prices"].get(i) is not None for r in rows)) or columns
         compared = [r for r in rows if not r["why"] and not r.get("gone")]
         excluded = sorted((r for r in rows if r["why"] or r.get("gone")), key=row_order)
         disc = any(r.get("disc") for r in rows)
