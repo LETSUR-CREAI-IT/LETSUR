@@ -32,9 +32,9 @@ def aws_anthropic_card(model="claude-opus-5-5", title="Claude Opus 5.5", *, prov
 <tr><td>bedrock-runtime</td><td>{provider_id}</td><td>N/A</td><td>us.{provider_id}</td><td>global.{provider_id}</td></tr></table>""".encode()
 
 
-def azure_card(model="gpt-6-sol", link="https://aka.ms/AzureOAIpricing"):
+def azure_card(model="claude-opus-5-5", link="https://aka.ms/AzureOAIpricing"):
     return f"""<h1>{model}</h1><h2>Pricing</h2><h2>Quick facts</h2>
-<dl><dt>Publisher</dt><dd>OpenAI</dd><dt>Hosted on</dt><dd>Azure</dd></dl>
+<dl><dt>Publisher</dt><dd>Anthropic</dd><dt>Hosted on</dt><dd>Anthropic infrastructure</dd></dl>
 <a href="{link}">View pricing</a><h2>Related models</h2><p>Neighbor $999 per 1M</p>""".encode()
 
 
@@ -48,16 +48,18 @@ class CloudAdapterTests(unittest.TestCase):
         _validate_parse(spec, "source-1", *rows)
         return rows
 
-    def test_registry_exact_21(self):
+    def test_registry_exact_14(self):
+        # The seven GPT Azure catalog pages went on 2026-10-28 (retail meters, test_azure_retail.py).
         specs = cloud_source_specs()
         validate_registry(specs)
-        self.assertEqual(len(specs), 21)
-        self.assertEqual(len({s.source_key for s in specs}), 21)
-        self.assertEqual(len({s.parser for s in specs}), 21)
+        self.assertEqual(len(specs), 14)
+        self.assertEqual(len({s.source_key for s in specs}), 14)
+        self.assertEqual(len({s.parser for s in specs}), 14)
         self.assertEqual({s.route for s in specs}, {"aws_bedrock", "azure_foundry"})
         self.assertTrue(all(s.modality == "llm" and s.task == "text_generation" for s in specs))
         self.assertNotIn("claude-fable-5-1:aws_bedrock", self.specs)
         self.assertIn("claude-fable-5-1:azure_foundry", self.specs)
+        self.assertNotIn("gpt-6-sol:azure_foundry", self.specs)
 
     def test_aws_standard_semantic_cells_and_boundaries(self):
         prices, conditions = self.parse("gpt-6-astra", "aws_bedrock", aws_openai_card())
@@ -140,13 +142,13 @@ class CloudAdapterTests(unittest.TestCase):
         self.assertEqual({p["provider_model_id"] for p in prices}, {"global.anthropic.claude-haiku-4-5-20251001-v1:0"})
 
     def test_azure_catalog_only_unknown(self):
-        prices, conditions = self.parse("gpt-6-sol", "azure_foundry", azure_card())
+        prices, conditions = self.parse("claude-opus-5-5", "azure_foundry", azure_card())
         self.assertEqual([p["billing_item"] for p in prices], ["input", "output"])
         self.assertTrue(all(p["amount"] == "" and "Azure-specific" in p["unknown_reason"] for p in prices))
         self.assertEqual({c["condition_key"] for c in conditions}, {"price_basis", "publisher", "hosting"})
-        for body in (azure_card("gpt-6-luna"), azure_card().replace(b"<h2>Pricing</h2>", b"<h2>Costs</h2>"),
+        for body in (azure_card("claude-sonnet-5-5"), azure_card().replace(b"<h2>Pricing</h2>", b"<h2>Costs</h2>"),
                      azure_card(link="https://example.com/pricing")):
-            self.assertEqual(self.parse("gpt-6-sol", "azure_foundry", body), ([], []))
+            self.assertEqual(self.parse("claude-opus-5-5", "azure_foundry", body), ([], []))
 
 
 if __name__ == "__main__":

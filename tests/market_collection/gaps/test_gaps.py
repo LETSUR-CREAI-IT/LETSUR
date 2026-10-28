@@ -1,4 +1,5 @@
-"""Retained-source regressions for the explicitly approved additions (Veo 3.1 sources retired 2026-10-22 and 2026-10-28)."""
+"""Retained-source regressions for the explicitly approved additions (Veo 3.1 sources retired 2026-10-22 and 2026-10-28,
+Azure GPT catalog pages replaced by retail meters 2026-10-28)."""
 import json
 from dataclasses import asdict
 from pathlib import Path
@@ -10,6 +11,7 @@ import pytest
 from scripts.market_collection import core
 from scripts.market_collection.collectors import parse_source
 from scripts.market_collection.sources import source_specs
+from tests.market_collection.retired_sources import without_retired
 
 FIXTURES = Path(__file__).parent / "fixtures"
 SPECS = {s.source_key: s for s in source_specs()}
@@ -40,11 +42,11 @@ def changed_json(key, mutate):
 
 def test_existing_specs_preserved_in_each_modality_order():
     # Immutable pre-change source representation retained in the compact fixture.
-    old = json.loads((FIXTURES / 'baseline_specs.json').read_text())
+    old = without_retired(json.loads((FIXTURES / 'baseline_specs.json').read_text()))
     current = {s.source_key: asdict(s) for s in source_specs()}
     assert [current[s['source_key']] for s in old] == old
     for modality in ('llm', 'image', 'video'):
-        assert [asdict(s) for s in source_specs() if s.modality == modality and s.parser not in NEW_PARSERS and not s.parser.endswith("endpoints_llm") and not s.source_key.startswith("image25_")] == [s for s in old if s['modality'] == modality]
+        assert [asdict(s) for s in source_specs() if s.modality == modality and s.parser not in NEW_PARSERS and not s.parser.endswith("endpoints_llm") and not s.source_key.startswith("image25_") and s.parser != "azure_llm_retail"] == [s for s in old if s['modality'] == modality]
     assert len(NEW) == 5
     assert len(source_specs()) == 146
     assert len({(s.model_id, s.route) for s in source_specs()}) == 86

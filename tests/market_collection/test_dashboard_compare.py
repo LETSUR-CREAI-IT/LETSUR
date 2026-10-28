@@ -484,6 +484,10 @@ def test_direct_route_conditions_map_to_tier_region_and_band():
     assert bedrock("Global CRIS")["who"] == ["AWS", "aws_bedrock · Global CRIS"] and bedrock("Global CRIS")["tier"] == "Standard"
     vertex = _listing("gemini-3.8-flash", "google_vertex", {"region": "Global", "service_tier": "standard", "input_token_band": ">200K"})
     assert (vertex["region"], vertex["band"], vertex["labels"]) == ("", "200K", ["표기 Global"])
+    azure = lambda scope: _listing("gpt-6-sol", "azure_foundry", {"service_tier": "standard", "meter_scope": scope,
+                                                                  "context_band": "short context (ShortCo)"})
+    assert (azure("Global (Gl)")["region"], azure("Global (Gl)")["band"], azure("Global (Gl)")["why"]) == ("", "", [])
+    assert azure("Global (Gl)")["labels"] == ["글로벌 배포 기준(렛서 배포 방식 미확인)"] and azure("Data Zone (DZ)")["labels"] == ["표기 Data Zone (DZ)"]
     page = _listing(GLM, "openrouter", {"price_basis": "model_page_rate"})
     assert page["who"] == ["OpenRouter", "모델 페이지 대표가"] and page["why"] == ["모델 페이지 대표가 (하위 공급처·조건 미지정)"]
     odd = _listing(GLM, "fal", {"resolution": "1080p"})

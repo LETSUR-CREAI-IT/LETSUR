@@ -44,7 +44,9 @@ _AWS_ANTHROPIC = (
     ("claude-haiku-4-5", "claude-haiku-4-5", "Claude Haiku 4.5"),
 )
 
-_AZURE_MODELS = tuple(model for model, _, _ in _AWS_OPENAI) + ("claude-fable-5-1",) + tuple(model for model, _, _ in _AWS_ANTHROPIC)
+# Azure Foundry catalog pages (no numeric rate); the GPT models are priced from Azure retail meters since 2026-10-28.
+_AZURE_MODELS = ("claude-fable-5-1",) + tuple(model for model, _, _ in _AWS_ANTHROPIC)
+_AZURE_RETAIL_MODELS = tuple(model for model, _, _ in _AWS_OPENAI)
 
 SUNBURST_MODEL = "gpt-image-2.5-sunburst"
 

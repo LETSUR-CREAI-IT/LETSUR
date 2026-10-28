@@ -61,6 +61,7 @@ scripts/market_collection/
 │   ├── common.py              공급자 parser가 공유하는 parsing helper
 │   ├── video_common.py        공급자 영상 응답 해석에 쓰는 공용 helper
 │   ├── image25_api.py         GPT Image 2.5 공개 API 조건 문서 parser
+│   ├── azure_retail_llm.py    Azure Retail Prices API의 GPT 7개 Global Standard 미터 parser
 │   └── <supplier>.py          Google, Google Vertex, OpenAI, Anthropic,
 │                              OpenRouter, Vercel, AWS Bedrock, Azure Foundry,
 │                              Azure retail, Azure Databricks, fal, BytePlus parser

@@ -6,7 +6,10 @@ RETIRED_SOURCE_KEYS = frozenset({"google_veo_3_1_standard", "google_veo_3_1_fast
                                  "fal_veo_3_1_standard", "fal_veo_3_1_fast", "fal_veo_3_1_lite",
                                  "vercel_veo_3_1_standard", "vercel_veo_3_1_fast", "vercel_veo_3_1_lite",
                                  "ideogram_45_t2i", "ideogram_45_edit", "ideogram_45_precise_edit",
-                                 "fal_ideogram_45_t2i", "fal_ideogram_45_edit", "fal_ideogram_45_precise_edit"})
+                                 "fal_ideogram_45_t2i", "fal_ideogram_45_edit", "fal_ideogram_45_precise_edit",
+                                 # Azure catalog pages of the GPT models, replaced by the retail-meter specs azure_retail_<model> (2026-10-28).
+                                 "azure_gpt_6_astra", "azure_gpt_6_sol", "azure_gpt_6_1_sol", "azure_gpt_6_luna",
+                                 "azure_gpt_5_6_sol", "azure_gpt_5_6_terra", "azure_gpt_5_6_luna"})
 
 
 def without_retired(specs: list[dict]) -> list[dict]:

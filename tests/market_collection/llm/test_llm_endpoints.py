@@ -39,7 +39,7 @@ def test_registry_adds_36_distinct_sources_for_18_models_after_existing_ones():
     specs = llm_endpoint_source_specs()
     assert len(specs) == 36 and len({s.source_key for s in specs}) == 36
     assert len({s.model_id for s in specs}) == 18
-    assert source_specs()[-36:] == specs
+    assert source_specs()[-43:-7] == specs  # the seven Azure retail GPT specs (2026-10-28) come after them
     assert {s.route for s in specs} == {"openrouter", "vercel_ai_gateway"}
 
 

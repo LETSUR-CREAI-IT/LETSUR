@@ -83,7 +83,7 @@ UNIT_KO = {"1M tokens": "100만 토큰", "1000 tokens": "1,000 토큰"}
 CONDITION_KO = {"service_tier": "등급", "cache_read_multiplier": "캐시 읽기 배율", "context_length": "컨텍스트", "endpoint_tag": "엔드포인트",
                 "endpoint_provider": "제공자", "endpoint_model_slug": "모델 slug", "quantization": "정밀도", "endpoint_status": "상태",
                 "endpoint_discount": "엔드포인트 할인", "discount_application": "할인 적용", "price_basis": "가격 기준",
-                "region": "지역", "input_token_band": "입력 구간", "precision": "정밀도"}
+                "region": "지역", "input_token_band": "입력 구간", "precision": "정밀도", "meter_scope": "배포 방식"}
 # Condition values stay as the source wrote them; only tiers and regions get the dashboard's names (2026-10-27 decision 26-1).
 TIER_NAMES = {"standard": "Standard", "priority": "Priority", "ultrafast": "Ultrafast", "flex": "Flex", "batch": "Batch"}
 REGION_NAMES = {"us": "US", "eu": "EU"}
