@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from scripts.market_collection.core import SourceSpec, CollectionError
-from scripts.market_collection.models import (GOOGLE_LLM_MODEL, ASTRA_MODEL, FABLE_MODEL, STANDARD_LLM_MODELS, BROKER_CATALOG_MODELS, BROKER_API_MODELS, _AWS_OPENAI, _AWS_ANTHROPIC, _AZURE_MODELS, _AZURE_RETAIL_MODELS, SUNBURST_MODEL, FLARE_MODEL, SEEDANCE_MODEL, MODEL_MODALITIES)
+from scripts.market_collection.models import (GOOGLE_LLM_MODEL, ASTRA_MODEL, FABLE_MODEL, STANDARD_LLM_MODELS, BROKER_CATALOG_MODELS, BROKER_API_MODELS, GATEWAY_MORE_MODELS, GATEWAY_EMBEDDING_MODELS, ZAI_DIRECT_MODELS, _AWS_OPENAI, _AWS_ANTHROPIC, _AZURE_MODELS, _AZURE_RETAIL_MODELS, SUNBURST_MODEL, FLARE_MODEL, SEEDANCE_MODEL, MODEL_MODALITIES)
 
 def _targets() -> dict[str, tuple[str, str, str, str, str]]:
     targets = {
@@ -61,14 +61,16 @@ def llm_endpoint_source_specs() -> list[SourceSpec]:
     gateway_ids = [(GOOGLE_LLM_MODEL, "google/gemini-3.8-flash", "google/gemini-3.8-flash")]
     gateway_ids.extend((model, target[4], target[4]) for model, target in _targets().items())
     gateway_ids.extend((model, openrouter_id, vercel_id) for model, _, _, openrouter_id, vercel_id in BROKER_CATALOG_MODELS)
-    gateway_ids.extend((model, openrouter_id, vercel_id) for model, _, openrouter_id, vercel_id in BROKER_API_MODELS)
+    gateway_ids.extend((model, openrouter_id, vercel_id) for model, _, openrouter_id, vercel_id in BROKER_API_MODELS + GATEWAY_MORE_MODELS + GATEWAY_EMBEDDING_MODELS)
+    embeddings = {model for model, *_ in GATEWAY_EMBEDDING_MODELS}
     specs: list[SourceSpec] = []
     for model, openrouter_id, vercel_id in gateway_ids:
         key = _key(model)
+        task = "embedding" if model in embeddings else "text_generation"
         if openrouter_id:  # None: the gateway does not list the model
-            specs.append(SourceSpec(f"openrouter_llm_endpoints_{key}", "llm", model, "openrouter", "text_generation", f"https://openrouter.ai/api/v1/models/{openrouter_id}/endpoints", "openrouter_endpoints_llm"))
+            specs.append(SourceSpec(f"openrouter_llm_endpoints_{key}", "llm", model, "openrouter", task, f"https://openrouter.ai/api/v1/models/{openrouter_id}/endpoints", "openrouter_endpoints_llm"))
         if vercel_id:
-            specs.append(SourceSpec(f"vercel_llm_endpoints_{key}", "llm", model, "vercel_ai_gateway", "text_generation", f"https://ai-gateway.vercel.sh/v1/models/{vercel_id}/endpoints", "vercel_endpoints_llm"))
+            specs.append(SourceSpec(f"vercel_llm_endpoints_{key}", "llm", model, "vercel_ai_gateway", task, f"https://ai-gateway.vercel.sh/v1/models/{vercel_id}/endpoints", "vercel_endpoints_llm"))
     return specs
 
 
@@ -113,6 +115,12 @@ def azure_retail_llm_source_specs() -> list[SourceSpec]:
             for model in _AZURE_RETAIL_MODELS]
 
 
+def zai_source_specs() -> list[SourceSpec]:
+    # One Markdown page lists every model's token prices; each model gets its own spec of it, like the Azure GPT meters above.
+    return [SourceSpec(f"zai_{_key(model)}", "llm", model, "zai_direct", "text_generation", "https://docs.z.ai/guides/overview/pricing.md", "zai_pricing")
+            for model, _ in ZAI_DIRECT_MODELS]
+
+
 def image_source_specs() -> list[SourceSpec]:
     # Ideogram 4.5 is not collected: LETSUR's model list has no Ideogram (2026-10-28).
     sources = (
@@ -151,7 +159,7 @@ def video_source_specs() -> list[SourceSpec]:
 
 
 def source_specs() -> list[SourceSpec]:
-    specs = llm_source_specs() + image_source_specs() + video_source_specs() + image25_api_source_specs() + image25_openrouter_endpoint_source_specs() + image25_supplement_source_specs() + llm_endpoint_source_specs() + azure_retail_llm_source_specs()
+    specs = llm_source_specs() + image_source_specs() + video_source_specs() + image25_api_source_specs() + image25_openrouter_endpoint_source_specs() + image25_supplement_source_specs() + llm_endpoint_source_specs() + azure_retail_llm_source_specs() + zai_source_specs()
     for spec in specs:
         if MODEL_MODALITIES.get(spec.model_id) != spec.modality:
             raise CollectionError(f"source model/modality mismatch: {spec.source_key}")

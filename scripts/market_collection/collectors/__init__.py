@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from scripts.market_collection.core import SourceSpec
 from scripts.market_collection.sources import source_specs
-from . import google, openai, anthropic, openrouter, vercel, aws_bedrock, azure_foundry, fal, byteplus, google_vertex, azure_databricks, image25_api, image25_supplement, azure_retail_llm
+from . import google, openai, anthropic, openrouter, vercel, aws_bedrock, azure_foundry, fal, byteplus, google_vertex, azure_databricks, image25_api, image25_supplement, azure_retail_llm, zai
 
 SUPPLIERS = {
     "google_direct": google, "openai_direct": openai, "openai": openai,
@@ -11,7 +11,7 @@ SUPPLIERS = {
     "vercel_ai_gateway": vercel, "vercel": vercel,
     "aws_bedrock": aws_bedrock, "azure_foundry": azure_foundry,
     "google_vertex": google_vertex, "azure_databricks": azure_databricks,
-    "fal": fal, "BytePlus ModelArk": byteplus,
+    "fal": fal, "BytePlus ModelArk": byteplus, "zai_direct": zai,
 }
 
 def parser_module(spec: SourceSpec):

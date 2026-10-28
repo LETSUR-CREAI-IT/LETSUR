@@ -8,7 +8,7 @@ import pytest
 from scripts.market_collection.collectors import llm_endpoints as L, parse_source
 from scripts.market_collection.core import SourceSpec, _validate_parse
 from scripts.market_collection.events.catalog import maker
-from scripts.market_collection.models import BROKER_API_MODELS
+from scripts.market_collection.models import BROKER_API_MODELS, GATEWAY_EMBEDDING_MODELS, GATEWAY_MORE_MODELS
 from scripts.market_collection.sources import llm_endpoint_source_specs, source_specs
 
 OR_SPEC = SourceSpec("openrouter_llm_endpoints_x", "llm", "glm-5.2", "openrouter", "text_generation",
@@ -39,17 +39,19 @@ def by_set(conditions):
     return grouped
 
 
-def test_registry_adds_98_distinct_sources_for_52_models_after_existing_ones():
+def test_registry_adds_197_distinct_sources_for_103_models_after_existing_ones():
     specs = llm_endpoint_source_specs()
-    assert len(specs) == 98 and len({s.source_key for s in specs}) == 98
-    # The first 36 (2026-10-17) cover the 18 page-sourced LLM models; the 34 gateway-only models (2026-10-28) follow.
-    assert len({s.model_id for s in specs[:36]}) == 18 and len({s.model_id for s in specs}) == 52
-    assert source_specs()[-105:-7] == specs  # the seven Azure retail GPT specs (2026-10-28) come after them
+    assert len(specs) == 197 and len({s.source_key for s in specs}) == 197
+    # The first 36 (2026-10-17) cover the 18 page-sourced LLM models; the 34 gateway-only models and 51 more (2026-10-28) follow.
+    assert len({s.model_id for s in specs[:36]}) == 18 and len({s.model_id for s in specs}) == 103
+    registered = source_specs()
+    first = registered.index(specs[0])
+    assert registered[first:first + len(specs)] == specs  # one block, in this order
     assert {s.route for s in specs} == {"openrouter", "vercel_ai_gateway"}
 
 
 def test_gateway_only_models_have_a_source_only_on_each_gateway_that_lists_them():
-    specs = llm_endpoint_source_specs()[36:]
+    specs = llm_endpoint_source_specs()[36:98]
     assert {s.model_id for s in specs} == {row[0] for row in BROKER_API_MODELS} and len(BROKER_API_MODELS) == 34
     assert [s.route for s in specs].count("openrouter") == 31 and [s.route for s in specs].count("vercel_ai_gateway") == 31
     assert {(s.route, s.parser, s.task) for s in specs} == {("openrouter", "openrouter_endpoints_llm", "text_generation"),
@@ -79,6 +81,42 @@ def test_gateway_only_models_have_a_source_only_on_each_gateway_that_lists_them(
         assert urls[key] == url
     # Endpoint APIs only: no catalog-page (missing_*) or other source for these models.
     assert [s for s in source_specs() if s.model_id in routes] == specs
+
+
+def test_more_gateway_models_have_a_source_only_on_each_gateway_that_lists_them():
+    specs = llm_endpoint_source_specs()[98:]
+    embeddings = {row[0] for row in GATEWAY_EMBEDDING_MODELS}
+    assert len(GATEWAY_MORE_MODELS) == 48 and embeddings == {"text-embedding-3-large", "text-embedding-3-small", "text-embedding-ada-002"}
+    assert {s.model_id for s in specs} == {row[0] for row in GATEWAY_MORE_MODELS} | embeddings
+    assert [s.route for s in specs].count("openrouter") == 50 and [s.route for s in specs].count("vercel_ai_gateway") == 49
+    assert {(s.route, s.parser) for s in specs} == {("openrouter", "openrouter_endpoints_llm"), ("vercel_ai_gateway", "vercel_endpoints_llm")}
+    # Embeddings read task "embedding" on both gateways; every other model text_generation.
+    assert {(s.route, s.task) for s in specs if s.model_id in embeddings} == {("openrouter", "embedding"), ("vercel_ai_gateway", "embedding")}
+    assert {s.task for s in specs if s.model_id not in embeddings} == {"text_generation"}
+    routes = {}
+    for s in specs:
+        routes.setdefault(s.model_id, set()).add(s.route)
+    # OpenRouter does not list gpt-5-codex; Vercel lists neither gpt-5.1 nor gemini-3-flash-preview.
+    assert {m for m, r in routes.items() if r == {"vercel_ai_gateway"}} == {"gpt-5-codex"}
+    assert {m for m, r in routes.items() if r == {"openrouter"}} == {"gpt-5.1", "gemini-3-flash-preview"}
+    urls = {s.source_key: s.url for s in specs}
+    for key, url in (
+        # LETSUR's dated Claude ids are read through the gateways' undated models
+        ("openrouter_llm_endpoints_claude_opus_4_5_20251101", "https://openrouter.ai/api/v1/models/anthropic/claude-opus-4.5/endpoints"),
+        ("vercel_llm_endpoints_claude_sonnet_4_5_20250929", "https://ai-gateway.vercel.sh/v1/models/anthropic/claude-sonnet-4.5/endpoints"),
+        ("vercel_llm_endpoints_claude_haiku_5_5", "https://ai-gateway.vercel.sh/v1/models/anthropic/claude-haiku-5.5/endpoints"),
+        ("openrouter_llm_endpoints_o3_pro", "https://openrouter.ai/api/v1/models/openai/o3-pro/endpoints"),
+        ("openrouter_llm_endpoints_gpt_5_1", "https://openrouter.ai/api/v1/models/openai/gpt-5.1/endpoints"),
+        ("vercel_llm_endpoints_gpt_5_codex", "https://ai-gateway.vercel.sh/v1/models/openai/gpt-5-codex/endpoints"),
+        ("openrouter_llm_endpoints_gemini_3_flash_preview", "https://openrouter.ai/api/v1/models/google/gemini-3-flash-preview/endpoints"),
+        ("openrouter_llm_endpoints_glm_5_3_flashx", "https://openrouter.ai/api/v1/models/z-ai/glm-5.3-flashx/endpoints"),
+        ("vercel_llm_endpoints_glm_5_3_flashx", "https://ai-gateway.vercel.sh/v1/models/zai/glm-5.3-flashx/endpoints"),
+        ("vercel_llm_endpoints_text_embedding_ada_002", "https://ai-gateway.vercel.sh/v1/models/openai/text-embedding-ada-002/endpoints"),
+        ("openrouter_llm_endpoints_text_embedding_3_large", "https://openrouter.ai/api/v1/models/openai/text-embedding-3-large/endpoints"),
+    ):
+        assert urls[key] == url
+    # The two endpoint APIs are the only gateway sources of these models; their other routes belong to other sources.
+    assert [s for s in source_specs() if s.model_id in routes and s.parser.endswith("endpoints_llm")] == specs
 
 
 def test_gateway_only_model_families_have_makers():
@@ -314,6 +352,19 @@ def test_real_vercel_per_call_search_fields_and_tier_prices_are_not_token_rows()
     groups = by_set(conditions)
     assert all(groups[p["condition_set_id"]]["service_tier"]["status"] == "unknown" for p in prices)
     assert all(groups[p["condition_set_id"]]["service_tier_applicability"]["status"] == "unknown" for p in xai)
+
+
+@pytest.mark.parametrize("name,providers,context", [("vercel-text-embedding-3-small.json", ("azure", "openai"), "0"),
+                                                      ("openrouter-text-embedding-3-small.json", ("Azure", "OpenAI"), "8192")])
+def test_real_embedding_listings_keep_the_prompt_rate_beside_the_gateways_zero_completion(name, providers, context):
+    """text-embedding-3-small, 2026-10-28: input-only pricing. Both gateways list completion "0"; Vercel lists context_length 0.
+    Each is kept as written, and the sources read it as task "embedding"."""
+    spec, (prices, conditions) = real(name)
+    assert spec.task == "embedding" and {p["task"] for p in prices} == {"embedding"} and {p["unit"] for p in prices} == {"1M tokens"}
+    assert {(p["upstream_provider"], p["billing_item"], p["amount"]) for p in prices} == {
+        (provider, item, amount) for provider in providers for item, amount in (("input", "0.02"), ("output", "0"))}
+    groups = by_set(conditions)
+    assert {groups[p["condition_set_id"]]["context_length"]["value"] for p in prices} == {context}
 
 
 def test_real_vercel_endpoint_with_nonzero_status_keeps_prices_but_status_unknown():
