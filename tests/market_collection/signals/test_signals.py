@@ -70,6 +70,16 @@ def test_models_added_on_1028_match_and_a_name_inside_a_longer_model_name_is_tha
     assert labels("GPT-5.6 Sol is 50% off") == [("GPT-5.6 Sol", "exact")]
 
 
+def test_a_model_name_before_a_variant_word_is_another_model():
+    """Price tracker lines of 2026-10-28: o1-pro, GPT-5.2 Codex and GPT-5.2 Chat retired are not o1 or GPT-5.2 notices, and
+    the DeepSeek V4 Flash Vision Exp notice is not DeepSeek V4 Flash's (decision 36), registered or not."""
+    assert labels("o1-pro (OpenAI) retired") == [] and labels("o1 (OpenAI) retired") == [("o1", "exact")]
+    assert labels("GPT-5.2 Codex (OpenAI) retired") == [] and labels("GPT-5.2 Chat (OpenAI) retired") == []
+    assert labels("DeepSeek V4 Flash Vision Exp is 50% off") == []
+    assert labels("GPT-4.1 nano (OpenAI) retired") == [("GPT-4.1 Nano", "exact")]
+    assert labels("Qwen 3.8 Max 0902 price cut") == [("Qwen 3.8 Max", "exact")]  # a dated snapshot is the same model
+
+
 def test_claim_terms_skip_comparisons_and_keep_kinds():
     assert claims_in("Both models work at a lower price than GPT-6 Astra.")[0] == []
     assert claims_in("OpenAI lowered list pricing for GPT-5.6 Sol.")[0] == ["price_decrease"]

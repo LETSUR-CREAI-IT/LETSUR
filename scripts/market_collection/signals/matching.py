@@ -37,10 +37,17 @@ def _flex(text: str) -> str:
     return r"[-\s]*".join(tokens)
 
 
+# A model name followed by one of these words names another model of the family (o1-pro, GPT-5.2 Codex, Gemini 3 Pro Image
+# Preview, DeepSeek V4 Flash Vision Exp), registered or not (2026-10-28).
+VARIANT_WORDS = ("pro", "mini", "nano", "codex", "chat", "turbo", "lite", "image", "preview", "thinking", "max", "plus", "flash",
+                 "flashx", "air", "vision", "exp", "fast", "instruct", "audio", "realtime", "search", "omni", "ultra", "edit")
+
+
 def _compile(texts: list[str]) -> re.Pattern:
     alternatives = sorted({_flex(text) for text in texts if text}, key=len, reverse=True)
-    # Do not match inside a longer identifier (GPT-6 inside GPT-6.1, sol inside solar).
-    return re.compile(r"(?<![\w.])(?:" + "|".join(alternatives) + r")(?![\w]|\.\d)", re.IGNORECASE)
+    # Do not match inside a longer identifier (GPT-6 inside GPT-6.1, sol inside solar) or before a variant word.
+    return re.compile(r"(?<![\w.])(?:" + "|".join(alternatives) + r")(?![\w]|\.\d|[-\s]+(?:" + "|".join(VARIANT_WORDS) + r")\b)",
+                      re.IGNORECASE)
 
 
 def _exact_aliases() -> list[ModelAlias]:
