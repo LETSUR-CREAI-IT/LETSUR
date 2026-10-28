@@ -1,9 +1,10 @@
 """Per-model supplier comparison table ('공급사 비교 표') for the card detail, from the 10/25~27 review decisions.
 
-One table per LLM model with a card. A row is one offer: a direct route, or a gateway (OpenRouter, Vercel) and one
-upstream endpoint of it (OpenRouter tag, Vercel provider). Rows are compared only inside a group of the same precision
-(fp4 takes mxfp4·nvfp4, fp8 takes mxfp8, closed-weight models are '비공개'), tier, region and context band; a row whose
-conditions do not place it in a group is '비교 제외' with the reason and is listed under the table.
+One table per LLM model the newest run observed, with or without a change card (2026-10-28). A row is one offer: a direct
+route, or a gateway (OpenRouter, Vercel) and one upstream endpoint of it (OpenRouter tag, Vercel provider). Rows are
+compared only inside a group of the same precision (fp4 takes mxfp4·nvfp4, fp8 takes mxfp8, closed-weight models are
+'비공개'), tier, region and context band; a row whose conditions do not place it in a group is '비교 제외' with the reason
+and is listed under the table.
 
 Inputs, all read-only:
 - the newest core run under <root>/runs the engine processed: amounts of every observation, the excluded
@@ -58,8 +59,9 @@ ITEM_LEVEL = {"cache_write_ttl", "cache_duration", *evidence.MUTABLE_CONDITIONS}
 # is Standard and its tier and region prices become rows of their own (10, 18).
 SETTLED = {"discount_application", "region_applicability", "service_tier_applicability", "service_tier"}
 # One upstream under its gateway spellings, case and punctuation aside (decision 4-8): OpenRouter tag provider, Vercel provider.
+# spacexai: Vercel owns xAI's models as spacexai and OpenRouter names them SpaceXAI (10/28 catalogs); both are the maker xAI.
 ALIAS = {"togetherai": "together", "bedrock": "amazonbedrock", "vertex": "googlevertex", "vertexanthropic": "googlevertex",
-         "google": "googleaistudio", "claudeaws": "claudeonaws"}
+         "google": "googleaistudio", "claudeaws": "claudeonaws", "spacexai": "xai"}
 # OpenRouter upstream -> the direct route whose announced change can date its discount (decision 6 exception).
 DIRECT_OF = {"googleaistudio": "google_direct", "googlevertex": "google_vertex"}
 # Serving precision the provider's own material states for a model, checked by hand on 10/26 (decision 5, analysis
@@ -199,6 +201,25 @@ def latest_run(root: Path, report: dict | None) -> Path | None:
     runs = sorted(path for path in folder.iterdir()
                   if path.is_dir() and (path / "sources.csv").exists() and (report is None or path.name in processed))
     return runs[-1] if runs else None
+
+
+def observed_models(root: Path, report: dict | None) -> list[str]:
+    """Every model the newest processed core run observed, with or without a change card (2026-10-28: a model starts with
+    baselines and no events, yet the 모델별 가격 list must have it). Empty when no run can be read: the page then keeps the
+    models with cards."""
+    run_dir = latest_run(root, report)
+    if run_dir is None:
+        return []
+    try:
+        run = evidence.load_run(run_dir)
+        if run["kind"] != "core":
+            return []
+        return sorted({obs["model_id"] for obs in evidence.core_observations(run, Catalog())[0] if obs.get("model_id")})
+    except evidence.RunRejected:
+        return []
+    except Exception:  # the page without the extra models beats a failure page
+        traceback.print_exc()
+        return []
 
 
 def unknown_values(run: dict) -> dict:

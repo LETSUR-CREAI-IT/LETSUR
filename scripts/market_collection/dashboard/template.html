@@ -431,7 +431,7 @@ body:not([data-page="health"]) .hpage{display:none}
 .hst.bad{background:var(--amber-soft);color:var(--ink);border:1px solid var(--amber)} .hst.ok{background:var(--mint-soft);color:var(--mint-ink)} .hst.gone{background:var(--grey-soft);color:var(--muted)}
 .mpage{display:grid;grid-template-columns:minmax(0,230px) minmax(0,1fr);gap:16px;align-items:start}
 .mcol{display:flex;flex-direction:column;gap:16px;min-width:0}
-.mlist{padding:10px;position:sticky;top:12px}
+.mlist{padding:10px;position:sticky;top:12px;max-height:calc(100vh - 24px);overflow-y:auto}  /* 모델 목록 높이 제한(2026-10-28): 화면보다 긴 목록은 아래쪽 모델을 고르려면 그래프가 화면 밖으로 밀려서 목록 안에서 스크롤한다 */
 .mlist h3{margin:12px 8px 4px;font-size:11.5px;font-weight:700;color:var(--muted)}
 .mlist h3:first-child{margin-top:2px}
 .mrow{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;padding:6px 8px;border:0;border-radius:8px;background:none;text-align:left;font-size:13px;color:var(--ink);cursor:pointer}
@@ -439,7 +439,7 @@ body:not([data-page="health"]) .hpage{display:none}
 .mrow small.up{color:var(--up)} .mrow small.down{color:var(--down)}
 .mrow:hover{background:var(--grey-soft)}
 .mrow[aria-pressed="true"]{background:var(--mint-soft);font-weight:700}
-@media (max-width:900px){.mpage{grid-template-columns:minmax(0,1fr)}.mlist{position:static;display:flex;flex-wrap:wrap;gap:4px}.mlist h3{width:100%}.mrow{width:auto}}
+@media (max-width:900px){.mpage{grid-template-columns:minmax(0,1fr)}.mlist{position:static;display:flex;flex-wrap:wrap;gap:4px;max-height:max(240px,40vh)}.mlist h3{width:100%}.mrow{width:auto}}
 .ptable .th{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;margin-bottom:8px}
 .ptable .th h2{margin:0;font-size:14px;font-weight:700;color:var(--ink)}
 .ptable .th span{font-size:12px;color:var(--muted)}
@@ -1071,10 +1071,16 @@ const COLLECTED = /*DATA:COLLECTED*/;
 // 수집 상태(build.py health, 2026-10-28): 마지막 수집, 실패 중인 출처, 최근 실패 기록, 원문 재검증 필요
 const HEALTH = /*DATA:HEALTH*/;
 // 모델별 가격 화면의 모델 목록(2026-10-28 박건 요청): 만든 회사별로 묶고 회사·모델 이름순. 회사는 모델 id 앞부분으로 정한다.
-const MAKERS = [["claude", "Anthropic"], ["seedance", "ByteDance"], ["deepseek", "DeepSeek"], ["gemini", "Google"], ["kimi", "Moonshot AI"], ["gpt", "OpenAI"], ["glm", "Z.AI"]];
+const MAKERS = [["qwen", "Alibaba"], ["claude", "Anthropic"], ["seedance", "ByteDance"], ["deepseek", "DeepSeek"], ["gemini", "Google"], ["muse", "Meta"], ["minimax", "MiniMax"], ["kimi", "Moonshot AI"], ["gpt", "OpenAI"], ["grok", "xAI"], ["glm", "Z.AI"]];
 const makerOf = k => (MAKERS.find(([p]) => k.startsWith(p)) || ["", "기타"])[1];
-const MODEL_GROUPS = [...new Set(Object.keys(TREND).map(makerOf))].sort((a, b) => (a === "기타") - (b === "기타") || a.localeCompare(b))
-  .map(g => [g, Object.keys(TREND).filter(k => makerOf(k) === g).sort((a, b) => TREND[a].name.localeCompare(TREND[b].name, undefined, {numeric: true}))]);
+// 변화 카드가 없는 모델도 넣는다(2026-10-28): 최신 수집이 관측한 모델마다 가격 추이(TREND)나 현재 가격 표(COMPARE)가 있다. 조건이 정해지지
+// 않은 관측뿐인 모델은 선으로 그릴 값이 없어 표만 있다. 표의 형식은 아래 '공급사 비교 표' 절에 적었다.
+const COMPARE = /*DATA:COMPARE*/;
+const MODEL_IDS = [...new Set([...Object.keys(TREND), ...Object.keys(COMPARE)])];
+const modelName = k => TREND[k] ? TREND[k].name : k;
+const modelBadge = k => { const n = EVENTS.filter(e => e.mid === k).length; return TREND[k] ? TREND[k].badge : [n ? `변화 ${n}건` : "변화 없음", ""]; };
+const MODEL_GROUPS = [...new Set(MODEL_IDS.map(makerOf))].sort((a, b) => (a === "기타") - (b === "기타") || a.localeCompare(b))
+  .map(g => [g, MODEL_IDS.filter(k => makerOf(k) === g).sort((a, b) => modelName(a).localeCompare(modelName(b), undefined, {numeric: true}))]);
 let trendModel = (MODEL_GROUPS[0] || ["", []])[1][0], trendMeasure = 0, trendTier = "Standard";
 // 비교 모드: 탭은 정밀도·지역·등급까지 나뉘어 한 탭 안의 선은 공급처가 달라도 같은 조건이다. 엄격 비교는 그 선만, 전체 관측은 조건이 정해지지 않은
 // 참고 선(ref: 표시 최소가 같은 대표가, 비교 표가 상태로 빼는 엔드포인트)도 함께 본다(2026-10-27 결정 26-2).
@@ -1119,7 +1125,7 @@ function trendStats(M, mi){
       next ? `${esc(next.s)} · ${ddTxt(next.d)}` : note ? esc(note[1]) : "알려진 예정 없음");
 }
 function renderModelList(){
-  document.getElementById("mlist").innerHTML = MODEL_GROUPS.map(([g, ks]) => `<h3>${esc(g)}</h3>${ks.map(k => `<button type="button" class="mrow" data-model="${esc(k)}" aria-pressed="${k === trendModel}"><span>${esc(TREND[k].name)}</span><small class="${TREND[k].badge[1]}">${esc(TREND[k].badge[0])}</small></button>`).join("")}`).join("");
+  document.getElementById("mlist").innerHTML = MODEL_GROUPS.map(([g, ks]) => `<h3>${esc(g)}</h3>${ks.map(k => `<button type="button" class="mrow" data-model="${esc(k)}" aria-pressed="${k === trendModel}"><span>${esc(modelName(k))}</span><small class="${modelBadge(k)[1]}">${esc(modelBadge(k)[0])}</small></button>`).join("")}`).join("");
 }
 // 현재 가격 표: 공급사 비교 표를 모델별 가격 화면의 가격 추이 아래에 둔다(2026-10-28 가안, 카드 상세에는 링크만).
 function renderTable(){
@@ -1130,7 +1136,7 @@ function renderTable(){
 function renderPrice(){
   renderModelList(); renderTable();
   // 수정안: 등급(tiers)이 있으면 고른 등급의 선만
-  if (!TREND[trendModel]) { const p = document.createElement("p"); p.className = "unknown"; p.textContent = "단가 추이: 그릴 수 있는 관측 단가가 없습니다."; document.getElementById("trend").replaceChildren(p); return; }
+  if (!TREND[trendModel]) { const p = document.createElement("p"); p.className = "unknown"; p.textContent = "단가 추이: 그릴 수 있는 관측 단가가 없습니다." + (COMPARE[trendModel] ? " 현재 가격은 아래 표에 있습니다." : ""); document.getElementById("trend").replaceChildren(p); return; }
   const M0 = TREND[trendModel], tierKeys = M0.tiers ? Object.keys(M0.tiers) : [], tier = M0.tiers && M0.tiers[trendTier] ? trendTier : tierKeys[0];
   const cmp = comparableSeries(M0.tiers ? M0.tiers[tier] : M0.series), onlyRef = trendCompare === "strict" && !cmp.excluded.length && cmp.shown.length && cmp.shown.every(x => x.ref);
   const M = Object.assign({}, M0, {series: cmp.shown}), mi = M.measures.length > 1 ? trendMeasure : 0, el = document.getElementById("trend");
@@ -1327,7 +1333,7 @@ function changeTable(e){
 // ---- 공급사 비교 표 (compare.py가 COMPARE를 채운다, 결정 1~18·22절) ----
 // COMPARE[모델] = {at 가격 기준 관측 시각, unit, items 가격 열 이름, disc 한시 할인 열 여부, groups [[묶음 이름, 행…]], ex 비교 제외 행, special 특이사항, foot}
 // 행: w [경로, 하위 공급처] · c 열마다 [값, lo 최저 | un 유일] · d [할인가, 종료일, 종료 후 가격]마다 [값, 구분] · p [적용 기간, 근거] · n 비고 · t 칩 [이름, 구분] · f 강조는 채움만
-const COMPARE = /*DATA:COMPARE*/;
+// COMPARE는 모델 목록이 먼저 쓰므로 위 MAKERS 아래에서 받는다.
 // 2026-10-28 가안: 표는 모델별 가격의 '현재 가격 표' 탭에 두고, 카드 상세에는 그 탭으로 가는 링크만 둔다. 표는 모델마다 하나라서
 // 같은 모델의 카드 여러 장에 같은 표가 되풀이되고, 이벤트 없이 모델 가격만 볼 자리가 없었다.
 function compareTable(mid){
@@ -1450,7 +1456,7 @@ function setPage(p, model, target){
   document.getElementById("ptitle").textContent = {models: "모델별 가격", health: "수집 상태"}[p] || "확인할 변화";
   if (p === "health") { renderHealth(); try { history.replaceState(null, "", "#health"); } catch (err) {} return; }
   if (p !== "models") { try { history.replaceState(null, "", state.sel ? "#" + state.sel : location.pathname + location.search); } catch (err) {} return; }
-  if (model && TREND[model] && model !== trendModel) { trendModel = model; trendMeasure = 0; trendTier = "Standard"; }
+  if (model && MODEL_IDS.includes(model) && model !== trendModel) { trendModel = model; trendMeasure = 0; trendTier = "Standard"; }
   renderPrice();
   try { history.replaceState(null, "", "#m/" + encodeURIComponent(trendModel)); } catch (err) {}
   const to = target === "table" && COMPARE[trendModel] ? "ptable" : target ? "trend" : null;

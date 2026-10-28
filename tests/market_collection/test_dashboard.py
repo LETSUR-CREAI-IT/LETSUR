@@ -451,6 +451,16 @@ def test_frequent_price_changes_of_one_route_share_a_bundle() -> None:
     assert again[0]["vg"] == busy[0]["vg"]  # the id comes from model and route, so links stay put
 
 
+def _makers(page: str) -> list[list[str]]:
+    """template.html's MAKERS as the built page carries it: [model id prefix, company] in the order written."""
+    return json.loads(re.search(r"^const MAKERS = (.*);$", page, re.M).group(1))
+
+
+def _maker_of(makers: list[list[str]], model_id: str) -> str:
+    """template.html's makerOf: the company of the first prefix the id starts with, else 기타."""
+    return next((company for prefix, company in makers if model_id.startswith(prefix)), "기타")
+
+
 def test_template_bundles_the_list_and_moves_the_table_to_the_model_view(tmp_path: Path) -> None:
     """2026-10-28 가안: the list shows one row per 변동 잦음 bundle at its first member's place, a bundle opens its own detail
     (#vg) with links to 모델별 가격, and the page has two screens, 변화 and 모델별 가격 (model list by maker, 가격 추이, 현재 가격
@@ -466,9 +476,10 @@ def test_template_bundles_the_list_and_moves_the_table_to_the_model_view(tmp_pat
     assert 'body:not([data-page="models"]) .mpage{display:none}' in page and 'if (h.startsWith("m/")) startModel' in page
     assert '<section class="card trend" id="trend" aria-label="가격 추이"></section>' in page and 'id="ptable"' in page
     assert 'setPage("models", tr.dataset.trend, tr.dataset.tview || "chart");' in page
-    # models grouped by maker (from the id), makers and models in name order
-    assert 'const MAKERS = [["claude", "Anthropic"], ["seedance", "ByteDance"], ["deepseek", "DeepSeek"], ["gemini", "Google"]' in page
-    assert "TREND[a].name.localeCompare(TREND[b].name, undefined, {numeric: true})" in page
+    # models grouped by maker (from the id), makers and models in name order (the table is written in company-name order too)
+    companies = [company for _, company in _makers(page)]
+    assert companies == sorted(companies, key=str.lower)
+    assert "modelName(a).localeCompare(modelName(b), undefined, {numeric: true})" in page
 
 
 def test_observed_condition_change(tmp_path: Path) -> None:
@@ -689,6 +700,59 @@ def test_committed_routes_mark_each_route_and_leave_glm_52_unknown(tmp_path: Pat
     judged = {tuple(card["events"]): card for card in json.loads((tmp_path / "site" / "cards.json").read_text(encoding="utf-8"))["cards"]}
     azure = judged[("e0",)]  # what the Slack bot writes after 렛서 사용 :
     assert (azure["usage"], azure["applicability"]) == ("이 경로로 사용 중 (호출 확인)", "APPLIES")
+
+
+GATEWAY_MODELS = {  # the 34 models one LETSUR API call on 2026-10-28 reached through OpenRouter or Vercel, by the gateway it went through
+    "openrouter": ("deepseek-v4-flash-0731 deepseek-v4-pro-0813 glm-4.5 glm-4.5-air glm-4.6 glm-5-turbo grok-4.20 grok-4.6 kimi-k2-thinking "
+                   "kimi-k2.6 kimi-k3.1-pro minimax-m2.7 muse-spark-1.2 qwen3-coder-flash qwen3.7-flash qwen3.5-plus").split(),
+    "vercel_ai_gateway": ("deepseek-v4-flash deepseek-v4.1-flash-1017 gemini-2.5-flash-lite glm-5.1 grok-4.3 kimi-k2.5 kimi-k2.7-code minimax-m2 "
+                          "minimax-m2.1 minimax-m2.5 minimax-m3 muse-spark-1.3 muse-wonder-1.0 qwen3-coder-next qwen3.6-plus qwen3.7-max "
+                          "qwen3.7-plus qwen3.8-max").split(),
+}
+
+
+def test_committed_routes_hold_one_observed_record_for_each_of_the_34_gateway_models() -> None:
+    """2026-10-28: 25 records became 59; each added model has one record, observed, on the gateway its call went through."""
+    records = json.loads(DEMO_ROUTES.read_text(encoding="utf-8"))["records"]
+    bases = [record.get("basis") for record in records]
+    assert (len(records), bases.count("settings"), bases.count("observed")) == (59, 10, 49)
+    assert not any(build.record_problem(record) for record in records)
+    expected = sorted((model, route) for route, models in GATEWAY_MODELS.items() for model in models)
+    assert len(expected) == 34 and [len(models) for models in GATEWAY_MODELS.values()] == [16, 18]
+    added = [record for record in records if record["model_id"] in dict(expected)]
+    assert sorted((record["model_id"], record["route_id"]) for record in added) == expected  # one each: a repeated model would show twice
+    assert all(record["endpoint_id"] is None and record["basis"] == "observed" for record in added)
+
+
+def test_a_card_on_another_route_than_the_observed_one_says_which_route_is() -> None:
+    """qwen3.5-plus went through OpenRouter, which has no endpoint listing under that id, so its Vercel card reads 'another
+    route' and does not claim the Vercel route is the one in use; deepseek-v4-flash went through Vercel."""
+    doc = json.loads(DEMO_ROUTES.read_text(encoding="utf-8"))
+
+    def card(model: str, route: str) -> tuple:
+        found = build.relation({"model_id": model, "route": route}, doc)
+        return found["relKey"], found["relShort"], found.get("relObs", False)
+    assert card("qwen3.5-plus", "vercel_ai_gateway") == ("other", "모델 제공 중 : OpenRouter · openrouter 경로로 사용 (호출 확인)", True)
+    assert card("deepseek-v4-flash", "vercel_ai_gateway") == ("use", "이 경로로 사용 중 (호출 확인)", True)
+    assert card("deepseek-v4-flash", "openrouter") == ("other", "모델 제공 중 : Vercel · vercel_ai_gateway 경로로 사용 (호출 확인)", True)
+    assert build.model_use("qwen3.5-plus", doc) == {"use": "OpenRouter · openrouter 경로로 사용 (호출 확인)"}
+
+
+def test_model_list_groups_the_gateway_models_under_their_makers_and_stays_a_box_of_its_own_height(tmp_path: Path) -> None:
+    """2026-10-28: grok, minimax, muse and qwen models get xAI, MiniMax, Meta and Alibaba in the 모델별 가격 list instead of 기타;
+    every model of the committed routes file has a company, and no prefix hides a later one (the first match wins)."""
+    _write(tmp_path, [])
+    page = _build(tmp_path)[1]
+    makers = _makers(page)
+    assert dict(makers) == {"qwen": "Alibaba", "claude": "Anthropic", "seedance": "ByteDance", "deepseek": "DeepSeek", "gemini": "Google",
+                            "muse": "Meta", "minimax": "MiniMax", "kimi": "Moonshot AI", "gpt": "OpenAI", "grok": "xAI", "glm": "Z.AI"}
+    assert all(_maker_of(makers, f"{prefix}-x") == company for prefix, company in makers)
+    assert [_maker_of(makers, model) for model in ("grok-4.20", "minimax-m2.5", "muse-wonder-1.0", "qwen3.8-max")] == ["xAI", "MiniMax", "Meta", "Alibaba"]
+    models = {record["model_id"] for record in json.loads(DEMO_ROUTES.read_text(encoding="utf-8"))["records"]}
+    assert [model for model in sorted(models) if _maker_of(makers, model) == "기타"] == []
+    # about 55 models: the sticky list scrolls inside itself (a taller one pushes the chart off screen), and so does the phone's list
+    assert ".mlist{padding:10px;position:sticky;top:12px;max-height:calc(100vh - 24px);overflow-y:auto}" in page
+    assert ".mlist{position:static;display:flex;flex-wrap:wrap;gap:4px;max-height:max(240px,40vh)}" in page
 
 
 @pytest.mark.parametrize(("records", "risk"), [

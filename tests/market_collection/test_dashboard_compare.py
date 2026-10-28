@@ -13,6 +13,7 @@ import pytest
 
 from scripts.market_collection import core
 from scripts.market_collection.dashboard import build, compare
+from scripts.market_collection.events.__main__ import main as events_main
 from scripts.market_collection.events.engine import base_event
 from scripts.market_collection.sources import source_specs
 
@@ -52,6 +53,15 @@ def _run(root: Path, model: str, openrouter: list | None, vercel: list | str | N
     _, adapters = core.registry()
     return core.live(root, specs=specs, adapters=adapters, fetcher=lambda spec: (json.dumps(listing[spec.source_key]).encode(), spec.url,
                                                                                     500 if bodies[spec.source_key] == "fail" else 200))
+
+
+def _run_models(root: Path, lists: dict) -> Path:
+    """One collector run of several models' endpoint listings, {model: (openrouter, vercel)}."""
+    bodies = {key: body for model, pair in lists.items() for key, body in zip(KEYS[model], pair)}
+    listing = {key: {"data": {"id": model_id, "endpoints": bodies[key]}} for model in lists for key, model_id in zip(KEYS[model], IDS[model])}
+    specs = [spec for spec in source_specs() if bodies.get(spec.source_key) is not None]
+    _, adapters = core.registry()
+    return core.live(root, specs=specs, adapters=adapters, fetcher=lambda spec: (json.dumps(listing[spec.source_key]).encode(), spec.url, 200))
 
 
 GLM_OR = [
@@ -259,6 +269,51 @@ def test_a_record_with_an_endpoint_marks_only_that_endpoint_and_a_record_without
     assert compare.assumed_routes(GLM, {"records": [{"model_id": "other", "route_id": "openrouter"}]}) == [] and compare.assumed_routes(GLM, None) == []
 
 
+@pytest.mark.parametrize(("maker", "spellings"), [
+    ("Z.ai", ["Z.AI", "z-ai", "zai"]),
+    ("Moonshot AI", ["Moonshot AI", "moonshotai"]),
+    ("xAI", ["xAI", "x-ai", "xai", "SpaceXAI", "spacexai"]),
+    ("MiniMax", ["MiniMax", "minimax"]),
+    ("Meta", ["Meta", "meta"]),
+    ("Alibaba", ["Alibaba", "alibaba"]),
+])
+def test_a_makers_name_and_its_spellings_on_the_gateways_are_one_upstream(maker, spellings):
+    """2026-10-28: OpenRouter writes 'Z.AI', 'xAI', 'Meta', 'Alibaba', 'MiniMax', 'Moonshot AI' (and names xAI's models SpaceXAI) and
+    Vercel the lowercase ids ('zai', 'spacexai', 'meta', 'moonshotai' ...); norm() makes each spelling the maker's own name."""
+    assert {compare.norm(spelling) for spelling in spellings} == {compare.norm(maker)}
+
+
+@pytest.mark.parametrize(("model", "maker", "route", "conditions"), [
+    ("glm-4.6", "Z.ai", "openrouter", {"endpoint_tag": "z-ai/fp8"}),
+    ("glm-5.1", "Z.ai", "vercel_ai_gateway", {"endpoint_provider": "zai"}),
+    ("kimi-k2.6", "Moonshot AI", "openrouter", {"endpoint_tag": "moonshotai"}),
+    ("kimi-k2.5", "Moonshot AI", "vercel_ai_gateway", {"endpoint_provider": "moonshotai"}),
+    ("grok-4.20", "xAI", "openrouter", {"endpoint_tag": "xai"}),
+    ("grok-4.6", "xAI", "openrouter", {"endpoint_tag": "spacexai/fast"}),
+    ("grok-4.3", "xAI", "vercel_ai_gateway", {"endpoint_provider": "spacexai"}),
+    ("grok-4.3", "xAI", "vercel_ai_gateway", {"endpoint_provider": "xai"}),
+    ("minimax-m2.7", "MiniMax", "openrouter", {"endpoint_tag": "minimax/fp8"}),
+    ("minimax-m3", "MiniMax", "vercel_ai_gateway", {"endpoint_provider": "minimax"}),
+    ("muse-spark-1.2", "Meta", "openrouter", {"endpoint_tag": "meta"}),
+    ("muse-spark-1.3", "Meta", "vercel_ai_gateway", {"endpoint_provider": "meta"}),
+    ("qwen3.7-flash", "Alibaba", "openrouter", {"endpoint_tag": "alibaba"}),
+    ("qwen3.7-max", "Alibaba", "vercel_ai_gateway", {"endpoint_provider": "alibaba"}),
+])
+def test_the_route_chip_lands_on_the_makers_own_upstream_row_of_each_gateway(monkeypatch, model, maker, route, conditions):
+    """2026-10-28 (decision 17): on a gateway the chip marks the maker's own upstream at Standard. The row is placed from what its
+    source states (OpenRouter tag, Vercel provider); the maker is set here, so this checks the spelling match and not the
+    FAMILY_MAKERS of events/catalog.py."""
+    monkeypatch.setattr(compare, "maker", lambda _model: maker)
+    targets = [(route, "", "observed")]
+
+    def placed(**stated) -> dict:
+        row = _row(model=model, route=route, conditions=stated, unknown={}, origin="listing")
+        compare.place(row)
+        return row
+    assert compare.assumed_chip(placed(**conditions), targets, False) == "호출 확인"
+    assert compare.assumed_chip(placed(**{key: "deepinfra" for key in conditions}), targets, False) == ""  # another upstream of the model
+
+
 def _row(**fields) -> dict:
     row = {"model": GLM, "route": "openrouter", "provider": "", "tier": "Standard", "region": "", "band": "", "discount": None,
            "prices": {}, "future": {}, "start": set(), "until": set(), "conditions": {}, "notes": []}
@@ -447,6 +502,48 @@ def test_an_error_in_the_table_leaves_the_page_without_tables(tmp_path, monkeypa
     monkeypatch.setattr(compare, "build_tables", broken)
     assert compare.tables(tmp_path, [GLM], [], [], None, None, None, "2026-10-27") == {}
     assert "KeyError" in capsys.readouterr().err
+
+
+CLOSED_OR = [_or("openai", _prices(10, 50, 1), quant="unknown")]
+CLOSED_VERCEL = [_vercel("openai", _prices(10, 50, 1))]
+
+
+def test_observed_models_are_the_newest_runs_whatever_a_card_says(tmp_path):
+    run = _run_models(tmp_path, {GLM: (GLM_OR, GLM_VERCEL), ASTRA: (CLOSED_OR, CLOSED_VERCEL)})
+    assert compare.observed_models(tmp_path, {"processed_runs": [run.name]}) == [GLM, ASTRA]
+    assert compare.observed_models(tmp_path, {"processed_runs": []}) == []  # the engine has not processed it
+    assert compare.observed_models(tmp_path / "nothing", None) == []
+
+
+def test_a_model_without_cards_still_gets_a_trend_a_table_and_a_list_entry(tmp_path):
+    """2026-10-28: the 모델별 가격 list covers every model the newest run observed, not only models with change cards. A new model
+    has baselines and no events: glm-5.2 has series to draw (TREND, badge 변화 없음), gpt-6-astra's observations all have unknown
+    conditions, so it has only the table; both are in the list. The cards and cards.json do not change."""
+    root = tmp_path / "root"
+    run = _run_models(root, {GLM: (GLM_OR, GLM_VERCEL), ASTRA: (CLOSED_OR, CLOSED_VERCEL)})
+    assert events_main(["build", "--run", str(run), "--output", str(root / "events")]) == 0  # the engine's own state, events and report
+
+    def built(name):
+        assert build.main(["--root", str(root), "--output", str(tmp_path / name)]) == 0
+        page = (tmp_path / name / "index.html").read_text(encoding="utf-8")
+        slot = lambda key: json.loads(re.search(rf"^const {key} = (.*);$", page, re.M).group(1))
+        return page, slot, json.loads((tmp_path / name / "cards.json").read_text(encoding="utf-8"))["cards"]
+    page, slot, judged = built("site")
+    assert (slot("EVENTS"), judged) == ([], [])
+    assert set(slot("COMPARE")) == {GLM, ASTRA} and ASTRA not in slot("TREND")  # nothing to draw, the table has its rows
+    assert slot("COMPARE")[ASTRA]["groups"]
+    trend = slot("TREND")[GLM]
+    assert (trend["name"], trend["badge"]) == (GLM, ["변화 없음", ""]) and (trend.get("tiers") or trend.get("series"))
+    # the page lists TREND and COMPARE models alike, #m/<model> opens either, and an empty trend points at the table
+    assert "const MODEL_IDS = [...new Set([...Object.keys(TREND), ...Object.keys(COMPARE)])];" in page
+    assert "MODEL_IDS.includes(model) && model !== trendModel" in page and "현재 가격은 아래 표에 있습니다." in page
+    # a card of one model does not touch the others: its badge counts it, the card model keeps the only card
+    folder = root / "events"
+    events = json.loads((folder / "events.json").read_text(encoding="utf-8"))
+    (folder / "events.json").write_text(json.dumps(dict(events, events=[base_event("e1", "price_change", GLM, "openrouter", "confirmed")])), encoding="utf-8")
+    page, slot, judged = built("with-card")
+    assert [card["mid"] for card in slot("EVENTS")] == [GLM] and len(judged) == 1
+    assert (slot("TREND")[GLM]["badge"], set(slot("COMPARE")), ASTRA in slot("TREND")) == (["변화 1건", ""], {GLM, ASTRA}, False)
 
 
 def _listing(model, route, conditions, prices=("1", "2", "0.1"), **fields) -> dict:

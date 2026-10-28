@@ -1036,12 +1036,14 @@ def build_card(card_id: str, members: list[dict], sources: Sources, routes: dict
     return card
 
 
-def trend(cards: list[dict], groups: dict[str, list[dict]], state: dict | None, gaps: list) -> dict:
-    """TREND for each model with events: tabs are price condition sets, lines are routes and their gateway endpoints, measures are billing items."""
+def trend(cards: list[dict], groups: dict[str, list[dict]], state: dict | None, gaps: list, models: tuple | list = ()) -> dict:
+    """TREND for each model with events and for each of `models` (the newest run's, 2026-10-28), cards or not: tabs are price
+    condition sets, lines are routes and their gateway endpoints, measures are billing items. A model with no drawable
+    observation has no entry."""
     series = state.get("series") if isinstance(state, dict) and isinstance(state.get("series"), dict) else None
     suspect = {gap.get("after_observation_id") for gap in gaps if isinstance(gap, dict) and gap.get("kind") in SUSPECT_GAPS} - {None, ""}
     out = {}
-    for model_id in dict.fromkeys(card["mid"] for card in cards if card["mid"]):
+    for model_id in dict.fromkeys([*(card["mid"] for card in cards if card["mid"]), *models]):
         entry = model_trend(model_id, [card for card in cards if card["mid"] == model_id], groups, series, suspect)
         if entry:
             out[model_id] = entry
@@ -1174,7 +1176,7 @@ def model_trend(model_id: str, cards: list[dict], groups: dict[str, list[dict]],
     notes = sorted([card["eff"], f"{card.get('effLabel') or '적용일'} · {card['ch']}", card["id"]]
                    for card in cards if card["id"] in memo and card.get("eff"))
     entry = {"name": model_id, "unit": " · ".join(dict.fromkeys(f"USD / {unit_ko(tab[1])}" if tab[1] else "USD" for tab in tabs)),
-             "real": True, "note": " ".join(facts), "badge": [f"변화 {len(cards)}건", ""],
+             "real": True, "note": " ".join(facts), "badge": [f"변화 {len(cards)}건" if cards else "변화 없음", ""],
              "measures": [html.escape(MEASURE_KO.get(item, item)) for item in measures], "notes": notes}
     full = tab_conditions(list(tabs))
     entry["conds"] = {names[tab]: full[tab] for tab in tabs}  # tab name -> its conditions in the source's words
@@ -1599,11 +1601,13 @@ def collect(root: Path, today: str, routes: dict | None) -> tuple[dict, str]:
     cards = [build_card(cid, groups[cid], sources, routes, feed) for cid in order]
     mark_volatile(cards)
     mark_reverted(cards, groups, reverted([e for e in doc["events"] if isinstance(e, dict)]))
+    # 모델별 가격 화면은 변화 카드가 없어도 최신 수집 run이 관측한 모델을 모두 보인다(2026-10-28): 새 모델은 기준선만 있고 이벤트가 없다
+    shown = list(dict.fromkeys([*(card["mid"] for card in cards if card["mid"]), *compare.observed_models(root, report)]))
     data = {"TODAY": today, "SRC": sources.entries(), "ID": {cid: [e.get("event_id") for e in groups[cid]] for cid in order},
-            "EVENTS": cards, "MODELS": models(cards, routes), "TREND": trend(cards, groups, state, doc.get("gaps") or []),
+            "EVENTS": cards, "MODELS": models(cards, routes), "TREND": trend(cards, groups, state, doc.get("gaps") or [], shown),
             "COLLECTED": collected(report), "HEALTH": health(root, report, state, today)}
-    # 공급사 비교 표 per LLM model with a card (compare.py; reads the newest processed run under <root>/runs)
-    data["COMPARE"] = compare.tables(root, [card["mid"] for card in cards], [e for e in doc["events"] if isinstance(e, dict)],
+    # 공급사 비교 표 per LLM model of `shown` (compare.py; reads the newest processed run under <root>/runs)
+    data["COMPARE"] = compare.tables(root, shown, [e for e in doc["events"] if isinstance(e, dict)],
                                      doc.get("gaps") or [], state, report, routes, today)
     link_promotions(cards, groups, data["COMPARE"], routes)
     data["JUDGED"] = judgements(data, groups)  # not a page slot: main writes it to cards.json

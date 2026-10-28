@@ -152,6 +152,210 @@
       "route_id": "BytePlus ModelArk",
       "endpoint_id": null,
       "basis": "settings"
+    },
+    {
+      "model_id": "deepseek-v4-flash",
+      "route_id": "vercel_ai_gateway",
+      "endpoint_id": null,
+      "basis": "observed"
+    },
+    {
+      "model_id": "deepseek-v4-flash-0731",
+      "route_id": "openrouter",
+      "endpoint_id": null,
+      "basis": "observed"
+    },
+    {
+      "model_id": "deepseek-v4-pro-0813",
+      "route_id": "openrouter",
+      "endpoint_id": null,
+      "basis": "observed"
+    },
+    {
+      "model_id": "deepseek-v4.1-flash-1017",
+      "route_id": "vercel_ai_gateway",
+      "endpoint_id": null,
+      "basis": "observed"
+    },
+    {
+      "model_id": "gemini-2.5-flash-lite",
+      "route_id": "vercel_ai_gateway",
+      "endpoint_id": null,
+      "basis": "observed"
+    },
+    {
+      "model_id": "glm-4.5",
+      "route_id": "openrouter",
+      "endpoint_id": null,
+      "basis": "observed"
+    },
+    {
+      "model_id": "glm-4.5-air",
+      "route_id": "openrouter",
+      "endpoint_id": null,
+      "basis": "observed"
+    },
+    {
+      "model_id": "glm-4.6",
+      "route_id": "openrouter",
+      "endpoint_id": null,
+      "basis": "observed"
+    },
+    {
+      "model_id": "glm-5-turbo",
+      "route_id": "openrouter",
+      "endpoint_id": null,
+      "basis": "observed"
+    },
+    {
+      "model_id": "glm-5.1",
+      "route_id": "vercel_ai_gateway",
+      "endpoint_id": null,
+      "basis": "observed"
+    },
+    {
+      "model_id": "grok-4.20",
+      "route_id": "openrouter",
+      "endpoint_id": null,
+      "basis": "observed"
+    },
+    {
+      "model_id": "grok-4.3",
+      "route_id": "vercel_ai_gateway",
+      "endpoint_id": null,
+      "basis": "observed"
+    },
+    {
+      "model_id": "grok-4.6",
+      "route_id": "openrouter",
+      "endpoint_id": null,
+      "basis": "observed"
+    },
+    {
+      "model_id": "kimi-k2-thinking",
+      "route_id": "openrouter",
+      "endpoint_id": null,
+      "basis": "observed"
+    },
+    {
+      "model_id": "kimi-k2.5",
+      "route_id": "vercel_ai_gateway",
+      "endpoint_id": null,
+      "basis": "observed"
+    },
+    {
+      "model_id": "kimi-k2.6",
+      "route_id": "openrouter",
+      "endpoint_id": null,
+      "basis": "observed"
+    },
+    {
+      "model_id": "kimi-k2.7-code",
+      "route_id": "vercel_ai_gateway",
+      "endpoint_id": null,
+      "basis": "observed"
+    },
+    {
+      "model_id": "kimi-k3.1-pro",
+      "route_id": "openrouter",
+      "endpoint_id": null,
+      "basis": "observed"
+    },
+    {
+      "model_id": "minimax-m2",
+      "route_id": "vercel_ai_gateway",
+      "endpoint_id": null,
+      "basis": "observed"
+    },
+    {
+      "model_id": "minimax-m2.1",
+      "route_id": "vercel_ai_gateway",
+      "endpoint_id": null,
+      "basis": "observed"
+    },
+    {
+      "model_id": "minimax-m2.5",
+      "route_id": "vercel_ai_gateway",
+      "endpoint_id": null,
+      "basis": "observed"
+    },
+    {
+      "model_id": "minimax-m2.7",
+      "route_id": "openrouter",
+      "endpoint_id": null,
+      "basis": "observed"
+    },
+    {
+      "model_id": "minimax-m3",
+      "route_id": "vercel_ai_gateway",
+      "endpoint_id": null,
+      "basis": "observed"
+    },
+    {
+      "model_id": "muse-spark-1.2",
+      "route_id": "openrouter",
+      "endpoint_id": null,
+      "basis": "observed"
+    },
+    {
+      "model_id": "muse-spark-1.3",
+      "route_id": "vercel_ai_gateway",
+      "endpoint_id": null,
+      "basis": "observed"
+    },
+    {
+      "model_id": "muse-wonder-1.0",
+      "route_id": "vercel_ai_gateway",
+      "endpoint_id": null,
+      "basis": "observed"
+    },
+    {
+      "model_id": "qwen3-coder-flash",
+      "route_id": "openrouter",
+      "endpoint_id": null,
+      "basis": "observed"
+    },
+    {
+      "model_id": "qwen3-coder-next",
+      "route_id": "vercel_ai_gateway",
+      "endpoint_id": null,
+      "basis": "observed"
+    },
+    {
+      "model_id": "qwen3.5-plus",
+      "route_id": "openrouter",
+      "endpoint_id": null,
+      "basis": "observed"
+    },
+    {
+      "model_id": "qwen3.6-plus",
+      "route_id": "vercel_ai_gateway",
+      "endpoint_id": null,
+      "basis": "observed"
+    },
+    {
+      "model_id": "qwen3.7-flash",
+      "route_id": "openrouter",
+      "endpoint_id": null,
+      "basis": "observed"
+    },
+    {
+      "model_id": "qwen3.7-max",
+      "route_id": "vercel_ai_gateway",
+      "endpoint_id": null,
+      "basis": "observed"
+    },
+    {
+      "model_id": "qwen3.7-plus",
+      "route_id": "vercel_ai_gateway",
+      "endpoint_id": null,
+      "basis": "observed"
+    },
+    {
+      "model_id": "qwen3.8-max",
+      "route_id": "vercel_ai_gateway",
+      "endpoint_id": null,
+      "basis": "observed"
     }
   ]
 }
