@@ -69,6 +69,28 @@ BROKER_API_MODELS = (
     ("qwen3.8-max", "Qwen 3.8 Max", None, "alibaba/qwen3.8-max"),
 )
 
+# Gemini models LETSUR serves straight from Google, each read from its own section of the Gemini API pricing page
+# (2026-10-28): (model, title). The model id is also the id of the section's h2 on that page.
+# Not collected, because the page has no section for them: gemini-3.5-flash and gemini-3.7-flash (their model pages say
+# deprecated, routed to gemini-3.6-flash and gemini-3.8-flash), gemini-3-pro-image-preview and gemini-3.1-flash-image-preview.
+GOOGLE_DIRECT_MODELS = (
+    ("gemini-4-argon", "Gemini 4 Argon"),
+    ("gemini-3.1-pro-preview", "Gemini 3.1 Pro Preview"),
+    ("gemini-3.1-flash-lite", "Gemini 3.1 Flash Lite"),
+    ("gemini-3.5-flash-lite", "Gemini 3.5 Flash Lite"),
+    ("gemini-3.6-flash", "Gemini 3.6 Flash"),
+    ("gemini-3-flash-preview", "Gemini 3 Flash Preview"),
+    ("gemini-2.5-flash", "Gemini 2.5 Flash"),
+    ("gemini-2.5-pro", "Gemini 2.5 Pro"),
+)
+
+GOOGLE_IMAGE_MODELS = (
+    ("gemini-nano-banana-2.1", "Gemini Nano Banana 2.1"),
+    ("gemini-2.5-flash-image", "Gemini 2.5 Flash Image"),
+    ("gemini-3-pro-image", "Gemini 3 Pro Image"),
+    ("gemini-3.1-flash-image", "Gemini 3.1 Flash Image"),
+)
+
 _AWS_OPENAI = (
     ("gpt-6-astra", "gpt-6-astra", "GPT-6 Astra"),
     ("gpt-6-sol", "gpt-6-sol", "GPT-6 Sol"),
@@ -148,6 +170,8 @@ MODEL_MODALITIES = {
     **{model: "llm" for model, *_ in BROKER_CATALOG_MODELS},
     **{model: "llm" for model, *_ in BROKER_API_MODELS},
     **{model: "llm" for model in AZURE_RETAIL_GPT5_MODELS + AZURE_RETAIL_OPENAI_MODELS},
+    **{model: "llm" for model, _ in GOOGLE_DIRECT_MODELS},
+    **{model: "image" for model, _ in GOOGLE_IMAGE_MODELS},
     SUNBURST_MODEL: "image", FLARE_MODEL: "image", SEEDANCE_MODEL: "video",
     **{model: "llm" for model, _ in ANTHROPIC_DIRECT_MODELS},
     **{model: "llm" for model, *_ in OPENAI_DIRECT_MODELS},

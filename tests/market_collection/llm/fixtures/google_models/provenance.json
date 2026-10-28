@@ -1,0 +1,27 @@
+[
+  {
+    "fixture": "pricing.html",
+    "source_url": "https://ai.google.dev/gemini-api/docs/pricing",
+    "fetched_at_utc": "2026-10-28T14:29:45Z",
+    "raw_sha256": "5d1fe0e8ae9a1ef837d16caa8c4fb8a24b24f68cc62a2218a000eeec01d1dc44",
+    "raw_bytes": 254011,
+    "fixture_sha256": "a716d27713e99e2e8031cf6bd9655e2933d77673e48c66cfb5a5d8948fdff66c",
+    "sections": [
+      "gemini-4-argon",
+      "gemini-3.8-flash",
+      "gemini-3.6-flash",
+      "gemini-3.8-live",
+      "gemini-3.5-flash-lite",
+      "gemini-3.1-flash-lite",
+      "gemini-3.1-pro-preview",
+      "gemini-nano-banana-2.1",
+      "gemini-3.1-flash-image",
+      "gemini-3-flash-preview",
+      "gemini-3-pro-image",
+      "gemini-2.5-pro",
+      "gemini-2.5-flash",
+      "gemini-2.5-flash-image"
+    ],
+    "method": "The model sections (models-section blocks) of the twelve Gemini models collected from this page and of gemini-3.8-flash, kept byte for byte and in page order, with the gemini-3.8-live section the page nests after gemini-3.6-flash; the page head, navigation, scripts, the other models and the notes are cut; no price edited."
+  }
+]

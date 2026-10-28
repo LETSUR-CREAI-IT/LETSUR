@@ -5,6 +5,7 @@ from scripts.market_collection.core import SourceSpec
 from scripts.market_collection.sources import source_specs
 from . import google, openai, anthropic, openrouter, vercel, aws_bedrock, azure_foundry, fal, byteplus, google_vertex, azure_databricks, image25_api, image25_supplement, azure_retail_llm, azure_retail_models
 from . import anthropic_models, openai_models
+from . import google_models
 
 SUPPLIERS = {
     "google_direct": google, "openai_direct": openai, "openai": openai,
@@ -29,6 +30,8 @@ def parser_module(spec: SourceSpec):
         return anthropic_models
     if spec.parser in openai_models.PARSERS:
         return openai_models
+    if spec.parser in google_models.PARSERS:  # its own module, so google.py keeps its fingerprint
+        return google_models
     module = SUPPLIERS.get(spec.route)
     if module is None:
         raise ValueError("unhandled source route")
