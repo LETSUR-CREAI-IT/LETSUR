@@ -30,8 +30,8 @@ class LlmAdapterTests(unittest.TestCase):
 
     def test_registry_is_fixed_and_distinct(self):
         validate_registry(llm.source_specs())
-        self.assertEqual(len(llm.source_specs()), 109)
-        self.assertEqual(len({spec.source_key for spec in self.specs.values()}), 75)
+        self.assertEqual(len(llm.source_specs()), 129)
+        self.assertEqual(len({spec.source_key for spec in self.specs.values()}), 87)
         self.assertEqual([spec.model_id for spec in llm.source_specs()[:3]], ["gemini-3.8-flash"] * 3)
         self.assertTrue({"gpt-6-astra", "claude-fable-5-1"}.issubset({spec.model_id for spec in llm.source_specs()}))
         for model, _, _ in STANDARD_LLM_MODELS:
@@ -194,6 +194,8 @@ For pricing information, see the [Amazon Bedrock Pricing](https://aws.amazon.com
 
     def test_nine_new_models_direct_tables_are_exact_and_isolated(self):
         for model, title, slug in STANDARD_LLM_MODELS:
+            if model == "claude-haiku-5-5":
+                continue  # priced in two prompt-length tiers; checked in test_successor_models
             provider = "openai" if model.startswith("gpt-") else "anthropic"
             parser = f"{provider}_{model.replace('-', '_').replace('.', '_')}"
             with self.subTest(model=model):

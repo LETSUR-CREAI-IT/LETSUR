@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from scripts.market_collection.core import SourceSpec, CollectionError
-from scripts.market_collection.models import (GOOGLE_LLM_MODEL, ASTRA_MODEL, FABLE_MODEL, STANDARD_LLM_MODELS, BROKER_CATALOG_MODELS, _AWS_OPENAI, _AWS_ANTHROPIC, _AZURE_MODELS, SUNBURST_MODEL, FLARE_MODEL, SEEDANCE_MODEL, MODEL_MODALITIES, IDEOGRAM_MODEL, VEO_MODELS, VEO_VERCEL_IDS)
+from scripts.market_collection.models import (GOOGLE_LLM_MODEL, GOOGLE_ARGON_MODEL, GOOGLE_BROKER_MODEL, ASTRA_MODEL, FABLE_MODEL, STANDARD_LLM_MODELS, BROKER_CATALOG_MODELS, _AWS_OPENAI, _AWS_ANTHROPIC, _AZURE_MODELS, SUNBURST_MODEL, FLARE_MODEL, SEEDANCE_MODEL, MODEL_MODALITIES, IDEOGRAM_MODEL, VEO_MODELS, VEO_VERCEL_IDS, SUCCESSOR_MODELS)
 
 def _targets() -> dict[str, tuple[str, str, str, str, str]]:
     targets = {
@@ -30,11 +30,15 @@ _AZURE_BASE = "https://ai.azure.com/catalog/models/"
 _BEDROCK_PRICING = "https://aws.amazon.com/bedrock/pricing/"
 
 
+_GOOGLE_PRICING = "https://ai.google.dev/gemini-api/docs/pricing"
+
+
 def llm_source_specs() -> list[SourceSpec]:
     specs = [
-        SourceSpec("google_gemini_38_flash", "llm", GOOGLE_LLM_MODEL, "google_direct", "text_generation", "https://ai.google.dev/gemini-api/docs/pricing", "google"),
+        SourceSpec("google_gemini_38_flash", "llm", GOOGLE_LLM_MODEL, "google_direct", "text_generation", _GOOGLE_PRICING, "google"),
         SourceSpec("openrouter_gemini_38_flash", "llm", GOOGLE_LLM_MODEL, "openrouter", "text_generation", "https://openrouter.ai/google/gemini-3.8-flash/providers", "openrouter"),
         SourceSpec("vercel_gemini_38_flash", "llm", GOOGLE_LLM_MODEL, "vercel_ai_gateway", "text_generation", "https://vercel.com/ai-gateway/models/gemini-3.8-flash", "vercel"),
+        SourceSpec("google_gemini_4_argon", "llm", GOOGLE_ARGON_MODEL, "google_direct", "text_generation", _GOOGLE_PRICING, "google_gemini_4_argon"),
         SourceSpec("openai_gpt_6_astra", "llm", ASTRA_MODEL, "openai_direct", "text_generation", "https://developers.openai.com/api/docs/models/gpt-6-astra.md", "openai_astra"),
         SourceSpec("openrouter_gpt_6_astra", "llm", ASTRA_MODEL, "openrouter", "text_generation", "https://openrouter.ai/openai/gpt-6-astra/providers", "openrouter_astra"),
         SourceSpec("vercel_gpt_6_astra", "llm", ASTRA_MODEL, "vercel_ai_gateway", "text_generation", "https://vercel.com/ai-gateway/models/gpt-6-astra.md", "vercel_astra"),
@@ -58,7 +62,7 @@ def llm_source_specs() -> list[SourceSpec]:
 
 
 def llm_endpoint_source_specs() -> list[SourceSpec]:
-    gateway_ids = [(GOOGLE_LLM_MODEL, "google/gemini-3.8-flash", "google/gemini-3.8-flash")]
+    gateway_ids = [(GOOGLE_LLM_MODEL, GOOGLE_BROKER_MODEL, GOOGLE_BROKER_MODEL)]
     gateway_ids.extend((model, target[4], target[4]) for model, target in _targets().items())
     gateway_ids.extend((model, openrouter_id, vercel_id) for model, _, _, openrouter_id, vercel_id in BROKER_CATALOG_MODELS)
     specs: list[SourceSpec] = []
@@ -153,7 +157,9 @@ def video_source_specs() -> list[SourceSpec]:
 
 
 def source_specs() -> list[SourceSpec]:
-    specs = llm_source_specs() + image_source_specs() + video_source_specs() + image25_api_source_specs() + image25_openrouter_endpoint_source_specs() + image25_supplement_source_specs() + llm_endpoint_source_specs()
+    llm = llm_source_specs()
+    # The successor models' sources follow the original registry: the retained registry fixtures pin its order.
+    specs = [spec for spec in llm if spec.model_id not in SUCCESSOR_MODELS] + image_source_specs() + video_source_specs() + image25_api_source_specs() + image25_openrouter_endpoint_source_specs() + image25_supplement_source_specs() + [spec for spec in llm if spec.model_id in SUCCESSOR_MODELS] + llm_endpoint_source_specs()
     for spec in specs:
         if MODEL_MODALITIES.get(spec.model_id) != spec.modality:
             raise CollectionError(f"source model/modality mismatch: {spec.source_key}")

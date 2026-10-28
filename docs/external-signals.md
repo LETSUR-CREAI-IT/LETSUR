@@ -55,14 +55,14 @@ data/market_collection/signals/runs/<run_id>/
 | `openai_news` | RSS | supplier_notice | 고객 사례 글이 많아 단서는 드묾 |
 | `simonwillison_blog` | Atom | developer_blog | 최근 30개 글만 유지 → `history`로 보존 |
 | `modelpricewatch_news` | Atom | price_tracker | 가격 변화 날짜 기록. 3:1 혼합 단가라 수치는 2차 자료 |
-| `openrouter_endpoints_<model>` | JSON API | channel_api | 등록 LLM 18개. `pricing.discount`가 0보다 큰 endpoint만 기록하고 `tag`(flex, fast, 지역)를 함께 남김 |
+| `openrouter_endpoints_<model>` | JSON API | channel_api | 등록 LLM 22개. `pricing.discount`가 0보다 큰 endpoint만 기록하고 `tag`(flex, fast, 지역)를 함께 남김 |
 
 출처를 추가하려면 `scripts/market_collection/signals/registry.py`에 넣는다. 로그인 없이 받을 수 있는지 먼저 확인한다. X·Discord·Reddit은 로그인 또는 403 때문에 자동 수집하지 않는다. 쿠폰·제휴 사이트는 계정별 혜택이라 넣지 않는다.
 
 ## 찾는 방법과 한계
 
 1. 피드 글의 제목과 본문을 문장으로 나눈다. HTML 태그를 지우고 유니코드 하이픈(`GPT‑5.6`)을 `-`로 맞춘다.
-2. 문장에서 등록 모델 이름을 찾는다. 별칭은 `models.py`와 `sources.py`의 표시 이름·slug·OpenRouter ID에서 만든다. 개별 모델 이름이 있으면 같은 문장의 계열 이름은 따로 세지 않는다.
+2. 문장에서 등록 모델 이름을 찾는다. 별칭은 `models.py`와 `sources.py`의 표시 이름·slug·OpenRouter ID에서 만든다. 개별 모델 이름이 있으면 같은 문장의 계열 이름은 따로 세지 않는다. 등록된 더 긴 모델 이름 안에 든 이름(`GLM-5.3-Flash` 안의 `GLM-5.3`)은 짧은 모델을 언급한 것으로 세지 않는다.
 3. 같은 문장에 할인·인상·인하·종료 표현이 있으면 단서로 남긴다. 모델 이름이 없는 본문 문장은 제목에 나온 모델에 붙인다.
 
 2026-10-09 실제 출처 22곳 시험 결과(최근 120일): 피드 단서 15건, OpenRouter `discount` 32건, 실패 0. 피드 단서 중 GPT-5.6 Sol Vercel 할인(8/17 공지, "through September 18"), Gemini 3.8 Flash 할인("through December 31st"), GLM-5.3-Flash 9/9 직판가 상승이 잡혔다.
@@ -70,6 +70,7 @@ data/market_collection/signals/runs/<run_id>/
 알려진 한계:
 
 - 한 문장에 여러 모델이 섞이면 잘못 붙을 수 있다. 예: "Luna and Terra are now cheaper and Sol is faster"에서 Sol에도 인하 단서가 생긴다. 그래서 모든 단서는 사람이 원문을 확인한다.
+- 등록하지 않은 변형 이름은 앞부분의 등록 모델로 읽힐 수 있다. 예: `GLM 5.3 FlashX`는 `glm-5.3`으로, `Kimi K3.1 Pro Highspeed`는 `kimi-k3.1-pro`로 잡힌다. 변형을 모델로 등록하면 위 2번 규칙에 따라 더 긴 이름이 우선한다.
 - 영어 표현만 찾는다. 한국어 출처는 아직 없다.
 - OpenRouter `discount`는 채널이 밝힌 할인율이지만, 렛서 계정에 적용되는지와 Flex·지역 endpoint의 처리 조건 차이는 따로 확인해야 한다.
 - 단서와 가격 관측(사건)의 자동 연결은 하지 않는다. `linked_event`는 사람이 채운다.

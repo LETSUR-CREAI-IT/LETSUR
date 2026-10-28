@@ -17,10 +17,10 @@ class MissingLlmAdapterTests(unittest.TestCase):
         _validate_parse(self.specs[key], "source-1", *result)
         return result
 
-    def test_registry_adds_exactly_thirteen_model_scoped_sources(self):
+    def test_registry_adds_exactly_nineteen_model_scoped_sources(self):
         validate_registry(llm.source_specs())
         additions = broker_catalog_source_specs()
-        self.assertEqual(len(additions), 13)
+        self.assertEqual(len(additions), 19)
         self.assertEqual({spec.model_id for spec in additions}, {model[0] for model in BROKER_CATALOG_MODELS})
         self.assertEqual(sum(spec.route == "anthropic_direct" for spec in additions), 1)
         for model, _, _, openrouter_id, vercel_id in BROKER_CATALOG_MODELS:

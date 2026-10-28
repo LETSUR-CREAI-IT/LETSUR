@@ -54,8 +54,32 @@ def _anthropic_model(body: str, model: str, title: str, parser: str) -> tuple[li
     return prices, conditions
 
 
+# Models priced by prompt length have one row of the model pricing table per tier, so each tier is a series of its own.
+# As the gateway endpoint rows do (llm_endpoints.py), only the tier above the threshold states prompt_tokens.
+PROMPT_TIERS = {
+    "claude-haiku-5-5": (("Claude Haiku 5.5 (for prompts up to 100,000 tokens)", "up_to_100k", ""),
+                         ("Claude Haiku 5.5 (for prompts over 100,000 tokens)", "over_100k", "100000")),
+}
+
+
+def _anthropic_prompt_tiers(body: str, model: str, parser: str) -> tuple[list[dict], list[dict]]:
+    """Every tier row must be present with all five prices: a renamed row or a missing cell raises instead of collecting less."""
+    prices, conditions = [], []
+    for title, name, over in PROMPT_TIERS[model]:
+        tier_prices, tier_conditions = _anthropic_model(body, model, title, f"{parser}_{name}")
+        if len(tier_prices) != 5:
+            raise ValueError(f"anthropic pricing page has no complete row for {title!r}")
+        if over:
+            tier_conditions += [dict(llm_condition(price["condition_set_id"], "prompt_tokens", over, f"Model pricing > {title}"), operator="gt") for price in tier_prices]
+        prices += tier_prices
+        conditions += tier_conditions
+    return prices, conditions
+
+
 def parse_source(spec: SourceSpec, body: bytes, source_id: str) -> tuple[list[dict], list[dict]]:
     from scripts.market_collection.sources import _targets
+    if spec.model_id in PROMPT_TIERS:
+        return _anthropic_prompt_tiers(body.decode("utf-8", errors="replace"), spec.model_id, spec.parser)
     if spec.parser.startswith("missing_"):
         model, title = "claude-sonnet-5", "Claude Sonnet 5"
     else:

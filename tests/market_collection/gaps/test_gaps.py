@@ -9,6 +9,7 @@ import pytest
 
 from scripts.market_collection import core
 from scripts.market_collection.collectors import parse_source
+from scripts.market_collection.models import SUCCESSOR_MODELS
 from scripts.market_collection.sources import source_specs
 
 FIXTURES = Path(__file__).parent / "fixtures"
@@ -45,10 +46,10 @@ def test_existing_specs_preserved_in_each_modality_order():
     current = {s.source_key: asdict(s) for s in source_specs()}
     assert [current[s['source_key']] for s in old] == old
     for modality in ('llm', 'image', 'video'):
-        assert [asdict(s) for s in source_specs() if s.modality == modality and s.parser not in NEW_PARSERS and not s.parser.endswith("endpoints_llm") and s.model_id != "ideogram-4.5" and not s.source_key.startswith("image25_")] == [s for s in old if s['modality'] == modality]
+        assert [asdict(s) for s in source_specs() if s.modality == modality and s.parser not in NEW_PARSERS and not s.parser.endswith("endpoints_llm") and s.model_id != "ideogram-4.5" and not s.source_key.startswith("image25_") and s.model_id not in SUCCESSOR_MODELS] == [s for s in old if s['modality'] == modality]
     assert len(NEW) == 11
-    assert len(source_specs()) == 158
-    assert len({(s.model_id, s.route) for s in source_specs()}) == 94
+    assert len(source_specs()) == 178
+    assert len({(s.model_id, s.route) for s in source_specs()}) == 106
     assert not any(s.route == 'openrouter' and s.modality == 'video' for s in source_specs())
     assert sum(s.route == 'fal' and s.model_id == 'veo-3.1-lite' for s in source_specs()) == 1
 
