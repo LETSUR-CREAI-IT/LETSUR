@@ -7,6 +7,7 @@ from . import google, openai, anthropic, openrouter, vercel, aws_bedrock, azure_
 from . import anthropic_models, openai_models
 from . import google_models
 from . import zai
+from . import gateway_image_endpoints
 
 SUPPLIERS = {
     "google_direct": google, "openai_direct": openai, "openai": openai,
@@ -33,6 +34,8 @@ def parser_module(spec: SourceSpec):
         return openai_models
     if spec.parser in google_models.PARSERS:  # its own module, so google.py keeps its fingerprint
         return google_models
+    if spec.parser in gateway_image_endpoints.PARSERS:  # image listings of the two gateways, ahead of the route lookup
+        return gateway_image_endpoints
     module = SUPPLIERS.get(spec.route)
     if module is None:
         raise ValueError("unhandled source route")
