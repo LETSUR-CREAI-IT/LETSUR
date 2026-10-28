@@ -178,6 +178,7 @@ python3 -B -m scripts.market_collection.dashboard --root data/market_collection 
 - 시연 파일 `samples/market_collection/demo_internal_routes.json`: LETSUR-events `deliverables/event-json-handoff-20261009/demo_internal_routes.json`을 2026-10-21에 바이트 그대로 복사했다(617 bytes, SHA256 `f27733b9a9c01edb54a6b34b3b6ca4aadc4e785056bf2da1632fa3b212c51f0a`). `is_demo: true`와 `purpose`는 원본 그대로다. 실제 렛서 경로가 아니라 시연용 가정이다.
   - 레코드 4개: gemini-3.8-flash · vercel_ai_gateway, claude-sonnet-5-5 · anthropic_direct, veo-3.1-standard · fal(endpoint fal-ai/veo3.1), gpt-6.1-sol · null(미도입).
   - 2026-10-28 박건 결정: 렛서 QnA 답변(9/23) 질문 2의 설정 등록 경로로 여섯 모델을 바꾸고 `basis: "settings"`를 달았다. gemini-3.8-flash(google_direct, openrouter, vercel_ai_gateway), claude-fable-5-1(anthropic_direct, aws_bedrock), gpt-6-astra(openai_direct), gpt-image-2.5-flare·sunburst(openai), seedance-2.5(fal, BytePlus ModelArk). 나머지는 시연용 가정 그대로다. 10/28 수집 자료 61장에서 바뀐 카드는 4장이다. gemini Google 1/1 인상 예정이 RECORD · NOT APPLIES에서 REVIEW · APPLIES(렛서 설정)가 되고, claude-fable-5-1·gpt-6-astra·seedance-2.5의 Vercel 경로 추가가 APPLIES에서 NOT APPLIES가 된다.
+  - 2026-10-28 박건 결정: 렛서 API 모델 목록에 Veo가 없어 veo-3.1-standard 레코드를 뺐다(수집에서도 뺐다, [market-collection.md](market-collection.md)).
 - 실제 연동: 실제 렛서 사용 경로가 생기면 workflow `Build dashboard` 단계에서 `--internal-routes`를 빼거나(모든 카드가 "사용 경로 확인 필요"로 돌아간다), 같은 형식의 실제 경로 파일(`is_demo: false`)로 바꾼다. 시연 파일은 그때 지우면 된다.
 
 ### 상세페이지 필드 (박기범, 2026-10-26)

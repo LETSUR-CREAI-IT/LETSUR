@@ -54,21 +54,15 @@ FLARE_MODEL = "gpt-image-2.5-flare"
 
 FLARE_FAL_MODEL = "openai/gpt-image-2.5/flare/text-to-image"
 
-IDEOGRAM_MODEL = "ideogram-4.5"
-
 SEEDANCE_MODEL = "seedance-2.5"
 
 SEEDANCE_FAL_ID = "bytedance/seedance-2.5/text-to-video"
 
 BYTEPLUS_ID = "dreamina-seedance-2-5-260628"
 
-VEO_MODELS = ("veo-3.1-standard", "veo-3.1-fast", "veo-3.1-lite")
-VEO_VERCEL_IDS = ("veo-3.1-generate-001", "veo-3.1-fast-generate-001", "veo-3.1-lite-generate-001")
-
 MODEL_MODALITIES = {
-    **{model: "video" for model in VEO_MODELS},
     **{model: "llm" for model in (GOOGLE_LLM_MODEL, ASTRA_MODEL, FABLE_MODEL)},
     **{model: "llm" for model, _, _ in STANDARD_LLM_MODELS},
     **{model: "llm" for model, *_ in BROKER_CATALOG_MODELS},
-    IDEOGRAM_MODEL: "image", SUNBURST_MODEL: "image", FLARE_MODEL: "image", SEEDANCE_MODEL: "video",
+    SUNBURST_MODEL: "image", FLARE_MODEL: "image", SEEDANCE_MODEL: "video",
 }

@@ -43,14 +43,13 @@ class VideoAdapterTests(unittest.TestCase):
         return {c["condition_key"]: c["value"] for c in conditions if c["condition_set_id"] == f"s1:byteplus_{group}"}
 
     def test_registry_routes_and_identifiers(self):
-        self.assertEqual(len(self.specs), 10)
+        self.assertEqual(len(self.specs), 4)
         self.assertEqual({s.route for s in self.specs.values()}, {"fal", "BytePlus ModelArk", "vercel_ai_gateway"})
         self.assertEqual({s.task for s in self.specs.values()}, {"text-to-video"})
 
-    def test_google_direct_veo_preview_retired_while_fal_and_vercel_veo_remain(self):
-        # Google ended the Gemini API Veo 3.1 preview on 2026-10-22 and removed its pricing section.
-        self.assertEqual({key for key in self.specs if "veo" in key},
-                         {f"{route}_veo_3_1_{tier}" for route in ("fal", "vercel") for tier in ("standard", "fast", "lite")})
+    def test_veo_is_not_collected(self):
+        # Google ended the Gemini API Veo 3.1 preview on 2026-10-22; LETSUR's model list has no Veo (2026-10-28).
+        self.assertEqual({spec.model_id for spec in self.specs.values()}, {"seedance-2.5"})
 
     def test_fal_rate_estimates_and_conflict(self):
         prices, conditions = self.parse("fal_seedance_25_t2v", FAL)

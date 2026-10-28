@@ -61,8 +61,6 @@ scripts/market_collection/
 │   ├── common.py              공급자 parser가 공유하는 parsing helper
 │   ├── video_common.py        공급자 영상 응답 해석에 쓰는 공용 helper
 │   ├── image25_api.py         GPT Image 2.5 공개 API 조건 문서 parser
-│   ├── ideogram.py            Ideogram Direct 공개 pricing catalog parser
-│   ├── ideogram_fal.py        fal의 Ideogram 4.5 endpoint·가격·OpenAPI parser
 │   └── <supplier>.py          Google, Google Vertex, OpenAI, Anthropic,
 │                              OpenRouter, Vercel, AWS Bedrock, Azure Foundry,
 │                              Azure retail, Azure Databricks, fal, BytePlus parser
@@ -73,7 +71,7 @@ scripts/market_collection/
 └── signals/                   (기범 추가) 외부 단서 수집. 아래 2026-10-09 절 참고
 ```
 
-CLI는 Python 표준 라이브러리로 실행한다. 테스트에는 `pytest`가 필요하다. 출처별 parser fixture와 회귀 검사는 `tests/market_collection/` 아래에 있고, Ideogram 4.5와 GPT Image 2.5 API 문서의 원문 fixture·provenance도 이 트리에서 관리한다. 실행·데이터 형식·출처 추가 절차와 보존 범위는 [수집기 안내](docs/market-collection.md)를 참고한다. GPT Image 2.5의 공개 단가 비교 기준은 [비교 규칙](docs/image25-comparison-rules.md), 출처별 조건과 확인하지 못한 항목은 [수집 범위 검토](docs/collector-coverage-review.md)에 정리했다. 날짜·모드별 결과와 CSV 바로가기는 [보존 snapshot index](samples/market_collection/README.md)에서 확인한다.
+CLI는 Python 표준 라이브러리로 실행한다. 테스트에는 `pytest`가 필요하다. 출처별 parser fixture와 회귀 검사는 `tests/market_collection/` 아래에 있고, GPT Image 2.5 API 문서의 원문 fixture·provenance도 이 트리에서 관리한다. 실행·데이터 형식·출처 추가 절차와 보존 범위는 [수집기 안내](docs/market-collection.md)를 참고한다. GPT Image 2.5의 공개 단가 비교 기준은 [비교 규칙](docs/image25-comparison-rules.md), 출처별 조건과 확인하지 못한 항목은 [수집 범위 검토](docs/collector-coverage-review.md)에 정리했다. 날짜·모드별 결과와 CSV 바로가기는 [보존 snapshot index](samples/market_collection/README.md)에서 확인한다.
 
 현재 최종 registry는 125개 출처 사양(LLM 73, 이미지 39, 영상 13), 97개 모델/경로 조합, 25개 정규 모델 ID다. 사양 수는 서로 다른 공개 URL 수가 아니다. 이전 97·103·111·113-source 수치는 해당 단계 기록이다. 2026-10-08 [PR #4](https://github.com/LETSUR-CREAI-IT/LETSUR/pull/4)가 `develop`에 merge됐고, feature 및 기본 브랜치 manual Actions run과 artifact 검사가 성공했다. 최종 registry 수집과 두 모델 비교 보고서의 확인 내용은 [운영 기록](docs/automation-health-2026-10-08.md), 규칙은 [비교 보고서 자동화](docs/image-docs-automation.md)에 정리했다. 예약 cron firing은 **NOT_RUN**이며 UI 연결·유료 생성·계정 적용·실제 billing은 확인하지 않았다. 수집기 경로는 임시 도구이며 현재 `src/` 구조에 통합하기로 한 결정이 아니다.
 

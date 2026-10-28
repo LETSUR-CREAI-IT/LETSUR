@@ -27,11 +27,6 @@
       "endpoint_id": null
     },
     {
-      "model_id": "veo-3.1-standard",
-      "route_id": "fal",
-      "endpoint_id": "fal-ai/veo3.1"
-    },
-    {
       "model_id": "gpt-6.1-sol",
       "route_id": null,
       "endpoint_id": null

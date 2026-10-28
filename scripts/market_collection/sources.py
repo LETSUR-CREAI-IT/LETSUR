@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from scripts.market_collection.core import SourceSpec, CollectionError
-from scripts.market_collection.models import (GOOGLE_LLM_MODEL, ASTRA_MODEL, FABLE_MODEL, STANDARD_LLM_MODELS, BROKER_CATALOG_MODELS, _AWS_OPENAI, _AWS_ANTHROPIC, _AZURE_MODELS, SUNBURST_MODEL, FLARE_MODEL, SEEDANCE_MODEL, MODEL_MODALITIES, IDEOGRAM_MODEL, VEO_MODELS, VEO_VERCEL_IDS)
+from scripts.market_collection.models import (GOOGLE_LLM_MODEL, ASTRA_MODEL, FABLE_MODEL, STANDARD_LLM_MODELS, BROKER_CATALOG_MODELS, _AWS_OPENAI, _AWS_ANTHROPIC, _AZURE_MODELS, SUNBURST_MODEL, FLARE_MODEL, SEEDANCE_MODEL, MODEL_MODALITIES)
 
 def _targets() -> dict[str, tuple[str, str, str, str, str]]:
     targets = {
@@ -103,6 +103,7 @@ _AZURE_IMAGE_PRICING = "https://prices.azure.com/api/retail/prices?$filter=conta
 
 
 def image_source_specs() -> list[SourceSpec]:
+    # Ideogram 4.5 is not collected: LETSUR's model list has no Ideogram (2026-10-28).
     sources = (
         ("openai_sunburst", "openai", "https://developers.openai.com/api/docs/models/gpt-image-2.5-sunburst.md", "openai"),
         ("fal_sunburst_t2i", "fal", "https://fal.ai/models/openai/gpt-image-2.5/sunburst/text-to-image", "fal_task"),
@@ -110,7 +111,7 @@ def image_source_specs() -> list[SourceSpec]:
         ("openrouter_sunburst", "openrouter", "https://openrouter.ai/openai/gpt-image-2.5-sunburst-20260908", "openrouter"),
         ("vercel_sunburst", "vercel", "https://vercel.com/ai-gateway/models/gpt-image-2.5-sunburst", "vercel"),
     )
-    return [SourceSpec(key, "image", SUNBURST_MODEL, route, "text-to-image", url, parser) for key, route, url, parser in sources] + flare_source_specs() + ideogram_source_specs() + [
+    return [SourceSpec(key, "image", SUNBURST_MODEL, route, "text-to-image", url, parser) for key, route, url, parser in sources] + flare_source_specs() + [
         SourceSpec("azure_" + model.split("-")[-1], "image", model, "azure_foundry", "text-to-image", _AZURE_IMAGE_PRICING, "azure_image_retail")
         for model in (SUNBURST_MODEL, FLARE_MODEL)
     ]
@@ -127,27 +128,13 @@ def flare_source_specs() -> list[SourceSpec]:
             for key, route, url, parser in sources]
 
 
-def ideogram_source_specs() -> list[SourceSpec]:
-    specs = []
-    for suffix, task in (("t2i", "text-to-image"), ("edit", "image-edit"), ("precise_edit", "precise-edit")):
-        specs.append(SourceSpec("ideogram_45_" + suffix, "image", IDEOGRAM_MODEL, "ideogram_direct", task,
-                                "https://ideogram.ai/api/usage-pricing/catalog", "ideogram_catalog"))
-        specs.append(SourceSpec("fal_ideogram_45_" + suffix, "image", IDEOGRAM_MODEL, "fal", task,
-                                "https://fal.ai/models/ideogram/v4.5" + ("" if task == "text-to-image" else "/edit"), "ideogram_fal"))
-    return specs
-
-
 def video_source_specs() -> list[SourceSpec]:
     specs = [
         SourceSpec("fal_seedance_25_t2v", "video", SEEDANCE_MODEL, "fal", "text-to-video", "https://fal.ai/models/bytedance/seedance-2.5/text-to-video", "fal"),
         SourceSpec("byteplus_seedance_25_t2v", "video", SEEDANCE_MODEL, "BytePlus ModelArk", "text-to-video", "https://docs.byteplus.com/id/docs/modelark/model-pricing?redirect=1", "byteplus_pricing"),
         SourceSpec("byteplus_seedance_promotion_rules", "video", SEEDANCE_MODEL, "BytePlus ModelArk", "text-to-video", "https://docs.byteplus.com/en/docs/modelark/seedance-2-0-mini-fast-limited-time-discount?redirect=1", "byteplus_campaign"),
     ]
-    # Google ended the Gemini API Veo 3.1 preview on 2026-10-22, so Veo has no google_direct source.
-    for model, provider_id in zip(VEO_MODELS, VEO_VERCEL_IDS):
-        specs.append(SourceSpec("vercel_" + _key(model), "video", model, "vercel_ai_gateway", "text-to-video", "https://vercel.com/ai-gateway/models/" + provider_id, "vercel_video"))
-    for model, endpoint in zip(VEO_MODELS, ("fal-ai/veo3.1", "fal-ai/veo3.1/fast", "fal-ai/veo3.1/lite")):
-        specs.append(SourceSpec("fal_" + _key(model), "video", model, "fal", "text-to-video", "https://fal.ai/models/" + endpoint, "fal_veo"))
+    # Veo 3.1 is not collected: Google ended its Gemini API preview on 2026-10-22, and LETSUR's model list has no Veo (2026-10-28).
     specs.append(SourceSpec("vercel_seedance_25_t2v", "video", SEEDANCE_MODEL, "vercel_ai_gateway", "text-to-video", "https://vercel.com/ai-gateway/models/seedance-2.5", "vercel_video"))
     return specs
 

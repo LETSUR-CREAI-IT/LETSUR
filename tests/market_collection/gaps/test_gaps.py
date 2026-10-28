@@ -1,4 +1,4 @@
-"""Retained-source regressions for the explicitly approved additions (Google direct Veo previews retired 2026-10-22)."""
+"""Retained-source regressions for the explicitly approved additions (Veo 3.1 sources retired 2026-10-22 and 2026-10-28)."""
 import json
 from dataclasses import asdict
 from pathlib import Path
@@ -13,13 +13,12 @@ from scripts.market_collection.sources import source_specs
 
 FIXTURES = Path(__file__).parent / "fixtures"
 SPECS = {s.source_key: s for s in source_specs()}
-NEW_PARSERS = {"vertex_gemini", "databricks_gemini", "azure_image_retail", "vercel_video", "fal_veo"}
+NEW_PARSERS = {"vertex_gemini", "databricks_gemini", "azure_image_retail", "vercel_video"}
 NEW = [s for s in source_specs() if s.parser in NEW_PARSERS]
 FILES = {s.source_key: (
     'azure.json' if s.parser == 'azure_image_retail' else
     'vertex.html' if s.parser == 'vertex_gemini' else
     'databricks.html' if s.parser == 'databricks_gemini' else
-    'fal_' + s.model_id.split('-')[-1] + '.json' if s.parser == 'fal_veo' else
     s.url.split('/')[-1] + '.json') for s in NEW}
 
 
@@ -45,18 +44,16 @@ def test_existing_specs_preserved_in_each_modality_order():
     current = {s.source_key: asdict(s) for s in source_specs()}
     assert [current[s['source_key']] for s in old] == old
     for modality in ('llm', 'image', 'video'):
-        assert [asdict(s) for s in source_specs() if s.modality == modality and s.parser not in NEW_PARSERS and not s.parser.endswith("endpoints_llm") and s.model_id != "ideogram-4.5" and not s.source_key.startswith("image25_")] == [s for s in old if s['modality'] == modality]
-    assert len(NEW) == 11
-    assert len(source_specs()) == 158
-    assert len({(s.model_id, s.route) for s in source_specs()}) == 94
+        assert [asdict(s) for s in source_specs() if s.modality == modality and s.parser not in NEW_PARSERS and not s.parser.endswith("endpoints_llm") and not s.source_key.startswith("image25_")] == [s for s in old if s['modality'] == modality]
+    assert len(NEW) == 5
+    assert len(source_specs()) == 146
+    assert len({(s.model_id, s.route) for s in source_specs()}) == 86
     assert not any(s.route == 'openrouter' and s.modality == 'video' for s in source_specs())
-    assert sum(s.route == 'fal' and s.model_id == 'veo-3.1-lite' for s in source_specs()) == 1
 
 
 @pytest.mark.parametrize('key,count', [
     ('azure_sunburst',5), ('azure_flare',5), ('vertex_gemini_38_flash',12), ('databricks_gemini_38_flash',2),
-    ('vercel_veo_3_1_standard',6), ('vercel_veo_3_1_fast',6), ('vercel_veo_3_1_lite',4),
-    ('fal_veo_3_1_standard',6), ('fal_veo_3_1_fast',6), ('fal_veo_3_1_lite',4), ('vercel_seedance_25_t2v',3)])
+    ('vercel_seedance_25_t2v',3)])
 def test_retained_additions_contract(key,count):
     prices, conditions = parse(key)
     assert len(prices) == count
@@ -121,45 +118,19 @@ def test_databricks_no_price_and_exact_section():
         with pytest.raises(ValueError):parse('databricks_gemini_38_flash',body('databricks_gemini_38_flash').replace(old,new))
 
 
-def test_fal_primary_exact_endpoint_not_related_copy():
-    key='fal_veo_3_1_fast'
-    data=json.loads(body(key));data['relatedModels']=[json.loads(body('fal_veo_3_1_standard'))['model']]
-    prices,_=parse(key,json.dumps(data).encode())
-    assert [p['amount'] for p in prices]==['0.10','0.15','0.10','0.15','0.30','0.35']
-    data['model']['pricingInfoOverride']='No price'
-    data['relatedModels'].append(json.loads(body(key))['model'])
-    with pytest.raises(ValueError):parse(key,json.dumps(data).encode())
-
-
-@pytest.mark.parametrize('mutation', [lambda d:d['model'].update(modelUrl='https://fal.run/fal-ai/veo3.1'),
-    lambda d:d['modelData'].update(endpointId='fal-ai/veo3.1'),
-    lambda d:d['model'].update(category='image-to-video'), lambda d:d['model'].update(status='private'),
-    lambda d:d['model'].update(pricingInfoOverride=d['model']['pricingInfoOverride'].replace('every second','every minute'))])
-def test_fal_wrong_endpoint_unit(mutation):
-    with pytest.raises(ValueError):parse('fal_veo_3_1_fast',changed_json('fal_veo_3_1_fast',mutation))
-
-
-def test_fal_duplicate_primary():
-    content=body('fal_veo_3_1_fast')
-    with pytest.raises(ValueError):parse('fal_veo_3_1_fast',content+content)
-
-
-@pytest.mark.parametrize('mutation', [lambda d:d['backingModels'][0].update(primaryModel='veo-3.1-fast-generate-001'),
+@pytest.mark.parametrize('mutation', [lambda d:d['backingModels'][0].update(primaryModel='seedance-2.0'),
     lambda d:d['backingModels'][0].update(provider='google'), lambda d:d['backingModels'][0].update(type='chat'),
-    lambda d:d['backingModels'][0]['videoDimensionPricing'][0].update(costUnit='minute'),
-    lambda d:d['backingModels'][0]['videoDimensionPricing'][0].update(size='480p'),
-    lambda d:d['backingModels'][0]['videoDimensionPricing'][0].update(hasAudio='false'),
-    lambda d:d['backingModels'][0]['videoDimensionPricing'][0].update(cost='NaN'),
-    lambda d:d['backingModels'].append(d['backingModels'][0]),
-    lambda d:d['backingModels'][0]['videoDimensionPricing'].append(d['backingModels'][0]['videoDimensionPricing'][0])])
+    lambda d:d['backingModels'][0]['videoTokenPricing'].pop('costPerMillionTokens'),
+    lambda d:d['backingModels'][0]['videoTokenPricing']['tiers'].append(d['backingModels'][0]['videoTokenPricing']['tiers'][0]),
+    lambda d:d['backingModels'].append(d['backingModels'][0])])
 def test_vercel_identity_unit_capability_duplicate(mutation):
-    with pytest.raises(ValueError):parse('vercel_veo_3_1_standard',changed_json('vercel_veo_3_1_standard',mutation))
+    with pytest.raises(ValueError):parse('vercel_seedance_25_t2v',changed_json('vercel_seedance_25_t2v',mutation))
 
 
 def test_vercel_no_price_not_zero_or_recommendations():
-    key='vercel_veo_3_1_standard';data=json.loads(body(key));model=data['backingModels'][0]
+    key='vercel_seedance_25_t2v';data=json.loads(body(key));model=data['backingModels'][0]
     data['recommendedModels']=[{'backingModels':[dict(model)]}]
-    del model['videoDimensionPricing']
+    del model['videoTokenPricing']
     prices,_=parse(key,json.dumps(data).encode())
     assert len(prices)==1 and prices[0]['amount']=='' and prices[0]['unknown_reason']
     data['backingModels']=[]
@@ -175,15 +146,10 @@ def test_vercel_seedance_base_resolution_and_input_video_separation():
     assert {c['value'] for c in conditions if c['condition_key']=='input_video'}=={'none'}
 
 
-def test_vercel_audio_absent_vs_explicit_false():
-    key='vercel_veo_3_1_lite';parse(key)
-    with pytest.raises(ValueError):parse(key,changed_json(key,lambda d:d['backingModels'][0]['videoCapabilities'].update(generateAudio=False)))
-
-
 def test_live_partial_parse_failure_and_unknown_preserved(tmp_path):
-    specs=[SPECS[k] for k in ('azure_sunburst','databricks_gemini_38_flash','vercel_veo_3_1_standard')]
+    specs=[SPECS[k] for k in ('azure_sunburst','databricks_gemini_38_flash','vercel_seedance_25_t2v')]
     _,adapters=core.registry()
-    run=core.live(tmp_path,specs=specs,adapters=adapters,fetcher=lambda s:(b'changed' if s.source_key=='vercel_veo_3_1_standard' else body(s.source_key),s.url,200))
+    run=core.live(tmp_path,specs=specs,adapters=adapters,fetcher=lambda s:(b'changed' if s.source_key=='vercel_seedance_25_t2v' else body(s.source_key),s.url,200))
     _,sources,prices,_=core._validated_run(run)
     assert [s['parse_status'] for s in sources]==['ok','ok','error']
     assert len(prices)==7
@@ -198,17 +164,3 @@ def test_fetch_accepts_exact_four_mib_boundary():
         assert core.fetch(NEW[0])[0]==payload
     assert core.MAX_BODY_BYTES==4*1024*1024
 
-
-def test_fal_lite_exact_resolution_audio_rates_no_four_k():
-    key = 'fal_veo_3_1_lite'
-    prices, conditions = parse(key)
-    groups = {p['condition_set_id']:p['amount'] for p in prices}
-    by_group = {}
-    for c in conditions:
-        by_group.setdefault(c['condition_set_id'], {})[c['condition_key']] = c['value']
-    assert {(by_group[g]['resolution'],by_group[g]['audio'],v) for g,v in groups.items()} == {
-        ('720p','on','0.05'), ('720p','off','0.03'), ('1080p','on','0.08'), ('1080p','off','0.05')}
-    assert all(p['provider_model_id']=='fal-ai/veo3.1/lite' and p['unit']=='1 second' for p in prices)
-    for old,new in ((b'1080p without audio',b'4k without audio'), (b'For every second',b'For every minute'),
-                    (b'https://fal.run/fal-ai/veo3.1/lite',b'https://fal.run/fal-ai/veo3.1/fast')):
-        with pytest.raises(ValueError): parse(key,body(key).replace(old,new))
