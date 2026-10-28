@@ -1,7 +1,7 @@
 {
   "is_demo": false,
   "purpose": "대시보드가 카드와 모델마다 렛서 사용 경로를 정할 때 읽는 파일. 렛서가 설정에 등록한 경로(9/23 QnA 답변)와, 2026-10-28에 렛서 API를 모델마다 한 번 호출해 확인한 경로를 담았다.",
-  "basis_note": "settings는 렛서 QnA 답변(9/23) 질문 2의 '설정에 등록된 공급 경로'다. 렛서는 설정에 경로가 있어도 지금 그 경로로 실제 트래픽이 흐르는지는 따로 확인해야 한다고 했다. observed는 2026-10-28에 렛서 API를 모델마다 한 번 호출했을 때 실제로 지나간 경로(응답 헤더·필드로 판별)다. 그 경로를 쓰고 있다는 확인일 뿐 다른 경로를 쓰지 않는다는 뜻은 아니다. 이미지·영상 모델은 호출하지 않았고, glm-5.2는 경로를 알아내지 못해 기록을 뺐다.",
+  "basis_note": "settings는 렛서 QnA 답변(9/23) 질문 2의 '설정에 등록된 공급 경로'다. 렛서는 설정에 경로가 있어도 지금 그 경로로 실제 트래픽이 흐르는지는 따로 확인해야 한다고 했다. observed는 2026-10-28에 렛서 API를 모델마다 한 번 호출했을 때 실제로 지나간 경로(응답 헤더·필드로 판별)다. 그 경로를 쓰고 있다는 확인일 뿐 다른 경로를 쓰지 않는다는 뜻은 아니다. 이미지·영상 모델은 호출하지 않았다. GLM 5개(glm-4.7·glm-5·glm-5.2·glm-5.3·glm-5.3-flashx)와 임베딩 3개는 경로를 알아내지 못해, gpt-5.6·gpt-5.5-2026-04-23은 OpenAI 직접으로 보이지만(Azure 응답 필드가 없음) 확인이 아니라 추정이라 기록을 뺐다.",
   "records": [
     {
       "model_id": "gemini-3.8-flash",
@@ -354,6 +354,282 @@
     {
       "model_id": "qwen3.8-max",
       "route_id": "vercel_ai_gateway",
+      "endpoint_id": null,
+      "basis": "observed"
+    },
+    {
+      "model_id": "gemini-2.5-flash",
+      "route_id": "google_direct",
+      "endpoint_id": null,
+      "basis": "observed"
+    },
+    {
+      "model_id": "gemini-2.5-pro",
+      "route_id": "google_direct",
+      "endpoint_id": null,
+      "basis": "observed"
+    },
+    {
+      "model_id": "gemini-3-flash-preview",
+      "route_id": "google_direct",
+      "endpoint_id": null,
+      "basis": "observed"
+    },
+    {
+      "model_id": "gemini-3.1-flash-lite",
+      "route_id": "google_direct",
+      "endpoint_id": null,
+      "basis": "observed"
+    },
+    {
+      "model_id": "gemini-3.1-pro-preview",
+      "route_id": "google_direct",
+      "endpoint_id": null,
+      "basis": "observed"
+    },
+    {
+      "model_id": "gemini-3.5-flash-lite",
+      "route_id": "google_direct",
+      "endpoint_id": null,
+      "basis": "observed"
+    },
+    {
+      "model_id": "gemini-3.5-flash",
+      "route_id": "google_direct",
+      "endpoint_id": null,
+      "basis": "observed"
+    },
+    {
+      "model_id": "gemini-3.6-flash",
+      "route_id": "google_direct",
+      "endpoint_id": null,
+      "basis": "observed"
+    },
+    {
+      "model_id": "gemini-3.7-flash",
+      "route_id": "google_direct",
+      "endpoint_id": null,
+      "basis": "observed"
+    },
+    {
+      "model_id": "gemini-4-argon",
+      "route_id": "google_direct",
+      "endpoint_id": null,
+      "basis": "observed"
+    },
+    {
+      "model_id": "gpt-4.1-mini",
+      "route_id": "azure_foundry",
+      "endpoint_id": null,
+      "basis": "observed"
+    },
+    {
+      "model_id": "gpt-4.1-nano",
+      "route_id": "azure_foundry",
+      "endpoint_id": null,
+      "basis": "observed"
+    },
+    {
+      "model_id": "gpt-4.1",
+      "route_id": "azure_foundry",
+      "endpoint_id": null,
+      "basis": "observed"
+    },
+    {
+      "model_id": "gpt-4o-mini",
+      "route_id": "azure_foundry",
+      "endpoint_id": null,
+      "basis": "observed"
+    },
+    {
+      "model_id": "gpt-4o",
+      "route_id": "azure_foundry",
+      "endpoint_id": null,
+      "basis": "observed"
+    },
+    {
+      "model_id": "gpt-5-codex",
+      "route_id": "azure_foundry",
+      "endpoint_id": null,
+      "basis": "observed"
+    },
+    {
+      "model_id": "gpt-5-mini",
+      "route_id": "azure_foundry",
+      "endpoint_id": null,
+      "basis": "observed"
+    },
+    {
+      "model_id": "gpt-5-nano",
+      "route_id": "azure_foundry",
+      "endpoint_id": null,
+      "basis": "observed"
+    },
+    {
+      "model_id": "gpt-5.1-codex-mini",
+      "route_id": "azure_foundry",
+      "endpoint_id": null,
+      "basis": "observed"
+    },
+    {
+      "model_id": "gpt-5.1-codex",
+      "route_id": "azure_foundry",
+      "endpoint_id": null,
+      "basis": "observed"
+    },
+    {
+      "model_id": "gpt-5.1",
+      "route_id": "azure_foundry",
+      "endpoint_id": null,
+      "basis": "observed"
+    },
+    {
+      "model_id": "gpt-5.2-pro",
+      "route_id": "openai_direct",
+      "endpoint_id": null,
+      "basis": "observed"
+    },
+    {
+      "model_id": "gpt-5.2",
+      "route_id": "azure_foundry",
+      "endpoint_id": null,
+      "basis": "observed"
+    },
+    {
+      "model_id": "gpt-5.4-2026-03-05",
+      "route_id": "azure_foundry",
+      "endpoint_id": null,
+      "basis": "observed"
+    },
+    {
+      "model_id": "gpt-5.4-mini",
+      "route_id": "azure_foundry",
+      "endpoint_id": null,
+      "basis": "observed"
+    },
+    {
+      "model_id": "gpt-5.4-nano",
+      "route_id": "azure_foundry",
+      "endpoint_id": null,
+      "basis": "observed"
+    },
+    {
+      "model_id": "gpt-5.4",
+      "route_id": "azure_foundry",
+      "endpoint_id": null,
+      "basis": "observed"
+    },
+    {
+      "model_id": "gpt-5.5-pro-2026-04-23",
+      "route_id": "openai_direct",
+      "endpoint_id": null,
+      "basis": "observed"
+    },
+    {
+      "model_id": "gpt-5.5-pro",
+      "route_id": "openai_direct",
+      "endpoint_id": null,
+      "basis": "observed"
+    },
+    {
+      "model_id": "gpt-5.5",
+      "route_id": "azure_foundry",
+      "endpoint_id": null,
+      "basis": "observed"
+    },
+    {
+      "model_id": "gpt-5",
+      "route_id": "azure_foundry",
+      "endpoint_id": null,
+      "basis": "observed"
+    },
+    {
+      "model_id": "gpt-6.1-terra",
+      "route_id": "openai_direct",
+      "endpoint_id": null,
+      "basis": "observed"
+    },
+    {
+      "model_id": "o1",
+      "route_id": "azure_foundry",
+      "endpoint_id": null,
+      "basis": "observed"
+    },
+    {
+      "model_id": "o3-mini",
+      "route_id": "azure_foundry",
+      "endpoint_id": null,
+      "basis": "observed"
+    },
+    {
+      "model_id": "o3-pro",
+      "route_id": "azure_foundry",
+      "endpoint_id": null,
+      "basis": "observed"
+    },
+    {
+      "model_id": "o3",
+      "route_id": "azure_foundry",
+      "endpoint_id": null,
+      "basis": "observed"
+    },
+    {
+      "model_id": "o4-mini",
+      "route_id": "azure_foundry",
+      "endpoint_id": null,
+      "basis": "observed"
+    },
+    {
+      "model_id": "claude-fable-5",
+      "route_id": "anthropic_direct",
+      "endpoint_id": null,
+      "basis": "observed"
+    },
+    {
+      "model_id": "claude-haiku-5-5",
+      "route_id": "anthropic_direct",
+      "endpoint_id": null,
+      "basis": "observed"
+    },
+    {
+      "model_id": "claude-opus-4-5-20251101",
+      "route_id": "anthropic_direct",
+      "endpoint_id": null,
+      "basis": "observed"
+    },
+    {
+      "model_id": "claude-opus-4-6",
+      "route_id": "anthropic_direct",
+      "endpoint_id": null,
+      "basis": "observed"
+    },
+    {
+      "model_id": "claude-opus-4-7",
+      "route_id": "anthropic_direct",
+      "endpoint_id": null,
+      "basis": "observed"
+    },
+    {
+      "model_id": "claude-opus-4-8",
+      "route_id": "anthropic_direct",
+      "endpoint_id": null,
+      "basis": "observed"
+    },
+    {
+      "model_id": "claude-opus-5",
+      "route_id": "anthropic_direct",
+      "endpoint_id": null,
+      "basis": "observed"
+    },
+    {
+      "model_id": "claude-sonnet-4-5-20250929",
+      "route_id": "anthropic_direct",
+      "endpoint_id": null,
+      "basis": "observed"
+    },
+    {
+      "model_id": "claude-sonnet-4-6",
+      "route_id": "anthropic_direct",
       "endpoint_id": null,
       "basis": "observed"
     }

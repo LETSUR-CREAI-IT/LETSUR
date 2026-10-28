@@ -751,16 +751,42 @@ GATEWAY_MODELS = {  # the 34 models one LETSUR API call on 2026-10-28 reached th
 
 
 def test_committed_routes_hold_one_observed_record_for_each_of_the_34_gateway_models() -> None:
-    """2026-10-28: 25 records became 59; each added model has one record, observed, on the gateway its call went through."""
+    """2026-10-28: 25 records became 59; each added model has one record, observed, on the gateway its call went through.
+    (The 46 direct-route records added afterwards are checked below.)"""
     records = json.loads(DEMO_ROUTES.read_text(encoding="utf-8"))["records"]
     bases = [record.get("basis") for record in records]
-    assert (len(records), bases.count("settings"), bases.count("observed")) == (59, 10, 49)
+    assert (len(records), bases.count("settings"), bases.count("observed")) == (105, 10, 95)
     assert not any(build.record_problem(record) for record in records)
     expected = sorted((model, route) for route, models in GATEWAY_MODELS.items() for model in models)
     assert len(expected) == 34 and [len(models) for models in GATEWAY_MODELS.values()] == [16, 18]
     added = [record for record in records if record["model_id"] in dict(expected)]
     assert sorted((record["model_id"], record["route_id"]) for record in added) == expected  # one each: a repeated model would show twice
     assert all(record["endpoint_id"] is None and record["basis"] == "observed" for record in added)
+
+
+DIRECT_MODELS = {  # the 46 models one LETSUR API call on 2026-10-28 reached through Azure or a maker's own API, by route
+    "azure_foundry": ("gpt-4.1 gpt-4.1-mini gpt-4.1-nano gpt-4o gpt-4o-mini gpt-5 gpt-5-codex gpt-5-mini gpt-5-nano gpt-5.1 gpt-5.1-codex "
+                      "gpt-5.1-codex-mini gpt-5.2 gpt-5.4 gpt-5.4-2026-03-05 gpt-5.4-mini gpt-5.4-nano gpt-5.5 o1 o3 o3-mini o3-pro o4-mini").split(),
+    "google_direct": ("gemini-2.5-flash gemini-2.5-pro gemini-3-flash-preview gemini-3.1-flash-lite gemini-3.1-pro-preview gemini-3.5-flash "
+                      "gemini-3.5-flash-lite gemini-3.6-flash gemini-3.7-flash gemini-4-argon").split(),
+    "anthropic_direct": ("claude-fable-5 claude-haiku-5-5 claude-opus-4-5-20251101 claude-opus-4-6 claude-opus-4-7 claude-opus-4-8 "
+                         "claude-opus-5 claude-sonnet-4-5-20250929 claude-sonnet-4-6").split(),
+    "openai_direct": "gpt-5.2-pro gpt-5.5-pro gpt-5.5-pro-2026-04-23 gpt-6.1-terra".split(),
+}
+
+
+def test_committed_routes_hold_one_observed_record_for_each_of_the_46_direct_route_models() -> None:
+    """2026-10-28 (박건 '70개도 모두 보도록'): the calls that went to Azure, Google, Anthropic or OpenAI directly are recorded
+    too. Calls whose route was only inferred (gpt-5.6, gpt-5.5-2026-04-23) or not found (GLM, embeddings) have no record."""
+    records = json.loads(DEMO_ROUTES.read_text(encoding="utf-8"))["records"]
+    expected = sorted((model, route) for route, models in DIRECT_MODELS.items() for model in models)
+    assert [len(models) for models in DIRECT_MODELS.values()] == [23, 10, 9, 4]
+    added = [record for record in records if record["model_id"] in dict(expected)]
+    assert sorted((record["model_id"], record["route_id"]) for record in added) == expected
+    assert all(record["endpoint_id"] is None and record["basis"] == "observed" and not build.record_problem(record) for record in added)
+    unknown = {"gpt-5.6", "gpt-5.5-2026-04-23", "glm-4.7", "glm-5", "glm-5.2", "glm-5.3", "glm-5.3-flashx",
+               "text-embedding-3-large", "text-embedding-3-small", "text-embedding-ada-002"}
+    assert not unknown & {record["model_id"] for record in records}
 
 
 def test_a_card_on_another_route_than_the_observed_one_says_which_route_is() -> None:
@@ -783,8 +809,10 @@ def test_model_list_groups_the_gateway_models_under_their_makers_and_stays_a_box
     _write(tmp_path, [])
     page = _build(tmp_path)[1]
     makers = _makers(page)
-    assert dict(makers) == {"qwen": "Alibaba", "claude": "Anthropic", "seedance": "ByteDance", "deepseek": "DeepSeek", "gemini": "Google",
-                            "muse": "Meta", "minimax": "MiniMax", "kimi": "Moonshot AI", "gpt": "OpenAI", "grok": "xAI", "glm": "Z.AI"}
+    assert dict(makers) == {"qwen": "Alibaba", "claude": "Anthropic", "seedance": "ByteDance", "byteplus-seedance": "ByteDance",
+                            "deepseek": "DeepSeek", "gemini": "Google", "kling": "Kuaishou", "muse": "Meta", "minimax": "MiniMax",
+                            "kimi": "Moonshot AI", "gpt": "OpenAI", "o1": "OpenAI", "o3": "OpenAI", "o4": "OpenAI",
+                            "text-embedding": "OpenAI", "grok": "xAI", "glm": "Z.AI"}
     assert all(_maker_of(makers, f"{prefix}-x") == company for prefix, company in makers)
     assert [_maker_of(makers, model) for model in ("grok-4.20", "minimax-m2.5", "muse-wonder-1.0", "qwen3.8-max")] == ["xAI", "MiniMax", "Meta", "Alibaba"]
     models = {record["model_id"] for record in json.loads(DEMO_ROUTES.read_text(encoding="utf-8"))["records"]}

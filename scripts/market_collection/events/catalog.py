@@ -32,7 +32,10 @@ FAMILY_MAKERS = (("gemini", "Google"), ("veo", "Google"), ("gpt", "OpenAI"), ("c
                  ("ideogram", "Ideogram"), ("seedance", "ByteDance"), ("deepseek", "DeepSeek"),
                  ("glm", "Z.ai"), ("kimi", "Moonshot AI"),
                  # OpenRouter names the Grok upstream xAI although its model names say SpaceXAI.
-                 ("grok", "xAI"), ("minimax", "MiniMax"), ("muse", "Meta"), ("qwen", "Alibaba"))
+                 ("grok", "xAI"), ("minimax", "MiniMax"), ("muse", "Meta"), ("qwen", "Alibaba"),
+                 # OpenAI's o-series and embedding models, Kling and LETSUR's "byteplus-" Seedance ids (2026-10-28).
+                 ("o1", "OpenAI"), ("o3", "OpenAI"), ("o4", "OpenAI"), ("text-embedding", "OpenAI"),
+                 ("kling", "Kuaishou"), ("byteplus-seedance", "ByteDance"))
 # Signal feeds: publisher and the route a channel notice speaks for.
 SIGNAL_PUBLISHERS = {"vercel_changelog": ("Vercel", "vercel_ai_gateway"), "openai_news": ("OpenAI", "")}
 # Channel API signal parsers: the route whose own endpoint listing they read.
