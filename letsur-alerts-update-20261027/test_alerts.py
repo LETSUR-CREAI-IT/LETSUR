@@ -6,7 +6,8 @@ import sqlite3
 import tempfile
 import unittest
 
-from alerts import connect, sync, prepare, acknowledge, render, simulated_success, digest, material, health_events, small_decrease
+from alerts import connect, sync, prepare, acknowledge, render, simulated_success, digest, material, health_events, small_decrease, \
+    event_eligible, observed
 from dashboard_cards import parse
 
 
@@ -455,6 +456,50 @@ class AlertTests(unittest.TestCase):
         report = prepare(self.db, self.today, "test")
         self.assertEqual([(c["stage"], c["days"]) for c in report["cards"]], [(0, 4), (1, 3)])
 
+
+    def supplier_end(self, **changes):
+        """Vercel's deprecated_at end of one supplier on LETSUR's route (결정 기록 37절): a channel API's own dated stop that
+        stays a candidate (undocumented field, stop not seen) and has no publication day, only the run that carried it."""
+        event = copy.deepcopy(self.document["events"][0])  # demo-input, in the APPLIES card of fixtures_cards.json
+        event.update(event_type="route_change", subtags=["remove"], status="candidate", conflicts=[],
+                     dates={"effective_from": "2026-11-18", "published": None},
+                     sources=[{"authority": "channel_official", "role": "api"}],
+                     evidence_refs=[{"run_id": "20261026T013000Z-a", "locator": "data.endpoints[0].deprecated_at"}],
+                     gaps=[{"field": "undocumented_field", "class": "check_first", "reason": "deprecated_at is not documented"},
+                           {"field": "shutdown_confirmed", "class": "limits_value", "reason": "call stop not observed"}])
+        event.update(changes)
+        return event
+
+    def test_a_channel_dated_end_of_a_supplier_goes_out_when_first_seen_while_still_a_candidate(self):
+        sync(self.db, {"events": [self.supplier_end()]}, self.today, 5)
+        judged = parse(self.cards_document())
+        first = prepare(self.db, self.today, "test", judged=judged)
+        self.assertEqual([(c["alert"], c["stage"], c["days"]) for c in first["cards"]], [("new", 0, 23)])
+        simulated_success(self.db, first)
+        later = prepare(self.db, date(2026, 11, 13), "test", judged=judged)
+        self.assertEqual([(c["alert"], c["days"]) for c in later["cards"]], [("urgent", 5)])
+
+    def test_the_end_of_supply_gaps_open_only_dated_official_route_removals(self):
+        self.assertTrue(event_eligible(self.supplier_end()))
+        other_gap = self.supplier_end()
+        other_gap["gaps"].append({"field": "scope", "reason": "unknown"})
+        cases = {"model end": self.supplier_end(event_type="model_end", subtags=[]),
+                 "price change": self.supplier_end(event_type="price_change", subtags=[]),
+                 "other gap": other_gap,
+                 "unofficial": self.supplier_end(sources=[{"authority": "unofficial", "role": "tracker"}]),
+                 "no route": self.supplier_end(route=""),
+                 "no date": self.supplier_end(dates={"published": None})}
+        for label, event in cases.items():
+            with self.subTest(label):
+                self.assertFalse(event_eligible(event))
+
+    def test_first_seen_falls_back_to_the_earliest_run_that_carried_the_event(self):
+        event = self.supplier_end(evidence_refs=[{"run_id": "20261027T160000Z-b"}, {"run_id": "20261026T013000Z-a"}])
+        self.assertEqual(observed(event), date(2026, 10, 26))  # 01:30 UTC is 10:30 KST the same day
+        self.assertEqual(observed(self.supplier_end(evidence_refs=[{"run_id": "20261026T160000Z-c"}])), date(2026, 10, 27))
+        self.assertIsNone(observed(self.supplier_end(evidence_refs=[])))
+        self.assertIsNone(observed(self.supplier_end(evidence_refs=[{"run_id": "not-a-run"}])))
+        self.assertEqual(observed(self.supplier_end(dates={"published": "2026-10-20"})), date(2026, 10, 20))
 
     def test_a_price_cut_under_ten_percent_is_not_a_new_change(self):
         # 2026-10-28 (결정 기록 29절 렛서 답변): cuts are sent from 10%, rises whatever their size, discounts from 10%

@@ -1,8 +1,8 @@
 """Fixed list of external signal sources.
 
-Feeds are checked as a whole and filtered by model names; the OpenRouter endpoints
-API is called once per registered LLM model. Add a source here only after checking
-that it is reachable without login (docs/external-signals.md).
+Feeds are checked as a whole and filtered by model names; the OpenRouter and Vercel
+endpoints APIs are called once per registered LLM model the gateway lists. Add a source
+here only after checking that it is reachable without login (docs/external-signals.md).
 """
 
 from __future__ import annotations
@@ -11,14 +11,15 @@ import re
 from dataclasses import dataclass
 
 from scripts.market_collection.core import CollectionError, _validate_url
-from scripts.market_collection.models import BROKER_CATALOG_MODELS, GOOGLE_BROKER_MODEL, GOOGLE_LLM_MODEL
+from scripts.market_collection.models import BROKER_API_MODELS, BROKER_CATALOG_MODELS, GOOGLE_BROKER_MODEL, GOOGLE_LLM_MODEL
 from scripts.market_collection.sources import _targets
 
 # channel_notice/supplier_notice: the company's own announcements.
 # developer_blog/price_tracker: secondary sources, always unverified until checked.
 # channel_api: a channel's own machine-readable pricing field.
 SOURCE_KINDS = {"channel_notice", "supplier_notice", "developer_blog", "price_tracker", "channel_api"}
-PARSERS = {"atom", "rss", "openrouter_endpoints"}
+API_PARSERS = {"openrouter_endpoints", "vercel_endpoints"}  # one call per model: model_id is required
+PARSERS = {"atom", "rss", *API_PARSERS}
 
 
 @dataclass(frozen=True)
@@ -39,17 +40,26 @@ FEEDS = [
 ]
 
 
-def _openrouter_models() -> list[tuple[str, str, str]]:
-    models = [(model, title, openrouter_id) for model, (title, _, _, _, openrouter_id) in _targets().items()]
-    models.append((GOOGLE_LLM_MODEL, "Gemini 3.8 Flash", GOOGLE_BROKER_MODEL))
-    models.extend((model, title, openrouter_id) for model, title, _, openrouter_id, _ in BROKER_CATALOG_MODELS)
+def _gateway_models() -> list[tuple[str, str, str | None, str | None]]:
+    """(model, title, OpenRouter id, Vercel id) by the id rule of sources.llm_endpoint_source_specs; None: not listed there."""
+    models = [(model, title, gateway_id, gateway_id) for model, (title, _, _, _, gateway_id) in _targets().items()]
+    models.append((GOOGLE_LLM_MODEL, "Gemini 3.8 Flash", GOOGLE_BROKER_MODEL, GOOGLE_BROKER_MODEL))
+    models.extend((model, title, openrouter_id, vercel_id) for model, title, _, openrouter_id, vercel_id in BROKER_CATALOG_MODELS)
+    models.extend(BROKER_API_MODELS)
     return models
 
 
 def openrouter_specs() -> list[SignalSourceSpec]:
     return [SignalSourceSpec("openrouter_endpoints_" + re.sub(r"[^a-z0-9]+", "_", model), "channel_api",
                              f"https://openrouter.ai/api/v1/models/{openrouter_id}/endpoints", "openrouter_endpoints", model, title)
-            for model, title, openrouter_id in _openrouter_models()]
+            for model, title, openrouter_id, _ in _gateway_models() if openrouter_id]
+
+
+def vercel_specs() -> list[SignalSourceSpec]:
+    """Vercel AI Gateway endpoint listings, read for an endpoint's deprecated_at (2026-10-28)."""
+    return [SignalSourceSpec("vercel_endpoints_" + re.sub(r"[^a-z0-9]+", "_", model), "channel_api",
+                             f"https://ai-gateway.vercel.sh/v1/models/{vercel_id}/endpoints", "vercel_endpoints", model, title)
+            for model, title, _, vercel_id in _gateway_models() if vercel_id]
 
 
 def validate(specs: list[SignalSourceSpec]) -> list[SignalSourceSpec]:
@@ -62,11 +72,11 @@ def validate(specs: list[SignalSourceSpec]) -> list[SignalSourceSpec]:
         seen.add(spec.source_key)
         if spec.source_kind not in SOURCE_KINDS or spec.parser not in PARSERS:
             raise CollectionError(f"invalid signal source kind or parser: {spec.source_key}")
-        if (spec.parser == "openrouter_endpoints") != bool(spec.model_id):
+        if (spec.parser in API_PARSERS) != bool(spec.model_id):
             raise CollectionError(f"model_id must be set only for API sources: {spec.source_key}")
         _validate_url(spec.url)
     return specs
 
 
 def signal_sources() -> list[SignalSourceSpec]:
-    return validate(FEEDS + openrouter_specs())
+    return validate(FEEDS + openrouter_specs() + vercel_specs())

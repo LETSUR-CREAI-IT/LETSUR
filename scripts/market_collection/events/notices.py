@@ -15,7 +15,7 @@ from datetime import datetime, timezone
 from scripts.market_collection import signals as signal_runs
 from scripts.market_collection.signals.matching import models_in, normalize, sentences
 from scripts.market_collection.signals.parsers import atom_entries, rss_entries
-from scripts.market_collection.signals.registry import SignalSourceSpec
+from scripts.market_collection.signals.registry import API_PARSERS, SignalSourceSpec
 
 from .catalog import Catalog, authority
 
@@ -57,7 +57,7 @@ def reread(spec: dict, body: bytes, window_start: datetime) -> tuple[list[dict],
     try:
         parsed = SignalSourceSpec(**spec)
         _, _, rows = signal_runs.parse_body(parsed, body, window_start)
-        entries = [] if parsed.parser == "openrouter_endpoints" else (atom_entries(body) if parsed.parser == "atom" else rss_entries(body))
+        entries = [] if parsed.parser in API_PARSERS else (atom_entries(body) if parsed.parser == "atom" else rss_entries(body))
     except Exception:
         return None
     return rows, [entry for entry in entries if entry.published is None or entry.published >= window_start]

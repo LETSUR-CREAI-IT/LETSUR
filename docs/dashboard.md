@@ -9,7 +9,7 @@ python3 -B -m scripts.market_collection.dashboard --root data/market_collection 
 ```
 
 - `--output`은 아직 없는 경로여야 한다(있으면 아무것도 쓰지 않고 exit 2). 결과는 `<output>/index.html` 한 파일이다.
-- `--internal-routes <파일>`(선택): 렛서가 모델마다 쓰는 공급 경로 파일. 주면 카드의 렛서 관계와 모델별 사용 경로(`MODELS`의 `use`, 지금 화면에는 나오지 않음)를 이 파일로 정하고, 빼면 모든 카드가 "사용 경로 확인 필요"다(아래 "렛서 관계"). workflow는 시연용 가정 파일 `samples/market_collection/demo_internal_routes.json`을 넘긴다.
+- `--internal-routes <파일>`(선택): 렛서가 모델마다 쓰는 공급 경로 파일. 주면 카드의 렛서 관계와 모델별 사용 경로(`MODELS`의 `use`, 지금 화면에는 나오지 않음)를 이 파일로 정하고, 빼면 모든 카드가 "사용 경로 확인 필요"다(아래 "렛서 관계"). workflow는 `samples/market_collection/demo_internal_routes.json`을 넘긴다(2026-10-28부터 레코드마다 근거가 있어 시연용 가정이 아니다. 파일 이름은 그대로 뒀다).
 - 종료 코드: 0 정상(입력 문제로 실패 화면을 쓴 경우, 경로 파일을 쓰지 못해 경고를 붙인 경우 포함), 1 예기치 못한 오류(이때도 실패 화면은 쓴다), 2 출력 경로가 이미 있음.
 - 기준일(D-day, 캘린더의 오늘)은 생성 시점의 KST 날짜다. 주소 뒤에 `?base=2026-10-12`를 붙이면 그 날짜로 바꿔 볼 수 있다(원본 템플릿 기능). 변화 목록의 날짜 필터도 이 기준일을 쓴다(2026-10-27 결정, 아래 "목록 필터").
 
@@ -87,10 +87,10 @@ python3 -B -m scripts.market_collection.dashboard --root data/market_collection 
 - `ld`(묶음 카드의 마지막 관측일): 이벤트 2건 이상을 묶은 카드에만 넣는다. 구성원 이벤트의 `after.observed_at_utc`를 KST 날짜로 바꾼 값 중 가장 늦은 날이며, 변경 행에 "관측 M/D"로 보이는 날과 같은 값이다. 관측한 구성원이 하나도 없으면(공지만 있는 이벤트뿐이면) 키를 넣지 않는다. 회색 "그대로" 행과 비교 줄의 "조회" 시각은 쓰지 않는다. 필터가 `cd`와 함께 읽는 값이고, `cd`와 카드 묶음, 정렬, 날짜 표시는 바뀌지 않는다.
 - `sub`
   - 조건 변경: `billing.*`는 "과금 · 캐시/Batch/단위/구간/할증", `support.*`는 "지원 · 해상도/입력 형식/지역/컨텍스트 한도/라이선스/alias" 중 키에 든 낱말로 고른다. 모르는 키는 그대로 쓴다.
-  - 공급 경로 변경: `remove` 경로 중단, `add` 경로 추가.
+  - 공급 경로 변경: `remove` 경로 중단, `add` 경로 추가. 묶음의 모든 이벤트가 `endpoint_id`(경로 안 공급처 하나, 예: Vercel `deprecated_at`)를 가진 `remove`는 "공급 N곳 중단"이다(2026-10-28). 경로 전체가 아니라 그 경로의 공급처 하나가 끝난다는 뜻이고, '중단'이 들어 있어 템플릿(`isAdd`·`dirOf`·`tierOf`·`isEndDate`)과 `judge()`는 경로 중단처럼 끝으로 읽는다.
   - 한시 할인: `period_state` `active` 진행 중, `ended` 종료(없거나 섞이면 비움).
 - `flag`: 묶음에 `conflicted`가 있으면 "출처 상충", `candidate`가 있으면 "공식 확인 전", 유형 미정이면 "유형 미정: " 뒤에 후보 유형을 " 또는 "으로 이어 붙이고(예: "유형 미정: 모델 출시 또는 공급 경로 변경"), 이것들을 " · "로 잇는다.
-- `sum`(목록·제목 문구)은 모델·경로·유형·날짜 사실로만 만든다. 예: "12개 항목 단가 1/1부터 인상 예정", "단가 인상 언급 · 관측값 확인 전", "경로 중단 · 날짜 미확인".
+- `sum`(목록·제목 문구)은 모델·경로·유형·날짜 사실로만 만든다. 예: "12개 항목 단가 1/1부터 인상 예정", "단가 인상 언급 · 관측값 확인 전", "경로 중단 · 날짜 미확인", "Vercel · minimax 공급 11/18 종료 예정"(공급처 하나의 종료, 2026-10-28).
   - 인상·인하는 엔진 `change.delta` 부호가 모두 같을 때만 쓰고, 아니면 "변경"이다.
   - 관측값이 없는 가격 claim은 `claim_kind`(`price_increase`, `price_decrease`)로 정한다.
 
@@ -101,6 +101,7 @@ python3 -B -m scripts.market_collection.dashboard --root data/market_collection 
 | 한시 할인 | `dates.end_date`, 없으면 `period_end.date` | 할인 종료일 |
 | 모델 출시, 경로 추가 | `dates.route_added_date` | 제공일 |
 | 제공 종료, 경로 중단 | `dates.effective_from` | 제공 종료일, 경로 중단일 |
+| 공급처 하나의 종료(`endpoint_id`가 있는 경로 중단, 2026-10-28) | `dates.effective_from` | `<공급처> 공급 종료일`(예: minimax 공급 종료일) |
 | 그 밖(예정 변경 등) | `dates.effective_from` | 적용일 |
 
 - `YYYY-MM-DD`가 아닌 값(시각이 붙은 값 포함)은 날짜 없음으로 다룬다. 묶음에 날짜가 여럿이면 가장 이른 날짜를 쓴다.
@@ -140,7 +141,11 @@ python3 -B -m scripts.market_collection.dashboard --root data/market_collection 
 ### 렛서 관계 (`--internal-routes`)
 
 - 카드의 렛서 관계(`relKey`, `relShort`, `relDemo`)는 `--internal-routes` 파일로만 정한다. 엔진 `letsur_usage`는 지금 항상 `unknown`이라 쓰지 않는다. 옵션이 없으면 모든 카드가 `relKey: "unk"`, `relShort: "사용 경로 확인 필요"`, `relDemo: false`다(옵션이 생기기 전과 같은 결과).
-- 파일 형식: `{"is_demo": true 또는 false, "records": [{"model_id": "...", "route_id": "..." 또는 null, "endpoint_id": "..." 또는 null}, ...]}`. `endpoint_id`는 빠져도 된다. 그 밖의 키(`purpose` 등)는 읽지 않는다.
+- 파일 형식: `{"is_demo": true 또는 false, "records": [{"model_id": "...", "route_id": "..." 또는 null, "endpoint_id": "..." 또는 null, "basis": "settings" 또는 "observed" 또는 없음}, ...]}`. `endpoint_id`와 `basis`는 빠져도 된다. 그 밖의 키(`purpose`, `basis_note` 등)는 읽지 않는다.
+- `basis: "settings"`(2026-10-28 박건 결정): 렛서 QnA 답변(9/23) 질문 2의 '설정에 등록된 공급 경로'다. 렛서는 설정에 경로가 있어도 실제 트래픽이 흐르는지는 따로 확인해야 한다고 했다. 이 근거의 카드는 `relDemo: false`, `relSet: true`이고 `relShort` 끝에 " (렛서 설정)"이 붙는다(`route_basis`). 화면은 적용 배지에 "· 설정", 상세 "현재 사용 경로"에 '렛서 설정' 태그, 제안 근거에 "(렛서 관계는 9/23 답변의 렛서 설정 경로 기준, 실제 트래픽 미확인)"을 붙인다.
+- `basis: "observed"`(2026-10-28 박건 결정): 같은 날 렛서 API를 모델마다 한 번 호출해 응답 헤더·필드로 판별한, 그 호출이 실제로 지나간 경로다. 그 경로를 쓰고 있다는 확인일 뿐 다른 경로를 쓰지 않는다는 뜻은 아니다. 이 근거의 카드는 `relDemo: false`, `relObs: true`이고 `relShort` 끝에 " (호출 확인)"이 붙는다. 화면은 적용 배지에 "· 호출 확인", 상세 "현재 사용 경로"에 '호출 확인' 태그, 제안 근거에 "(렛서 관계는 10/28 렛서 API 호출로 확인한 경로 기준)"을 붙이고, 마우스 설명은 "10/28 렛서 API 호출 1회로 확인한 경로 · 다른 경로도 쓸 수 있음"이다.
+- 끝 표시를 정하는 레코드(`route_basis`): 카드 경로에 그 모델의 레코드가 있으면 그 레코드의 근거, 없으면(`other`·`none`) 그 모델 레코드 전체의 근거다. 모두 settings면 " (렛서 설정)", 모두 observed면 " (호출 확인)", 섞이면 " (렛서 설정·호출 확인)"이고 이때는 `relSet`도 `relObs`도 없다(`relSet`·`relObs`는 각각 그 근거 하나일 때만 붙는다). 예: gpt-6-astra는 OpenAI 직접 카드가 "(렛서 설정)", Azure 카드가 "(호출 확인)", 그 밖의 경로 카드가 "(렛서 설정·호출 확인)"이다. 할인 끝남 주의 줄(`risk`)의 짧은 표기("렛서 설정 경로", "렛서 호출 확인 경로")는 그 줄이 말하는 경로의 레코드를 따른다.
+- 한 모델에 basis가 없는 레코드가 하나라도 있으면 그 모델 전체를 `is_demo`로 본다(아래).
 - 카드의 모델(대표 이벤트 `model_id`)로 레코드를 찾고 카드 경로(대표 이벤트 `route`)와 `route_id`를 비교한다.
 
 | 그 모델의 레코드 | relKey | relShort |
@@ -155,8 +160,9 @@ python3 -B -m scripts.market_collection.dashboard --root data/market_collection 
 - `other`의 쓰는 경로는 카드 경로와 같은 표기(게시자 · route_id, 예: "Vercel · vercel_ai_gateway")다. 경로 표기가 없는 카드도 그 모델에 경로가 있는 레코드가 있으면 `other`다.
 - `endpoint_id`는 경로가 같을 때만 보조 정보로 붙인다(예: "이 경로로 사용 중 : endpoint fal-ai/veo3.1", 여럿이면 ", "로 잇는다). 카드는 endpoint를 비교하지 않아 1011 원본 예시의 "이 endpoint로 사용 중"은 쓰지 않는다.
 - `is_demo`
-  - true: 그 파일로 정한 카드(`use`, `other`, `none`)에 `relDemo: true`를 넣고 `relShort` 끝에 " (가정)"을 붙인다. 템플릿은 제안 근거 끝에 "(렛서 관계는 시연용 가정)"을, 상세 "현재 사용 경로"에 가정 태그를 붙인다. 영향 줄 "제공·사용"은 태그 없이 `relShort`만 보여서 " (가정)"을 문구에 넣었다(1011 원본 표기와 같다).
-  - false: 둘 다 붙이지 않는다. 레코드가 없는 카드(`unk`)는 is_demo와 상관없이 `relDemo: false`다.
+  - true: basis가 없는 레코드가 있는 모델의 카드(`use`, `other`, `none`)에 `relDemo: true`를 넣고 `relShort` 끝에 " (가정)"을 붙인다. 템플릿은 제안 근거 끝에 "(렛서 관계는 시연용 가정)"을, 상세 "현재 사용 경로"에 가정 태그를 붙인다. 영향 줄 "제공·사용"은 태그 없이 `relShort`만 보여서 " (가정)"을 문구에 넣었다(1011 원본 표기와 같다). 모든 레코드에 basis가 있으면 true여도 아무것도 붙지 않는다.
+  - false: 둘 다 붙이지 않는다(basis가 없는 레코드는 표시 없이 사실처럼 보이니 레코드마다 basis를 단다). 레코드가 없는 카드(`unk`)는 is_demo와 상관없이 `relDemo: false`다.
+  - 공급사 비교 표(`compare.py`)는 레코드마다 그 경로의 행(결정 17: 직접 경로는 Standard 행, 게이트웨이는 제조사 자신의 상류 Standard 행)에 칩을 붙인다. 칩은 그 레코드의 basis를 따른다: settings는 "렛서 설정", observed는 "호출 확인", basis가 없으면 true일 때 "가정", false일 때 "사용 경로"다. 한 행이 레코드 여럿에 맞으면 파일에서 앞선 레코드를 따른다. gpt-6-astra는 OpenAI 직접 행이 "렛서 설정", Azure 행이 "호출 확인"이다(2026-10-28 전에는 모델의 첫 레코드 경로 행만 basis와 상관없이 칩을 받았다).
 - 제안·다음 할 일은 템플릿 규칙이 `relKey`로 계산하고, 이 규칙은 바꾸지 않았다. 예: `other`인 단가 인상 예정 카드는 "기존 조건 유지 검토", "현재 경로 유지 : Google · google_direct 새 단가는 비교용으로 기록"이다. `unk` 카드는 사용 중으로 가정하되 "확인 후 "와 "먼저 렛서 사용 경로 확인"이 붙는다.
 - 모델별 사용 경로(`MODELS[model].use`)는 카드 경로와 상관없이 모델 단위로 같은 파일에서 채운다(2026-10-21 박건 요청). 카드에 나온 모델만 다룬다.
 - 이 값은 지금 화면에 나오지 않는다. 이 값을 보일 템플릿의 "모델별 현황" 표(`renderModels()`, 1037행)는 정의만 있고 호출되지 않으며, 표를 넣을 `id="models"` 요소도 없다. 1011 원본도 같다(1221행에 정의, 호출 없음). 아래 규칙은 페이지 데이터 기준이다.
@@ -169,13 +175,18 @@ python3 -B -m scripts.market_collection.dashboard --root data/market_collection 
 
 - `use`의 쓰는 경로는 카드 `other`와 같은 표기(게시자 · route_id)를 ", "로 잇는다. 카드 `other` 문구에서 "모델 제공 중 : "만 뺀 꼴이다. 예: "Vercel · vercel_ai_gateway 경로로 사용".
 - `use`의 endpoint: 경로가 있는 레코드의 `endpoint_id`를 " · endpoint <id>"로 뒤에 붙인다(예: "fal · fal 경로로 사용 · endpoint fal-ai/veo3.1"). 경로가 여럿이면 endpoint가 어느 경로의 것인지는 문구에 나오지 않는다.
-- `use`의 is_demo: true면 끝에 " (가정)"을 붙이고 false면 붙이지 않는다. 시연 파일로는 gemini-3.8-flash가 "Vercel · vercel_ai_gateway 경로로 사용 (가정)"이다.
+- `use`의 끝 표시는 그 모델의 레코드 전체로 정한다: 모두 settings면 " (렛서 설정)", 모두 observed면 " (호출 확인)", 섞이면 " (렛서 설정·호출 확인)"이다. basis가 없는 레코드가 있으면 is_demo가 true일 때 " (가정)"이고 false면 붙이지 않는다. 시연 파일로는 gemini-3.8-flash가 "Google · google_direct, OpenRouter · openrouter, Vercel · vercel_ai_gateway 경로로 사용 (렛서 설정)"(10/28 전에는 "Vercel · vercel_ai_gateway 경로로 사용 (가정)"), gpt-6-astra가 "OpenAI · openai_direct, Microsoft · azure_foundry 경로로 사용 (렛서 설정·호출 확인)"이다.
 - 1011 원본 `MODELS` 예시("제공 중 · Vercel 경로 (가정)", "미도입 (가정)")와 달리 "제공 중 · "을 붙이지 않고 경로를 카드와 같은 표기로 쓴다.
 - 옵션이 없거나 파일을 쓸 수 없으면 어느 모델에도 `use`를 넣지 않는다(옵션이 생기기 전과 같은 결과).
-- 파일을 쓸 수 없으면 페이지는 그대로 만들고, 경고 배너에 파일 이름과 사유를 적고, 모든 카드를 `unk`로 둔다(exit 0). 시연 파일 문제로 일일 페이지가 멈추지 않게 하려는 것이다. 사유: 파일 없음, JSON으로 읽을 수 없음, `is_demo`가 true·false가 아님, `records`가 목록이 아님, 레코드에 `model_id`(빈 문자열 제외)나 `route_id` 키가 없음, `route_id`·`endpoint_id`가 빈 문자열이거나 문자열·null이 아님.
+- 파일을 쓸 수 없으면 페이지는 그대로 만들고, 경고 배너에 파일 이름과 사유를 적고, 모든 카드를 `unk`로 둔다(exit 0). 시연 파일 문제로 일일 페이지가 멈추지 않게 하려는 것이다. 사유: 파일 없음, JSON으로 읽을 수 없음, `is_demo`가 true·false가 아님, `records`가 목록이 아님, 레코드에 `model_id`(빈 문자열 제외)나 `route_id` 키가 없음, `route_id`·`endpoint_id`가 빈 문자열이거나 문자열·null이 아님, `basis`가 settings·observed·null이 아님.
 - 템플릿 510행 데이터 출처 주석("렛서 사용 경로는 엔진 letsur_usage가 unknown이라 relKey "unk".")은 이 옵션 전 설명이고, 고치지 않고 두었다.
-- 시연 파일 `samples/market_collection/demo_internal_routes.json`: LETSUR-events `deliverables/event-json-handoff-20261009/demo_internal_routes.json`을 2026-10-21에 바이트 그대로 복사했다(617 bytes, SHA256 `f27733b9a9c01edb54a6b34b3b6ca4aadc4e785056bf2da1632fa3b212c51f0a`). `is_demo: true`와 `purpose`는 원본 그대로다. 실제 렛서 경로가 아니라 시연용 가정이다.
+- 시연 파일 `samples/market_collection/demo_internal_routes.json`: LETSUR-events `deliverables/event-json-handoff-20261009/demo_internal_routes.json`을 2026-10-21에 바이트 그대로 복사했다(617 bytes, SHA256 `f27733b9a9c01edb54a6b34b3b6ca4aadc4e785056bf2da1632fa3b212c51f0a`). `is_demo: true`와 `purpose`는 원본 그대로였고 실제 렛서 경로가 아니라 시연용 가정이었다(아래 2026-10-28 결정 전까지).
   - 레코드 4개: gemini-3.8-flash · vercel_ai_gateway, claude-sonnet-5-5 · anthropic_direct, veo-3.1-standard · fal(endpoint fal-ai/veo3.1), gpt-6.1-sol · null(미도입).
+  - 2026-10-28 박건 결정: 렛서 QnA 답변(9/23) 질문 2의 설정 등록 경로로 여섯 모델을 바꾸고 `basis: "settings"`를 달았다. gemini-3.8-flash(google_direct, openrouter, vercel_ai_gateway), claude-fable-5-1(anthropic_direct, aws_bedrock), gpt-6-astra(openai_direct), gpt-image-2.5-flare·sunburst(openai), seedance-2.5(fal, BytePlus ModelArk). 나머지는 이때 시연용 가정 그대로였다(아래 호출 확인으로 바꿨다). 10/28 수집 자료 61장에서 바뀐 카드는 4장이다. gemini Google 1/1 인상 예정이 RECORD · NOT APPLIES에서 REVIEW · APPLIES(렛서 설정)가 되고, claude-fable-5-1·gpt-6-astra·seedance-2.5의 Vercel 경로 추가가 APPLIES에서 NOT APPLIES가 된다.
+  - 2026-10-28 박건 결정: 렛서 API 모델 목록에 Veo가 없어 veo-3.1-standard 레코드를 뺐다(수집에서도 뺐다, [market-collection.md](market-collection.md)).
+  - 2026-10-28 박건 결정: 같은 날 렛서 API를 모델마다 한 번 호출해 응답 헤더·필드로 지나간 경로를 확인하고 `basis: "observed"`로 달았다. azure_foundry는 gpt-6-astra, gpt-6-sol, gpt-6.1-sol('미도입' 레코드를 바꿨다), gpt-6-luna, gpt-5.6-sol·terra·luna, anthropic_direct는 claude-opus-5-5, claude-sonnet-5-5, claude-sonnet-5, claude-haiku-4-5, openrouter는 deepseek-v4-pro, glm-5.3-flash, kimi-k3, vercel_ai_gateway는 deepseek-v4.1-flash다. gpt-6-astra는 설정 경로(openai_direct)에 Azure 경로가 더해져 두 근거가 섞인다. 호출로 확인한 경로가 이미 설정 레코드에 있는 gemini-3.8-flash(Google)와 claude-fable-5-1(Anthropic 직접)은 그대로 뒀다. 경로를 알아내지 못한 glm-5.2는 레코드를 빼서 '사용 경로 확인 필요'가 된다. 시연용 가정 레코드는 이제 없다. 이미지·영상 모델은 호출하지 않았다. 호출 한 번은 지나간 경로를 보여 줄 뿐이라 다른 경로를 쓰지 않는다는 뜻은 아니다. 결과는 25개 레코드(settings 10, observed 15)이고 모두 근거가 있어 `is_demo`를 false로 바꿨다. 파일 이름은 workflow가 쓰고 있어 그대로다. 10/28 수집 자료 61장에서 렛서 관계가 바뀐 카드는 48장이다(경로 관계 38장, 끝 표시만 10장). 적용 배지가 바뀐 카드는 37장(APPLIES → NOT APPLIES 9, APPLIES → UNKNOWN 4, NOT APPLIES → APPLIES 18, NOT APPLIES → UNKNOWN 6), 추천 행동이 바뀐 카드는 15장이다. 가정으로 표시되던 카드 47장은 0장이 됐고 glm-5.2 카드 10장은 모두 '사용 경로 확인 필요'다. 카드의 다른 내용(요약·변경 표·날짜)은 그대로다.
+  - 2026-10-28: 호출 확인 경로가 카드 배지·태그·제안 근거(`relObs`)에 settings와 같은 방식으로 보이고, 공급사 비교 표 칩이 레코드마다 basis대로 붙는다(위 "렛서 관계"). 모델별 현황 표의 고정 머리글도 바꿨다.
+  - 2026-10-28 (OpenRouter·Vercel 34개 모델): 호출이 OpenRouter나 Vercel을 지나간 34개 모델의 `basis: "observed"` 기록을 더했다(OpenRouter 16, Vercel 18, `endpoint_id` 없음). 기록은 25개에서 59개(settings 10, observed 49)가 됐고 기존 25개는 그대로다. 수집에 이 모델들이 들어오기 전에는 화면에 나오지 않는다. qwen3.5-plus는 호출이 OpenRouter를 지나갔지만 OpenRouter에 그 id의 엔드포인트 목록이 없어(Vercel만 있음) 그 모델의 Vercel 카드가 '모델 제공 중 : OpenRouter · openrouter 경로로 사용 (호출 확인)'으로 읽힌다. 비교 표 칩은 제조사 자신의 상류 행을 `norm()` 이름으로 찾는다. MiniMax·Meta·Alibaba는 OpenRouter 공급자 이름(MiniMax, Meta, Alibaba)과 Vercel id(minimax, meta, alibaba) 모두 별칭 없이 제조사 이름과 같아진다. xAI는 Vercel이 모델 소유자를 `spacexai`, OpenRouter가 모델 이름을 SpaceXAI로 적는데(10/28 공개 목록) 엔드포인트의 공급자 표기는 아직 못 봐서, `ALIAS`에 `spacexai`→`xai`를 더해 어느 쪽이든 맞게 했다. `OPEN_WEIGHT`는 deepseek·glm·kimi 그대로라 새 모델은 모두 '비공개'로 묶인다. MiniMax처럼 가중치가 공개된 모델의 정밀도 묶음은 따로 정할 일이다.
 - 실제 연동: 실제 렛서 사용 경로가 생기면 workflow `Build dashboard` 단계에서 `--internal-routes`를 빼거나(모든 카드가 "사용 경로 확인 필요"로 돌아간다), 같은 형식의 실제 경로 파일(`is_demo: false`)로 바꾼다. 시연 파일은 그때 지우면 된다.
 
 ### 상세페이지 필드 (박기범, 2026-10-26)
@@ -201,7 +212,7 @@ python3 -B -m scripts.market_collection.dashboard --root data/market_collection 
 
 기준: Notion "연우 메인페이지"의 메인페이지 정규화 규칙과 김연우 시안(렛서_대시보드_메인페이지_정규화_1027.html). 시안은 샘플 데이터용이라 같은 규칙을 실데이터 카드 필드로 다시 만들었다. 엔진 출력은 바꾸지 않고 화면에서 만든다(`act`는 계속 `pending`).
 
-- Applicability: `relKey`가 use면 APPLIES, unk면 UNKNOWN, other·none이면 NOT APPLIES. `relDemo`면 "· 가정"을 붙인다.
+- Applicability: `relKey`가 use면 APPLIES, unk면 UNKNOWN, other·none이면 NOT APPLIES. `relDemo`면 "· 가정", `relSet`(렛서 설정 경로)이면 "· 설정"을 붙인다. `relObs`(호출로 확인한 경로)이면 "· 호출 확인"을 붙인다.
 - Suggested Action: 상세 제안(`suggestOf`)과 같은 판단에서 나와 목록·달력·상세가 같은 값을 보인다. 상세 "다음 할 일" 옆에도 같은 배지를 둔다.
 - 목록 줄 제목은 모델 이름을 앞에 둔 "glm-5.3-flash 20개 항목 단가 인하 관측" 꼴이고, 아래 줄은 유형과 경로다(2026-10-27 박건 요청: 어떤 모델의 변화인지 주어가 보이게).
 - 상세 "다음 할 일" 아래 줄은 "확인 : …", "대응 : …", "주의 : …"처럼 라벨과 내용을 쌍점으로 잇는다(2026-10-27 박건 요청, 이전 "먼저 확인 · …", "대응 방향 · …"). "확인"에는 엔진의 다음 수집 확인(`next`)도 들어간다. 굵은 첫 줄(예: "현재 경로 유지 : Google · google_direct 새 단가는 비교용으로 기록", "고객 할인 : 할인 기간에만 한정해 검토, 판매가 기본값은 유지")과 "현재 사용 경로"(예: "모델 제공 중 : Vercel · vercel_ai_gateway 경로로 사용 (가정)")도 같은 꼴이다. "Vercel · vercel_ai_gateway"처럼 경로 이름 안의 "·"는 그대로다.
@@ -240,9 +251,9 @@ python3 -B -m scripts.market_collection.dashboard --root data/market_collection 
 
 - 화면 탭(2026-10-28 박건 결정): 머리줄에 '변화 | 모델별 가격' 탭이 있다(`setPage`, `body[data-page]`). 변화 화면은 요약, 일정 캘린더(전체 폭), 목록과 상세다. 모델별 가격 화면은 왼쪽 모델 목록, 오른쪽 위 '가격 추이'(이 절의 그래프), 그 아래 '현재 가격 표'(공급사 비교 표)다. 캘린더 옆에 붙어 있던 단가 추이 칸에 표를 넣으니 칸이 길어지고 폭이 모자라서 화면을 나눴다.
 - 수집 상태 화면(2026-10-28 박건 제안, 결정 기록 29절 렛서 답변: 수집 실패는 '변화 없음'과 구분하고 아침에 먼저 보이게, build.py `health`, 슬롯 `HEALTH`): 머리줄 세 번째 탭('변화 | 모델별 가격 | 수집 상태', 주소 `#health`). 마지막 수집 시각과 출처 수(정상·실패)는 가장 최근 처리된 run의 sources.csv(`fetch_status`·`parse_status`·`error`·`requested_url`)에서 읽는다. '지금 실패 중'은 그 run에서 실패한 출처이고, 실패가 시작된 run은 state.json gaps의 `source_failed`(run마다 한 건, `active` 표시는 갱신되지 않아 쓰지 않음)를 processed_runs 순서로 거슬러 이어진 실패 run의 처음이다. '최근 14일 실패 기록'은 지금은 실패하지 않는 출처의 실패 run 수와 기간이고, 최신 run에 있으면 '정상으로 돌아옴', 없으면 '등록부에서 빠짐'이다. '원문 재검증 필요'는 gaps `parser_fingerprint_mismatch`의 출처별 건수, '등록부 점검 후보'는 최근 7일과 앞으로 일정이 있는 제공 종료·모델 출시·공급 경로 변경 카드다. 변화 화면은 수집 현황 타일 아랫줄에 '실패 N곳'을 붙이고, 실패가 있으면 맨 위에 안내 줄과 수집 상태 바로 가기를 둔다. 모델별 가격은 그 모델의 출처가 실패 중이면 그래프 위에 '이어진 선은 변화 없음이 아님'을 적는다. 10/27 자료: 출처 158곳 모두 정상, 최근 실패 9곳(fal·BytePlus Seedance는 정상으로 돌아옴, Google Veo 3곳은 등록부에서 빠짐), 원문 재검증 4곳(OpenRouter 엔드포인트).
-- 모델 목록은 만든 회사별로 묶는다(`MAKERS`: 모델 id 앞부분으로 Anthropic·ByteDance·DeepSeek·Google·Moonshot AI·OpenAI·Z.AI, 그 밖은 '기타'). 회사와 모델은 이름순이고(숫자는 크기순), 처음 고른 모델은 목록 맨 위다.
+- 모델 목록은 만든 회사별로 묶는다(`MAKERS`: 모델 id 앞부분으로 Alibaba·Anthropic·ByteDance·DeepSeek·Google·Meta·MiniMax·Moonshot AI·OpenAI·xAI·Z.AI, 그 밖은 '기타'). 회사와 모델은 이름순이고(숫자는 크기순), 처음 고른 모델은 목록 맨 위다. 2026-10-28에 Alibaba(qwen)·Meta(muse)·MiniMax(minimax)·xAI(grok)를 더하면서 Alibaba 모델에 카드가 있으면 맨 위가 그 첫 모델이 된다. 모델이 50개 안팎이 돼도 그래프가 밀려나지 않게 목록(`.mlist`)에 높이 제한을 걸어 넘치면 목록 안에서 스크롤한다(화면 높이 − 24px, 폭 900px 이하는 화면 높이의 40%·최소 240px). 고른 모델이 목록 밖에 있어도 자동으로 스크롤하지는 않는다.
 - 주소: 변화는 `#카드id`·`#v_묶음`, 모델별 가격은 `#m/모델`이다. 카드 상세의 '가격 추이 보기'·'공급사 비교 표 보기'는 그 모델을 고른 모델별 가격 화면의 해당 칸으로 간다. 그래프의 점을 누르면 변화 화면의 그 카드로 간다.
-- 이벤트 카드가 있는 모델만 넣는다(키 `model_id`).
+- 모델은 이벤트 카드가 있는 모델과 최신 수집 run(`report.json`이 처리한 가장 새 core run)이 관측한 모델이다(키 `model_id`). 2026-10-28 박건 요청으로 후자를 더했다. 새 모델은 기준선만 있고 이벤트가 없어 카드가 없고, gpt-6-sol·gpt-6-luna·claude-haiku-4-5도 카드가 없어 빠져 있었다. 카드가 없는 모델은 점을 `state.json` `series`에서만 얻고 목록 배지는 '변화 없음'이다. 엔진이 조건 미상으로 비교하지 못한(`not_comparable`) 관측뿐인 모델은 `series`가 없어 가격 추이가 없다. 그 모델은 현재 가격 표만 있는 모델로 목록에 들어가고(`MODEL_IDS`는 `TREND`와 `COMPARE` 키의 합), 가격 추이 칸에 '그릴 수 있는 관측 단가가 없습니다. 현재 가격은 아래 표에 있습니다.'를 보인다. `#m/모델` 주소는 두 경우 모두 열린다(페이지를 열 때만 읽는다). `EVENTS`·`cards.json`·`MODELS`는 카드 모델만 다루는 그대로다. 10/28 수집 자료로는 `TREND`가 16개에서 21개(claude-haiku-4-5, gpt-6-luna, gpt-6-sol, gpt-image-2.5-flare·sunburst), `COMPARE`가 15개에서 18개(앞의 LLM 3개)가 됐고, 페이지는 1,492,414바이트에서 1,531,085바이트가 됐다(기존 항목은 그대로).
 - 탭은 공급사 비교 표와 같은 묶음(정밀도 묶음 · 지역 · 등급, 그 밖의 가격 조건 + 단위)이고, 선은 경로와 게이트웨이 엔드포인트, 측정은 청구 항목이다(2026-10-27 결정 21절).
   - 게이트웨이(OpenRouter, Vercel) 목록이 적는 엔드포인트 사실(`endpoint_tag`, `endpoint_provider`, `endpoint_model_slug`, `context_length`, `quantization`, `endpoint_status`, `endpoint_discount`, `discount_application`)과 가격 근거 표기(`price_basis`, 모델 페이지 수집기도 낸다)는 그대로는 탭을 가르지 않고 선을 가른다. 다만 `quantization`의 정밀도 묶음(mxfp4·nvfp4는 fp4, mxfp8은 fp8)과 `endpoint_tag`·`region`의 지역(us·us-east-1은 US, eu·eu-west-1·europe은 EU, global은 지역 없음)은 탭을 가른다(`tab_facts`). `service_tier`나 `prompt_tokens` 같은 실제 가격 조건이나 단위가 다르면 탭이 갈라진다.
   - 탭 이름은 정밀도 · 지역 · 그 밖의 조건 · 등급 순이고(예: "fp4 · Standard", "fp8 · US", "fp8 · US · Priority"), 지역 탭은 Standard를 적지 않는다. 값은 26-1대로 원문이고 등급과 지역만 이름(Standard·Priority, US·EU)으로 적는다.
@@ -261,13 +272,15 @@ python3 -B -m scripts.market_collection.dashboard --root data/market_collection 
 그 전(10/27)에는 카드 상세에 '공급사 비교 표' 칸을 '바뀐 내용' 바로 아래 따로 두고 처음에는 접어 두었다. 비교 제외 행은 표 아래 '비교 제외 N행 보기'로 한 번 더 접는다(2026-10-27 박건 요청: 표가 너무 길다). LLM 모델에만 있고(영상·이미지는 묶음 규칙이 없다), 추천 문구는 없다.
 
 - 코드: 계산 `scripts/market_collection/dashboard/compare.py`, 데이터 자리표시자 `COMPARE`(모델 id → 표, `build.py` `collect()` 끝과 `empty()`), 그리기 `template.html`의 `.sct` CSS 묶음과 `compareTable()`(`changeTable()` 바로 뒤), `renderDetail()`의 '바뀐 내용' 한 줄. 테스트 `tests/market_collection/test_dashboard_compare.py`.
-- 입력(읽기만): `<root>/runs`에서 엔진이 처리한 가장 새 수집 run(`report.json` `processed_runs`)을 `evidence.load_run`으로 읽는다. 비교 제외 관측은 state.json에 금액이 없어 run CSV를 쓰고, 같은 run의 Vercel 엔드포인트 원문에서 행 안 등급·지역·피크 가격을 읽는다. 적용 기간·가격 변동 큼·관측 끊김은 state.json과 events.json, Vercel 할인 칸은 events.json의 한시 할인 공지에서 온다. run을 읽을 수 없으면 표가 없고, 표 계산 오류는 표만 빼고 traceback을 stderr에 남긴다.
+- 입력(읽기만): `<root>/runs`에서 엔진이 처리한 가장 새 수집 run(`report.json` `processed_runs`)을 `evidence.load_run`으로 읽는다. 표는 이벤트 카드가 없어도 그 run이 관측한 LLM 모델마다 만든다(2026-10-28, `observed_models`). 비교 제외 관측은 state.json에 금액이 없어 run CSV를 쓰고, 같은 run의 Vercel 엔드포인트 원문에서 행 안 등급·지역·피크 가격을 읽는다. 적용 기간·가격 변동 큼·관측 끊김은 state.json과 events.json, Vercel 할인 칸은 events.json의 한시 할인 공지에서 온다. run을 읽을 수 없으면 표가 없고, 표 계산 오류는 표만 빼고 traceback을 stderr에 남긴다.
 - 표: 행은 경로 · 하위 공급처(OpenRouter 태그, Vercel 공급처, 직접 경로 id), 열은 입력·출력·캐시 읽기(USD / 100만 토큰), 한시 할인 3칸(할인가·종료일·종료 후 가격, 있을 때만), 적용 기간, 비고. 위에 '가격 기준 M/D HH:MM 관측'. 캐시 쓰기는 TTL이 대부분 미기재라 뺐다.
 - 묶음: 정밀도(fp4에 mxfp4·nvfp4, fp8에 mxfp8, 비공개 모델은 '비공개') · 지역(US·EU 등) · 등급(Standard·Priority·Ultrafast·Flex·Batch) · 입력 구간이 같은 행끼리만 비교한다. OpenRouter 표기 fast 등은 Priority, us-east-1 등은 US로 묶고 원래 표기는 비고에, global은 지역 없음. Vercel 행 안 등급·지역 가격은 별도 행이고 정밀도는 그 Vercel 행이 적은 값만 쓴다.
+- Azure(`azure_foundry`) 행(2026-10-28): GPT 7개는 Azure 공개 가격 API의 글로벌 배포(`Std Gl`)·짧은 컨텍스트(`ShortCo`) 미터 값이다. 렛서가 어느 Azure 배포를 쓰는지 몰라 비고에 '글로벌 배포 기준(렛서 배포 방식 미확인)'을 붙인다(`compare.py`의 `SCOPE_NOTE`, 조건 `meter_scope`). 긴 컨텍스트 미터는 OpenAI 직접처럼 행으로 넣지 않는다.
 - 강조: 열마다 최저 민트(동점 모두), 비교할 행이 하나면 남색 '유일', 종료일은 가장 늦은 날짜. 정밀도가 적힌 행은 채움+테두리, 추정·상태 -1/-2·가격 변동 큼·비공개 모델 행은 채움만. 회색 종료·미확인, 점선 비교 제외(표 아래, 비고에 사유), 주황 출처 상충. 추정 수치와 '최소' 날짜는 강조하지 않는다.
 - 정밀도가 빈 행은 다른 게이트웨이의 같은 공급처·등급·가격 행 표기를 '추정'으로 빌린다. 10/26 손 조사 결과는 `DOC_PRECISION`·`DOC_UNCLEAR`·`DOC_NOTE`에 있다(가격이 같으면 확인, 다르면 추정).
 - 할인 칸: OpenRouter 할인은 표시 가격으로 비교하고 종료 후 가격 = 표시 ÷ (1 − 할인율) '(추정)'. Google 직접·Vertex 예정 인상은 현재가·마지막 날·새 가격, 그 일정과 맞는 OpenRouter 할인 행 종료일은 '12/31 (추정 · 공급사 문서 기준)'. Vercel 공지는 인용문의 하위 공급처 행(없으면 경로 전체)에 붙고 끝난 할인은 7일 뒤 빠진다. Vercel 공지가 할인율만 밝히면 종료 후 가격은 '미확인'이다. 다만 그 행의 표시 가격이 같은 하위 공급처 직접 경로의 현재가와 같고, 할인율로 되돌린 값이 그 경로의 공식 예정 가격과 같으면 그 값을 '(추정 · 공급사 문서 기준)'으로 적는다(2026-10-27 결정 1번 가안, `announced()`).
 - 적용 기간: 가격 변경 이벤트가 있으면 '변경 관측', 없으면 엔드포인트의 첫 관측 run('첫 관측', 첫 수집일 10/16이면 '수집 시작일').
+- Vercel 공급처 종료일(2026-10-28): events.json에 그 모델·경로·공급처(`endpoint_id`, `norm()` 이름)의 Vercel `deprecated_at` 경로 중단 이벤트가 있으면 그 행의 비고가 "상태 1 (뜻 미확인)" 대신 "11/18 종료 예정(Vercel API, 문서 미기재 필드)"이다(`endpoint_ends`). 날짜가 지나면 "종료일 지남"이다. 행은 그대로 비교에서 뺀다. `status` 1의 뜻은 여전히 문서에 없고, 곧 끝나는 공급처가 최저가 강조를 받지 않게 하려는 것이다. 상태가 0인 행에 같은 이벤트가 있으면 비교는 그대로 하고 비고에 종료일만 붙인다.
 - 한계: 7일 규칙은 생성일 기준이라 `?base=`로 다시 계산하지 않는다. 엔진이 비교에서 뺀 행은 가격 변경 기록이 없어 첫 관측만 보이고 가격 변동 큼도 판정하지 않는다. 공개 가중치 여부는 데이터에 칸이 없어 모델 계열(deepseek·glm·kimi)로 정한다. 결정 4-3('공식 확인 전' 값은 사유별 처리)은 처리 방법이 없어 넣지 않았다.
 
 ## 실패·경고 표시
@@ -285,7 +298,7 @@ python3 -B -m scripts.market_collection.dashboard --root data/market_collection 
 
 기존 단계·cron·permissions·concurrency는 그대로 두고 `collect` 잡 끝에 2단계를, 그 뒤에 `deploy` 잡을 더했다(박건 승인 2026-10-20). 배포 대상은 2026-10-22에 Cloudflare Pages에서 같은 저장소의 GitHub Pages로 바꿨다(저장소 공개는 박건 결정).
 
-1. `Build dashboard`(`if: always()`): 위 실행 명령에 `--internal-routes samples/market_collection/demo_internal_routes.json`을 붙인다(2026-10-21 박건 요청). 배포 페이지의 렛서 관계는 시연용 가정이고 "(가정)"으로 표시된다. 앞 단계가 실패해도 실패 화면을 만든다.
+1. `Build dashboard`(`if: always()`): 위 실행 명령에 `--internal-routes samples/market_collection/demo_internal_routes.json`을 붙인다(2026-10-21 박건 요청). 배포 페이지의 렛서 관계는 파일의 근거대로 "(렛서 설정)"·"(호출 확인)"으로 표시된다(2026-10-28 전에는 시연용 가정이라 "(가정)"이었다). 앞 단계가 실패해도 실패 화면을 만든다.
 2. `Upload Pages artifact`(`if: always()`이고 `dashboard-site/index.html`이 있을 때): `actions/upload-pages-artifact` v5.0.0(커밋 `fc324d3547104276b827a68afc52ff2a11cc49c9`로 고정, 2026-04-10 릴리스)으로 `dashboard-site`를 artifact `github-pages`(1일 보관)로 올린다. 이 단계 결과(`steps.pages.outcome`)가 `collect` 잡 output `dashboard`다.
 3. `deploy` 잡(`needs: collect`, `if: always() && needs.collect.outputs.dashboard == 'success'`): `actions/deploy-pages` v5.0.1(커밋 `368f82528645a54fb793d4d04e342629a3f51346`로 고정, 2026-09-01 릴리스)으로 배포한다. 잡 권한은 `pages: write`, `id-token: write`이고 환경은 `github-pages`(배포 주소를 환경 url로 보인다)다.
 
@@ -321,7 +334,7 @@ python3 -B -m scripts.market_collection.dashboard --root data/market_collection 
 - 상단 "기준일 … (고정)"은 생성일이다.
 - 경로 파일에 레코드가 없는 모델의 카드(옵션이 없으면 모든 카드)는 렛서 관계가 미확인이라 "먼저 렛서 사용 경로 확인"이 나온다.
 - "모델별 현황" 표는 화면에 나오지 않는다(1011 원본과 같다). `renderModels()`가 호출되지 않고 `id="models"` 요소도 없어서 `MODELS`(제조사, 종류, 사용 경로)는 페이지 데이터에만 있다. 레이아웃 주석(6행)의 "아래는 참고(모델별 현황 · 수집 추이)"와 `.models` CSS(322~325행)는 원본에서 남은 것이다. 표를 보이려면 템플릿을 바꿔야 한다.
-  - 표를 그리게 되면 머리의 "렛서 사용 여부는 시연용 가정"은 템플릿 고정 문구라 옵션이 없거나 is_demo가 false여도 나온다.
+  - 표를 그리게 되면 머리의 "렛서 사용 경로는 9/23 설정 답변과 10/28 호출 확인 기준"은 템플릿 고정 문구라 옵션이 없거나 파일에 그 근거가 없어도 나온다(2026-10-28 전에는 "렛서 사용 여부는 시연용 가정").
 - `t7` null 카드는 "수집 확인 필요 · 이벤트 아님 · 실제 변화인지 재조회 전", 제공일 없는 출시 카드는 "출시일 미확인 · 가격 미게시"로 나온다.
 - 원가 칩
   - 현재가가 없는 예정 변경 후보는 "원가 변화 없음"이 된다(템플릿은 예정 값 칸만 미확인 여부를 본다).
@@ -358,7 +371,7 @@ python3 -B -m scripts.market_collection.dashboard --root data/market_collection 
 - 기준: Notion "연우 상세페이지"(마지막 수정 2026-10-10 07:53 UTC, https://app.notion.com/p/3f5ce0db111480c6838ed3f2d80469b7)의 분류·표시·제안 규칙. 렌더러 동작은 템플릿(10/11) JS가 정본이고, Notion 규칙은 엔진 값을 템플릿 필드로 옮길 때의 판단 기준으로 썼다. 둘이 다르면 템플릿 동작을 따랐다.
 - 유형 미정(B-1): Notion은 `t7` null이다. `[model_release, route_change]` 미정만 박건 결정(2026-10-20)대로 공급 경로 변경 + 미정 flag로 두고, 그 밖의 미정은 null이다. 로컬 확인 데이터에는 유형 미정 이벤트가 0건이다.
 - 1건 기준(D1 모델 + 경로 + 유형 + 적용일): 하위 태그를 키에 더했고, 적용일이 없으면 게시일 → 관측일로 대신하며, `group_key`가 있으면 그것으로 묶는다.
-- 렛서 관계 가정(C-1, `demo_internal_routes.json`)과 "(렛서 관계는 시연용 가정)"(C-6): `--internal-routes`로 넘긴 파일로 정하고(위 "렛서 관계"), workflow가 시연 파일을 넘겨 배포 페이지에 보인다(2026-10-21 박건 요청). 가정은 "(가정)"과 가정 태그로 표시해 10/9 회의 정리("가정 시나리오로 보여주되 실제 사용 현황으로 표시하지 않는다")를 따른다. 레코드가 없는 모델은 C-1 기본값대로 "확인 필요"다.
+- 렛서 관계 가정(C-1, `demo_internal_routes.json`)과 "(렛서 관계는 시연용 가정)"(C-6): `--internal-routes`로 넘긴 파일로 정하고(위 "렛서 관계"), workflow가 시연 파일을 넘겨 배포 페이지에 보인다(2026-10-21 박건 요청). 가정은 "(가정)"과 가정 태그로 표시해 10/9 회의 정리("가정 시나리오로 보여주되 실제 사용 현황으로 표시하지 않는다")를 따른다. 레코드가 없는 모델은 C-1 기본값대로 "확인 필요"다. 2026-10-28부터는 시연 파일의 레코드마다 근거(설정 등록·호출 확인)가 있어 화면에 "(가정)"이 나오지 않는다.
 - 정렬: 템플릿의 급한 순을 따른다. 10/9 회의의 "유형 묶음 + 시간순"은 미확정이라 반영하지 않았다.
 - 유형별 표(B-4): 제공 종료의 공지/호출 중단 확인 구분, 출시의 이전 세대 비교, 할인의 대상·자격 줄과 시작일 열은 엔진 값이 없어 없다. 경로 변경·제공 종료 카드에는 비교 행이 없다.
 - 날짜 원문(B-2): 원문 표기(`effNote`)는 한시 할인에만 넣는다.

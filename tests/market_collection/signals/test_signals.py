@@ -9,10 +9,14 @@ from scripts.market_collection.core import CollectionError
 from scripts.market_collection import signals
 from scripts.market_collection.signals import __main__ as cli
 from scripts.market_collection.signals.matching import claims_in, date_phrases, entry_signals, models_in, normalize
-from scripts.market_collection.signals.parsers import SignalParseError, atom_entries, openrouter_endpoint_signals, rss_entries
+from scripts.market_collection.models import BROKER_API_MODELS
+from scripts.market_collection.signals.parsers import (SignalParseError, atom_entries, openrouter_endpoint_signals, rss_entries,
+                                                       vercel_endpoint_signals)
 from scripts.market_collection.signals.registry import SignalSourceSpec, signal_sources, validate
 
 FIXTURES = Path(__file__).parent / "fixtures"
+# Raw Vercel endpoint listings of the 10/28 core run (provenance.json next to them).
+ENDPOINT_FIXTURES = Path(__file__).parents[1] / "llm" / "fixtures" / "endpoints"
 ATOM = SignalSourceSpec("channel_feed", "channel_notice", "https://example.org/atom", "atom")
 RSS = SignalSourceSpec("supplier_feed", "supplier_notice", "https://example.org/rss.xml", "rss")
 BLOG = SignalSourceSpec("blog_feed", "developer_blog", "https://example.org/blog.atom", "atom")
@@ -42,6 +46,12 @@ def test_exact_names_win_over_family_and_longer_versions_do_not_match_shorter():
     # Unicode non-breaking hyphen as used in OpenAI headlines.
     assert labels("Advancing price-performance with GPT‑5.6 Luna") == [("GPT-5.6 Luna", "exact")]
     assert labels("Seedance 2.0 mini is 60% off") == []
+
+
+def test_gateway_only_models_match_by_title_and_gateway_ids():
+    assert labels("Qwen3.7 Max and alibaba/qwen3.7-plus are on AI Gateway") == [("Qwen 3.7 Max", "exact"), ("Qwen 3.7 Plus", "exact")]
+    assert labels("MiniMax M2.5 and x-ai/grok-4.20 pricing") == [("Grok 4.20", "exact"), ("MiniMax M2.5", "exact")]
+    assert labels("Muse Wonder is 50% off") == [("Muse Wonder", "exact")]
 
 
 def test_claim_terms_skip_comparisons_and_keep_kinds():
@@ -84,6 +94,93 @@ def test_unsafe_or_wrong_bodies_are_parse_errors():
         rss_entries((FIXTURES / "channel.atom").read_bytes())
     with pytest.raises(SignalParseError):
         openrouter_endpoint_signals(b"<html>login</html>", "gpt-5.6-sol", "GPT-5.6 Sol")
+
+
+def test_vercel_endpoint_parser_reads_deprecated_at_of_the_real_listing():
+    total, found = vercel_endpoint_signals((ENDPOINT_FIXTURES / "vercel-minimax-m2.json").read_bytes(), "minimax-m2", "MiniMax M2")
+    assert total == 1
+    assert found == [{
+        "entry_id": "minimax/minimax-m2#minimax#deprecated_at", "entry_url": "", "entry_title": "MiniMax M2", "published_at_utc": "",
+        "locator": "data.endpoints[0].deprecated_at", "model_label": "MiniMax M2", "model_ids": "minimax-m2", "model_match": "exact",
+        "claim_kinds": "endpoint_deprecation", "match_terms": "deprecated_at",
+        "quote": "minimax: deprecated_at=1794960000000 (2026-11-18T00:00:00Z), status=1; "
+                 "deprecated_at is absent from Vercel's API documentation, which defines only status 0 (active)",
+        "date_phrases": "2026-11-18"}]
+    # No deprecated_at, no row; a discount is left to the core price collector.
+    total, found = vercel_endpoint_signals((ENDPOINT_FIXTURES / "vercel-grok-4.3.json").read_bytes(), "grok-4.3", "Grok 4.3")
+    assert total >= 1 and found == []
+    listing = {"data": {"id": "x/y", "endpoints": [{"provider_name": "a", "pricing": {"discount": 0.5}, "status": 0}]}}
+    assert vercel_endpoint_signals(json.dumps(listing).encode(), "y", "Y") == (1, [])
+
+
+@pytest.mark.parametrize("endpoint", [
+    {"provider_name": "minimax", "deprecated_at": 1794960000},  # seconds, not milliseconds
+    {"provider_name": "minimax", "deprecated_at": 1794960000000.0},
+    {"provider_name": "minimax", "deprecated_at": "1794960000000"},
+    {"provider_name": "minimax", "deprecated_at": "2026-11-18"},
+    {"provider_name": "minimax", "deprecated_at": None},
+    {"provider_name": "minimax", "deprecated_at": True},
+    {"provider_name": "minimax", "deprecated_at": -1794960000000},
+    {"deprecated_at": 1794960000000},  # no provider to name the upstream
+    {"provider_name": "a#b", "deprecated_at": 1794960000000},
+    "minimax",
+])
+def test_vercel_endpoint_parser_refuses_anything_but_epoch_milliseconds(endpoint):
+    body = json.dumps({"data": {"id": "minimax/minimax-m2", "endpoints": [endpoint]}}).encode()
+    with pytest.raises(SignalParseError):
+        vercel_endpoint_signals(body, "minimax-m2", "MiniMax M2")
+
+
+def test_vercel_endpoint_parser_refuses_other_shapes_and_a_repeated_upstream():
+    twice = [{"provider_name": "minimax", "deprecated_at": 1794960000000}] * 2
+    for body in (b"<html>login</html>", b'{"data": {"endpoints": {}}}', b'{"endpoints": []}',
+                 json.dumps({"data": {"id": "minimax/minimax-m2", "endpoints": twice}}).encode()):
+        with pytest.raises(SignalParseError):
+            vercel_endpoint_signals(body, "minimax-m2", "MiniMax M2")
+
+
+def test_gateway_api_sources_cover_every_listed_model_of_both_gateways():
+    specs = signal_sources()
+    by_parser: dict[str, list] = {}
+    for spec in specs:
+        by_parser.setdefault(spec.parser, []).append(spec)
+    # 2026-10-28: 4 feeds + OpenRouter 18 -> 49 (34 gateway-only models, 31 with an OpenRouter id) + Vercel 49
+    assert len(specs) == 102 and {parser: len(found) for parser, found in by_parser.items()} == {
+        "atom": 3, "rss": 1, "openrouter_endpoints": 49, "vercel_endpoints": 49}
+    assert all(spec.source_kind == "channel_api" and spec.model_id for parser in ("openrouter_endpoints", "vercel_endpoints")
+               for spec in by_parser[parser])
+    keys = {spec.source_key: spec for spec in specs}
+    assert keys["vercel_endpoints_minimax_m2"].url == "https://ai-gateway.vercel.sh/v1/models/minimax/minimax-m2/endpoints"
+    assert keys["vercel_endpoints_claude_opus_5_5"].url == "https://ai-gateway.vercel.sh/v1/models/anthropic/claude-opus-5.5/endpoints"
+    assert keys["vercel_endpoints_gemini_3_8_flash"].url == "https://ai-gateway.vercel.sh/v1/models/google/gemini-3.8-flash/endpoints"
+    assert keys["vercel_endpoints_glm_5_2"].url == "https://ai-gateway.vercel.sh/v1/models/zai/glm-5.2/endpoints"
+    assert keys["openrouter_endpoints_minimax_m2_7"].url == "https://openrouter.ai/api/v1/models/minimax/minimax-m2.7/endpoints"
+    assert (keys["vercel_endpoints_minimax_m2_1"].model_id, keys["vercel_endpoints_minimax_m2_1"].model_label) == ("minimax-m2.1", "MiniMax M2.1")
+    # a model a gateway does not list gets no source there
+    for model, _, openrouter_id, vercel_id in BROKER_API_MODELS:
+        key = model.replace("-", "_").replace(".", "_")
+        assert (f"openrouter_endpoints_{key}" in keys) == bool(openrouter_id) and (f"vercel_endpoints_{key}" in keys) == bool(vercel_id)
+    # the 18 OpenRouter sources of before come first, the 31 of the gateway-only models after them
+    added = {model for model, *_ in BROKER_API_MODELS}
+    assert not {spec.model_id for spec in by_parser["openrouter_endpoints"][:18]} & added
+    assert {spec.model_id for spec in by_parser["openrouter_endpoints"][18:]} <= added
+
+
+def test_both_api_parsers_need_a_model_and_feeds_none():
+    with pytest.raises(CollectionError):
+        validate([SignalSourceSpec("vercel_endpoints_x", "channel_api", "https://ai-gateway.vercel.sh/v1/models/x/y/endpoints", "vercel_endpoints")])
+    with pytest.raises(CollectionError):
+        validate([SignalSourceSpec("feed_x", "channel_notice", "https://example.org/atom", "atom", "minimax-m2", "MiniMax M2")])
+    assert validate([SignalSourceSpec("vercel_endpoints_x", "channel_api", "https://example.org/e", "vercel_endpoints", "x", "X")])
+
+
+def test_live_reads_a_vercel_listing_through_its_registered_spec(tmp_path):
+    spec = next(spec for spec in signal_sources() if spec.source_key == "vercel_endpoints_minimax_m2")
+    body = (ENDPOINT_FIXTURES / "vercel-minimax-m2.json").read_bytes()
+    run = signals.live(tmp_path, specs=[spec], fetcher=lambda found: (body, found.url, 200))
+    _, sources, found = signals.validated_run(run)
+    assert (sources[0]["parse_status"], sources[0]["entries_total"], sources[0]["signal_count"]) == ("ok", "1", "1")
+    assert [(row["claim_kinds"], row["origin_status"], row["date_phrases"]) for row in found] == [("endpoint_deprecation", "channel_stated", "2026-11-18")]
 
 
 def test_registry_is_valid_and_rejects_bad_specs():

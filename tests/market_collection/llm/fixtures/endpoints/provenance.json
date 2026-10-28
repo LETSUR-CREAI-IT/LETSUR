@@ -1,0 +1,32 @@
+[
+  {
+    "fixture": "openrouter-deepseek-v4-pro-0813.json",
+    "source_key": "openrouter_llm_endpoints_deepseek_v4_pro_0813",
+    "source_url": "https://openrouter.ai/api/v1/models/deepseek/deepseek-v4-pro-0813/endpoints",
+    "run_id": "20261028T084722Z-908a97fa14424cb7936c6aaa0d8df9af",
+    "fetched_at_utc": "2026-10-28T08:48:21.004746Z",
+    "raw_sha256": "8e30d60a9a6dba96f7e09291f798c6b49b1102ca0097e073e88eee5279950bef",
+    "raw_bytes": 28562,
+    "method": "Raw body of a local live core run (public endpoint API, no login), kept byte for byte."
+  },
+  {
+    "fixture": "vercel-grok-4.3.json",
+    "source_key": "vercel_llm_endpoints_grok_4_3",
+    "source_url": "https://ai-gateway.vercel.sh/v1/models/spacexai/grok-4.3/endpoints",
+    "run_id": "20261028T084722Z-908a97fa14424cb7936c6aaa0d8df9af",
+    "fetched_at_utc": "2026-10-28T08:48:22.596258Z",
+    "raw_sha256": "690b675516739c7977fa5248d09cc3aae05ca56ab82917b683ee0bafa7bb796b",
+    "raw_bytes": 2857,
+    "method": "Raw body of a local live core run (public endpoint API, no login), kept byte for byte."
+  },
+  {
+    "fixture": "vercel-minimax-m2.json",
+    "source_key": "vercel_llm_endpoints_minimax_m2",
+    "source_url": "https://ai-gateway.vercel.sh/v1/models/minimax/minimax-m2/endpoints",
+    "run_id": "20261028T084722Z-908a97fa14424cb7936c6aaa0d8df9af",
+    "fetched_at_utc": "2026-10-28T08:48:23.660756Z",
+    "raw_sha256": "3808d010394ddca58378cd3b99c2ef1f6652eeaac60d7f4aa88c85596c465dbe",
+    "raw_bytes": 1516,
+    "method": "Raw body of a local live core run (public endpoint API, no login), kept byte for byte."
+  }
+]

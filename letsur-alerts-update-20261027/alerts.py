@@ -89,6 +89,11 @@ def deadline(event):
         return None, label, None
 
 
+# 2026-10-28 (결정 기록 37절, 박건 '슬랙에도 보내기'): a channel API's own dated end of a supplier on a route (Vercel's
+# deprecated_at) stays a candidate only because the field is undocumented and the stop is not seen yet; it still goes out.
+STOP_GAPS = ("undocumented_field", "shutdown_confirmed")
+
+
 def event_eligible(event):
     """A narrow warning path may notify an official, scheduled candidate."""
     if event.get("status") == "confirmed":
@@ -110,8 +115,9 @@ def event_eligible(event):
     gaps = event.get("gaps") or []
     if not gaps:
         return False
+    removal = event.get("event_type") == "route_change" and "remove" in (event.get("subtags") or [])
     for gap in gaps:
-        if gap.get("field") not in ("letsur_usage", "account_actual_price", "raw_check"):
+        if gap.get("field") not in ("letsur_usage", "account_actual_price", "raw_check") + (STOP_GAPS if removal else ()):
             return False
         if gap.get("field") == "raw_check" and gap.get("reason") not in (
             "parser_fingerprint_mismatch", "signal_raw_unparsable"
@@ -159,10 +165,18 @@ def small_decrease(event):
 
 
 def observed(event):
-    """KST day a change was first seen: its first observation after the change, else the notice's publication day."""
+    """KST day a change was first seen: its first observation after the change, else the notice's publication day, else
+    the earliest run that carried it (a channel API field such as Vercel's deprecated_at has no publication day)."""
     dates = event.get("dates") or {}
     raw = dates.get("observed_after_utc") or dates.get("published")
-    if not isinstance(raw, str) or not raw:
+    if not raw:
+        runs = sorted(ref["run_id"][:16] for ref in event.get("evidence_refs") or []
+                      if isinstance(ref, dict) and isinstance(ref.get("run_id"), str))
+        try:
+            return datetime.strptime(runs[0], "%Y%m%dT%H%M%SZ").replace(tzinfo=timezone.utc).astimezone(KST).date()
+        except (IndexError, ValueError):
+            return None
+    if not isinstance(raw, str):
         return None
     try:
         if len(raw) == 10:

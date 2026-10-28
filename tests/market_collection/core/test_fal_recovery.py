@@ -23,60 +23,6 @@ def rows(path):
         return list(csv.DictReader(stream))
 
 
-@pytest.mark.parametrize('variant', ['standard', 'fast', 'lite'])
-def test_retained_veo_public_unlisted_same_prices(variant):
-    spec = SPECS['fal_veo_3_1_' + variant]
-    old, _ = video.parse_source(spec, (FIXTURES / f'last-success-{variant}.json').read_bytes(), 's')
-    for run in ('previous-failure', 'latest'):
-        prices, conditions = video.parse_source(spec, (FIXTURES / f'{run}-{variant}.json').read_bytes(), 's')
-        core._validate_parse(spec, 's', prices, conditions)
-        assert prices == old
-        for group in {p['condition_set_id'] for p in prices}:
-            own = {c['condition_key']: c for c in conditions if c['condition_set_id'] == group}
-            assert own['model_status']['value'] == 'unlisted'
-            assert own['invocation_availability']['status'] == 'unknown'
-            assert 'not verified' in own['invocation_availability']['value']
-
-
-@pytest.mark.parametrize('status', ['private', 'unknown', '', None, 'PUBLIC'])
-def test_unrecognized_or_missing_veo_status_rejected(status):
-    spec = SPECS['fal_veo_3_1_fast']
-    data = json.loads((FIXTURES / 'latest-fast.json').read_bytes())
-    if status is None:
-        data['model'].pop('status')
-    else:
-        data['model']['status'] = status
-    with pytest.raises(ValueError):
-        video.parse_source(spec, json.dumps(data).encode(), 's')
-
-
-@pytest.mark.parametrize('mutation', [
-    lambda d: d['model'].update(id='fal-ai/veo3.1'),
-    lambda d: d['model'].update(modelUrl='https://fal.run/fal-ai/veo3.1'),
-    lambda d: d['model'].update(category='image-to-video'),
-    lambda d: d['modelData'].update(endpointId='fal-ai/veo3.1'),
-    lambda d: d['model'].update(pricingInfoOverride=d['model']['pricingInfoOverride'].replace('every second', 'every minute')),
-])
-def test_unlisted_still_requires_exact_identity_and_units(mutation):
-    spec = SPECS['fal_veo_3_1_fast']
-    data = json.loads((FIXTURES / 'latest-fast.json').read_bytes())
-    mutation(data)
-    with pytest.raises(ValueError):
-        video.parse_source(spec, json.dumps(data).encode(), 's')
-
-
-def test_unlisted_duplicate_or_related_price_never_substitutes():
-    spec = SPECS['fal_veo_3_1_fast']
-    raw = (FIXTURES / 'latest-fast.json').read_bytes()
-    with pytest.raises(ValueError):
-        video.parse_source(spec, raw + raw, 's')
-    data = json.loads(raw)
-    data['relatedModels'] = [dict(data['model'])]
-    data['model']['pricingInfoOverride'] = 'No price'
-    with pytest.raises(ValueError):
-        video.parse_source(spec, json.dumps(data).encode(), 's')
-
-
 def collect(tmp_path, monkeypatch, responses, spec=GUIDES[0]):
     calls, sleeps = [], []
     iterator = iter(responses)

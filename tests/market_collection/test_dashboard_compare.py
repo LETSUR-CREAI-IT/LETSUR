@@ -13,6 +13,7 @@ import pytest
 
 from scripts.market_collection import core
 from scripts.market_collection.dashboard import build, compare
+from scripts.market_collection.events.__main__ import main as events_main
 from scripts.market_collection.events.engine import base_event
 from scripts.market_collection.sources import source_specs
 
@@ -52,6 +53,15 @@ def _run(root: Path, model: str, openrouter: list | None, vercel: list | str | N
     _, adapters = core.registry()
     return core.live(root, specs=specs, adapters=adapters, fetcher=lambda spec: (json.dumps(listing[spec.source_key]).encode(), spec.url,
                                                                                     500 if bodies[spec.source_key] == "fail" else 200))
+
+
+def _run_models(root: Path, lists: dict) -> Path:
+    """One collector run of several models' endpoint listings, {model: (openrouter, vercel)}."""
+    bodies = {key: body for model, pair in lists.items() for key, body in zip(KEYS[model], pair)}
+    listing = {key: {"data": {"id": model_id, "endpoints": bodies[key]}} for model in lists for key, model_id in zip(KEYS[model], IDS[model])}
+    specs = [spec for spec in source_specs() if bodies.get(spec.source_key) is not None]
+    _, adapters = core.registry()
+    return core.live(root, specs=specs, adapters=adapters, fetcher=lambda spec: (json.dumps(listing[spec.source_key]).encode(), spec.url, 200))
 
 
 GLM_OR = [
@@ -174,7 +184,7 @@ def test_assumed_row_and_route_note(glm):
 
 
 @pytest.fixture(scope="module")
-def astra(tmp_path_factory) -> dict:
+def astra_root(tmp_path_factory) -> Path:
     root = tmp_path_factory.mktemp("astra")
     long = [{"min_prompt_tokens": 272000, **_prices(20, 75, 2)}]
     _run(root, ASTRA, [
@@ -186,7 +196,12 @@ def astra(tmp_path_factory) -> dict:
         _vercel("openai", _prices(10, 50, 1, service_tiers={"flex": _prices(5, 25, 0.5), "priority": _prices(20, 100, 2)}),
                 inference_regions=[{"scope": "zone", "geo_region": "eu", "pricing": _prices(11, 55, 1.1)}]),
     ])
-    return compare.tables(root, [ASTRA], [], [], None, None, {"is_demo": False, "records": [{"model_id": ASTRA, "route_id": "vercel_ai_gateway"}]},
+    return root
+
+
+@pytest.fixture(scope="module")
+def astra(astra_root) -> dict:
+    return compare.tables(astra_root, [ASTRA], [], [], None, None, {"is_demo": False, "records": [{"model_id": ASTRA, "route_id": "vercel_ai_gateway"}]},
                           "2026-10-27")
 
 
@@ -201,6 +216,102 @@ def test_closed_model_rows_are_비공개_and_vercel_tiers_split_out(astra):
     assert all(r.get("f") == 1 for rows in groups.values() for r in rows)  # no precision is written for a closed-weight model
     assert ["사용 경로", "as"] in groups["비공개 · Standard"][1]["t"]  # is_demo false: LETSUR's recorded route, not an assumption
     assert "special" not in table
+
+
+def _chips(table: dict) -> dict:
+    """'route · upstream' of every row with a route chip -> the chip's text."""
+    return {" · ".join(row["w"]): chip[0] for _, rows in table["groups"] for row in rows for chip in row.get("t", []) if chip[1] == "as"}
+
+
+def test_every_record_marks_its_own_route_with_its_own_basis(astra_root):
+    """2026-10-28: the chip follows each record's basis (settings: 렛서 설정, observed: 호출 확인), and every record of the model
+    marks its Standard row, not only the first record."""
+    def chips(records, is_demo=False):
+        routes = {"is_demo": is_demo, "records": [{"model_id": ASTRA, **record} for record in records]}
+        return _chips(compare.tables(astra_root, [ASTRA], [], [], None, None, routes, "2026-10-27")[ASTRA])
+    both = chips([{"route_id": "openrouter", "basis": "settings"}, {"route_id": "vercel_ai_gateway", "basis": "observed"}])
+    assert both == {"OpenRouter · openai": "렛서 설정", "Vercel · openai": "호출 확인"}
+    assert chips([{"route_id": "vercel_ai_gateway", "basis": "observed"}, {"route_id": "openrouter", "basis": "settings"}]) == both  # not the first record only
+    assert chips([{"route_id": "openrouter"}, {"route_id": "vercel_ai_gateway", "basis": "observed"}], is_demo=True) == {
+        "OpenRouter · openai": "가정", "Vercel · openai": "호출 확인"}  # a record without basis keeps the old wording
+    assert chips([{"route_id": "openrouter"}, {"route_id": "vercel_ai_gateway", "basis": "settings"}]) == {
+        "OpenRouter · openai": "사용 경로", "Vercel · openai": "렛서 설정"}
+    assert chips([{"route_id": None, "basis": "observed"}]) == {}  # not offered: no row
+
+
+def test_astra_openai_direct_row_says_settings_and_its_azure_row_says_observed():
+    """2026-10-28: gpt-6-astra has a registered route (OpenAI direct) and the route one API call went through (Azure); each of the
+    two Standard rows says its own basis. Which row a record marks is still decision 17's rule (Standard, no region or band)."""
+    records = [{"model_id": ASTRA, "route_id": "openai_direct", "basis": "settings"},
+               {"model_id": ASTRA, "route_id": "azure_foundry", "basis": "observed"}]
+    targets = compare.assumed_routes(ASTRA, {"is_demo": False, "records": records})
+    assert targets == [("openai_direct", "", "settings"), ("azure_foundry", "", "observed")]
+
+    def chip(route, publisher, **fields):
+        row = _row(model=ASTRA, route=route, who=[publisher, route], **{"origin": "listing", **fields})
+        return compare.assumed_chip(row, targets, False)
+    assert chip("openai_direct", "OpenAI") == "렛서 설정" and chip("azure_foundry", "Microsoft") == "호출 확인"
+    assert chip("azure_foundry", "Microsoft", tier="Priority") == "" and chip("openai_direct", "OpenAI", region="US") == ""
+    assert chip("openai_direct", "OpenAI", band="272K") == "" and chip("azure_foundry", "Microsoft", origin="vercel_tier") == ""
+    gateway = _row(model=ASTRA, route="vercel_ai_gateway", provider="openai", origin="listing", who=["Vercel", "openai"])
+    assert compare.assumed_chip(gateway, targets, False) == ""  # no record on that route
+
+
+def test_a_record_with_an_endpoint_marks_only_that_endpoint_and_a_record_without_basis_keeps_the_old_words():
+    records = {"records": [{"model_id": GLM, "route_id": "vercel_ai_gateway", "endpoint_id": "nu", "basis": "observed"}]}
+    targets = compare.assumed_routes(GLM, dict(records, is_demo=False))
+    nu = _row(route="vercel_ai_gateway", provider="nu", origin="listing", who=["Vercel", "nu"])
+    zai = _row(route="vercel_ai_gateway", provider="zai", origin="listing", who=["Vercel", "zai"])
+    assert (compare.assumed_chip(nu, targets, False), compare.assumed_chip(zai, targets, False)) == ("호출 확인", "")
+    plain = compare.assumed_routes(GLM, {"records": [{"model_id": GLM, "route_id": "vercel_ai_gateway"}]})
+    assert plain == [("vercel_ai_gateway", "", None)]
+    assert (compare.assumed_chip(zai, plain, True), compare.assumed_chip(zai, plain, False)) == ("가정", "사용 경로")  # maker's own upstream
+    assert compare.assumed_routes(GLM, {"records": [{"model_id": "other", "route_id": "openrouter"}]}) == [] and compare.assumed_routes(GLM, None) == []
+
+
+@pytest.mark.parametrize(("maker", "spellings"), [
+    ("Z.ai", ["Z.AI", "z-ai", "zai"]),
+    ("Moonshot AI", ["Moonshot AI", "moonshotai"]),
+    ("xAI", ["xAI", "x-ai", "xai", "SpaceXAI", "spacexai"]),
+    ("MiniMax", ["MiniMax", "minimax"]),
+    ("Meta", ["Meta", "meta"]),
+    ("Alibaba", ["Alibaba", "alibaba"]),
+])
+def test_a_makers_name_and_its_spellings_on_the_gateways_are_one_upstream(maker, spellings):
+    """2026-10-28: OpenRouter writes 'Z.AI', 'xAI', 'Meta', 'Alibaba', 'MiniMax', 'Moonshot AI' (and names xAI's models SpaceXAI) and
+    Vercel the lowercase ids ('zai', 'spacexai', 'meta', 'moonshotai' ...); norm() makes each spelling the maker's own name."""
+    assert {compare.norm(spelling) for spelling in spellings} == {compare.norm(maker)}
+
+
+@pytest.mark.parametrize(("model", "maker", "route", "conditions"), [
+    ("glm-4.6", "Z.ai", "openrouter", {"endpoint_tag": "z-ai/fp8"}),
+    ("glm-5.1", "Z.ai", "vercel_ai_gateway", {"endpoint_provider": "zai"}),
+    ("kimi-k2.6", "Moonshot AI", "openrouter", {"endpoint_tag": "moonshotai"}),
+    ("kimi-k2.5", "Moonshot AI", "vercel_ai_gateway", {"endpoint_provider": "moonshotai"}),
+    ("grok-4.20", "xAI", "openrouter", {"endpoint_tag": "xai"}),
+    ("grok-4.6", "xAI", "openrouter", {"endpoint_tag": "spacexai/fast"}),
+    ("grok-4.3", "xAI", "vercel_ai_gateway", {"endpoint_provider": "spacexai"}),
+    ("grok-4.3", "xAI", "vercel_ai_gateway", {"endpoint_provider": "xai"}),
+    ("minimax-m2.7", "MiniMax", "openrouter", {"endpoint_tag": "minimax/fp8"}),
+    ("minimax-m3", "MiniMax", "vercel_ai_gateway", {"endpoint_provider": "minimax"}),
+    ("muse-spark-1.2", "Meta", "openrouter", {"endpoint_tag": "meta"}),
+    ("muse-spark-1.3", "Meta", "vercel_ai_gateway", {"endpoint_provider": "meta"}),
+    ("qwen3.7-flash", "Alibaba", "openrouter", {"endpoint_tag": "alibaba"}),
+    ("qwen3.7-max", "Alibaba", "vercel_ai_gateway", {"endpoint_provider": "alibaba"}),
+])
+def test_the_route_chip_lands_on_the_makers_own_upstream_row_of_each_gateway(monkeypatch, model, maker, route, conditions):
+    """2026-10-28 (decision 17): on a gateway the chip marks the maker's own upstream at Standard. The row is placed from what its
+    source states (OpenRouter tag, Vercel provider); the maker is set here, so this checks the spelling match and not the
+    FAMILY_MAKERS of events/catalog.py."""
+    monkeypatch.setattr(compare, "maker", lambda _model: maker)
+    targets = [(route, "", "observed")]
+
+    def placed(**stated) -> dict:
+        row = _row(model=model, route=route, conditions=stated, unknown={}, origin="listing")
+        compare.place(row)
+        return row
+    assert compare.assumed_chip(placed(**conditions), targets, False) == "호출 확인"
+    assert compare.assumed_chip(placed(**{key: "deepinfra" for key in conditions}), targets, False) == ""  # another upstream of the model
 
 
 def _row(**fields) -> dict:
@@ -393,6 +504,48 @@ def test_an_error_in_the_table_leaves_the_page_without_tables(tmp_path, monkeypa
     assert "KeyError" in capsys.readouterr().err
 
 
+CLOSED_OR = [_or("openai", _prices(10, 50, 1), quant="unknown")]
+CLOSED_VERCEL = [_vercel("openai", _prices(10, 50, 1))]
+
+
+def test_observed_models_are_the_newest_runs_whatever_a_card_says(tmp_path):
+    run = _run_models(tmp_path, {GLM: (GLM_OR, GLM_VERCEL), ASTRA: (CLOSED_OR, CLOSED_VERCEL)})
+    assert compare.observed_models(tmp_path, {"processed_runs": [run.name]}) == [GLM, ASTRA]
+    assert compare.observed_models(tmp_path, {"processed_runs": []}) == []  # the engine has not processed it
+    assert compare.observed_models(tmp_path / "nothing", None) == []
+
+
+def test_a_model_without_cards_still_gets_a_trend_a_table_and_a_list_entry(tmp_path):
+    """2026-10-28: the 모델별 가격 list covers every model the newest run observed, not only models with change cards. A new model
+    has baselines and no events: glm-5.2 has series to draw (TREND, badge 변화 없음), gpt-6-astra's observations all have unknown
+    conditions, so it has only the table; both are in the list. The cards and cards.json do not change."""
+    root = tmp_path / "root"
+    run = _run_models(root, {GLM: (GLM_OR, GLM_VERCEL), ASTRA: (CLOSED_OR, CLOSED_VERCEL)})
+    assert events_main(["build", "--run", str(run), "--output", str(root / "events")]) == 0  # the engine's own state, events and report
+
+    def built(name):
+        assert build.main(["--root", str(root), "--output", str(tmp_path / name)]) == 0
+        page = (tmp_path / name / "index.html").read_text(encoding="utf-8")
+        slot = lambda key: json.loads(re.search(rf"^const {key} = (.*);$", page, re.M).group(1))
+        return page, slot, json.loads((tmp_path / name / "cards.json").read_text(encoding="utf-8"))["cards"]
+    page, slot, judged = built("site")
+    assert (slot("EVENTS"), judged) == ([], [])
+    assert set(slot("COMPARE")) == {GLM, ASTRA} and ASTRA not in slot("TREND")  # nothing to draw, the table has its rows
+    assert slot("COMPARE")[ASTRA]["groups"]
+    trend = slot("TREND")[GLM]
+    assert (trend["name"], trend["badge"]) == (GLM, ["변화 없음", ""]) and (trend.get("tiers") or trend.get("series"))
+    # the page lists TREND and COMPARE models alike, #m/<model> opens either, and an empty trend points at the table
+    assert "const MODEL_IDS = [...new Set([...Object.keys(TREND), ...Object.keys(COMPARE)])];" in page
+    assert "MODEL_IDS.includes(model) && model !== trendModel" in page and "현재 가격은 아래 표에 있습니다." in page
+    # a card of one model does not touch the others: its badge counts it, the card model keeps the only card
+    folder = root / "events"
+    events = json.loads((folder / "events.json").read_text(encoding="utf-8"))
+    (folder / "events.json").write_text(json.dumps(dict(events, events=[base_event("e1", "price_change", GLM, "openrouter", "confirmed")])), encoding="utf-8")
+    page, slot, judged = built("with-card")
+    assert [card["mid"] for card in slot("EVENTS")] == [GLM] and len(judged) == 1
+    assert (slot("TREND")[GLM]["badge"], set(slot("COMPARE")), ASTRA in slot("TREND")) == (["변화 1건", ""], {GLM, ASTRA}, False)
+
+
 def _listing(model, route, conditions, prices=("1", "2", "0.1"), **fields) -> dict:
     row = {"model": model, "route": route, "conditions": conditions, "unknown": fields.pop("unknown", {}), "prices": D(*prices),
            "future": {}, "start": set(), "until": set(), "obs": {}, "origin": "listing"}
@@ -428,6 +581,10 @@ def test_direct_route_conditions_map_to_tier_region_and_band():
     assert bedrock("Global CRIS")["who"] == ["AWS", "aws_bedrock · Global CRIS"] and bedrock("Global CRIS")["tier"] == "Standard"
     vertex = _listing("gemini-3.8-flash", "google_vertex", {"region": "Global", "service_tier": "standard", "input_token_band": ">200K"})
     assert (vertex["region"], vertex["band"], vertex["labels"]) == ("", "200K", ["표기 Global"])
+    azure = lambda scope: _listing("gpt-6-sol", "azure_foundry", {"service_tier": "standard", "meter_scope": scope,
+                                                                  "context_band": "short context (ShortCo)"})
+    assert (azure("Global (Gl)")["region"], azure("Global (Gl)")["band"], azure("Global (Gl)")["why"]) == ("", "", [])
+    assert azure("Global (Gl)")["labels"] == ["글로벌 배포 기준(렛서 배포 방식 미확인)"] and azure("Data Zone (DZ)")["labels"] == ["표기 Data Zone (DZ)"]
     page = _listing(GLM, "openrouter", {"price_basis": "model_page_rate"})
     assert page["who"] == ["OpenRouter", "모델 페이지 대표가"] and page["why"] == ["모델 페이지 대표가 (하위 공급처·조건 미지정)"]
     odd = _listing(GLM, "fal", {"resolution": "1080p"})
@@ -440,3 +597,45 @@ def test_an_unreadable_vercel_record_is_skipped_and_said(tmp_path):
     table = compare.tables(tmp_path, [GLM], [], [], None, None, None, "2026-10-27")[GLM]
     assert table["foot"] == ["Vercel 엔드포인트 원문을 읽지 못해 행 안 등급·지역 가격을 뺀 출처: vercel_llm_endpoints_glm_5_2 zai (ValueError)"]
     assert _rows(table)["Vercel · zai"][1]["n"] == "비교 제외 · 피크 요금 (시간대 미확인)"
+
+
+MINIMAX_LISTING = Path(__file__).parent / "llm" / "fixtures" / "endpoints" / "vercel-minimax-m2.json"  # real 10/28 raw, status 1
+
+
+def _ends(event_id: str, endpoint_id: str = "minimax", effective_from: str = "2026-11-18") -> dict:
+    """The engine's event for a Vercel endpoint deprecated_at (2026-10-28)."""
+    event = base_event(event_id, "route_change", "minimax-m2", "vercel_ai_gateway", "candidate")
+    event.update(subtags=["remove"], source_key="vercel_endpoints_minimax_m2", endpoint_id=endpoint_id, claim_kind="endpoint_deprecation",
+                 dates={"effective_from": effective_from, "published": None, "note": ""})
+    return event
+
+
+@pytest.fixture(scope="module")
+def minimax_root(tmp_path_factory) -> Path:
+    root = tmp_path_factory.mktemp("minimax")
+    spec = next(spec for spec in source_specs() if spec.source_key == "vercel_llm_endpoints_minimax_m2")
+    _, adapters = core.registry()
+    core.live(root, specs=[spec], adapters=adapters, fetcher=lambda found: (MINIMAX_LISTING.read_bytes(), found.url, 200))
+    return root
+
+
+@pytest.mark.parametrize(("events", "today", "note"), [
+    ([], "2026-10-28", "비교 제외 · 상태 1 (뜻 미확인)"),
+    ([_ends("e1")], "2026-10-28", "비교 제외 · 11/18 종료 예정(Vercel API, 문서 미기재 필드)"),
+    ([_ends("e1")], "2026-11-19", "비교 제외 · 11/18 종료일 지남(Vercel API, 문서 미기재 필드)"),
+    ([_ends("e1", endpoint_id="bedrock")], "2026-10-28", "비교 제외 · 상태 1 (뜻 미확인)"),  # another upstream's end
+    ([_ends("e1", effective_from="2026-11-18T00:00:00Z")], "2026-10-28", "비교 제외 · 상태 1 (뜻 미확인)"),  # not a bare date
+])
+def test_a_vercel_upstreams_stated_end_replaces_its_unknown_status_reason(minimax_root, events, today, note):
+    """The status-1 row stays out of the comparison: the status is still undocumented and the upstream ends soon."""
+    table = compare.tables(minimax_root, ["minimax-m2"], events, [], None, None, None, today)["minimax-m2"]
+    assert table["groups"] == []
+    assert _rows(table)["Vercel · minimax"] == ("비교 제외", _rows(table)["Vercel · minimax"][1])
+    assert _rows(table)["Vercel · minimax"][1]["n"] == note
+
+
+def test_a_compared_row_still_shows_its_stated_end():
+    row = dict(_row(route="vercel_ai_gateway", provider="minimax"), status=0, unknown={}, why=[], notes=[], prices=D("1"),
+               prec_kind="closed", ends="11/18 종료 예정(Vercel API, 문서 미기재 필드)")
+    compare.exclusions(row, {})
+    assert row["why"] == [] and row["notes"] == ["11/18 종료 예정(Vercel API, 문서 미기재 필드)"]

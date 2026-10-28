@@ -27,8 +27,10 @@ from typing import Callable
 from scripts.market_collection.core import (CollectionError, TIMEOUT_SECONDS, MAX_REDIRECTS, _NoRedirect, _new_run, _read_csv,
                                             _utc_now, _validate_url, _write_bytes, _write_csv, _write_json)
 
-from .parsers import SignalParseError, atom_entries, feed_signals, openrouter_endpoint_signals, rss_entries, utc_text
+from .parsers import SignalParseError, atom_entries, feed_signals, openrouter_endpoint_signals, rss_entries, utc_text, vercel_endpoint_signals
 from .registry import SignalSourceSpec, signal_sources, validate
+
+API_SIGNALS = {"openrouter_endpoints": openrouter_endpoint_signals, "vercel_endpoints": vercel_endpoint_signals}
 
 # Vercel's full changelog feed is ~3.7 MB, close to the 4 MiB price-page cap.
 MAX_SIGNAL_BODY_BYTES = 16 * 1024 * 1024
@@ -89,8 +91,8 @@ def fetch(spec: SignalSourceSpec) -> tuple[bytes, str, int]:
 
 def parse_body(spec: SignalSourceSpec, body: bytes, window_start: datetime) -> tuple[int, int, list[dict]]:
     """Return (entries_total, entries_in_window, signal rows without run identity)."""
-    if spec.parser == "openrouter_endpoints":
-        total, rows = openrouter_endpoint_signals(body, spec.model_id, spec.model_label)
+    if spec.parser in API_SIGNALS:
+        total, rows = API_SIGNALS[spec.parser](body, spec.model_id, spec.model_label)
         return total, total, rows
     entries = atom_entries(body) if spec.parser == "atom" else rss_entries(body)
     in_window, rows = feed_signals(entries, window_start)

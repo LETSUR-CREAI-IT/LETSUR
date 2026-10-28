@@ -11,8 +11,8 @@ import html
 import re
 from dataclasses import dataclass
 
-from scripts.market_collection.models import (BROKER_CATALOG_MODELS, FLARE_MODEL, GOOGLE_BROKER_MODEL, GOOGLE_LLM_MODEL, IDEOGRAM_MODEL,
-                                              SEEDANCE_MODEL, SUNBURST_MODEL, VEO_MODELS)
+from scripts.market_collection.models import (BROKER_API_MODELS, BROKER_CATALOG_MODELS, FLARE_MODEL, GOOGLE_BROKER_MODEL,
+                                              GOOGLE_LLM_MODEL, SEEDANCE_MODEL, SUNBURST_MODEL)
 from scripts.market_collection.sources import _targets
 
 MAX_QUOTES = 2
@@ -47,12 +47,11 @@ def _exact_aliases() -> list[ModelAlias]:
     names[GOOGLE_LLM_MODEL] = ["Gemini 3.8 Flash", GOOGLE_LLM_MODEL, GOOGLE_BROKER_MODEL]
     for model, title, _, openrouter_id, vercel_id in BROKER_CATALOG_MODELS:
         names[model] = [title, openrouter_id, vercel_id, model]
+    for model, title, openrouter_id, vercel_id in BROKER_API_MODELS:
+        names[model] = [title, openrouter_id, vercel_id, model]  # _compile skips a missing (None) id
     names[SUNBURST_MODEL] = ["GPT Image 2.5 Sunburst", SUNBURST_MODEL]
     names[FLARE_MODEL] = ["GPT Image 2.5 Flare", FLARE_MODEL]
-    names[IDEOGRAM_MODEL] = ["Ideogram 4.5", IDEOGRAM_MODEL]
     names[SEEDANCE_MODEL] = ["Seedance 2.5", SEEDANCE_MODEL]
-    for model in VEO_MODELS:
-        names[model] = ["Veo 3.1 " + model.rsplit("-", 1)[1].title(), model]
     return [ModelAlias(names[model][0], (model,), "exact", _compile(names[model])) for model in names]
 
 
@@ -62,7 +61,6 @@ def _family_aliases(exact: list[ModelAlias]) -> list[ModelAlias]:
         if re.fullmatch(r"GPT-[\d.]+ \w+", alias.label):
             families.setdefault(alias.label.rsplit(" ", 1)[0], []).extend(alias.model_ids)
     families["GPT Image 2.5"] = [SUNBURST_MODEL, FLARE_MODEL]
-    families["Veo 3.1"] = list(VEO_MODELS)
     return [ModelAlias(label, tuple(models), "family", _compile([label])) for label, models in families.items()]
 
 

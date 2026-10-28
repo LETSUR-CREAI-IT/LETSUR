@@ -40,6 +40,7 @@ VERIFIED = ("current_parser_both_raws", "stored_parse_of_before_raw")
 NEGATED_GAP = {"field": "negated_statement", "class": "check_first",
                "reason": "the sentence negates, cancels or postpones the claim; it is not read as a positive statement",
                "next_check": "read the notice and confirm what is actually in effect"}
+VERCEL_DEPRECATED_AT = re.compile(r"data\.endpoints\[\d+\]\.deprecated_at")  # signals parser vercel_endpoint_signals
 
 
 def empty_state() -> dict:
@@ -487,6 +488,8 @@ class Builder:
         if via:
             event["announced_via"] = via
         event["billing_item"] = claim.get("billing_item", "")
+        if claim.get("endpoint_id"):
+            event["endpoint_id"] = claim["endpoint_id"]  # the one upstream endpoint of the route the claim is about
         if claim.get("before") or claim.get("after"):
             event["before"], event["after"] = claim.get("before"), claim.get("after")
             if event["before"] and event["after"] and event["before"].get("amount") and event["after"].get("amount"):
@@ -677,6 +680,18 @@ def classify_claim(claim: dict) -> tuple[str | None, list[str], str, list[dict],
         status = "confirmed" if official_route and not negated else "candidate"
         return "condition_change", [f"{group}.{key}"], status, gaps, extra
     if kind == "endpoint_deprecation":
+        if claim.get("source_key", "").startswith("vercel_endpoints") and VERCEL_DEPRECATED_AT.fullmatch(claim.get("locator", "")):
+            # Vercel's API documentation defines only status 0 and does not list deprecated_at: never confirmed from it (2026-10-28).
+            extra["dates"] = {"effective_from": claim.get("date_phrases") or None, "published": None,
+                              "note": "deprecated_at of one upstream endpoint on this route (other upstreams of the route may "
+                                      "continue); not a route or model shutdown"}
+            extra["suggestion"] = "check which upstream LETSUR is served by and prepare another upstream or route before the date"
+            gaps.append({"field": "undocumented_field", "class": "check_first",
+                         "reason": "deprecated_at is absent from Vercel's API documentation; the end date is read from the field name only",
+                         "next_check": "confirm the end date with Vercel (model page, changelog or support)"})
+            gaps.append({"field": "shutdown_confirmed", "class": "limits_value", "reason": "end date from an undocumented field; call stop not observed",
+                         "next_check": "re-check the endpoint after the date"})
+            return "route_change", ["remove"], "candidate", gaps, extra
         extra["dates"] = {"effective_from": claim.get("effective_from"), "published": claim.get("published_at_utc") or None,
                           "note": "deprecation date of one endpoint on this route; not an API shutdown date"}
         gaps.append({"field": "shutdown_confirmed", "class": "limits_value", "reason": "deprecation notice only",

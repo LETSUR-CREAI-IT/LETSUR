@@ -1,4 +1,4 @@
-"""Read public Atom/RSS feeds and the OpenRouter endpoints API into signal candidates."""
+"""Read public Atom/RSS feeds and the OpenRouter and Vercel endpoints APIs into signal candidates."""
 
 from __future__ import annotations
 
@@ -160,4 +160,41 @@ def openrouter_endpoint_signals(body: bytes, model_id: str, model_label: str) ->
                      "published_at_utc": "", "locator": "data.expiration_date", "model_label": model_label, "model_ids": model_id,
                      "model_match": "exact", "claim_kinds": "deprecation", "match_terms": "expiration_date",
                      "quote": f"expiration_date={expiration}", "date_phrases": str(expiration)})
+    return len(endpoints), rows
+
+
+def vercel_endpoint_signals(body: bytes, model_id: str, model_label: str) -> tuple[int, list[dict]]:
+    """One signal per endpoint that has deprecated_at, read as epoch milliseconds (2026-11-18 is 1794960000000).
+
+    Vercel's API documentation defines only status 0 (active) and does not list deprecated_at, so the quote says so.
+    Discounts are left out: that field is undocumented too, and the core price collector records it.
+    """
+    try:
+        data = json.loads(body)["data"]
+        endpoints = data["endpoints"]
+    except (ValueError, KeyError, TypeError) as exc:
+        raise SignalParseError("not a Vercel endpoints response") from exc
+    if not isinstance(endpoints, list):
+        raise SignalParseError("endpoints is not a list")
+    rows, providers = [], set()
+    for index, endpoint in enumerate(endpoints):
+        if not isinstance(endpoint, dict):
+            raise SignalParseError(f"endpoint {index} is not an object")
+        if "deprecated_at" not in endpoint:
+            continue
+        value, provider = endpoint["deprecated_at"], endpoint.get("provider_name")
+        # 13 digits: milliseconds between 2001 and 2286; seconds, floats, strings, null and booleans are refused
+        if type(value) is not int or not 10 ** 12 <= value < 10 ** 13:
+            raise SignalParseError(f"deprecated_at at endpoint {index} is not epoch milliseconds")
+        if not isinstance(provider, str) or not provider or "#" in provider or provider in providers:
+            raise SignalParseError(f"invalid or duplicate provider_name at endpoint {index}")
+        providers.add(provider)
+        moment = datetime.fromtimestamp(value / 1000, tz=timezone.utc)
+        status = json.dumps(endpoint["status"]) if "status" in endpoint else "absent"
+        quote = (f"{provider}: deprecated_at={value} ({utc_text(moment)}), status={status}; "
+                 "deprecated_at is absent from Vercel's API documentation, which defines only status 0 (active)")
+        rows.append({"entry_id": f"{data.get('id', model_id)}#{provider}#deprecated_at", "entry_url": "", "entry_title": str(data.get("name", "")),
+                     "published_at_utc": "", "locator": f"data.endpoints[{index}].deprecated_at", "model_label": model_label,
+                     "model_ids": model_id, "model_match": "exact", "claim_kinds": "endpoint_deprecation", "match_terms": "deprecated_at",
+                     "quote": quote, "date_phrases": moment.date().isoformat()})
     return len(endpoints), rows

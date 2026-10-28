@@ -40,11 +40,11 @@ data/market_collection/signals/runs/<run_id>/
 | `signal_key` | 출처·글·모델·주장·인용문으로 만든 안정 키. 회차가 달라도 같은 단서면 같다 |
 | `entry_title`, `entry_url`, `published_at_utc` | 원문 글 제목, 링크, 발표일(피드에 적힌 값) |
 | `model_label`, `model_ids`, `model_match` | 언급된 모델. `exact`는 개별 모델, `family`는 "GPT-5.6"처럼 계열만 언급한 경우(해당 모델 ID를 모두 적음) |
-| `claim_kinds` | `discount`, `free`, `price_increase`, `price_decrease`, `deprecation`, `discount_active`(OpenRouter API) |
+| `claim_kinds` | `discount`, `free`, `price_increase`, `price_decrease`, `deprecation`, `discount_active`(OpenRouter API), `endpoint_deprecation`(Vercel API `deprecated_at`) |
 | `quote` | 모델과 주장이 함께 나온 원문 문장(최대 2개) |
 | `date_phrases` | 원문에 적힌 날짜 표현 그대로("through September 18", "at least until November 21"). 날짜로 바꾸지 않는다. "적어도 ~까지"는 종료일이 아니다 |
 | `origin_status` | `channel_stated`(채널 API 필드), `official_notice`(회사 공지), `unverified`(블로그·가격 추적 사이트) |
-| `locator` | 원문 안 위치(`feed/entry[3]`, `data.endpoints[1].pricing.discount`) |
+| `locator` | 원문 안 위치(`feed/entry[3]`, `data.endpoints[1].pricing.discount`, `data.endpoints[0].deprecated_at`) |
 | `linked_event`, `next_check` | 비워 둔다. 검토하는 사람이 연결 사건과 다음 확인을 적는다 |
 
 ## 등록한 출처
@@ -55,7 +55,12 @@ data/market_collection/signals/runs/<run_id>/
 | `openai_news` | RSS | supplier_notice | 고객 사례 글이 많아 단서는 드묾 |
 | `simonwillison_blog` | Atom | developer_blog | 최근 30개 글만 유지 → `history`로 보존 |
 | `modelpricewatch_news` | Atom | price_tracker | 가격 변화 날짜 기록. 3:1 혼합 단가라 수치는 2차 자료 |
-| `openrouter_endpoints_<model>` | JSON API | channel_api | 등록 LLM 18개. `pricing.discount`가 0보다 큰 endpoint만 기록하고 `tag`(flex, fast, 지역)를 함께 남김 |
+| `openrouter_endpoints_<model>` | JSON API | channel_api | 등록 LLM 49개(2026-10-28 전 18개). `pricing.discount`가 0보다 큰 endpoint만 기록하고 `tag`(flex, fast, 지역)를 함께 남김. 모델 목록의 `expiration_date`도 기록 |
+| `vercel_endpoints_<model>` | JSON API | channel_api | 등록 LLM 49개(2026-10-28 추가). endpoint의 `deprecated_at`만 기록(아래). 할인 필드는 읽지 않는다 |
+
+2026-10-28: 렛서가 OpenRouter·Vercel로만 쓰는 LLM 34개가 가격 수집에 들어오면서 signals 출처가 22개에서 102개가 됐다(feed 4 + OpenRouter 49 + Vercel 49). 두 게이트웨이 API 출처는 가격 수집기의 endpoint 출처(`sources.py`의 `llm_endpoint_source_specs`)와 같은 모델·같은 id 규칙이라 98개가 하나씩 짝을 이룬다. 그 게이트웨이 목록에 없는 모델은 출처가 없다(OpenRouter에 없는 `muse-wonder-1.0`·`qwen3.5-plus`·`qwen3.8-max`, Vercel에 없는 `grok-4.20`·`kimi-k2-thinking`·`qwen3-coder-flash`). 기존 22개 출처는 키·URL·순서 그대로다.
+
+Vercel `deprecated_at`(2026-10-28): Vercel AI Gateway endpoints API는 일부 endpoint에 `"status": 1`과 `"deprecated_at": 1794960000000`을 준다. 값은 epoch 밀리초(2026-11-18T00:00:00Z)다. [Vercel 문서](https://vercel.com/docs/ai-gateway/sdks-and-apis/rest-api#get-model-endpoints)는 "status 0 = active"만 정의하고 `deprecated_at`은 적지 않는다. 그래서 가격 수집기(`collectors/llm_endpoints.py`)는 그대로 두고(그 행은 `endpoint_status` 1, unknown) 이 단서 층에서 읽는다. parser `vercel_endpoints`는 `deprecated_at`이 있는 endpoint마다 한 줄을 만든다. `entry_id`는 `<data.id>#<provider_name>#deprecated_at`, `claim_kinds`는 `endpoint_deprecation`, `date_phrases`는 UTC 날짜(`2026-11-18`), 인용문은 공급처 이름·원래 값·UTC 시각·`status` 값과 "Vercel API 문서에 없는 필드"라는 말이다. 값이 13자리 정수(epoch 밀리초)가 아니면(초 단위, 소수, 문자열, null, 참거짓) 해석 실패로 기록한다. 10/28 수집 원문에서는 `minimax` 공급처 하나가 minimax-m2·m2.1·m2.5·m2.7에서 이 값을 가졌다(이벤트는 [events.md](events.md), 화면은 [dashboard.md](dashboard.md)).
 
 출처를 추가하려면 `scripts/market_collection/signals/registry.py`에 넣는다. 로그인 없이 받을 수 있는지 먼저 확인한다. X·Discord·Reddit은 로그인 또는 403 때문에 자동 수집하지 않는다. 쿠폰·제휴 사이트는 계정별 혜택이라 넣지 않는다.
 

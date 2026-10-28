@@ -1,0 +1,12 @@
+[
+  {
+    "fixture": "gpt-koreacentral.json",
+    "source_url": "https://prices.azure.com/api/retail/prices?$filter=serviceName%20eq%20'Foundry%20Models'%20and%20armRegionName%20eq%20'koreacentral'%20and%20(productName%20eq%20'Azure%20OpenAI%20GPT6'%20or%20productName%20eq%20'Azure%20OpenAI%20GPT5')",
+    "fetched_at_utc": "2026-10-28T08:00:47.491701+00:00",
+    "raw_sha256": "f9e9f53724b4d92a6f257eb955edf9efe7d2349f5d76661bf1909ef6b706af0e",
+    "raw_bytes": 215269,
+    "raw_items": 354,
+    "fixture_sha256": "9efcd412a92472ed059b72c21c34129695f869a611d460298a9f20c27f12adc6",
+    "method": "Items of the seven GPT models' meters (every deployment, tier and context variant) and the first four other meters, kept as returned and in order; Count set to the kept items; no prices invented."
+  }
+]

@@ -1,9 +1,10 @@
 """Per-model supplier comparison table ('공급사 비교 표') for the card detail, from the 10/25~27 review decisions.
 
-One table per LLM model with a card. A row is one offer: a direct route, or a gateway (OpenRouter, Vercel) and one
-upstream endpoint of it (OpenRouter tag, Vercel provider). Rows are compared only inside a group of the same precision
-(fp4 takes mxfp4·nvfp4, fp8 takes mxfp8, closed-weight models are '비공개'), tier, region and context band; a row whose
-conditions do not place it in a group is '비교 제외' with the reason and is listed under the table.
+One table per LLM model the newest run observed, with or without a change card (2026-10-28). A row is one offer: a direct
+route, or a gateway (OpenRouter, Vercel) and one upstream endpoint of it (OpenRouter tag, Vercel provider). Rows are
+compared only inside a group of the same precision (fp4 takes mxfp4·nvfp4, fp8 takes mxfp8, closed-weight models are
+'비공개'), tier, region and context band; a row whose conditions do not place it in a group is '비교 제외' with the reason
+and is listed under the table.
 
 Inputs, all read-only:
 - the newest core run under <root>/runs the engine processed: amounts of every observation, the excluded
@@ -11,7 +12,7 @@ Inputs, all read-only:
 - that run's Vercel endpoint listings (raw bodies; the run loader checks their hashes): in-row tier, region and peak
   prices, which the collector records only as unknown conditions;
 - state.json (baselines, not_comparable, series) for first observation and rows that dropped out, events.json for price
-  changes (적용 기간, 가격 변동 큼) and Vercel discount notices.
+  changes (적용 기간, 가격 변동 큼), Vercel discount notices and Vercel endpoint end dates (deprecated_at).
 
 build.py passes the result to the page as COMPARE; template.html draws it in compareTable(). Rules: docs/dashboard.md.
 """
@@ -52,14 +53,15 @@ QUIET = {"endpoint_tag", "endpoint_provider", "endpoint_model_slug", "context_le
          "quantization", "service_tier", "prompt_tokens", "utc_start", "utc_end", "utc_days", "context_tier_min_tokens",
          "context_tier_max_tokens", "rate_period", "input_token_band", "context_band", "inference_option", "region", "region_group",
          "input_modalities", "currency_basis", "long_context_multiplier", "promotion_note", "promotion_label", "publisher", "hosting",
-         "endpoint_scope", "cross_geography_routing", "billing_channel"}
+         "endpoint_scope", "cross_geography_routing", "billing_channel", "meter_scope"}
 ITEM_LEVEL = {"cache_write_ttl", "cache_duration", *evidence.MUTABLE_CONDITIONS}  # differ between the items of one offer
 # Unknown conditions a decision settles: OpenRouter discounts are compared at the shown price (6); Vercel's untiered price
 # is Standard and its tier and region prices become rows of their own (10, 18).
 SETTLED = {"discount_application", "region_applicability", "service_tier_applicability", "service_tier"}
 # One upstream under its gateway spellings, case and punctuation aside (decision 4-8): OpenRouter tag provider, Vercel provider.
+# spacexai: Vercel owns xAI's models as spacexai and OpenRouter names them SpaceXAI (10/28 catalogs); both are the maker xAI.
 ALIAS = {"togetherai": "together", "bedrock": "amazonbedrock", "vertex": "googlevertex", "vertexanthropic": "googlevertex",
-         "google": "googleaistudio", "claudeaws": "claudeonaws"}
+         "google": "googleaistudio", "claudeaws": "claudeonaws", "spacexai": "xai"}
 # OpenRouter upstream -> the direct route whose announced change can date its discount (decision 6 exception).
 DIRECT_OF = {"googleaistudio": "google_direct", "googlevertex": "google_vertex"}
 # Serving precision the provider's own material states for a model, checked by hand on 10/26 (decision 5, analysis
@@ -84,6 +86,8 @@ DOC_UNCLEAR = {("deepseek-v4.1-flash", "fireworks"): "체크포인트 설명만"
                ("glm-5.2", "cloudflare"): "혼합 형식: 생성 INT4 · 입력 처리 FP8"}
 # A note the review attached to one row (decision 7: Particle's peak prices are in its documents, not in the listing).
 DOC_NOTE = {("deepseek-v4.1-flash", "vercel_ai_gateway", "particle"): "피크 요금은 공급사 문서에만 있음 · 가격 확인 필요"}
+# Azure retail meters priced for one deployment; LETSUR has not said which Azure deployment it uses (2026-10-28).
+SCOPE_NOTE = {"Global (Gl)": "글로벌 배포 기준(렛서 배포 방식 미확인)"}
 SUSPECT = ("parser_artifact", "csv_raw_mismatch", "parser_fingerprint_mismatch")  # engine gaps: the raw did not confirm the value
 WEEKDAY_KO = "월화수목금토일"
 WEEKDAY_ISO = {"mon": 1, "tue": 2, "wed": 3, "thu": 4, "fri": 5, "sat": 6, "sun": 7}
@@ -197,6 +201,25 @@ def latest_run(root: Path, report: dict | None) -> Path | None:
     runs = sorted(path for path in folder.iterdir()
                   if path.is_dir() and (path / "sources.csv").exists() and (report is None or path.name in processed))
     return runs[-1] if runs else None
+
+
+def observed_models(root: Path, report: dict | None) -> list[str]:
+    """Every model the newest processed core run observed, with or without a change card (2026-10-28: a model starts with
+    baselines and no events, yet the 모델별 가격 list must have it). Empty when no run can be read: the page then keeps the
+    models with cards."""
+    run_dir = latest_run(root, report)
+    if run_dir is None:
+        return []
+    try:
+        run = evidence.load_run(run_dir)
+        if run["kind"] != "core":
+            return []
+        return sorted({obs["model_id"] for obs in evidence.core_observations(run, Catalog())[0] if obs.get("model_id")})
+    except evidence.RunRejected:
+        return []
+    except Exception:  # the page without the extra models beats a failure page
+        traceback.print_exc()
+        return []
 
 
 def unknown_values(run: dict) -> dict:
@@ -393,6 +416,8 @@ def place(row: dict) -> None:
             row["why"].append(f"조건 맞추기 전 (region_group {c['region_group']})")
         if c.get("billing_channel"):
             row["labels"].append(f"표기 {c['billing_channel']}")
+        if c.get("meter_scope"):
+            row["labels"].append(SCOPE_NOTE.get(c["meter_scope"], f"표기 {c['meter_scope']}"))
     for key in sorted(set(c) - QUIET):
         row["why"].append(f"조건 맞추기 전 ({key} {c[key]})")
 
@@ -470,9 +495,11 @@ def exclusions(row: dict, peaks: dict) -> None:
     if row["status"] in STATUS and STATUS[row["status"]][1]:
         why.append(f"OpenRouter 상태: {STATUS[row['status']][0]}, {STATUS[row['status']][1]}")
     elif row["status"] not in (None, 0) and row["route"] != "openrouter":
-        why.append(f"상태 {row['status']} (뜻 미확인)")
+        why.append(row.get("ends") or f"상태 {row['status']} (뜻 미확인)")
     elif row["status"] is None and "endpoint_status" in unknown:
         why.append("상태 미표기")
+    if row.get("ends") and row["ends"] not in why:  # a compared row still shows its stated end
+        row["notes"].append(row["ends"])
     if row.get("conflict"):
         why.append(row["conflict"])
     peak = peaks.get((row["model"], row["provider"])) if row["route"] == "vercel_ai_gateway" else row.get("peak")
@@ -518,6 +545,23 @@ def channel_notices(events: list[dict], models: set) -> list[dict]:
                     "year_guess": period.get("basis") == "derived_from_publication", "ended": event.get("period_state") == "ended",
                     "published": found["published"], "who": ROUTE_PUBLISHERS.get(event["route"], event["route"])})
     return out
+
+
+def endpoint_ends(events: list[dict], models: set, today: date) -> dict:
+    """(model, route, upstream) -> what the row says about the end date a Vercel endpoint listing states in deprecated_at
+    (route_change remove events with an endpoint_id, 2026-10-28). The field is not in Vercel's API documentation."""
+    out: dict = {}
+    for event in events:
+        day = str((event.get("dates") or {}).get("effective_from") or "")
+        if event.get("event_type") != "route_change" or "remove" not in (event.get("subtags") or []) or not event.get("endpoint_id") \
+                or event.get("model_id") not in models or not str(event.get("source_key") or "").startswith("vercel_endpoints") \
+                or not re.fullmatch(r"\d{4}-\d{2}-\d{2}", day):
+            continue
+        end = date.fromisoformat(day)
+        key = (event["model_id"], event.get("route"), norm(event["endpoint_id"]))
+        if key not in out or end < out[key]:
+            out[key] = end
+    return {key: f"{md(end)} {'종료 예정' if end >= today else '종료일 지남'}(Vercel API, 문서 미기재 필드)" for key, end in out.items()}
 
 
 def announced(row: dict, rows: list[dict], after: dict) -> dict | None:
@@ -685,10 +729,13 @@ def dropped(state: dict | None, run_id: str, run_obs: list[dict], statuses: list
 
 # ---- assembly ----------------------------------------------------------------------------------------------------------
 
-def assumed_route(model_id: str, routes: dict | None) -> tuple[str, str] | None:
-    """(route, endpoint) LETSUR is recorded to use for the model, or None (no record, or not offered)."""
-    records = [r for r in (routes or {}).get("records", []) if r.get("model_id") == model_id and r.get("route_id")]
-    return (records[0]["route_id"], records[0].get("endpoint_id") or "") if records else None
+RECORD_CHIP = {"settings": "렛서 설정", "observed": "호출 확인"}  # by the record's basis, as on the cards (build.py route_basis)
+
+
+def assumed_routes(model_id: str, routes: dict | None) -> list[tuple[str, str, str | None]]:
+    """(route, endpoint, basis) of every record that says LETSUR uses a route for the model; none when it has no record or is not offered."""
+    return [(r["route_id"], r.get("endpoint_id") or "", r.get("basis")) for r in (routes or {}).get("records", [])
+            if r.get("model_id") == model_id and r.get("route_id")]
 
 
 def is_assumed(row: dict, target: tuple[str, str] | None) -> bool:
@@ -699,6 +746,15 @@ def is_assumed(row: dict, target: tuple[str, str] | None) -> bool:
     if target[1]:
         return row["who"][1] == target[1]
     return row["route"] not in GATEWAYS or (bool(row["provider"]) and row["provider"] == norm(maker(row["model"])))
+
+
+def assumed_chip(row: dict, targets: list[tuple[str, str, str | None]], demo: bool) -> str:
+    """The chip of the first record whose route the row is (is_assumed), "" when none: the record's basis, else 가정 in a demo file,
+    else 사용 경로. Every record marks its own route, so gpt-6-astra's OpenAI direct row and its Azure row each say their own basis."""
+    for route, endpoint, basis in targets:
+        if is_assumed(row, (route, endpoint)):
+            return RECORD_CHIP.get(basis) or ("가정" if demo else "사용 경로")
+    return ""
 
 
 def group_name(precision: str, region: str, tier: str, band: str, subtypes: list[str]) -> str:
@@ -747,11 +803,11 @@ def ratio_text(prices: dict, base: dict) -> str:
     return "기본 가격 대비 " + " · ".join(f"{ITEM_KO[i]} {plain(r)}배" for i, r in ratios.items())
 
 
-def describe(row: dict, rows: list[dict], history: History, now: datetime, demo: bool) -> None:
+def describe(row: dict, rows: list[dict], history: History, now: datetime) -> None:
     """Note, chips, fill-only flag and 적용 기간 of one row."""
     notes, chips = [], []
     if row.get("assumed"):
-        chips.append(["가정" if demo else "사용 경로", "as"])
+        chips.append([row["assumed"], "as"])
     if row["why"] or row.get("gone"):  # listed under the table without a group title: say which conditions it carries
         notes.append(" · ".join(filter(None, (row["tier"] if row["tier"] != "Standard" else "", row["region"],
                                               f"입력 {row['band']} 초과" if row["band"] else ""))))
@@ -808,7 +864,7 @@ def serialize(row: dict, items: tuple, disc: bool) -> dict:
 
 
 def model_rows(model_id: str, current: list[dict], unknown: dict, extras: list[dict], peaks: dict, suspect: set,
-               failed: list[dict], gone: list[dict]) -> list[dict]:
+               failed: list[dict], gone: list[dict], ends: dict | None = None) -> list[dict]:
     listing = offers([o for o in current if o["model_id"] == model_id], unknown) + [r for r in failed if r["model"] == model_id]
     for row in listing:
         place(row)
@@ -819,6 +875,7 @@ def model_rows(model_id: str, current: list[dict], unknown: dict, extras: list[d
     rows = listing + inner
     for row in rows:
         precision_of(row)
+        row["ends"] = (ends or {}).get((row["model"], row["route"], row["provider"]), "")
     settle_precision(rows)
     for row in listing:
         exclusions(row, peaks)
@@ -894,20 +951,21 @@ def build_tables(root: Path, model_ids: list[str], events: list[dict], gaps: lis
     suspect = {g.get("after_observation_id") for g in gaps or [] if isinstance(g, dict) and g.get("kind") in SUSPECT} - {None, ""}
     extras, peaks, problems = vercel_extras(run, models)
     history, notices, today = History(state, events or []), channel_notices(events or [], models), date.fromisoformat(today_iso)
+    ends = endpoint_ends(events or [], models, today)
     now = run_time(run_dir.name)
     failed, gone = dropped(state, run_dir.name, run_obs, statuses, models, today)
     demo = bool((routes or {}).get("is_demo"))
     out = {}
     for model_id in sorted(models):
-        rows = model_rows(model_id, current, unknown, extras, peaks, suspect, failed, gone)
+        rows = model_rows(model_id, current, unknown, extras, peaks, suspect, failed, gone, ends)
         if not rows:
             continue
-        target = assumed_route(model_id, routes)
+        targets = assumed_routes(model_id, routes)
         for row in rows:
-            row["assumed"] = is_assumed(row, target)
+            row["assumed"] = assumed_chip(row, targets, demo)
             discount_cells(row, rows, ITEMS, notices, today)
         for row in rows:
-            describe(row, rows, history, now, demo)
+            describe(row, rows, history, now)
         items = tuple(i for i in ITEMS if any(r["prices"].get(i) is not None for r in rows)) or ITEMS
         compared = [r for r in rows if not r["why"] and not r.get("gone")]
         excluded = sorted((r for r in rows if r["why"] or r.get("gone")), key=row_order)

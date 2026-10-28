@@ -11,8 +11,10 @@ not make (headline, risk, suggestion text) stay empty, and the template's own ru
 compute the rest. LETSUR's route for each card, and for each model in MODELS, comes only
 from --internal-routes, a file of the routes LETSUR uses per model; without it, or when
 the file cannot be used, every card says the route is unconfirmed and no model gets one.
-Cards and models decided by a file with is_demo true are marked as assumed. MODELS is
-page data only for now: the template reads it in renderModels(), which nothing calls.
+A record may say its basis: settings (LETSUR's registered routes from its 9/23 QnA answer) or observed (the route one
+LETSUR API call on 2026-10-28 went through). A card whose route has a record takes that record's mark, any other card
+and MODELS the mark of all the model's records. A model with a record without basis is marked as assumed when the file
+has is_demo true. MODELS is page data only for now: the template reads it in renderModels(), which nothing calls.
 When events.json is missing or unreadable, or the build or the
 continuity step failed, a page is still written and says today's build failed, so
 yesterday's page never stays up as if it were current. Mapping rules: docs/dashboard.md.
@@ -54,6 +56,7 @@ GAP_KO = {
     "sub_provider": "채널 전체가 아니라 안쪽 제공자 한 곳의 할인 · 렛서가 어느 제공자로 연결되는지 확인",
     "account_actual_price": "렛서 계정·등급·지역의 실제 가격은 미확인 · 렛서 계정에서 확인",
     "shutdown_confirmed": "실제 호출 중단은 확인 안 됨 · 날짜가 지나면 다시 확인",
+    "undocumented_field": "종료일은 Vercel API 문서에 없는 필드(deprecated_at)에서 읽음 · Vercel 모델 페이지·changelog·문의로 확인",
     "scope": "모델 전체·endpoint·경로 중 무엇이 끝나는지 미확인 · 공지 원문에서 범위와 날짜 확인",
     "before": "같은 조건의 현재가가 하나로 정해지지 않음",
     "effective_from_or_rate": "적용일과 새 가격이 둘 다 있어야 확정",
@@ -81,7 +84,7 @@ UNIT_KO = {"1M tokens": "100만 토큰", "1000 tokens": "1,000 토큰"}
 CONDITION_KO = {"service_tier": "등급", "cache_read_multiplier": "캐시 읽기 배율", "context_length": "컨텍스트", "endpoint_tag": "엔드포인트",
                 "endpoint_provider": "제공자", "endpoint_model_slug": "모델 slug", "quantization": "정밀도", "endpoint_status": "상태",
                 "endpoint_discount": "엔드포인트 할인", "discount_application": "할인 적용", "price_basis": "가격 기준",
-                "region": "지역", "input_token_band": "입력 구간", "precision": "정밀도"}
+                "region": "지역", "input_token_band": "입력 구간", "precision": "정밀도", "meter_scope": "배포 방식"}
 # Condition values stay as the source wrote them; only tiers and regions get the dashboard's names (2026-10-27 decision 26-1).
 TIER_NAMES = {"standard": "Standard", "priority": "Priority", "ultrafast": "Ultrafast", "flex": "Flex", "batch": "Batch"}
 REGION_NAMES = {"us": "US", "eu": "EU"}
@@ -505,12 +508,32 @@ def mark_reverted(cards: list[dict], groups: dict[str, list[dict]], gone: set[st
             card["rv"], card["rn"] = back, len(priced)
 
 
+BASIS_MARK = {"settings": " (렛서 설정)", "observed": " (호출 확인)", "mixed": " (렛서 설정·호출 확인)", "demo": " (가정)"}
+COMPACT_MARK = {"settings": " 설정", "observed": " 호출 확인", "mixed": " 설정·호출 확인", "demo": " 가정"}  # inside a sentence
+
+
+def route_basis(model_id: str, routes: dict | None, route: str = "") -> str:
+    """Where the --internal-routes records come from, read for the model's records on `route` or, when it has none there,
+    for all of them: 'settings' (LETSUR's registered routes from its 9/23 QnA answer, question 2; LETSUR says their traffic
+    is not confirmed, 2026-10-28 박건 결정), 'observed' (the route one LETSUR API call on 2026-10-28 went through: the route
+    is in use, maybe not alone) or 'mixed' (both). 'demo' when a record of the model has no basis and the file is a demo
+    file, else ''; one such record keeps the whole model an assumption."""
+    records = [record for record in (routes or {}).get("records", []) if record["model_id"] == model_id]
+    bases = {record.get("basis") for record in records}
+    if records and bases <= {"settings", "observed"}:
+        bases = {record["basis"] for record in records if route and record["route_id"] == route} or bases
+        return next(iter(bases)) if len(bases) == 1 else "mixed"
+    return "demo" if (routes or {}).get("is_demo") else ""
+
+
 def relation(rep: dict, routes: dict | None) -> dict:
     """relKey, relShort and relDemo for the card's model and route from the --internal-routes file.
 
     A model with no record stays unconfirmed: no record does not mean LETSUR does not use it.
     A card with no route stays unconfirmed too: its source never said which route changed (2026-10-27 decision).
-    endpoint_id only adds detail when the route matches."""
+    endpoint_id only adds detail when the route matches. The mark after relShort is the basis of the record on the
+    card's route, else of all the model's records (route_basis); relSet and relObs are there for exactly settings and
+    exactly observed (a mix has neither: its mark says both)."""
     records = [record for record in (routes or {}).get("records", []) if record["model_id"] == rep.get("model_id")]
     if not records:
         return {"relKey": "unk", "relShort": "사용 경로 확인 필요", "relDemo": False}
@@ -524,7 +547,9 @@ def relation(rep: dict, routes: dict | None) -> dict:
         key, short = "other", f"모델 제공 중 : {', '.join(map(route_label, used))} 경로로 사용"
     else:
         key, short = "none", "미도입"
-    return {"relKey": key, "relShort": short + (" (가정)" if routes["is_demo"] else ""), "relDemo": routes["is_demo"]}
+    basis = route_basis(rep.get("model_id"), routes, route)
+    return {"relKey": key, "relShort": short + BASIS_MARK.get(basis, ""), "relDemo": basis == "demo",
+            **({"relSet": True} if basis == "settings" else {}), **({"relObs": True} if basis == "observed" else {})}
 
 
 def model_use(model_id: str, routes: dict | None) -> dict:
@@ -536,7 +561,7 @@ def model_use(model_id: str, routes: dict | None) -> dict:
     used = list(dict.fromkeys(record["route_id"] for record in records if record["route_id"]))
     endpoints = dict.fromkeys(record["endpoint_id"] for record in records if record["route_id"] and record.get("endpoint_id"))
     use = " · ".join([f"{', '.join(map(route_label, used))} 경로로 사용", *(f"endpoint {endpoint}" for endpoint in endpoints)]) if used else "미도입"
-    return {"use": use + (" (가정)" if routes["is_demo"] else "")}
+    return {"use": use + BASIS_MARK.get(route_basis(model_id, routes), "")}
 
 
 def undecided_release(event: dict) -> bool:
@@ -742,7 +767,14 @@ def unchanged_rows(event: dict, refs: list) -> list[dict]:
     return rows
 
 
-def eff_rule(t7: str | None, remove: bool, added: bool) -> tuple[str, tuple[str, ...]]:
+def upstreams(members: list[dict]) -> list[str]:
+    """The upstream endpoints a route removal ends (event endpoint_id, e.g. one Vercel provider's deprecated_at) when every
+    member names one; empty when a member is about the whole route."""
+    names = [str(event.get("endpoint_id") or "") for event in members]
+    return list(dict.fromkeys(names)) if all(names) else []
+
+
+def eff_rule(t7: str | None, remove: bool, added: bool, ends: list[str] = ()) -> tuple[str, tuple[str, ...]]:
     """The date a card is filed under, and its label."""
     if t7 == "한시 할인":
         return "할인 종료일", ("end_date", "period_end")
@@ -750,6 +782,8 @@ def eff_rule(t7: str | None, remove: bool, added: bool) -> tuple[str, tuple[str,
         return "제공일", ("route_added_date",)
     if t7 == "제공 종료":
         return "제공 종료일", ("effective_from",)
+    if remove and ends:
+        return f"{', '.join(ends)} 공급 종료일", ("effective_from",)
     if remove:
         return "경로 중단일", ("effective_from",)
     return "적용일", ("effective_from",)
@@ -784,11 +818,11 @@ def condition_label(subtags: list[str]) -> str:
     return " · ".join(f"{name} · {'/'.join(dict.fromkeys(labels))}" for name, labels in groups.items())
 
 
-def sub_label(t7, members, subtags, remove, added) -> str:
+def sub_label(t7, members, subtags, remove, added, ends=()) -> str:
     if t7 in CONDITIONED:
         return condition_label(subtags)
-    if t7 == "공급 경로 변경":
-        return "경로 중단" if remove else "경로 추가" if added else ""
+    if t7 == "공급 경로 변경":  # '중단' marks an end for the template (isAdd, dirOf, tierOf) and judge()
+        return f"공급 {len(ends)}곳 중단" if remove and ends else "경로 중단" if remove else "경로 추가" if added else ""
     if t7 == "한시 할인":
         states = {event.get("period_state") for event in members}
         return {"active": "진행 중", "ended": "종료"}.get(states.pop(), "") if len(states) == 1 else ""
@@ -814,9 +848,12 @@ def direction(deltas: list) -> str:
     return "변경"
 
 
-def summary_text(t7, members, eff, sub, q1, remove, added) -> str:
+def summary_text(t7, members, eff, sub, q1, remove, added, ends=(), route="") -> str:
     """List and headline text, made only of model, route, type and date facts."""
     when = md(eff) if eff else ""
+    if t7 == "공급 경로 변경" and remove and ends:  # one upstream of the route ends, not the route (2026-10-28)
+        who = " · ".join(filter(None, (ROUTE_PUBLISHERS.get(route, route), ", ".join(ends))))
+        return f"{who} 공급 {when} 종료 예정" if eff else f"{who} 공급 종료 예정 · 날짜 미확인"
     if t7 == "예정 변경":
         priced = [e for e in members if number(part(e, "after").get("amount")) is not None]
         word = direction([number(part(e, "change").get("delta")) for e in members])
@@ -944,7 +981,8 @@ def build_card(card_id: str, members: list[dict], sources: Sources, routes: dict
     t7 = T7.get(rep.get("event_type")) or ("공급 경로 변경" if q1 else None)
     subtags = list(dict.fromkeys(str(tag) for e in members for tag in e.get("subtags") or []))
     remove, added = "remove" in subtags, q1 or "add" in subtags
-    label, fields = eff_rule(t7, remove, added)
+    ends = upstreams(members) if remove else []
+    label, fields = eff_rule(t7, remove, added, ends)
     dated = sorted(filter(None, (member_eff(e, fields) for e in members)))
     eff, qual = dated[0] if dated else ("", "")
     ch = route_label(rep.get("route") or "")
@@ -972,11 +1010,11 @@ def build_card(card_id: str, members: list[dict], sources: Sources, routes: dict
             if (sid, json.dumps(text, ensure_ascii=False)) not in kept:
                 kept.add((sid, json.dumps(text, ensure_ascii=False)))
                 ev.append([sid, text])
-    sub = sub_label(t7, members, subtags, remove, added)
+    sub = sub_label(t7, members, subtags, remove, added, ends)
     pairs = dict.fromkeys((side["currency"], unit_ko(side.get("unit")))
                           for e in members for side in (part(e, "before"), part(e, "after")) if side.get("currency"))
     card = {"id": card_id, "t7": t7, "kind": T7.get(rep.get("event_type")) or "유형 미정", "m": rep.get("model_id") or "모델 표기 없음", "mid": rep.get("model_id") or "", "ch": ch,
-            "unit": " · ".join(f"{c} / {u}" if u else c for c, u in pairs), "sum": summary_text(t7, members, eff, sub, q1, remove, added),
+            "unit": " · ".join(f"{c} / {u}" if u else c for c, u in pairs), "sum": summary_text(t7, members, eff, sub, q1, remove, added, ends, rep.get("route") or ""),
             **relation(rep, routes), "act": "pending", "real": True,
             "chgHead": table_head(t7, members), "chg": [row["row"] for row in rows], "cond": compare_line(members, rep, ch, t7), "ev": ev}
     phrase = next((part(e, "dates")["end_phrase"] for e in members if part(e, "dates").get("end_phrase")), None) if t7 == "한시 할인" else None
@@ -1012,12 +1050,14 @@ def build_card(card_id: str, members: list[dict], sources: Sources, routes: dict
     return card
 
 
-def trend(cards: list[dict], groups: dict[str, list[dict]], state: dict | None, gaps: list) -> dict:
-    """TREND for each model with events: tabs are price condition sets, lines are routes and their gateway endpoints, measures are billing items."""
+def trend(cards: list[dict], groups: dict[str, list[dict]], state: dict | None, gaps: list, models: tuple | list = ()) -> dict:
+    """TREND for each model with events and for each of `models` (the newest run's, 2026-10-28), cards or not: tabs are price
+    condition sets, lines are routes and their gateway endpoints, measures are billing items. A model with no drawable
+    observation has no entry."""
     series = state.get("series") if isinstance(state, dict) and isinstance(state.get("series"), dict) else None
     suspect = {gap.get("after_observation_id") for gap in gaps if isinstance(gap, dict) and gap.get("kind") in SUSPECT_GAPS} - {None, ""}
     out = {}
-    for model_id in dict.fromkeys(card["mid"] for card in cards if card["mid"]):
+    for model_id in dict.fromkeys([*(card["mid"] for card in cards if card["mid"]), *models]):
         entry = model_trend(model_id, [card for card in cards if card["mid"] == model_id], groups, series, suspect)
         if entry:
             out[model_id] = entry
@@ -1150,7 +1190,7 @@ def model_trend(model_id: str, cards: list[dict], groups: dict[str, list[dict]],
     notes = sorted([card["eff"], f"{card.get('effLabel') or '적용일'} · {card['ch']}", card["id"]]
                    for card in cards if card["id"] in memo and card.get("eff"))
     entry = {"name": model_id, "unit": " · ".join(dict.fromkeys(f"USD / {unit_ko(tab[1])}" if tab[1] else "USD" for tab in tabs)),
-             "real": True, "note": " ".join(facts), "badge": [f"변화 {len(cards)}건", ""],
+             "real": True, "note": " ".join(facts), "badge": [f"변화 {len(cards)}건" if cards else "변화 없음", ""],
              "measures": [html.escape(MEASURE_KO.get(item, item)) for item in measures], "notes": notes}
     full = tab_conditions(list(tabs))
     entry["conds"] = {names[tab]: full[tab] for tab in tabs}  # tab name -> its conditions in the source's words
@@ -1365,7 +1405,7 @@ def internal_routes(path: Path) -> tuple[dict | None, str]:
 
 def record_problem(record) -> str:
     """Why one --internal-routes record cannot be used, or "". route_id must be there (null: the model is not
-    offered); endpoint_id may be left out."""
+    offered); endpoint_id may be left out, and so may basis ('settings' or 'observed', see route_basis)."""
     if not isinstance(record, dict) or not isinstance(record.get("model_id"), str) or not record["model_id"]:
         return "model_id 없음"
     if "route_id" not in record:
@@ -1373,6 +1413,8 @@ def record_problem(record) -> str:
     for key in ("route_id", "endpoint_id"):
         if record.get(key) is not None and not (isinstance(record[key], str) and record[key]):
             return f"{key}가 문자열이나 null이 아님"
+    if record.get("basis") not in (None, "settings", "observed"):
+        return "basis가 settings·observed나 null이 아님"
     return ""
 
 
@@ -1512,7 +1554,6 @@ def link_promotions(cards: list[dict], groups: dict[str, list[dict]], tables: di
         pairs = [(m, changes[m["direct"]]) for m in matches
                  if m["direct"] in changes and changes[m["direct"]]["eff"] == m["start"] and m["route"] in sales]
         used = {record["route_id"] for record in (routes or {}).get("records", []) if record["model_id"] == model_id}
-        mark = " 가정" if (routes or {}).get("is_demo") else ""
         for gateway in dict.fromkeys(m["route"] for m, _ in pairs):
             change = next(c for m, c in pairs if m["route"] == gateway)
             for sale in sales[gateway]:
@@ -1523,6 +1564,7 @@ def link_promotions(cards: list[dict], groups: dict[str, list[dict]], tables: di
             change["link"] = [sales[gateway][0]["id"], sales[gateway][0]["sum"]]
             if gateway in used:
                 end = sales[gateway][0].get("eff") or (date.fromisoformat(change["eff"]) - timedelta(days=1)).isoformat()
+                mark = COMPACT_MARK.get(route_basis(model_id, routes, gateway), "")
                 change["risk"] = (f"렛서{mark} 경로({ROUTE_PUBLISHERS.get(gateway, gateway)})도 {md(end)}에 할인이 끝나 "
                                   f"{md(change['eff'])}부터 같은 가격이 될 수 있음(추정)")
         for gateway in dict.fromkeys(m["route"] for m, _ in pairs if m["route"] in used):
@@ -1573,11 +1615,13 @@ def collect(root: Path, today: str, routes: dict | None) -> tuple[dict, str]:
     cards = [build_card(cid, groups[cid], sources, routes, feed) for cid in order]
     mark_volatile(cards)
     mark_reverted(cards, groups, reverted([e for e in doc["events"] if isinstance(e, dict)]))
+    # 모델별 가격 화면은 변화 카드가 없어도 최신 수집 run이 관측한 모델을 모두 보인다(2026-10-28): 새 모델은 기준선만 있고 이벤트가 없다
+    shown = list(dict.fromkeys([*(card["mid"] for card in cards if card["mid"]), *compare.observed_models(root, report)]))
     data = {"TODAY": today, "SRC": sources.entries(), "ID": {cid: [e.get("event_id") for e in groups[cid]] for cid in order},
-            "EVENTS": cards, "MODELS": models(cards, routes), "TREND": trend(cards, groups, state, doc.get("gaps") or []),
+            "EVENTS": cards, "MODELS": models(cards, routes), "TREND": trend(cards, groups, state, doc.get("gaps") or [], shown),
             "COLLECTED": collected(report), "HEALTH": health(root, report, state, today)}
-    # 공급사 비교 표 per LLM model with a card (compare.py; reads the newest processed run under <root>/runs)
-    data["COMPARE"] = compare.tables(root, [card["mid"] for card in cards], [e for e in doc["events"] if isinstance(e, dict)],
+    # 공급사 비교 표 per LLM model of `shown` (compare.py; reads the newest processed run under <root>/runs)
+    data["COMPARE"] = compare.tables(root, shown, [e for e in doc["events"] if isinstance(e, dict)],
                                      doc.get("gaps") or [], state, report, routes, today)
     link_promotions(cards, groups, data["COMPARE"], routes)
     data["JUDGED"] = judgements(data, groups)  # not a page slot: main writes it to cards.json

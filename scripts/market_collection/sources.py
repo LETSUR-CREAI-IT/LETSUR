@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from scripts.market_collection.core import SourceSpec, CollectionError
-from scripts.market_collection.models import (GOOGLE_LLM_MODEL, ASTRA_MODEL, FABLE_MODEL, STANDARD_LLM_MODELS, BROKER_CATALOG_MODELS, _AWS_OPENAI, _AWS_ANTHROPIC, _AZURE_MODELS, SUNBURST_MODEL, FLARE_MODEL, SEEDANCE_MODEL, MODEL_MODALITIES, IDEOGRAM_MODEL, VEO_MODELS, VEO_VERCEL_IDS)
+from scripts.market_collection.models import (GOOGLE_LLM_MODEL, ASTRA_MODEL, FABLE_MODEL, STANDARD_LLM_MODELS, BROKER_CATALOG_MODELS, BROKER_API_MODELS, _AWS_OPENAI, _AWS_ANTHROPIC, _AZURE_MODELS, _AZURE_RETAIL_MODELS, SUNBURST_MODEL, FLARE_MODEL, SEEDANCE_MODEL, MODEL_MODALITIES)
 
 def _targets() -> dict[str, tuple[str, str, str, str, str]]:
     targets = {
@@ -61,13 +61,14 @@ def llm_endpoint_source_specs() -> list[SourceSpec]:
     gateway_ids = [(GOOGLE_LLM_MODEL, "google/gemini-3.8-flash", "google/gemini-3.8-flash")]
     gateway_ids.extend((model, target[4], target[4]) for model, target in _targets().items())
     gateway_ids.extend((model, openrouter_id, vercel_id) for model, _, _, openrouter_id, vercel_id in BROKER_CATALOG_MODELS)
+    gateway_ids.extend((model, openrouter_id, vercel_id) for model, _, openrouter_id, vercel_id in BROKER_API_MODELS)
     specs: list[SourceSpec] = []
     for model, openrouter_id, vercel_id in gateway_ids:
         key = _key(model)
-        specs.extend((
-            SourceSpec(f"openrouter_llm_endpoints_{key}", "llm", model, "openrouter", "text_generation", f"https://openrouter.ai/api/v1/models/{openrouter_id}/endpoints", "openrouter_endpoints_llm"),
-            SourceSpec(f"vercel_llm_endpoints_{key}", "llm", model, "vercel_ai_gateway", "text_generation", f"https://ai-gateway.vercel.sh/v1/models/{vercel_id}/endpoints", "vercel_endpoints_llm"),
-        ))
+        if openrouter_id:  # None: the gateway does not list the model
+            specs.append(SourceSpec(f"openrouter_llm_endpoints_{key}", "llm", model, "openrouter", "text_generation", f"https://openrouter.ai/api/v1/models/{openrouter_id}/endpoints", "openrouter_endpoints_llm"))
+        if vercel_id:
+            specs.append(SourceSpec(f"vercel_llm_endpoints_{key}", "llm", model, "vercel_ai_gateway", "text_generation", f"https://ai-gateway.vercel.sh/v1/models/{vercel_id}/endpoints", "vercel_endpoints_llm"))
     return specs
 
 
@@ -102,7 +103,18 @@ def cloud_source_specs() -> list[SourceSpec]:
 _AZURE_IMAGE_PRICING = "https://prices.azure.com/api/retail/prices?$filter=contains(productName,'OpenAI')%20and%20contains(meterName,'2.5')%20and%20armRegionName%20eq%20'koreacentral'"
 
 
+# One fixed page of the Foundry Models GPT-6 and GPT-5 products in koreacentral, shared by the seven GPT specs.
+_AZURE_GPT_PRICING = "https://prices.azure.com/api/retail/prices?$filter=serviceName%20eq%20'Foundry%20Models'%20and%20armRegionName%20eq%20'koreacentral'%20and%20(productName%20eq%20'Azure%20OpenAI%20GPT6'%20or%20productName%20eq%20'Azure%20OpenAI%20GPT5')"
+
+
+def azure_retail_llm_source_specs() -> list[SourceSpec]:
+    # Since 2026-10-28 these replace the catalog-page specs azure_<model> of the same models (appended: the registry is additive).
+    return [SourceSpec(f"azure_retail_{_key(model)}", "llm", model, "azure_foundry", "text_generation", _AZURE_GPT_PRICING, "azure_llm_retail")
+            for model in _AZURE_RETAIL_MODELS]
+
+
 def image_source_specs() -> list[SourceSpec]:
+    # Ideogram 4.5 is not collected: LETSUR's model list has no Ideogram (2026-10-28).
     sources = (
         ("openai_sunburst", "openai", "https://developers.openai.com/api/docs/models/gpt-image-2.5-sunburst.md", "openai"),
         ("fal_sunburst_t2i", "fal", "https://fal.ai/models/openai/gpt-image-2.5/sunburst/text-to-image", "fal_task"),
@@ -110,7 +122,7 @@ def image_source_specs() -> list[SourceSpec]:
         ("openrouter_sunburst", "openrouter", "https://openrouter.ai/openai/gpt-image-2.5-sunburst-20260908", "openrouter"),
         ("vercel_sunburst", "vercel", "https://vercel.com/ai-gateway/models/gpt-image-2.5-sunburst", "vercel"),
     )
-    return [SourceSpec(key, "image", SUNBURST_MODEL, route, "text-to-image", url, parser) for key, route, url, parser in sources] + flare_source_specs() + ideogram_source_specs() + [
+    return [SourceSpec(key, "image", SUNBURST_MODEL, route, "text-to-image", url, parser) for key, route, url, parser in sources] + flare_source_specs() + [
         SourceSpec("azure_" + model.split("-")[-1], "image", model, "azure_foundry", "text-to-image", _AZURE_IMAGE_PRICING, "azure_image_retail")
         for model in (SUNBURST_MODEL, FLARE_MODEL)
     ]
@@ -127,33 +139,19 @@ def flare_source_specs() -> list[SourceSpec]:
             for key, route, url, parser in sources]
 
 
-def ideogram_source_specs() -> list[SourceSpec]:
-    specs = []
-    for suffix, task in (("t2i", "text-to-image"), ("edit", "image-edit"), ("precise_edit", "precise-edit")):
-        specs.append(SourceSpec("ideogram_45_" + suffix, "image", IDEOGRAM_MODEL, "ideogram_direct", task,
-                                "https://ideogram.ai/api/usage-pricing/catalog", "ideogram_catalog"))
-        specs.append(SourceSpec("fal_ideogram_45_" + suffix, "image", IDEOGRAM_MODEL, "fal", task,
-                                "https://fal.ai/models/ideogram/v4.5" + ("" if task == "text-to-image" else "/edit"), "ideogram_fal"))
-    return specs
-
-
 def video_source_specs() -> list[SourceSpec]:
     specs = [
         SourceSpec("fal_seedance_25_t2v", "video", SEEDANCE_MODEL, "fal", "text-to-video", "https://fal.ai/models/bytedance/seedance-2.5/text-to-video", "fal"),
         SourceSpec("byteplus_seedance_25_t2v", "video", SEEDANCE_MODEL, "BytePlus ModelArk", "text-to-video", "https://docs.byteplus.com/id/docs/modelark/model-pricing?redirect=1", "byteplus_pricing"),
         SourceSpec("byteplus_seedance_promotion_rules", "video", SEEDANCE_MODEL, "BytePlus ModelArk", "text-to-video", "https://docs.byteplus.com/en/docs/modelark/seedance-2-0-mini-fast-limited-time-discount?redirect=1", "byteplus_campaign"),
     ]
-    # Google ended the Gemini API Veo 3.1 preview on 2026-10-22, so Veo has no google_direct source.
-    for model, provider_id in zip(VEO_MODELS, VEO_VERCEL_IDS):
-        specs.append(SourceSpec("vercel_" + _key(model), "video", model, "vercel_ai_gateway", "text-to-video", "https://vercel.com/ai-gateway/models/" + provider_id, "vercel_video"))
-    for model, endpoint in zip(VEO_MODELS, ("fal-ai/veo3.1", "fal-ai/veo3.1/fast", "fal-ai/veo3.1/lite")):
-        specs.append(SourceSpec("fal_" + _key(model), "video", model, "fal", "text-to-video", "https://fal.ai/models/" + endpoint, "fal_veo"))
+    # Veo 3.1 is not collected: Google ended its Gemini API preview on 2026-10-22, and LETSUR's model list has no Veo (2026-10-28).
     specs.append(SourceSpec("vercel_seedance_25_t2v", "video", SEEDANCE_MODEL, "vercel_ai_gateway", "text-to-video", "https://vercel.com/ai-gateway/models/seedance-2.5", "vercel_video"))
     return specs
 
 
 def source_specs() -> list[SourceSpec]:
-    specs = llm_source_specs() + image_source_specs() + video_source_specs() + image25_api_source_specs() + image25_openrouter_endpoint_source_specs() + image25_supplement_source_specs() + llm_endpoint_source_specs()
+    specs = llm_source_specs() + image_source_specs() + video_source_specs() + image25_api_source_specs() + image25_openrouter_endpoint_source_specs() + image25_supplement_source_specs() + llm_endpoint_source_specs() + azure_retail_llm_source_specs()
     for spec in specs:
         if MODEL_MODALITIES.get(spec.model_id) != spec.modality:
             raise CollectionError(f"source model/modality mismatch: {spec.source_key}")

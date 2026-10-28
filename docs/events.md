@@ -6,9 +6,9 @@ core run과 signals run을 그대로 읽어 7종 이벤트와 상세페이지용
 
 2026-10-16 registry·live run 38864687828 기준(`python -m scripts.market_collection.events catalog`). 숫자는 단위가 다르다.
 
-- 정규 모델 ID 25개(LLM 18, 이미지 3, 영상 4).
-- core SourceSpec 158개(기존 125 + LLM 게이트웨이 endpoint 36 − 2026-10-22에 퇴역한 Google 직접 Veo 3.1 3, 아래 '비교 불가 진단과 endpoint 조건 보충'): 모델 하나에 하나씩 연결된 수집 단위이며 모두 가격 출처는 아니다. 역할은 pricing 81, api 49, docs 14, catalog_listing 13, notice 1. live run에서 가격 행을 낸 것은 105개이고, 가격 행이 없는 20개는 모두 GPT Image 2.5 보충 문서·API 계약 출처(조건·계약 확인용)다.
-- signals 출처 22개: 공지/블로그/tracker feed 4개 + 모델별 OpenRouter endpoints API 18개(가격 CSV가 아니라 `pricing.discount`·`expiration_date`를 읽는 신호 입력). catalog의 모델×출처 연결은 2026-10-17 `events catalog` CLI 재계산으로 179개 = core SourceSpec 161 + signals endpoint 18이며 feed 4개는 모델에 매핑되지 않아 제외된다(이전 기록: 2026-10-16 시점 core 125 기준 143개 = 125 + 18). 2026-10-22 Google 직접 Veo 3.1 3개 퇴역 뒤 재계산은 176개 = core 158 + signals endpoint 18이다.
+- 정규 모델 ID 55개(LLM 52, 이미지 2, 영상 1). 2026-10-28에 렛서가 OpenRouter·Vercel로만 쓰는 LLM 34개가 더해졌다(21개에서).
+- core SourceSpec 208개(기존 125 + LLM 게이트웨이 endpoint 36 − 2026-10-22에 퇴역한 Google 직접 Veo 3.1 3 − 2026-10-28에 퇴역한 Veo 3.1 fal·Vercel 6과 Ideogram 4.5 6 + 같은 날 게이트웨이 전용 LLM 34개의 endpoint 62, 아래 '비교 불가 진단과 endpoint 조건 보충'): 모델 하나에 하나씩 연결된 수집 단위이며 모두 가격 출처는 아니다. 역할은 pricing 65, api 115, docs 14, catalog_listing 13, notice 1(2026-10-28 Azure GPT 7개를 카탈로그 페이지에서 retail API로 바꿔 pricing 72·api 46에서 바뀌었고, 같은 날 endpoint 62개로 api 53에서 115가 됨). 2026-10-28 로컬 live run에서 가격 행을 낸 것은 188개이고, 가격 행이 없는 20개는 모두 GPT Image 2.5 보충 문서·API 계약 출처(조건·계약 확인용)다.
+- signals 출처 102개(2026-10-28 전 22개): 공지/블로그/tracker feed 4개 + 모델별 OpenRouter endpoints API 49개(전 18개) + Vercel endpoints API 49개(가격 CSV가 아니라 `pricing.discount`·`expiration_date`·`deprecated_at`을 읽는 신호 입력). catalog의 모델×출처 연결은 2026-10-17 `events catalog` CLI 재계산으로 179개 = core SourceSpec 161 + signals endpoint 18이며 feed 4개는 모델에 매핑되지 않아 제외된다(이전 기록: 2026-10-16 시점 core 125 기준 143개 = 125 + 18). 2026-10-22 Google 직접 Veo 3.1 3개 퇴역 뒤 재계산은 176개 = core 158 + signals endpoint 18이고, 2026-10-28 Veo 3.1·Ideogram 4.5 12개 퇴역 뒤는 164개 = core 146 + signals endpoint 18, 같은 날 게이트웨이 전용 LLM 34개를 더한 뒤는 226개 = core 208 + signals endpoint 18이다(이때 새 34개 모델에는 signals endpoint 출처가 없었다). 2026-10-28 Vercel `deprecated_at` 반영 뒤 signals 출처는 102개 = feed 4 + OpenRouter endpoints 49(34개 중 OpenRouter id가 있는 31개를 더함) + Vercel endpoints 49(새 parser `vercel_endpoints`, [external-signals.md](external-signals.md))이고, catalog 연결은 306개 = core 208 + signals endpoint 98(OpenRouter 49는 route `openrouter`, Vercel 49는 route `vercel_ai_gateway`, 모두 channel_official)이다.
 - 가격 행 478개(run 1건), 서로 다른 URL 수와 무관하다.
 
 모델군별 읽는 경로(가격 = core 가격 행, 보충 = 조건·계약 확인):
@@ -16,19 +16,18 @@ core run과 signals run을 그대로 읽어 7종 이벤트와 상세페이지용
 | 모델군 | 정규 모델 ID | 가격을 읽는 경로 | 비고 |
 |---|---|---|---|
 | Gemini LLM 1 | `gemini-3.8-flash` | Google 직접, Vertex, Azure Databricks, OpenRouter, Vercel | Bedrock·Azure Foundry 없음 |
-| OpenAI LLM 7 | `gpt-6-astra`, `gpt-6-sol`, `gpt-6.1-sol`, `gpt-6-luna`, `gpt-5.6-sol`, `gpt-5.6-terra`, `gpt-5.6-luna` | OpenAI 직접, AWS Bedrock, Azure Foundry, OpenRouter, Vercel | |
+| OpenAI LLM 7 | `gpt-6-astra`, `gpt-6-sol`, `gpt-6.1-sol`, `gpt-6-luna`, `gpt-5.6-sol`, `gpt-5.6-terra`, `gpt-5.6-luna` | OpenAI 직접, AWS Bedrock, Azure Foundry, OpenRouter, Vercel | Azure Foundry는 2026-10-28부터 retail 가격 API의 Global Standard 짧은 컨텍스트 미터(렛서 배포 방식 미확인) |
 | Anthropic LLM 4 | `claude-fable-5-1`, `claude-opus-5-5`, `claude-sonnet-5-5`, `claude-haiku-4-5` | Anthropic 직접, AWS Bedrock, Azure Foundry, OpenRouter, Vercel | 명시 cache 배율 각주는 Fable 5.1·Opus 5.5만 추출 |
 | 카탈로그 목록형 LLM 6 | `claude-sonnet-5`(Anthropic 직접·OpenRouter·Vercel), `deepseek-v4-pro`, `deepseek-v4.1-flash`, `glm-5.2`, `glm-5.3-flash`, `kimi-k3`(OpenRouter·Vercel) | 각 경로 카탈로그/모델 페이지 | 가격 행은 있으나(input·output 중심, Sonnet 5는 cache 포함) 조건이 `model_page_rate` 수준이라 직접 비교 불가인 경우가 많음. 제조사 직접 가격표(DeepSeek·Z.ai·Moonshot)는 없음 |
+| 게이트웨이 전용 LLM 34 (2026-10-28) | DeepSeek 4, `gemini-2.5-flash-lite`, GLM 5, Grok 3(xAI), Kimi 5, MiniMax 5, Muse 3(Meta), Qwen 8(Alibaba). 목록은 [market-collection.md](market-collection.md)의 '구성과 출처 확장' | OpenRouter·Vercel endpoint API만(OpenRouter 31, Vercel 31) | 모델 페이지 사양 없음. `muse-wonder-1.0`·`qwen3.8-max`·`qwen3.5-plus`는 Vercel만, `grok-4.20`·`kimi-k2-thinking`·`qwen3-coder-flash`는 OpenRouter만 |
 | 이미지 | `gpt-image-2.5-sunburst`, `gpt-image-2.5-flare`(OpenAI) | OpenAI·fal·OpenRouter·Vercel 가격 페이지, Azure Foundry retail 가격 API, OpenRouter endpoints | 보충: OpenAI 가이드·generate API, Azure how-to·리전, fal·OpenRouter·Vercel 문서/API(가격 행 없음) |
-| | `ideogram-4.5`(Ideogram) | Ideogram 직접 API 카탈로그(t2i, edit, precise-edit), fal 가격 | |
 | 영상 | `seedance-2.5`(ByteDance) | BytePlus ModelArk 가격 + 캠페인 공지, fal, Vercel | |
-| | `veo-3.1-standard`, `veo-3.1-fast`, `veo-3.1-lite`(Google) | fal, Vercel | Google 직접 경로는 2026-10-22 Gemini API Veo 3.1 preview 종료로 수집에서 뺌 |
 
 - 가격 경로: 각 출처 parser가 가격·조건 행(CSV 3종)과 원문 raw를 run으로 저장한다. 엔진은 같은 조건끼리만 이전 관측과 비교한다(위 "신뢰 판단").
 - 공지 경로(signals): OpenAI news RSS, Vercel changelog Atom, Simon Willison blog Atom(비공식), modelpricewatch feed(비공식 tracker), 모델별 OpenRouter endpoints API를 읽는다. 문장에서 모델 하나가 특정되고 지원 문형일 때만 typed claim이 되고, 아니면 candidate와 gap이다.
 - 판정: `confirmed`(공식 근거가 조건·권한 범위에 맞고 충돌 없음), `candidate`(비공식이거나 검증 못 한 부분이 있음), `conflicted`(등록 출처 값이 서로 다름).
 - 이벤트는 `events.json`에 7종 공통 필드로 담기고, 상세 화면 전달 대상은 아래 "이벤트 상세 필드"다. 현재 공급사 순위·추천, confidence 점수, impact 자동 계산, 알림, UI, Slack은 없다.
-- 자동 지원 한계: 조건을 알 수 없는 행(예: OpenRouter·Vercel LLM, fal, Ideogram direct, Azure Foundry)은 비교 불가로 남고, 위 표 밖 문형은 후보/gap이다. X/Threads 자동 수집은 없다. 실제 live로 확인된 유형과 합성 fixture 검증은 "실제 자동 검출 범위"에서 구분한다.
+- 자동 지원 한계: 조건을 알 수 없는 행(예: OpenRouter·Vercel LLM, fal, Azure Foundry 이미지)은 비교 불가로 남고, 위 표 밖 문형은 후보/gap이다. X/Threads 자동 수집은 없다. 실제 live로 확인된 유형과 합성 fixture 검증은 "실제 자동 검출 범위"에서 구분한다.
 
 ## 비교 불가 진단과 endpoint 조건 보충 (2026-10-17, 로컬 검증·미배포)
 
@@ -43,10 +42,11 @@ core run과 signals run을 그대로 읽어 7종 이벤트와 상세페이지용
   - 나머지 등록 13개 모델(Claude 5종, `gemini-3.8-flash`, GPT 7종)은 endpoint 가격 행을 계속 수집하지만 quantization 미보고 등 조건 부족으로 모두 비교 불가로 남는다(비교 가능 0행). 이는 "실제 호출 가능·원가·절감액"을 뜻하지 않으며 조건이 문서로 확정된 행만 비교 가능하다는 뜻이다.
   - 이 271행은 새 비교 대상이지 기존 unknown이 풀린 것이 아니다(대표 가격 72행의 upstream 미확인은 그대로).
   - 엔진 단위: 같은 입력으로 events 빌드 시 신규 endpoint는 첫 관측 baseline 271(series)이고 price_change는 0이다. not_comparable 항목은 run3 단독 178(원문 보고서의 누적 run 설명과 달리 측정으로는 `disputed_claim` 5행이 엔진 대상 밖이어서 행 단위 183과 5 차이: 174 published + 4 future = 178) → 신규 반영 1,470(기존 178 + endpoint 1,292).
+- 게이트웨이 전용 LLM 34개(2026-10-28): 같은 두 endpoint API의 사양 62개(OpenRouter 31, Vercel 31)를 기존 parser로 더했다. 기존 146개 출처의 parser fingerprint는 바뀌지 않았다. 로컬 live run(2026-10-28 08:47Z, 208개 모두 ok)의 새 출처 가격 행 1,138개를 17:05 KST 상태에 이어 빌드하면 baseline 363(24개 출처, 17개 모델)과 not_comparable 775이고, 새 출처의 price_change·gap은 0이다. 비교 불가 사유는 quantization 683, 할인 적용 89, endpoint_status 60 순이다(한 행에 여러 사유). 같은 빌드의 새 이벤트 16건은 모두 기존 4개 모델(`deepseek-v4.1-flash`, `glm-5.2`, `glm-5.3-flash`, `kimi-k3`)의 OpenRouter endpoint 가격이 08:05Z run 뒤 실제로 바뀐 것이다.
 - 남은 공백: 캐시 쓰기 TTL(문서 미정의), Vercel region/tier/peak 적용 범위(문서 미정의), `price_missing` 43(미공개), 직접 공급자 쪽 미확인 조건은 이 변경으로 바뀐 것이 없다. 이 항목들은 가정하지 않고 `unknown`으로 남긴다. 신규 endpoint source는 가격 변화 이벤트 규칙을 바꾸지 않았고 새 series의 첫 관측은 변경으로 세지 않는다.
 - 원인군별 남은 비교 불가(행, 2026-10-17 점검): Ideogram direct 22(카탈로그 `snapshot_at`이 `effective_at`보다 앞서 적용 관계 미확정, 문서 기본값은 generate에만 있음), fal Ideogram 8(설명과 schema enum 충돌 보존), fal Sunburst/Flare 품질 12(schema 기본값 high, 토큰 단가의 품질 독립 여부 미확인), Azure 이미지 10(배포 자격 미확인), fal Veo 16(`status: unlisted` 의미 미정의), Bedrock Anthropic 8(공개 가격 JSON은 모델·단위·tier 없이 불투명한 rateCode만 담고 의미는 가격 페이지 마크업에만 있다. 게다가 JSON 본문이 `Accept-Encoding: identity` 요청에도 gzip 바이트로 오므로 안전한 압축 해제와 두 문서 join 설계가 필요해 이번에는 등록하지 않았다), Databricks 2(DBU 단위, $/DBU 미확정), Azure LLM 16(공개 retail 미터는 있으나 코드 약어 의미 미정의, Claude 8행은 미터 없음), Google cache_storage 8(USD/토큰·시간 단위가 `UNIT_SCALE`에 없음, 가격 부재가 아님). 제조사 조건을 게이트웨이로 옮기지 않았고 추정 기본값은 넣지 않았다.
 - 코드 검수 시점 차이: Fable의 최종 사본 검수(APPROVE)는 이 항목 직전 사본 기준이고, 그가 비차단으로 지적한 Vercel `vertexAnthropic`이 provider 이름 완전 일치 때문에 non-tier `standard`로 단정되는 문제를 게시 전에 접두 일치(openai·azure·google·vertex·spacexai·xai 계열)로 좁혀 unknown 처리했다. 이 1건은 Fable 재검수를 거치지 않았고 targeted+전체 pytest와 같은 보존 raw 재파싱(비교 가능 271행 불변)으로만 확인했다. 문서가 비지원이라고 명시한 공급자의 `standard` stated는 유지한다.
-- 문의 시 필요한 정보 목록(발송하지 않음): Ideogram — 카탈로그 `snapshot_at`과 `effective_at`의 관계, edit 계열 기본값. fal — Sunburst/Flare 토큰 단가의 quality 독립 여부, Veo `status: unlisted` 의미. Databricks — $/DBU(plan·region별), Gemini 3.8 Flash 가격 위치. Azure — GPT 미터 코드(ShortCo/LongCo, Std/Flex/PP, Gl/DZ 등) 의미와 배포 자격.
+- 문의 시 필요한 정보 목록(발송하지 않음): fal — Sunburst/Flare 토큰 단가의 quality 독립 여부. Databricks — $/DBU(plan·region별), Gemini 3.8 Flash 가격 위치. Azure — GPT 미터 코드(ShortCo/LongCo, Std/Flex/PP, Gl/DZ 등) 의미와 배포 자격, 렛서의 Azure 배포 방식(2026-10-28부터 `Std Gl` `ShortCo` 미터를 Global Standard 짧은 컨텍스트 가격으로 읽는다).
 - parser fingerprint 범위(2026-10-19 수정, 로컬 검증·미배포): 이전 `parser_fingerprint()`는 `collectors/` 전체 파일을 해시해서, 일일 workflow처럼 이전 raw 없이 state만 쓰면 무관한 collector 파일만 바꿔도 다음 run의 실제 가격 변화가 `confirmed` 대신 `candidate`(`parser_fingerprint_mismatch`)가 됐다(fixture 재현: `fal.py`에 주석만 추가 → candidate). 지금은 출처(spec)마다 그 raw를 파싱하는 collector 모듈과 그 모듈이 import하는 collector 모듈(파일 전체), 그리고 이들과 core parse 검증(`_validate_parse`)이 쓰는 core·models·sources 정의(최상위 정의의 소스 줄, 참조하는 이름을 따라감)만 해시한다. 다른 출처의 collector를 고쳐도 그 출처의 fingerprint는 그대로다.
   - 배포 직후 첫 run에서는 저장된 값이 옛 방식이라 모든 series가 한 번 불일치로 보인다. 그 run에서 값이 바뀐 series만 `candidate`가 되고, 바뀌지 않은 series는 새 값으로 저장만 된다. 그 run 날짜를 기록해 둔다.
 - 아직 하지 않은 것: 원격 workflow 실행, 알림·Impact·추천. LETSUR 계약가·사용량·실비용은 계속 unknown이다.
@@ -138,7 +138,7 @@ python -m scripts.market_collection.events legacy --event <case>/event.json ... 
 | condition_change | (1) 공식 feed 문장의 cache multiplier / context window(length) "from A to B". 같은 문장의 가격 변화는 별도 price 후보로 만들지 않는다. (2) core diff: 원문이 명시한 `cache_read_multiplier` 조건 행의 전후 값 변화(아래 "명시 정책과 파생 비율"). 가격 비율 변화만으로는 검출하지 않음 | (1) source-shaped 합성 Atom + signals.live, legacy Sonnet. (2) source-shaped 합성 pricing.md(명시 0.1x→0.05x 각주) → 실제 Anthropic parser → 3 CSV → build. 실제 보존 run으로 변화 사례는 미검증 |
 | model_release | 제조사 공지 feed의 같은 문장에 "new/newest … model" 또는 "first release"와 "is available today"/"launch(ed)·release(d)… today"가 함께 있고 부정·범위 축소 표현이 없을 때 + feed 게시일(UTC 날짜) → 제조사 직접 경로. Batch·ChatGPT·free tier·region·Plus/Pro/Team/Enterprise 사용자 범위 문장은 실제 신규 출시와 함께 있어도 현재 보수적 문법상 확정하지 않는다(미지원). "Introducing"만 있거나 게시일이 없으면 확정하지 않음 | source-shaped 합성 RSS + signals.live |
 | model_end | 제조사 공지 "will be retired/shut down … across all products/everywhere" + 날짜만 confirmed. endpoint·snapshot·alias·version·ChatGPT 한정은 route_change remove candidate. 그 외 retirement 단어는 candidate | source-shaped 합성 RSS + signals.live |
-| route_change | 채널 공지 "is now available on" (add, 제조사 confirmed model_release 날짜가 state에 있을 때만 7일 판정), "will be removed from … <날짜>"(remove). OpenRouter `expiration_date`(remove). legacy fal endpoint 폐기 | source-shaped 합성 Atom + signals.live, 합성 signal fixture |
+| route_change | 채널 공지 "is now available on" (add, 제조사 confirmed model_release 날짜가 state에 있을 때만 7일 판정), "will be removed from … <날짜>"(remove). OpenRouter `expiration_date`(remove). Vercel endpoint `deprecated_at`(remove, 그 경로 안 공급처 하나의 종료, 항상 candidate, 2026-10-28). legacy fal endpoint 폐기 | source-shaped 합성 Atom + signals.live, 합성 signal fixture |
 
 - X/Threads 수집기는 없다. catalog에는 `unsupported`로 표시되고 `--manual` 입력은 항상 비공식 candidate로만 들어간다.
 - DeepSeek·Z.ai 공식 문서, Anthropic 공지 등은 등록된 출처가 아니며 추출 gap이다.
