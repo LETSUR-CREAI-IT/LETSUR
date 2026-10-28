@@ -10,4 +10,4 @@
 
 2026-10-04 snapshot은 당시 3모델·11출처 범위다. 2026-10-05 expanded 두 bundle은 확장된 21모델 registry 결과다. replay는 live의 보존 원문을 재해석하며 각 source의 원래 관측 시각을 유지한다. 66출처 QA 원본은 여전히 로컬에만 있으며, 10월 4일 snapshot은 그 범위를 대표하지 않는다.
 
-[demo_internal_routes.json](demo_internal_routes.json)은 수집 snapshot이 아니다. 대시보드 생성기가 `--internal-routes`로 읽는 시연용 렛서 사용 경로 가정(`is_demo: true`)이며, 매핑 규칙과 출처는 [대시보드 안내](../../docs/dashboard.md)에 있다.
+[demo_internal_routes.json](demo_internal_routes.json)은 수집 snapshot이 아니다. 대시보드 생성기가 `--internal-routes`로 읽는 렛서 사용 경로 파일이다. 렛서 설정 등록 경로(9/23 QnA 답변)와 2026-10-28 렛서 API 호출로 확인한 경로를 담고(`is_demo: false`), 파일 이름의 demo는 처음 시연용이던 흔적이다. 매핑 규칙과 출처는 [대시보드 안내](../../docs/dashboard.md)에 있다.

@@ -11,9 +11,10 @@ not make (headline, risk, suggestion text) stay empty, and the template's own ru
 compute the rest. LETSUR's route for each card, and for each model in MODELS, comes only
 from --internal-routes, a file of the routes LETSUR uses per model; without it, or when
 the file cannot be used, every card says the route is unconfirmed and no model gets one.
-Cards and models decided by a file with is_demo true are marked as assumed, except a model whose records all say
-basis settings (LETSUR's registered routes from its 9/23 QnA answer), marked as LETSUR settings instead. MODELS is
-page data only for now: the template reads it in renderModels(), which nothing calls.
+A record may say its basis: settings (LETSUR's registered routes from its 9/23 QnA answer) or observed (the route one
+LETSUR API call on 2026-10-28 went through). A card whose route has a record takes that record's mark, any other card
+and MODELS the mark of all the model's records. A model with a record without basis is marked as assumed when the file
+has is_demo true. MODELS is page data only for now: the template reads it in renderModels(), which nothing calls.
 When events.json is missing or unreadable, or the build or the
 continuity step failed, a page is still written and says today's build failed, so
 yesterday's page never stays up as if it were current. Mapping rules: docs/dashboard.md.
@@ -506,16 +507,21 @@ def mark_reverted(cards: list[dict], groups: dict[str, list[dict]], gone: set[st
             card["rv"], card["rn"] = back, len(priced)
 
 
-BASIS_MARK = {"settings": " (렛서 설정)", "demo": " (가정)"}
+BASIS_MARK = {"settings": " (렛서 설정)", "observed": " (호출 확인)", "mixed": " (렛서 설정·호출 확인)", "demo": " (가정)"}
+COMPACT_MARK = {"settings": " 설정", "observed": " 호출 확인", "mixed": " 설정·호출 확인", "demo": " 가정"}  # inside a sentence
 
 
-def route_basis(model_id: str, routes: dict | None) -> str:
-    """'settings' when every --internal-routes record of the model says basis settings: LETSUR's registered routes from
-    its 9/23 QnA answer (question 2), whose traffic LETSUR says is not confirmed (2026-10-28 박건 결정). 'demo' when the
-    file is a demo file, else ''."""
+def route_basis(model_id: str, routes: dict | None, route: str = "") -> str:
+    """Where the --internal-routes records come from, read for the model's records on `route` or, when it has none there,
+    for all of them: 'settings' (LETSUR's registered routes from its 9/23 QnA answer, question 2; LETSUR says their traffic
+    is not confirmed, 2026-10-28 박건 결정), 'observed' (the route one LETSUR API call on 2026-10-28 went through: the route
+    is in use, maybe not alone) or 'mixed' (both). 'demo' when a record of the model has no basis and the file is a demo
+    file, else ''; one such record keeps the whole model an assumption."""
     records = [record for record in (routes or {}).get("records", []) if record["model_id"] == model_id]
-    if records and all(record.get("basis") == "settings" for record in records):
-        return "settings"
+    bases = {record.get("basis") for record in records}
+    if records and bases <= {"settings", "observed"}:
+        bases = {record["basis"] for record in records if route and record["route_id"] == route} or bases
+        return next(iter(bases)) if len(bases) == 1 else "mixed"
     return "demo" if (routes or {}).get("is_demo") else ""
 
 
@@ -524,7 +530,8 @@ def relation(rep: dict, routes: dict | None) -> dict:
 
     A model with no record stays unconfirmed: no record does not mean LETSUR does not use it.
     A card with no route stays unconfirmed too: its source never said which route changed (2026-10-27 decision).
-    endpoint_id only adds detail when the route matches."""
+    endpoint_id only adds detail when the route matches. The mark after relShort is the basis of the record on the
+    card's route, else of all the model's records (route_basis); relSet is there for settings only."""
     records = [record for record in (routes or {}).get("records", []) if record["model_id"] == rep.get("model_id")]
     if not records:
         return {"relKey": "unk", "relShort": "사용 경로 확인 필요", "relDemo": False}
@@ -538,7 +545,7 @@ def relation(rep: dict, routes: dict | None) -> dict:
         key, short = "other", f"모델 제공 중 : {', '.join(map(route_label, used))} 경로로 사용"
     else:
         key, short = "none", "미도입"
-    basis = route_basis(rep.get("model_id"), routes)
+    basis = route_basis(rep.get("model_id"), routes, route)
     return {"relKey": key, "relShort": short + BASIS_MARK.get(basis, ""), "relDemo": basis == "demo",
             **({"relSet": True} if basis == "settings" else {})}
 
@@ -1381,7 +1388,7 @@ def internal_routes(path: Path) -> tuple[dict | None, str]:
 
 def record_problem(record) -> str:
     """Why one --internal-routes record cannot be used, or "". route_id must be there (null: the model is not
-    offered); endpoint_id may be left out, and so may basis ('settings': LETSUR's registered route, see route_basis)."""
+    offered); endpoint_id may be left out, and so may basis ('settings' or 'observed', see route_basis)."""
     if not isinstance(record, dict) or not isinstance(record.get("model_id"), str) or not record["model_id"]:
         return "model_id 없음"
     if "route_id" not in record:
@@ -1389,8 +1396,8 @@ def record_problem(record) -> str:
     for key in ("route_id", "endpoint_id"):
         if record.get(key) is not None and not (isinstance(record[key], str) and record[key]):
             return f"{key}가 문자열이나 null이 아님"
-    if record.get("basis") not in (None, "settings"):
-        return "basis가 settings나 null이 아님"
+    if record.get("basis") not in (None, "settings", "observed"):
+        return "basis가 settings·observed나 null이 아님"
     return ""
 
 
@@ -1530,7 +1537,6 @@ def link_promotions(cards: list[dict], groups: dict[str, list[dict]], tables: di
         pairs = [(m, changes[m["direct"]]) for m in matches
                  if m["direct"] in changes and changes[m["direct"]]["eff"] == m["start"] and m["route"] in sales]
         used = {record["route_id"] for record in (routes or {}).get("records", []) if record["model_id"] == model_id}
-        mark = {"settings": " 설정", "demo": " 가정"}.get(route_basis(model_id, routes), "")
         for gateway in dict.fromkeys(m["route"] for m, _ in pairs):
             change = next(c for m, c in pairs if m["route"] == gateway)
             for sale in sales[gateway]:
@@ -1541,6 +1547,7 @@ def link_promotions(cards: list[dict], groups: dict[str, list[dict]], tables: di
             change["link"] = [sales[gateway][0]["id"], sales[gateway][0]["sum"]]
             if gateway in used:
                 end = sales[gateway][0].get("eff") or (date.fromisoformat(change["eff"]) - timedelta(days=1)).isoformat()
+                mark = COMPACT_MARK.get(route_basis(model_id, routes, gateway), "")
                 change["risk"] = (f"렛서{mark} 경로({ROUTE_PUBLISHERS.get(gateway, gateway)})도 {md(end)}에 할인이 끝나 "
                                   f"{md(change['eff'])}부터 같은 가격이 될 수 있음(추정)")
         for gateway in dict.fromkeys(m["route"] for m, _ in pairs if m["route"] in used):

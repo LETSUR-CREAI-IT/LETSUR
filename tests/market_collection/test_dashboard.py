@@ -603,6 +603,7 @@ def test_committed_demo_routes(tmp_path: Path) -> None:
      ("other", "모델 제공 중 : Vercel · vercel_ai_gateway 경로로 사용 (렛서 설정)", False, True)),
     # one record without basis keeps the whole model an assumption
     ([_record("google_direct", basis="settings"), _record("vercel_ai_gateway")], ("use", "이 경로로 사용 중 (가정)", True, False)),
+    ([_record("google_direct", basis="observed"), _record("vercel_ai_gateway")], ("use", "이 경로로 사용 중 (가정)", True, False)),
 ])
 def test_registered_routes_are_marked_as_letsur_settings(tmp_path: Path, records: list, relation: tuple) -> None:
     """2026-10-28 박건 결정: records with basis settings are LETSUR's registered routes (9/23 QnA answer), not assumptions."""
@@ -612,6 +613,99 @@ def test_registered_routes_are_marked_as_letsur_settings(tmp_path: Path, records
     assert (card["relKey"], card["relShort"], card["relDemo"], card.get("relSet", False)) == relation
     page = (tmp_path / "site" / "index.html").read_text(encoding="utf-8")
     assert 'e.relSet ? {chip: "설정", note: "렛서 설정 경로, 9/23 답변 · 실제 트래픽 미확인"}' in page
+
+
+def _astra_records() -> dict:
+    """gpt-6-astra as the committed file has it: a registered route (settings) and the route one API call went through."""
+    return {"is_demo": False, "records": [_record("openai_direct", model_id="gpt-6-astra", basis="settings"),
+                                          _record("azure_foundry", model_id="gpt-6-astra", basis="observed")]}
+
+
+@pytest.mark.parametrize(("route", "relation"), [
+    ("azure_foundry", ("use", "이 경로로 사용 중 (호출 확인)", False, False)),  # its own record: observed, no 설정 chip
+    ("openai_direct", ("use", "이 경로로 사용 중 (렛서 설정)", False, True)),  # its own record: settings
+    ("vercel_ai_gateway", ("other", "모델 제공 중 : OpenAI · openai_direct, Microsoft · azure_foundry 경로로 사용 (렛서 설정·호출 확인)", False, False)),
+])
+def test_a_route_with_a_record_shows_that_records_mark(route: str, relation: tuple) -> None:
+    """2026-10-28 박건 결정: a card on a route with a record takes that record's mark (settings: 렛서 설정, observed: 호출 확인);
+    a card on any other route takes the mark of all the model's records, both when they differ."""
+    found = build.relation({"model_id": "gpt-6-astra", "route": route}, _astra_records())
+    assert (found["relKey"], found["relShort"], found["relDemo"], found.get("relSet", False)) == relation
+    assert build.model_use("gpt-6-astra", _astra_records()) == {
+        "use": "OpenAI · openai_direct, Microsoft · azure_foundry 경로로 사용 (렛서 설정·호출 확인)"}
+
+
+@pytest.mark.parametrize(("records", "relation"), [
+    ([_record("openrouter", basis="settings"), _record("vercel_ai_gateway", basis="settings")],
+     ("other", "모델 제공 중 : OpenRouter · openrouter, Vercel · vercel_ai_gateway 경로로 사용 (렛서 설정)", True)),
+    ([_record("openrouter", basis="observed"), _record("vercel_ai_gateway", basis="observed")],
+     ("other", "모델 제공 중 : OpenRouter · openrouter, Vercel · vercel_ai_gateway 경로로 사용 (호출 확인)", False)),
+    ([_record("openrouter", basis="settings"), _record("vercel_ai_gateway", basis="observed")],
+     ("other", "모델 제공 중 : OpenRouter · openrouter, Vercel · vercel_ai_gateway 경로로 사용 (렛서 설정·호출 확인)", False)),
+    ([_record(None, basis="observed")], ("none", "미도입 (호출 확인)", False)),  # not adopted: the model level too
+])
+def test_a_route_without_a_record_shows_the_mark_of_all_the_models_records(records: list, relation: tuple) -> None:
+    """relation is relKey, relShort and relSet (the 설정 chip: only when every record of the model is settings)."""
+    found = build.relation({"model_id": "gemini-3.8-flash", "route": "google_direct"}, {"is_demo": False, "records": records})
+    assert (found["relKey"], found["relShort"], found["relDemo"], "relSet" in found) == (relation[0], relation[1], False, relation[2])
+
+
+def test_observed_is_a_valid_basis_and_any_other_is_not() -> None:
+    for basis in (None, "settings", "observed"):
+        assert build.record_problem(_record("google_direct", basis=basis)) == ""
+    for basis in ("confirmed", "Observed", "", 1):
+        assert build.record_problem(_record("google_direct", basis=basis)) == "basis가 settings·observed나 null이 아님"
+
+
+def test_committed_routes_mark_each_route_and_leave_glm_52_unknown(tmp_path: Path) -> None:
+    """2026-10-28: the committed file holds LETSUR's registered routes (settings) and the route one API call per model went
+    through (observed) and no assumption, so each record says which; glm-5.2's route could not be told and has no record."""
+    doc = json.loads(DEMO_ROUTES.read_text(encoding="utf-8"))
+    assert doc["is_demo"] is False and {record.get("basis") for record in doc["records"]} == {"settings", "observed"}
+    assert not any(record["model_id"] == "glm-5.2" for record in doc["records"])
+    cards = [("gpt-6-astra", "azure_foundry"), ("gpt-6-astra", "openai_direct"), ("gpt-6-astra", "vercel_ai_gateway"),
+             ("gpt-5.6-sol", "azure_foundry"), ("claude-opus-5-5", "anthropic_direct"), ("claude-opus-5-5", "vercel_ai_gateway"),
+             ("claude-fable-5-1", "anthropic_direct"), ("glm-5.2", "vercel_ai_gateway")]
+    _write(tmp_path, [_observed(f"e{n}", "price_change", "1.00", "2.00", model_id=model, route=route) for n, (model, route) in enumerate(cards)])
+    _, _, data = _build(tmp_path, args=["--internal-routes", str(DEMO_ROUTES)])
+    assert data["STATUS"] == ""
+    found = {(card["m"], card["ch"].split(" · ")[-1]): card for card in data["EVENTS"]}
+    assert {key: (card["relKey"], card["relShort"], card["relDemo"], card.get("relSet", False)) for key, card in found.items()} == {
+        ("gpt-6-astra", "azure_foundry"): ("use", "이 경로로 사용 중 (호출 확인)", False, False),
+        ("gpt-6-astra", "openai_direct"): ("use", "이 경로로 사용 중 (렛서 설정)", False, True),
+        ("gpt-6-astra", "vercel_ai_gateway"): ("other", "모델 제공 중 : OpenAI · openai_direct, Microsoft · azure_foundry 경로로 사용 (렛서 설정·호출 확인)", False, False),
+        ("gpt-5.6-sol", "azure_foundry"): ("use", "이 경로로 사용 중 (호출 확인)", False, False),
+        ("claude-opus-5-5", "anthropic_direct"): ("use", "이 경로로 사용 중 (호출 확인)", False, False),
+        ("claude-opus-5-5", "vercel_ai_gateway"): ("other", "모델 제공 중 : Anthropic · anthropic_direct 경로로 사용 (호출 확인)", False, False),
+        ("claude-fable-5-1", "anthropic_direct"): ("use", "이 경로로 사용 중 (렛서 설정)", False, True),
+        ("glm-5.2", "vercel_ai_gateway"): ("unk", "사용 경로 확인 필요", False, False),
+    }
+    assert data["MODELS"]["gpt-6-astra"]["use"] == "OpenAI · openai_direct, Microsoft · azure_foundry 경로로 사용 (렛서 설정·호출 확인)"
+    assert data["MODELS"]["claude-opus-5-5"]["use"] == "Anthropic · anthropic_direct 경로로 사용 (호출 확인)"
+    assert "use" not in data["MODELS"]["glm-5.2"]
+    judged = {tuple(card["events"]): card for card in json.loads((tmp_path / "site" / "cards.json").read_text(encoding="utf-8"))["cards"]}
+    azure = judged[("e0",)]  # what the Slack bot writes after 렛서 사용 :
+    assert (azure["usage"], azure["applicability"]) == ("이 경로로 사용 중 (호출 확인)", "APPLIES")
+
+
+@pytest.mark.parametrize(("records", "risk"), [
+    ([{"model_id": "m", "route_id": "vercel_ai_gateway", "basis": "observed"}],
+     "렛서 호출 확인 경로(Vercel)도 12/31에 할인이 끝나 1/1부터 같은 가격이 될 수 있음(추정)"),
+    # OpenRouter is the first of the model's routes the change reaches: its own basis, not both of the model's
+    ([{"model_id": "m", "route_id": "vercel_ai_gateway", "basis": "settings"}, {"model_id": "m", "route_id": "openrouter", "basis": "observed"}],
+     "렛서 호출 확인 경로(OpenRouter)도 12/31에 할인이 끝나 1/1부터 같은 가격이 될 수 있음(추정)"),
+    ([{"model_id": "m", "route_id": "vercel_ai_gateway", "basis": "settings"}],
+     "렛서 설정 경로(Vercel)도 12/31에 할인이 끝나 1/1부터 같은 가격이 될 수 있음(추정)"),
+])
+def test_the_discount_warning_names_the_basis_of_the_route_it_is_about(records: list, risk: str) -> None:
+    cards = [{"id": "up", "mid": "m", "t7": "예정 변경", "eff": "2027-01-01", "sum": "12개 항목 단가 1/1부터 인상 예정"},
+             {"id": "vercel", "mid": "m", "t7": "한시 할인", "eff": "2026-12-31", "sum": "50% 할인 · 12/31까지"},
+             {"id": "or", "mid": "m", "t7": "한시 할인", "sum": "할인 · 종료일 미확인"}]
+    groups = {"up": [{"route": "google_direct"}], "vercel": [{"route": "vercel_ai_gateway"}], "or": [{"route": "openrouter"}]}
+    promo = [{"route": route, "direct": "google_direct", "start": "2027-01-01", "standard": True, "after": "$1.50 / $7.50 / $0.15",
+              "times": "2"} for route in ("openrouter", "vercel_ai_gateway")]
+    build.link_promotions(cards, groups, {"m": {"groups": [], "promo": promo}}, {"records": records, "is_demo": False})
+    assert cards[0]["risk"] == risk
 
 
 @pytest.mark.parametrize(("doc", "reason"), [
@@ -624,7 +718,7 @@ def test_registered_routes_are_marked_as_letsur_settings(tmp_path: Path, records
     ({"is_demo": True, "records": [_record("google_direct"), _record("", model_id="gpt-6.1-sol")]},
      "routes.json 형식이 다름 (records 2번째 route_id가 문자열이나 null이 아님)"),
     ({"is_demo": True, "records": [_record(None, endpoint_id=3)]}, "routes.json 형식이 다름 (records 1번째 endpoint_id가 문자열이나 null이 아님)"),
-    ({"is_demo": True, "records": [_record("google_direct", basis="confirmed")]}, "routes.json 형식이 다름 (records 1번째 basis가 settings나 null이 아님)"),
+    ({"is_demo": True, "records": [_record("google_direct", basis="confirmed")]}, "routes.json 형식이 다름 (records 1번째 basis가 settings·observed나 null이 아님)"),
 ])
 def test_unusable_routes_file_still_writes_the_page(tmp_path: Path, doc, reason: str) -> None:
     _write(tmp_path, [_scheduled("e1", "input", "0.75", "1.50", "0.75")])

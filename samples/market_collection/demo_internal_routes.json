@@ -1,7 +1,7 @@
 {
-  "is_demo": true,
-  "purpose": "참고 이벤트 시연용 가상 현재 공급 경로. 실제 렛서 내부 공급 경로 연동 전 시뮬레이션.",
-  "basis_note": "basis가 settings인 기록은 렛서 QnA 답변(9/23) 질문 2의 '설정에 등록된 공급 경로'다(2026-10-28 박건 결정). 렛서는 설정에 경로가 있어도 지금 그 경로로 실제 트래픽이 흐르는지는 따로 확인해야 한다고 했다. basis가 없는 기록은 시연용 가정이다.",
+  "is_demo": false,
+  "purpose": "대시보드가 카드와 모델마다 렛서 사용 경로를 정할 때 읽는 파일. 렛서가 설정에 등록한 경로(9/23 QnA 답변)와, 2026-10-28에 렛서 API를 모델마다 한 번 호출해 확인한 경로를 담았다.",
+  "basis_note": "settings는 렛서 QnA 답변(9/23) 질문 2의 '설정에 등록된 공급 경로'다. 렛서는 설정에 경로가 있어도 지금 그 경로로 실제 트래픽이 흐르는지는 따로 확인해야 한다고 했다. observed는 2026-10-28에 렛서 API를 모델마다 한 번 호출했을 때 실제로 지나간 경로(응답 헤더·필드로 판별)다. 그 경로를 쓰고 있다는 확인일 뿐 다른 경로를 쓰지 않는다는 뜻은 아니다. 이미지·영상 모델은 호출하지 않았고, glm-5.2는 경로를 알아내지 못해 기록을 뺐다.",
   "records": [
     {
       "model_id": "gemini-3.8-flash",
@@ -24,12 +24,26 @@
     {
       "model_id": "claude-sonnet-5-5",
       "route_id": "anthropic_direct",
-      "endpoint_id": null
+      "endpoint_id": null,
+      "basis": "observed"
     },
     {
       "model_id": "gpt-6.1-sol",
-      "route_id": null,
-      "endpoint_id": null
+      "route_id": "azure_foundry",
+      "endpoint_id": null,
+      "basis": "observed"
+    },
+    {
+      "model_id": "gpt-6-sol",
+      "route_id": "azure_foundry",
+      "endpoint_id": null,
+      "basis": "observed"
+    },
+    {
+      "model_id": "gpt-6-luna",
+      "route_id": "azure_foundry",
+      "endpoint_id": null,
+      "basis": "observed"
     },
     {
       "model_id": "claude-fable-5-1",
@@ -45,54 +59,69 @@
     },
     {
       "model_id": "claude-opus-5-5",
-      "route_id": "vercel_ai_gateway",
-      "endpoint_id": null
+      "route_id": "anthropic_direct",
+      "endpoint_id": null,
+      "basis": "observed"
     },
     {
       "model_id": "claude-sonnet-5",
-      "route_id": "vercel_ai_gateway",
-      "endpoint_id": null
+      "route_id": "anthropic_direct",
+      "endpoint_id": null,
+      "basis": "observed"
+    },
+    {
+      "model_id": "claude-haiku-4-5",
+      "route_id": "anthropic_direct",
+      "endpoint_id": null,
+      "basis": "observed"
     },
     {
       "model_id": "deepseek-v4-pro",
-      "route_id": "vercel_ai_gateway",
-      "endpoint_id": null
+      "route_id": "openrouter",
+      "endpoint_id": null,
+      "basis": "observed"
     },
     {
       "model_id": "deepseek-v4.1-flash",
       "route_id": "vercel_ai_gateway",
-      "endpoint_id": null
-    },
-    {
-      "model_id": "glm-5.2",
-      "route_id": "vercel_ai_gateway",
-      "endpoint_id": null
+      "endpoint_id": null,
+      "basis": "observed"
     },
     {
       "model_id": "glm-5.3-flash",
-      "route_id": "vercel_ai_gateway",
-      "endpoint_id": null
+      "route_id": "openrouter",
+      "endpoint_id": null,
+      "basis": "observed"
     },
     {
       "model_id": "gpt-5.6-luna",
-      "route_id": "vercel_ai_gateway",
-      "endpoint_id": null
+      "route_id": "azure_foundry",
+      "endpoint_id": null,
+      "basis": "observed"
     },
     {
       "model_id": "gpt-5.6-sol",
-      "route_id": "vercel_ai_gateway",
-      "endpoint_id": null
+      "route_id": "azure_foundry",
+      "endpoint_id": null,
+      "basis": "observed"
     },
     {
       "model_id": "gpt-5.6-terra",
-      "route_id": "vercel_ai_gateway",
-      "endpoint_id": null
+      "route_id": "azure_foundry",
+      "endpoint_id": null,
+      "basis": "observed"
     },
     {
       "model_id": "gpt-6-astra",
       "route_id": "openai_direct",
       "endpoint_id": null,
       "basis": "settings"
+    },
+    {
+      "model_id": "gpt-6-astra",
+      "route_id": "azure_foundry",
+      "endpoint_id": null,
+      "basis": "observed"
     },
     {
       "model_id": "gpt-image-2.5-flare",
@@ -108,8 +137,9 @@
     },
     {
       "model_id": "kimi-k3",
-      "route_id": "vercel_ai_gateway",
-      "endpoint_id": null
+      "route_id": "openrouter",
+      "endpoint_id": null,
+      "basis": "observed"
     },
     {
       "model_id": "seedance-2.5",
