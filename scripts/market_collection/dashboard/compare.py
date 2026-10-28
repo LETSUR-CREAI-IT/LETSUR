@@ -12,7 +12,7 @@ Inputs, all read-only:
 - that run's Vercel endpoint listings (raw bodies; the run loader checks their hashes): in-row tier, region and peak
   prices, which the collector records only as unknown conditions;
 - state.json (baselines, not_comparable, series) for first observation and rows that dropped out, events.json for price
-  changes (적용 기간, 가격 변동 큼) and Vercel discount notices.
+  changes (적용 기간, 가격 변동 큼), Vercel discount notices and Vercel endpoint end dates (deprecated_at).
 
 build.py passes the result to the page as COMPARE; template.html draws it in compareTable(). Rules: docs/dashboard.md.
 """
@@ -495,9 +495,11 @@ def exclusions(row: dict, peaks: dict) -> None:
     if row["status"] in STATUS and STATUS[row["status"]][1]:
         why.append(f"OpenRouter 상태: {STATUS[row['status']][0]}, {STATUS[row['status']][1]}")
     elif row["status"] not in (None, 0) and row["route"] != "openrouter":
-        why.append(f"상태 {row['status']} (뜻 미확인)")
+        why.append(row.get("ends") or f"상태 {row['status']} (뜻 미확인)")
     elif row["status"] is None and "endpoint_status" in unknown:
         why.append("상태 미표기")
+    if row.get("ends") and row["ends"] not in why:  # a compared row still shows its stated end
+        row["notes"].append(row["ends"])
     if row.get("conflict"):
         why.append(row["conflict"])
     peak = peaks.get((row["model"], row["provider"])) if row["route"] == "vercel_ai_gateway" else row.get("peak")
@@ -543,6 +545,23 @@ def channel_notices(events: list[dict], models: set) -> list[dict]:
                     "year_guess": period.get("basis") == "derived_from_publication", "ended": event.get("period_state") == "ended",
                     "published": found["published"], "who": ROUTE_PUBLISHERS.get(event["route"], event["route"])})
     return out
+
+
+def endpoint_ends(events: list[dict], models: set, today: date) -> dict:
+    """(model, route, upstream) -> what the row says about the end date a Vercel endpoint listing states in deprecated_at
+    (route_change remove events with an endpoint_id, 2026-10-28). The field is not in Vercel's API documentation."""
+    out: dict = {}
+    for event in events:
+        day = str((event.get("dates") or {}).get("effective_from") or "")
+        if event.get("event_type") != "route_change" or "remove" not in (event.get("subtags") or []) or not event.get("endpoint_id") \
+                or event.get("model_id") not in models or not str(event.get("source_key") or "").startswith("vercel_endpoints") \
+                or not re.fullmatch(r"\d{4}-\d{2}-\d{2}", day):
+            continue
+        end = date.fromisoformat(day)
+        key = (event["model_id"], event.get("route"), norm(event["endpoint_id"]))
+        if key not in out or end < out[key]:
+            out[key] = end
+    return {key: f"{md(end)} {'종료 예정' if end >= today else '종료일 지남'}(Vercel API, 문서 미기재 필드)" for key, end in out.items()}
 
 
 def announced(row: dict, rows: list[dict], after: dict) -> dict | None:
@@ -845,7 +864,7 @@ def serialize(row: dict, items: tuple, disc: bool) -> dict:
 
 
 def model_rows(model_id: str, current: list[dict], unknown: dict, extras: list[dict], peaks: dict, suspect: set,
-               failed: list[dict], gone: list[dict]) -> list[dict]:
+               failed: list[dict], gone: list[dict], ends: dict | None = None) -> list[dict]:
     listing = offers([o for o in current if o["model_id"] == model_id], unknown) + [r for r in failed if r["model"] == model_id]
     for row in listing:
         place(row)
@@ -856,6 +875,7 @@ def model_rows(model_id: str, current: list[dict], unknown: dict, extras: list[d
     rows = listing + inner
     for row in rows:
         precision_of(row)
+        row["ends"] = (ends or {}).get((row["model"], row["route"], row["provider"]), "")
     settle_precision(rows)
     for row in listing:
         exclusions(row, peaks)
@@ -931,12 +951,13 @@ def build_tables(root: Path, model_ids: list[str], events: list[dict], gaps: lis
     suspect = {g.get("after_observation_id") for g in gaps or [] if isinstance(g, dict) and g.get("kind") in SUSPECT} - {None, ""}
     extras, peaks, problems = vercel_extras(run, models)
     history, notices, today = History(state, events or []), channel_notices(events or [], models), date.fromisoformat(today_iso)
+    ends = endpoint_ends(events or [], models, today)
     now = run_time(run_dir.name)
     failed, gone = dropped(state, run_dir.name, run_obs, statuses, models, today)
     demo = bool((routes or {}).get("is_demo"))
     out = {}
     for model_id in sorted(models):
-        rows = model_rows(model_id, current, unknown, extras, peaks, suspect, failed, gone)
+        rows = model_rows(model_id, current, unknown, extras, peaks, suspect, failed, gone, ends)
         if not rows:
             continue
         targets = assumed_routes(model_id, routes)

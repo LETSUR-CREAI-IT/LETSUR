@@ -216,6 +216,45 @@ def test_route_removal_date(tmp_path: Path, effective_from: str | None, eff: str
         "공급 경로 변경", "경로 중단", "경로 중단일", summary, eff, [])
 
 
+def _upstream_end(event_id: str, model_id: str, endpoint_id: str = "minimax") -> dict:
+    """The engine's card of a Vercel endpoint deprecated_at (2026-10-28): one upstream of the route, a candidate."""
+    key = "vercel_endpoints_" + re.sub(r"[^a-z0-9]+", "_", model_id)
+    return _claim(event_id, "route_change", key, f"{endpoint_id}: deprecated_at=1794960000000 (2026-11-18T00:00:00Z), status=1; "
+                  "deprecated_at is absent from Vercel's API documentation, which defines only status 0 (active)",
+                  model_id=model_id, route="vercel_ai_gateway", subtags=["remove"], claim_kind="endpoint_deprecation", endpoint_id=endpoint_id,
+                  dates={"effective_from": "2026-11-18", "published": None, "note": "deprecated_at of one upstream endpoint on this route"},
+                  gaps=[{"field": "undocumented_field", "class": "check_first", "reason": "", "next_check": ""},
+                        {"field": "shutdown_confirmed", "class": "limits_value", "reason": "", "next_check": ""}])
+
+
+def test_one_upstreams_end_names_the_upstream_and_follows_the_routes_file(tmp_path: Path) -> None:
+    """2026-10-28: the minimax upstream's end on Vercel is one supplier of the route, not 경로 중단. LETSUR's routes file says
+    Vercel for minimax-m2, m2.1 and m2.5 and OpenRouter for minimax-m2.7."""
+    models = ("minimax-m2", "minimax-m2.1", "minimax-m2.5", "minimax-m2.7")
+    _write(tmp_path, [_upstream_end(f"v{index}", model) for index, model in enumerate(models)])
+    _, _, data = _build(tmp_path, args=["--internal-routes", str(DEMO_ROUTES)])
+    cards = {card["mid"]: card for card in data["EVENTS"]}
+    card = cards["minimax-m2"]
+    assert (card["t7"], card["sub"], card["sum"], card["eff"], card["effLabel"], card["st"], card["cd"]) == (
+        "공급 경로 변경", "공급 1곳 중단", "Vercel · minimax 공급 11/18 종료 예정", "2026-11-18", "minimax 공급 종료일", "candidate", "2026-11-18")
+    assert "중단" in card["sub"] and "경로" not in card["sub"]  # the template and judge() read '중단' as an end, never an addition
+    assert card["chk"] == [["first", build.GAP_KO["undocumented_field"]], ["limit", build.GAP_KO["shutdown_confirmed"]]]
+    judged = [build.judge(cards[model], data["TODAY"]) for model in models]
+    assert [item["applicability"] for item in judged] == ["APPLIES", "APPLIES", "APPLIES", "NOT APPLIES"]
+    assert judged[0]["action"] == "MONITOR" and cards["minimax-m2.7"]["relShort"].startswith("모델 제공 중 : OpenRouter")
+
+
+def test_a_route_end_with_a_whole_route_member_keeps_the_route_wording(tmp_path: Path) -> None:
+    whole = _claim("r1", "route_change", "vercel_changelog", "MiniMax M2 will be removed from AI Gateway on November 18, 2026.",
+                   status="confirmed", model_id="minimax-m2", route="vercel_ai_gateway", subtags=["remove"], claim_kind="route_removal",
+                   dates={"effective_from": "2026-11-18", "published": "2026-10-20", "note": ""}, group_key="g1", group_role="representative")
+    upstream = dict(_upstream_end("v1", "minimax-m2"), group_key="g1", group_role="member")
+    _write(tmp_path, [whole, upstream])
+    [card] = _build(tmp_path)[2]["EVENTS"]
+    assert (card["sub"], card["sum"], card["effLabel"]) == ("경로 중단", "경로 중단 11/18", "경로 중단일")
+    assert build.upstreams([upstream, dict(upstream, endpoint_id="bedrock")]) == ["minimax", "bedrock"]
+
+
 def test_discount_end_year_read_from_publication(tmp_path: Path) -> None:
     event = _claim("d1", "limited_discount", "openrouter_endpoints", "20% off until Oct 31", status="confirmed", route="openrouter",
                    claim_kind="discount", billing_item="input",

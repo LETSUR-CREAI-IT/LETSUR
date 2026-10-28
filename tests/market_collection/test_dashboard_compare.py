@@ -597,3 +597,45 @@ def test_an_unreadable_vercel_record_is_skipped_and_said(tmp_path):
     table = compare.tables(tmp_path, [GLM], [], [], None, None, None, "2026-10-27")[GLM]
     assert table["foot"] == ["Vercel 엔드포인트 원문을 읽지 못해 행 안 등급·지역 가격을 뺀 출처: vercel_llm_endpoints_glm_5_2 zai (ValueError)"]
     assert _rows(table)["Vercel · zai"][1]["n"] == "비교 제외 · 피크 요금 (시간대 미확인)"
+
+
+MINIMAX_LISTING = Path(__file__).parent / "llm" / "fixtures" / "endpoints" / "vercel-minimax-m2.json"  # real 10/28 raw, status 1
+
+
+def _ends(event_id: str, endpoint_id: str = "minimax", effective_from: str = "2026-11-18") -> dict:
+    """The engine's event for a Vercel endpoint deprecated_at (2026-10-28)."""
+    event = base_event(event_id, "route_change", "minimax-m2", "vercel_ai_gateway", "candidate")
+    event.update(subtags=["remove"], source_key="vercel_endpoints_minimax_m2", endpoint_id=endpoint_id, claim_kind="endpoint_deprecation",
+                 dates={"effective_from": effective_from, "published": None, "note": ""})
+    return event
+
+
+@pytest.fixture(scope="module")
+def minimax_root(tmp_path_factory) -> Path:
+    root = tmp_path_factory.mktemp("minimax")
+    spec = next(spec for spec in source_specs() if spec.source_key == "vercel_llm_endpoints_minimax_m2")
+    _, adapters = core.registry()
+    core.live(root, specs=[spec], adapters=adapters, fetcher=lambda found: (MINIMAX_LISTING.read_bytes(), found.url, 200))
+    return root
+
+
+@pytest.mark.parametrize(("events", "today", "note"), [
+    ([], "2026-10-28", "비교 제외 · 상태 1 (뜻 미확인)"),
+    ([_ends("e1")], "2026-10-28", "비교 제외 · 11/18 종료 예정(Vercel API, 문서 미기재 필드)"),
+    ([_ends("e1")], "2026-11-19", "비교 제외 · 11/18 종료일 지남(Vercel API, 문서 미기재 필드)"),
+    ([_ends("e1", endpoint_id="bedrock")], "2026-10-28", "비교 제외 · 상태 1 (뜻 미확인)"),  # another upstream's end
+    ([_ends("e1", effective_from="2026-11-18T00:00:00Z")], "2026-10-28", "비교 제외 · 상태 1 (뜻 미확인)"),  # not a bare date
+])
+def test_a_vercel_upstreams_stated_end_replaces_its_unknown_status_reason(minimax_root, events, today, note):
+    """The status-1 row stays out of the comparison: the status is still undocumented and the upstream ends soon."""
+    table = compare.tables(minimax_root, ["minimax-m2"], events, [], None, None, None, today)["minimax-m2"]
+    assert table["groups"] == []
+    assert _rows(table)["Vercel · minimax"] == ("비교 제외", _rows(table)["Vercel · minimax"][1])
+    assert _rows(table)["Vercel · minimax"][1]["n"] == note
+
+
+def test_a_compared_row_still_shows_its_stated_end():
+    row = dict(_row(route="vercel_ai_gateway", provider="minimax"), status=0, unknown={}, why=[], notes=[], prices=D("1"),
+               prec_kind="closed", ends="11/18 종료 예정(Vercel API, 문서 미기재 필드)")
+    compare.exclusions(row, {})
+    assert row["why"] == [] and row["notes"] == ["11/18 종료 예정(Vercel API, 문서 미기재 필드)"]

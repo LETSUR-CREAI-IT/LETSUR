@@ -35,6 +35,8 @@ FAMILY_MAKERS = (("gemini", "Google"), ("veo", "Google"), ("gpt", "OpenAI"), ("c
                  ("grok", "xAI"), ("minimax", "MiniMax"), ("muse", "Meta"), ("qwen", "Alibaba"))
 # Signal feeds: publisher and the route a channel notice speaks for.
 SIGNAL_PUBLISHERS = {"vercel_changelog": ("Vercel", "vercel_ai_gateway"), "openai_news": ("OpenAI", "")}
+# Channel API signal parsers: the route whose own endpoint listing they read.
+API_ROUTES = {"openrouter_endpoints": "openrouter", "vercel_endpoints": "vercel_ai_gateway"}
 SIGNAL_ROLES = {"channel_notice": "notice", "supplier_notice": "notice", "developer_blog": "blog",
                 "price_tracker": "tracker", "channel_api": "api"}
 # No collector exists for these; they are listed so a model shows the gap.
@@ -100,8 +102,9 @@ class Catalog:
             return {"role": "unknown", "authority": "unregistered", "publisher": "unknown", "route": "", "scope": []}
         role = SIGNAL_ROLES[spec["source_kind"]]
         if spec["source_kind"] == "channel_api":
-            return {"role": role, "authority": "channel_official", "publisher": ROUTE_PUBLISHERS["openrouter"],
-                    "route": "openrouter", "scope": ["route_price", "route_availability"]}
+            route = API_ROUTES[spec["parser"]]
+            return {"role": role, "authority": "channel_official", "publisher": ROUTE_PUBLISHERS[route],
+                    "route": route, "scope": ["route_price", "route_availability"]}
         publisher, route = SIGNAL_PUBLISHERS.get(spec["source_key"], ("unknown", ""))
         if spec["source_kind"] in ("developer_blog", "price_tracker") or publisher == "unknown":
             return {"role": role, "authority": "unofficial", "publisher": publisher, "route": "", "scope": []}

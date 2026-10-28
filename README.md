@@ -86,7 +86,7 @@ CLI는 Python 표준 라이브러리로 실행한다. 테스트에는 `pytest`�
 scripts/market_collection/signals/
 ├── __init__.py      live·replay·history·summary. 출처를 받아 원문을 보존하고 signals.csv를 씀
 ├── __main__.py      CLI (python3 -B -m scripts.market_collection.signals ...)
-├── registry.py      외부 단서 출처 목록: 채널·공급사 공지, 개발자 블로그, 가격 추적 사이트, OpenRouter endpoints API
+├── registry.py      외부 단서 출처 목록: 채널·공급사 공지, 개발자 블로그, 가격 추적 사이트, OpenRouter·Vercel endpoints API
 ├── parsers.py       Atom·RSS 피드와 OpenRouter endpoints JSON 해석
 └── matching.py      모델 별칭(models.py·sources.py에서 생성), 할인·인상·종료 표현, 원문 인용과 날짜 표현 추출
 tests/market_collection/signals/   단위·회귀 테스트와 합성 fixture

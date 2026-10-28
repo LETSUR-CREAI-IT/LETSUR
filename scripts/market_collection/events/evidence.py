@@ -2,7 +2,7 @@
 
 Every run is checked with the collectors' own validators (core._validated_run,
 signals.validated_run); a failure rejects the whole build. Adapters here are by
-source format (core price rows, OpenRouter endpoints JSON, atom/rss feed rows),
+source format (core price rows, OpenRouter and Vercel endpoints JSON, atom/rss feed rows),
 never by model.
 """
 
@@ -408,6 +408,9 @@ def signal_claims(run: dict, catalog: Catalog) -> tuple[list[dict], list[dict], 
                     info = dict(info, route=stated_route(row["quote"], model_id, catalog))
                 for kind in [value for value in row["claim_kinds"].split(";") if value]:
                     claim = _claim(row, spec, dict(source, fetched_at_utc=row["observed_at_utc"]), run_id, model_id, kind, info)
+                    parts = row["entry_id"].rsplit("#", 2)
+                    if spec.get("parser") == "vercel_endpoints" and len(parts) == 3:
+                        claim["endpoint_id"] = parts[1]  # <data.id>#<provider>#deprecated_at: the upstream that ends
                     if kind in ("price_increase", "price_decrease") and info["authority"] == "channel_official" \
                             and maker_list_price(row["quote"], model_id):
                         # The same sentence's discount kind keeps the channel route; only the maker's price move loses it.

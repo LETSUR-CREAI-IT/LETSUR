@@ -56,6 +56,7 @@ GAP_KO = {
     "sub_provider": "채널 전체가 아니라 안쪽 제공자 한 곳의 할인 · 렛서가 어느 제공자로 연결되는지 확인",
     "account_actual_price": "렛서 계정·등급·지역의 실제 가격은 미확인 · 렛서 계정에서 확인",
     "shutdown_confirmed": "실제 호출 중단은 확인 안 됨 · 날짜가 지나면 다시 확인",
+    "undocumented_field": "종료일은 Vercel API 문서에 없는 필드(deprecated_at)에서 읽음 · Vercel 모델 페이지·changelog·문의로 확인",
     "scope": "모델 전체·endpoint·경로 중 무엇이 끝나는지 미확인 · 공지 원문에서 범위와 날짜 확인",
     "before": "같은 조건의 현재가가 하나로 정해지지 않음",
     "effective_from_or_rate": "적용일과 새 가격이 둘 다 있어야 확정",
@@ -766,7 +767,14 @@ def unchanged_rows(event: dict, refs: list) -> list[dict]:
     return rows
 
 
-def eff_rule(t7: str | None, remove: bool, added: bool) -> tuple[str, tuple[str, ...]]:
+def upstreams(members: list[dict]) -> list[str]:
+    """The upstream endpoints a route removal ends (event endpoint_id, e.g. one Vercel provider's deprecated_at) when every
+    member names one; empty when a member is about the whole route."""
+    names = [str(event.get("endpoint_id") or "") for event in members]
+    return list(dict.fromkeys(names)) if all(names) else []
+
+
+def eff_rule(t7: str | None, remove: bool, added: bool, ends: list[str] = ()) -> tuple[str, tuple[str, ...]]:
     """The date a card is filed under, and its label."""
     if t7 == "한시 할인":
         return "할인 종료일", ("end_date", "period_end")
@@ -774,6 +782,8 @@ def eff_rule(t7: str | None, remove: bool, added: bool) -> tuple[str, tuple[str,
         return "제공일", ("route_added_date",)
     if t7 == "제공 종료":
         return "제공 종료일", ("effective_from",)
+    if remove and ends:
+        return f"{', '.join(ends)} 공급 종료일", ("effective_from",)
     if remove:
         return "경로 중단일", ("effective_from",)
     return "적용일", ("effective_from",)
@@ -808,11 +818,11 @@ def condition_label(subtags: list[str]) -> str:
     return " · ".join(f"{name} · {'/'.join(dict.fromkeys(labels))}" for name, labels in groups.items())
 
 
-def sub_label(t7, members, subtags, remove, added) -> str:
+def sub_label(t7, members, subtags, remove, added, ends=()) -> str:
     if t7 in CONDITIONED:
         return condition_label(subtags)
-    if t7 == "공급 경로 변경":
-        return "경로 중단" if remove else "경로 추가" if added else ""
+    if t7 == "공급 경로 변경":  # '중단' marks an end for the template (isAdd, dirOf, tierOf) and judge()
+        return f"공급 {len(ends)}곳 중단" if remove and ends else "경로 중단" if remove else "경로 추가" if added else ""
     if t7 == "한시 할인":
         states = {event.get("period_state") for event in members}
         return {"active": "진행 중", "ended": "종료"}.get(states.pop(), "") if len(states) == 1 else ""
@@ -838,9 +848,12 @@ def direction(deltas: list) -> str:
     return "변경"
 
 
-def summary_text(t7, members, eff, sub, q1, remove, added) -> str:
+def summary_text(t7, members, eff, sub, q1, remove, added, ends=(), route="") -> str:
     """List and headline text, made only of model, route, type and date facts."""
     when = md(eff) if eff else ""
+    if t7 == "공급 경로 변경" and remove and ends:  # one upstream of the route ends, not the route (2026-10-28)
+        who = " · ".join(filter(None, (ROUTE_PUBLISHERS.get(route, route), ", ".join(ends))))
+        return f"{who} 공급 {when} 종료 예정" if eff else f"{who} 공급 종료 예정 · 날짜 미확인"
     if t7 == "예정 변경":
         priced = [e for e in members if number(part(e, "after").get("amount")) is not None]
         word = direction([number(part(e, "change").get("delta")) for e in members])
@@ -968,7 +981,8 @@ def build_card(card_id: str, members: list[dict], sources: Sources, routes: dict
     t7 = T7.get(rep.get("event_type")) or ("공급 경로 변경" if q1 else None)
     subtags = list(dict.fromkeys(str(tag) for e in members for tag in e.get("subtags") or []))
     remove, added = "remove" in subtags, q1 or "add" in subtags
-    label, fields = eff_rule(t7, remove, added)
+    ends = upstreams(members) if remove else []
+    label, fields = eff_rule(t7, remove, added, ends)
     dated = sorted(filter(None, (member_eff(e, fields) for e in members)))
     eff, qual = dated[0] if dated else ("", "")
     ch = route_label(rep.get("route") or "")
@@ -996,11 +1010,11 @@ def build_card(card_id: str, members: list[dict], sources: Sources, routes: dict
             if (sid, json.dumps(text, ensure_ascii=False)) not in kept:
                 kept.add((sid, json.dumps(text, ensure_ascii=False)))
                 ev.append([sid, text])
-    sub = sub_label(t7, members, subtags, remove, added)
+    sub = sub_label(t7, members, subtags, remove, added, ends)
     pairs = dict.fromkeys((side["currency"], unit_ko(side.get("unit")))
                           for e in members for side in (part(e, "before"), part(e, "after")) if side.get("currency"))
     card = {"id": card_id, "t7": t7, "kind": T7.get(rep.get("event_type")) or "유형 미정", "m": rep.get("model_id") or "모델 표기 없음", "mid": rep.get("model_id") or "", "ch": ch,
-            "unit": " · ".join(f"{c} / {u}" if u else c for c, u in pairs), "sum": summary_text(t7, members, eff, sub, q1, remove, added),
+            "unit": " · ".join(f"{c} / {u}" if u else c for c, u in pairs), "sum": summary_text(t7, members, eff, sub, q1, remove, added, ends, rep.get("route") or ""),
             **relation(rep, routes), "act": "pending", "real": True,
             "chgHead": table_head(t7, members), "chg": [row["row"] for row in rows], "cond": compare_line(members, rep, ch, t7), "ev": ev}
     phrase = next((part(e, "dates")["end_phrase"] for e in members if part(e, "dates").get("end_phrase")), None) if t7 == "한시 할인" else None
