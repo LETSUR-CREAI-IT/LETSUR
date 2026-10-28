@@ -53,7 +53,7 @@ QUIET = {"endpoint_tag", "endpoint_provider", "endpoint_model_slug", "context_le
          "quantization", "service_tier", "prompt_tokens", "utc_start", "utc_end", "utc_days", "context_tier_min_tokens",
          "context_tier_max_tokens", "rate_period", "input_token_band", "context_band", "inference_option", "region", "region_group",
          "input_modalities", "currency_basis", "long_context_multiplier", "promotion_note", "promotion_label", "publisher", "hosting",
-         "endpoint_scope", "cross_geography_routing", "billing_channel", "meter_scope"}
+         "endpoint_scope", "cross_geography_routing", "billing_channel", "meter_scope", "model_version"}
 ITEM_LEVEL = {"cache_write_ttl", "cache_duration", *evidence.MUTABLE_CONDITIONS}  # differ between the items of one offer
 # Unknown conditions a decision settles: OpenRouter discounts are compared at the shown price (6); Vercel's untiered price
 # is Standard and its tier and region prices become rows of their own (10, 18).
@@ -418,6 +418,8 @@ def place(row: dict) -> None:
             row["labels"].append(f"표기 {c['billing_channel']}")
         if c.get("meter_scope"):
             row["labels"].append(SCOPE_NOTE.get(c["meter_scope"], f"표기 {c['meter_scope']}"))
+        if c.get("model_version"):  # Azure bills some models per version (2026-10-28); the row is still that model's price
+            row["labels"].append(f"버전 {c['model_version']}")
     for key in sorted(set(c) - QUIET):
         row["why"].append(f"조건 맞추기 전 ({key} {c[key]})")
 

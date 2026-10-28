@@ -585,6 +585,8 @@ def test_direct_route_conditions_map_to_tier_region_and_band():
                                                                   "context_band": "short context (ShortCo)"})
     assert (azure("Global (Gl)")["region"], azure("Global (Gl)")["band"], azure("Global (Gl)")["why"]) == ("", "", [])
     assert azure("Global (Gl)")["labels"] == ["글로벌 배포 기준(렛서 배포 방식 미확인)"] and azure("Data Zone (DZ)")["labels"] == ["표기 Data Zone (DZ)"]
+    versioned = _listing("gpt-4o", "azure_foundry", {"service_tier": "standard", "meter_scope": "Global (Gl)", "model_version": "2024-11-20"})
+    assert versioned["why"] == [] and versioned["labels"] == ["글로벌 배포 기준(렛서 배포 방식 미확인)", "버전 2024-11-20"]
     page = _listing(GLM, "openrouter", {"price_basis": "model_page_rate"})
     assert page["who"] == ["OpenRouter", "모델 페이지 대표가"] and page["why"] == ["모델 페이지 대표가 (하위 공급처·조건 미지정)"]
     odd = _listing(GLM, "fal", {"resolution": "1080p"})
