@@ -3,7 +3,7 @@ import json
 from contextlib import closing
 from datetime import datetime, timezone
 
-from alerts import connect, prepare, sync
+from alerts import connect, health_events, prepare, sync
 from delivery import attempt, enqueue, pending_report, setup
 from slack_adapter import message_batches
 
@@ -55,6 +55,8 @@ def run_cycle(dbpath, document, today, channel, sender=None, dashboard_url=None,
         setup(db)
         if document is not None:
             sync(db, document, today, urgent_days)
+        if judged and judged.get("health") is not None:  # 수집 점검 (2026-10-28): failing sources as events of today
+            sync(db, {"events": health_events(judged["health"])}, today, urgent_days)
         initial = pending_report(db, prepare(db, today, channel, urgent_days, judged))
         preview, uncertain = _without_uncertain(db, initial)
         if notice:

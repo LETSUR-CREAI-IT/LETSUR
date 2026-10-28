@@ -48,6 +48,7 @@ a{color:var(--ink)}
 .top .tool{color:var(--nav-muted);font-size:13px;padding-left:16px;border-left:1px solid #3a3f3d;white-space:nowrap}
 .top .base{margin-left:auto;color:var(--nav-muted);font-size:12.5px;white-space:nowrap}
 @media (max-width:640px){.top{padding-inline:16px;gap:12px}.top .tool{display:none}}
+@media (max-width:640px){.top{flex-wrap:wrap;row-gap:6px;padding-block:8px}.top .base{margin-left:0}}  /* 화면 탭이 들어가 좁으면 줄을 바꾼다 */
 
 .wrap{max-width:1380px;margin:0 auto;padding-inline:24px;padding-block:22px 56px;display:flex;flex-direction:column;gap:22px}
 @media (max-width:640px){.wrap{padding-inline:16px}}
@@ -177,6 +178,9 @@ a{color:var(--ink)}
 .qchip{display:inline-flex;align-items:center;min-height:18px;padding:0 6px;border:1px solid transparent;border-radius:999px;font-size:10.5px;font-weight:750;letter-spacing:.01em;white-space:nowrap}
 .qchip.review{background:var(--mint-soft);color:var(--mint-ink)} .qchip.verify{background:var(--amber-soft);color:var(--amber)}
 .qchip.monitor{background:var(--slate-soft);color:var(--slate)} .qchip.record{background:var(--grey-soft);color:var(--muted)}
+.qchip.vgc{border-color:var(--line-strong);background:var(--surface);color:var(--ink)}
+.qchip.rvc{border-color:var(--line-strong);border-style:dashed;background:var(--grey-soft);color:var(--muted)}  /* 해소됨·일부 해소(2026-10-28) */
+.rvnote{margin:8px 0 0;font-size:13px;line-height:1.55;color:var(--body)}
 .qchip.applies{border-color:var(--mint);color:var(--mint-ink)} .qchip.unknown{border-color:var(--amber);color:var(--amber)} .qchip.not-applies{border-color:var(--line-strong);color:var(--muted)}
 .dkind{display:inline-flex;align-items:center;flex:none;height:15px;padding:0 4px;border-radius:4px;font-size:9.5px;font-weight:800}
 .dkind.effective{background:var(--mint-soft);color:var(--mint-ink)} .dkind.end{background:var(--surface-2);color:var(--up);box-shadow:inset 0 0 0 1px var(--line)} .dkind.next_check{background:var(--slate-soft);color:var(--slate)}
@@ -378,6 +382,8 @@ td small{display:block;font-size:11.5px;color:var(--muted)}
 .seg button{height:26px;padding:0 11px;border:0;background:var(--surface);font-size:12.5px;cursor:pointer;color:var(--body)}
 .seg button+button{border-left:1px solid var(--line-strong)}
 .seg button[aria-pressed="true"]{background:var(--ink);color:var(--surface);font-weight:650}
+.seg.ttabs{flex-wrap:wrap;gap:4px;max-width:100%;margin-left:0;border:0;border-radius:0;overflow:visible}  /* 가격 조건 탭: 패널 폭에서 줄바꿈(2026-10-27) */
+.seg.ttabs button,.seg.ttabs button+button{border:1px solid var(--line-strong);border-radius:8px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .lg{display:flex;flex-wrap:wrap;gap:4px 14px;margin:4px 0 0;font-size:12px;color:var(--body)}
 .lg span{display:inline-flex;align-items:center;gap:7px}
 .lg i{display:inline-block;width:14px;height:0;border-top:2.5px solid currentColor;border-radius:2px}
@@ -400,10 +406,43 @@ td small{display:block;font-size:11.5px;color:var(--muted)}
 .tfoot .tv{margin-top:2px}
 .tfoot .tv p{margin:6px 0 0;max-width:900px;line-height:1.6}
 .tnote b{color:var(--body);font-weight:650}
-.mpick{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;margin-top:8px;padding-top:8px;border-top:1px solid var(--line)}
-.mpick h3{display:none}
-.mgrp{display:flex;flex-wrap:wrap;align-items:center;gap:5px}
-.mgrp>span{margin-right:2px;font-size:11px;font-weight:650;color:var(--muted)}
+/* 화면 탭(2026-10-28 박건 요청): 변화 | 모델별 가격. body[data-page]가 보일 칸을 정한다. */
+.ptabs{display:flex;gap:4px}
+.ptabs button{height:30px;padding:0 12px;border:0;border-radius:8px;background:none;color:var(--nav-muted);font-size:13px;font-weight:650;cursor:pointer;white-space:nowrap}
+.ptabs button:hover{color:var(--nav-ink)}
+.ptabs button[aria-selected="true"]{background:var(--surface);color:var(--ink)}
+body[data-page="models"] .summary-grid,body[data-page="models"] .hero,body[data-page="models"] .work{display:none}
+body:not([data-page="models"]) .mpage{display:none}
+/* 수집 상태 화면(2026-10-28 박건 제안): 실패 중인 출처, 최근 실패 기록, 원문 재검증, 등록부 점검 */
+body[data-page="health"] .summary-grid,body[data-page="health"] .hero,body[data-page="health"] .work,body[data-page="health"] #hwarn{display:none}
+body:not([data-page="health"]) .hpage{display:none}
+.hwarn{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin:12px 0 0;padding:10px 12px;border:1px solid var(--amber);border-radius:10px;background:var(--amber-soft);font-size:13px;color:var(--ink)}
+.hwarn button{height:28px;padding:0 10px;border:1px solid var(--line-strong);border-radius:8px;background:var(--surface);font-size:12.5px;color:var(--ink);cursor:pointer}
+.hsum{margin:4px 0 0;font-size:13px;color:var(--body)}
+.hsec{margin-top:18px}
+.hsec h3{margin:0 0 6px;font-size:13.5px;font-weight:700;color:var(--ink)}
+.hsec p.note{margin:0 0 8px;font-size:12.5px;color:var(--muted);line-height:1.55}
+.hsec table{width:100%;font-size:12.5px}
+.hsec td,.hsec th{padding:6px 8px;text-align:left;vertical-align:top;border-top:1px solid var(--line)}
+.hsec th{color:var(--muted);font-weight:650}
+.hsec td small{display:block;color:var(--muted)}
+.hsec .none{font-size:13px;color:var(--muted)}
+.hst{display:inline-flex;align-items:center;height:20px;padding:0 7px;border-radius:999px;font-size:11px;font-weight:700;white-space:nowrap}
+.hst.bad{background:var(--amber-soft);color:var(--ink);border:1px solid var(--amber)} .hst.ok{background:var(--mint-soft);color:var(--mint-ink)} .hst.gone{background:var(--grey-soft);color:var(--muted)}
+.mpage{display:grid;grid-template-columns:minmax(0,230px) minmax(0,1fr);gap:16px;align-items:start}
+.mcol{display:flex;flex-direction:column;gap:16px;min-width:0}
+.mlist{padding:10px;position:sticky;top:12px}
+.mlist h3{margin:12px 8px 4px;font-size:11.5px;font-weight:700;color:var(--muted)}
+.mlist h3:first-child{margin-top:2px}
+.mrow{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;padding:6px 8px;border:0;border-radius:8px;background:none;text-align:left;font-size:13px;color:var(--ink);cursor:pointer}
+.mrow small{font-size:11px;font-weight:600;color:var(--muted);white-space:nowrap}
+.mrow small.up{color:var(--up)} .mrow small.down{color:var(--down)}
+.mrow:hover{background:var(--grey-soft)}
+.mrow[aria-pressed="true"]{background:var(--mint-soft);font-weight:700}
+@media (max-width:900px){.mpage{grid-template-columns:minmax(0,1fr)}.mlist{position:static;display:flex;flex-wrap:wrap;gap:4px}.mlist h3{width:100%}.mrow{width:auto}}
+.ptable .th{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;margin-bottom:8px}
+.ptable .th h2{margin:0;font-size:14px;font-weight:700;color:var(--ink)}
+.ptable .th span{font-size:12px;color:var(--muted)}
 .mchip{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 10px;border:1px solid var(--line-strong);border-radius:999px;background:var(--surface);font-size:12px;cursor:pointer;color:var(--ink)}
 .mchip small{font-size:10.5px;font-weight:650;color:var(--muted)}
 .mchip small.up{color:var(--up)} .mchip small.down{color:var(--down)}
@@ -412,10 +451,16 @@ td small{display:block;font-size:11.5px;color:var(--muted)}
 .mchip[aria-pressed="true"] small{color:var(--surface);opacity:.85}
 .tlink{margin-top:10px;display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 12px;border:1px solid var(--line-strong);border-radius:8px;background:var(--surface);font-size:12.5px;color:var(--ink);cursor:pointer}
 .tlink:hover{border-color:var(--ink)}
+/* 2026-10-28 가안: 카드 상세의 모델별 가격 링크(가격 추이·현재 가격 표), 변동 잦음 묶음 */
+.vgbtn{display:flex;flex-wrap:wrap;gap:0 8px}
+.vgbtn .tlink{height:auto;min-height:30px;padding:4px 12px;flex-wrap:wrap;text-align:left}
+.tlink small{color:var(--muted);font-size:11.5px;font-weight:500}
+.row.vg{box-shadow:inset 3px 0 0 var(--line-strong)}
+.vgnote{margin:10px 0 0;font-size:13px;line-height:1.6;color:var(--body)}
+.vgh{margin:18px 0 6px;font-size:13px;font-weight:700;color:var(--ink)}
 
 /* ---- v16: 캘린더·그래프 메인, 종류별 목록, 상세 2×2 ---- */
-.hero{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);gap:14px;align-items:stretch}
-@media (max-width:1100px){.hero{grid-template-columns:minmax(0,1fr)}}
+.hero{display:grid;grid-template-columns:minmax(0,1fr);gap:14px;align-items:stretch}  /* 단가 추이는 모델별 가격 화면으로(2026-10-28) */
 .hero>.card{padding:16px 18px}
 .day{min-height:80px}
 .ev{height:22px;font-size:11.5px;gap:4px}
@@ -540,13 +585,15 @@ tr.gh td{padding-top:12px;font-size:12px;font-weight:700;color:var(--muted);back
 <header class="top">
   <img src="data:image/png;base64,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" alt="LETSUR" width="130" height="17">
   <span class="tool">모델 가격·조건 모니터</span>
+  <nav class="ptabs" role="tablist" aria-label="화면"><button type="button" role="tab" data-ptab="changes" aria-selected="true">변화</button><button type="button" role="tab" data-ptab="models" aria-selected="false">모델별 가격</button><button type="button" role="tab" data-ptab="health" aria-selected="false">수집 상태</button></nav>
   <span class="base" id="base"></span>
 </header>
 
 <main class="wrap">
   <div class="title">
-    <h1>확인할 변화</h1>
+    <h1 id="ptitle">확인할 변화</h1>
 <!--STATUS-->
+    <div id="hwarn"></div>
     <div class="summary-grid" role="list" aria-label="요약">
       <div class="summary-item" role="listitem"><span class="summary-label">전체 변화</span><strong id="sum-total">0</strong></div>
       <div class="summary-item" role="listitem"><span class="summary-label">가격 알림</span><strong id="sum-price">0</strong></div>
@@ -557,17 +604,28 @@ tr.gh td{padding-top:12px;font-size:12px;font-weight:700;color:var(--muted);back
     </div>
   </div>
 
-  <section class="hero" aria-label="일정과 단가">
+  <section class="hero" aria-label="일정">
     <div class="card">
       <div class="ch"><h2>일정 캘린더</h2></div>
       <div id="cal"></div>
     </div>
-    <section class="card trend" id="trend" aria-label="단가 추이"></section>
   </section>
 
   <section class="work" aria-label="변화 목록과 상세">
     <nav class="card list" aria-label="변화 목록"><div class="lhead"><h2 id="lt">전체 변화</h2><div class="qtools"><label for="qsort">정렬</label><select id="qsort"><option value="recommended">추천 순</option><option value="date">적용일 순</option><option value="type">유형별</option></select></div></div><div class="lfilter" id="lf"></div><div id="queue"></div></nav>
     <article class="card detail" id="detail" aria-live="polite"></article>
+  </section>
+
+  <section class="hpage" aria-label="수집 상태">
+    <div class="card" id="health"></div>
+  </section>
+
+  <section class="mpage" aria-label="모델별 가격">
+    <nav class="card mlist" id="mlist" aria-label="모델 목록"></nav>
+    <div class="mcol">
+      <section class="card trend" id="trend" aria-label="가격 추이"></section>
+      <section class="card ptable" id="ptable" aria-label="현재 가격 표"></section>
+    </div>
   </section>
 
   
@@ -622,11 +680,15 @@ function urgency(e){ const d = e.eff ? days(e.eff) : null; return [e.done ? 1 : 
 function cmpU(a, b){ const x = urgency(a), y = urgency(b); for (let i = 0; i < x.length; i++) if (x[i] !== y[i]) return x[i] - y[i]; return 0; }
 function tableHtml(head, rows){ return `<table><thead><tr>${head.map(h => `<th>${esc(h)}</th>`).join("")}</tr></thead><tbody>${rows.map(r => `<tr>${r.map(c => `<td>${esc(c)}</td>`).join("")}</tr>`).join("")}</tbody></table>`; }
 
+// 변동 잦음 묶음(2026-10-28 가안): build.py mark_volatile이 같은 모델·경로의 가격 변경 카드가 7일 안에 3장 이상이면 같은 vg를 준다.
+// 목록은 그 카드들을 한 줄로 묶고, 묶음 상세(#vg)는 묶인 카드와 모델별 가격(가격 추이·현재 가격 표)으로 가는 링크를 보인다.
+const VG = {}; EVENTS.forEach(e => { if (e.vg) (VG[e.vg] = VG[e.vg] || []).push(e); });
 let state = {filter:"all", sel:null, queueSort:"recommended"};
 // 주소의 #카드id가 이 페이지에 없으면 맨 위 카드를 보이되 그렇다고 알린다(2026-10-27 결정 26-6). 카드 id는 엔진 묶음 키로 만들어서,
 // 묶음이 바뀌면 옛 슬랙 메시지의 링크가 없는 id가 될 수 있다. 다른 카드를 고르면 안내는 사라진다.
-let missingLink = "";
-try { const h = location.hash.slice(1); if (h) { state.sel = decodeURIComponent(h); if (!EVENTS.some(e => e.id === state.sel)) missingLink = state.sel; } } catch (e) {}
+let missingLink = "", startModel = null, startHealth = false;
+// 주소 #m/모델은 모델별 가격, #health는 수집 상태 화면이다(2026-10-28).
+try { const h = location.hash.slice(1); if (h === "health") startHealth = true; else if (h.startsWith("m/")) startModel = decodeURIComponent(h.slice(2)); else if (h) { state.sel = decodeURIComponent(h); if (!EVENTS.some(e => e.id === state.sel) && !VG[state.sel]) missingLink = state.sel; } } catch (e) {}
 
 // ---- 변화 종류 ----
 const TYPE = {price:{ko:"가격 알림"}, model:{ko:"모델·경로 변경"}, cond:{ko:"조건 변경"}, data:{ko:"표기 확인"}};
@@ -915,9 +977,12 @@ const applicabilityOf = e => { const r = relOf(e); return r === "use" ? APPSTAT.
 // Suggested Action: 담당자가 다음에 할 작업 구분(조달 결정이 아님). 상세의 제안(suggestOf)과 같은 판단에서 나와 목록·달력·상세가 같은 말을 한다.
 // VERIFY 유형·값·출처·렛서 적용이 아직 안 정해짐 → RECORD 끝난 할인, 제안이 "기존 조건 유지" → MONITOR 값은 있으나 공식 확인 전 → REVIEW 나머지(고객 할인·경로 검토)
 const QACTION = {review:{en:"REVIEW", ko:"검토", order:0}, verify:{en:"VERIFY", ko:"확인 필요", order:1}, monitor:{en:"MONITOR", ko:"관측 유지", order:2}, record:{en:"RECORD", ko:"기록", order:3}};
+// 되돌아간 가격(build.py mark_reverted, 2026-10-28): rv = 이후 원래 값으로 돌아온 가격 항목 수, rn = 가격이 바뀐 항목 수
+const isReverted = e => !!e.rv && e.rv === e.rn;
 function actionKey(e){
   if (EV7[e.id] === null || isClue(e) || (EV7FLAG[e.id] && !e.st) || e.st === "conflicted" || priceUnk(e)) return "verify";  // flag는 st가 없는 옛 카드에서만(공식 확인 전은 st가 말한다)
   if (isEnded(e)) return "record";
+  if (isReverted(e)) return "record";  // 해소됨: 지금은 적용되지 않는 변화라 기록만(결정 기록 29절 렛서 답변). build.py judge()와 함께 고친다.
   if (relOf(e) === "unk") return "verify";
   if (e.st === "candidate") return "monitor";
   const g = suggestOf(e);
@@ -925,7 +990,7 @@ function actionKey(e){
 }
 const actOrder = e => QACTION[actionKey(e)].order;
 const qchips = e => { const k = actionKey(e), a = applicabilityOf(e);
-  return `<span class="qchip ${k}" title="${QACTION[k].ko}">${QACTION[k].en}</span><span class="qchip ${a.cls}" title="렛서 적용 ${a.ko}${e.relDemo ? " (시연용 가정)" : ""}">${a.en}${e.relDemo && a !== APPSTAT.unk ? " · 가정" : ""}</span>`; };
+  return `<span class="qchip ${k}" title="${QACTION[k].ko}">${QACTION[k].en}</span><span class="qchip ${a.cls}" title="렛서 적용 ${a.ko}${e.relDemo ? " (시연용 가정)" : ""}">${a.en}${e.relDemo && a !== APPSTAT.unk ? " · 가정" : ""}</span>${e.rv ? `<span class="qchip rvc" title="이후 수집에서 원래 가격으로 돌아온 항목 ${e.rv}/${e.rn}">${e.rv === e.rn ? "해소됨" : `일부 해소 ${e.rv}/${e.rn}`}</span>` : ""}`; };
 // 달력 날짜: 한 이벤트에 날짜가 여럿일 수 있다. effective 적용·변경 / end 할인·경로·현재 단가가 끝나는 날 / next_check 다시 볼 날(팀 기준, 공지 날짜 아님)
 const DATE_KIND = {effective:"적용", end:"종료", next_check:"확인"};
 const calAddDays = (d, n) => new Date(dt(d) + n * 864e5).toISOString().slice(0, 10);
@@ -951,7 +1016,9 @@ function renderMeta(){
   document.getElementById("sum-cond").textContent = n("cond");
   document.getElementById("sum-soon").textContent = soon;
   document.getElementById("sum-runs").textContent = `${runs.length}회`;
-  document.getElementById("sum-range").textContent = runs.length ? `${runDay(runs[0][0])}~${runDay(runs[runs.length - 1][0])}` : "수집 기록 없음";
+  const fail = HEALTH.failing.length;  // 수집 실패는 '변화 없음'과 구분해 아침에 먼저 보이게(결정 기록 29절 렛서 답변)
+  document.getElementById("sum-range").textContent = (runs.length ? `${runDay(runs[0][0])}~${runDay(runs[runs.length - 1][0])}` : "수집 기록 없음") + (HEALTH.run ? ` · 실패 ${fail}곳` : "");
+  document.getElementById("hwarn").innerHTML = fail ? `<p class="hwarn" role="status">수집 실패 ${fail}곳: 최신 가격을 확인하지 못한 출처가 있습니다. 그 출처의 '변화 없음'은 확인된 결과가 아닙니다.<button type="button" data-ptab="health">수집 상태 보기 →</button></p>` : "";
   document.getElementById("base").textContent = `기준일 ${TODAY} (고정)`;
 }
 
@@ -996,9 +1063,14 @@ function renderCalendar(){
 const TREND = /*DATA:TREND*/;
 // ---- 수집 run 목록: report.json processed_runs의 run 시각(KST) ----
 const COLLECTED = /*DATA:COLLECTED*/;
-// 수정안: 그래프 모델 버튼을 이벤트 모델 / 그 밖의 수집 모델로 묶음
-const TREND_GROUPS = [...new Set(Object.values(TREND).map(m => m.group || "이벤트 모델"))].map(g => [g, Object.keys(TREND).filter(k => (TREND[k].group || "이벤트 모델") === g)]);
-let trendModel = Object.keys(TREND)[0], trendMeasure = 0, trendTier = "Standard";
+// 수집 상태(build.py health, 2026-10-28): 마지막 수집, 실패 중인 출처, 최근 실패 기록, 원문 재검증 필요
+const HEALTH = /*DATA:HEALTH*/;
+// 모델별 가격 화면의 모델 목록(2026-10-28 박건 요청): 만든 회사별로 묶고 회사·모델 이름순. 회사는 모델 id 앞부분으로 정한다.
+const MAKERS = [["claude", "Anthropic"], ["seedance", "ByteDance"], ["deepseek", "DeepSeek"], ["gemini", "Google"], ["kimi", "Moonshot AI"], ["gpt", "OpenAI"], ["glm", "Z.AI"]];
+const makerOf = k => (MAKERS.find(([p]) => k.startsWith(p)) || ["", "기타"])[1];
+const MODEL_GROUPS = [...new Set(Object.keys(TREND).map(makerOf))].sort((a, b) => (a === "기타") - (b === "기타") || a.localeCompare(b))
+  .map(g => [g, Object.keys(TREND).filter(k => makerOf(k) === g).sort((a, b) => TREND[a].name.localeCompare(TREND[b].name, undefined, {numeric: true}))]);
+let trendModel = (MODEL_GROUPS[0] || ["", []])[1][0], trendMeasure = 0, trendTier = "Standard";
 // 비교 모드: 탭은 정밀도·지역·등급까지 나뉘어 한 탭 안의 선은 공급처가 달라도 같은 조건이다. 엄격 비교는 그 선만, 전체 관측은 조건이 정해지지 않은
 // 참고 선(ref: 표시 최소가 같은 대표가, 비교 표가 상태로 빼는 엔드포인트)도 함께 본다(2026-10-27 결정 26-2).
 let trendCompare = "strict";
@@ -1009,7 +1081,8 @@ function comparableSeries(series){
 }
 function comparisonKeyText(M, mi, tier){
   const unit = (M.units && tier && M.units[tier]) || M.unit;
-  return [`모델 ${M.name}`, `항목 ${M.measures[mi]}`, `단위 ${unit}`, `가격 조건 ${tier || "기본"}`].join(" · ");
+  const conds = (M.conds && (tier ? M.conds[tier] : Object.values(M.conds)[0])) || tier || "기본";  // 탭 이름은 짧게, 여기는 원문 그대로
+  return [`모델 ${M.name}`, `항목 ${M.measures[mi]}`, `단위 ${unit}`, `가격 조건 ${conds}`].join(" · ");
 }
 const addDays = (d, n) => new Date(dt(d) + n * 864e5).toISOString().slice(0, 10);
 const money2 = v => { let s = v.toFixed(3); s = s.replace(/0$/, ""); return "$" + s; };
@@ -1040,7 +1113,17 @@ function trendStats(M, mi){
     tile("다음 예정", next ? `${md(next.d)}${pct(next)}` : note ? `${md(note[0])}<small class="up">${ddTxt(note[0])}</small>` : "없음",
       next ? `${esc(next.s)} · ${ddTxt(next.d)}` : note ? esc(note[1]) : "알려진 예정 없음");
 }
+function renderModelList(){
+  document.getElementById("mlist").innerHTML = MODEL_GROUPS.map(([g, ks]) => `<h3>${esc(g)}</h3>${ks.map(k => `<button type="button" class="mrow" data-model="${esc(k)}" aria-pressed="${k === trendModel}"><span>${esc(TREND[k].name)}</span><small class="${TREND[k].badge[1]}">${esc(TREND[k].badge[0])}</small></button>`).join("")}`).join("");
+}
+// 현재 가격 표: 공급사 비교 표를 모델별 가격 화면의 가격 추이 아래에 둔다(2026-10-28 가안, 카드 상세에는 링크만).
+function renderTable(){
+  const el = document.getElementById("ptable"), T = COMPARE[trendModel];
+  el.hidden = !T;
+  el.innerHTML = T ? `<div class="th"><h2>현재 가격 표</h2><span>${compareMeta(trendModel)}</span></div>${compareTable(trendModel)}` : "";
+}
 function renderPrice(){
+  renderModelList(); renderTable();
   // 수정안: 등급(tiers)이 있으면 고른 등급의 선만
   if (!TREND[trendModel]) { const p = document.createElement("p"); p.className = "unknown"; p.textContent = "단가 추이: 그릴 수 있는 관측 단가가 없습니다."; document.getElementById("trend").replaceChildren(p); return; }
   const M0 = TREND[trendModel], tierKeys = M0.tiers ? Object.keys(M0.tiers) : [], tier = M0.tiers && M0.tiers[trendTier] ? trendTier : tierKeys[0];
@@ -1049,18 +1132,17 @@ function renderPrice(){
   const colors = ["var(--s1)", "var(--s2)", "var(--s3)", "var(--s4)", "var(--s5)", "var(--s6)"];
   const lg = M.series.map((s, i) => { const p = valueAt(s, TODAY, mi), v = p ? pv(p, mi) : null;
     return `<span style="color:${colors[i]}"><i></i><b>${esc(s.name)}</b><small>${p == null ? "아직 없음" : v == null ? "미게시" : "현재 " + money2(v)}${s.obsOnly ? " · 관측" : ""}</small></span>`; }).join("");
-  const chips = TREND_GROUPS.map(([g, ks]) => `<div class="mgrp"><span>${g}</span>${ks.map(k => `<button type="button" class="mchip" data-model="${esc(k)}" aria-pressed="${k === trendModel}">${esc(TREND[k].name)}<small class="${TREND[k].badge[1]}">${esc(TREND[k].badge[0])}</small></button>`).join("")}</div>`).join("");
-  el.innerHTML = `<div class="th"><h2>단가 추이</h2><span class="mname">${esc(M.name)}</span><span class="unit">${esc(M.unit)}${M.real ? " · 실제" : " · 시연 데이터"}</span>
+  el.innerHTML = `<div class="th"><h2>가격 추이</h2><span class="mname">${esc(M.name)}</span><span class="unit">${esc(M.unit)}${M.real ? " · 실제" : " · 시연 데이터"}</span>
       <span class="tctl"><span class="rng" role="group" aria-label="기간">${T_RANGES.map(([k, l]) => `<button type="button" data-rng="${k}" aria-pressed="${k === trendRange}">${l}</button>`).join("")}</span>
-      ${tierKeys.length ? `<span class="seg" role="group" aria-label="등급">${tierKeys.map(k => `<button type="button" data-tier="${esc(k)}" aria-pressed="${k === tier}">${esc(k)}</button>`).join("")}</span>` : ""}
+      ${tierKeys.length ? `<span class="seg ttabs" role="group" aria-label="가격 조건">${tierKeys.map(k => `<button type="button" data-tier="${esc(k)}" aria-pressed="${k === tier}" title="${esc((M.conds || {})[k] || k)}">${esc(k)}</button>`).join("")}</span>` : ""}
       ${M.measures.length > 1 ? `<span class="seg" role="group" aria-label="단가 종류">${M.measures.map((m, i) => `<button type="button" data-meas="${i}" aria-pressed="${i === mi}">${m}</button>`).join("")}</span>` : ""}</span></div>
+    ${(down => down.length ? `<p class="hwarn" role="status">이 모델의 출처 ${down.length}곳이 최근 수집에 실패했습니다(${down.map(x => `${esc(x.ch)} ${md(x.since)}부터`).join(", ")}). 실패한 기간의 선은 마지막 값을 이은 것이라 '변화 없음'으로 읽으면 안 됩니다.</p>` : "")(HEALTH.failing.filter(x => x.model === trendModel))}
     <div class="cmpbar"><b>비교 조건</b><span>${esc(comparisonKeyText(M, mi, tier))}</span>${cmp.excluded.length ? `<span class="cmpwarn">엄격 비교에서 참고 선 ${cmp.excluded.length}개 뺌</span>` : onlyRef ? `<span class="cmpwarn">같은 조건으로 확인된 선이 없어 참고 선을 그대로 보임</span>` : ""}
       <span class="cmpmode" role="group" aria-label="비교 모드"><button type="button" data-cmp="strict" aria-pressed="${trendCompare === "strict"}">엄격 비교</button><button type="button" data-cmp="all" aria-pressed="${trendCompare === "all"}">전체 관측</button></span></div>
     <div class="tstats">${trendStats(M, mi)}</div>
     <div class="lg">${lg}</div><div class="tplot" id="tplot"></div>
     <div class="tfoot"><p class="tnote">${overlapNote(M, mi)}올리면 날짜별 값, 점을 누르면 상세로 이동</p>
-      <details class="tv"><summary>출처·설명 · 표로 보기</summary><p>${esc(M.note)}</p>${cmp.excluded.length ? `<p class="cmpwarn">엄격 비교에서 뺀 참고 선(조건이 정해지지 않은 선: 표시 최소가·중단 등 비교에서 빠진 상태의 엔드포인트):${esc(cmp.excluded.map(x => plain(x.name)).join(", "))}. 전체 관측에서 볼 수 있습니다.</p>` : ""}<div id="trend-tv"></div></details></div>
-    <div class="mpick">${chips}</div>`;
+      <details class="tv"><summary>출처·설명 · 표로 보기</summary><p>${esc(M.note)}</p>${cmp.excluded.length ? `<p class="cmpwarn">엄격 비교에서 뺀 참고 선(조건이 정해지지 않은 선: 표시 최소가·중단 등 비교에서 빠진 상태의 엔드포인트):${esc(cmp.excluded.map(x => plain(x.name)).join(", "))}. 전체 관측에서 볼 수 있습니다.</p>` : ""}<div id="trend-tv"></div></details></div>`;
   drawPrice(M, mi, colors);
   document.getElementById("trend-tv").innerHTML = tableHtml(["경로", "날짜", M.measures[mi], "비고"], M.series.flatMap(s => s.pts.map(p => [s.name, String(p[0]).replace("T", " "), pv(p, mi) == null ? "미게시" : money2(pv(p, mi)), p[3] === "unk" ? "시작 시점 기록 없음" : day(p[0]) > TODAY ? "예정" : ""])));
 }
@@ -1164,24 +1246,51 @@ function renderFilter(){
   const hid = showPast ? 0 : EVENTS.filter(e => kindShown(e) && isPast(e)).length;
   box.querySelector(".lhid").textContent = hid ? `지난 변화 ${hid}건 숨김` : "";
 }
-// 정렬: 추천 순(Suggested Action → 급한 순) · 적용일 순(급한 순 → Suggested Action) · 유형별(종류 묶음 안에서 급한 순)
-function queueCmp(a, b){ return state.queueSort === "date" ? cmpU(a, b) || actOrder(a) - actOrder(b) : actOrder(a) - actOrder(b) || cmpU(a, b); }
+// 정렬: 추천 순(렛서 판단 단계 → 급한 순 → Suggested Action) · 적용일 순(급한 순 → Suggested Action) · 유형별(종류 묶음 안에서 급한 순)
+// 렛서 판단 단계(2026-10-28 가안): 3팀 서면보고에 적힌 렛서 판단 순서(지금 쓰는 판매처 → 판매 중단 위험과 기한 → 같은 조건의 비용 증감
+// → 대신 쓸 판매처 → 보안·계약상 빼야 할 곳)를 따른다. 원문은 확인 전이고, 보안·계약 기준은 렛서 신뢰 공급사 목록이 없어 비워 둔다.
+// 0 렛서 경로의 판매 중단 · 1 렛서 경로의 비용 증감 · 2 렛서 경로의 그 밖 · 3 사용 경로 모름 · 4 다른 경로의 대신 쓸 만한 변화(인하·할인·경로 추가)
+// · 5 다른 경로의 그 밖 · 6 렛서가 쓰지 않는 모델 · 7 기록(RECORD)
+function tierOf(e){
+  if (actionKey(e) === "record") return 7;
+  const r = relOf(e), t = EV7[e.id];
+  if (r === "use") return t === "제공 종료" || (t === "공급 경로 변경" && /중단/.test(EV7SUB[e.id] || "")) ? 0 : ["가격 변경", "예정 변경", "한시 할인", "조건·가격 변경"].includes(t) ? 1 : 2;
+  if (r === "unk") return 3;
+  if (r === "other") return dirOf(e) === "good" ? 4 : 5;
+  return 6;
+}
+function recCmp(a, b){ return tierOf(a) - tierOf(b) || cmpU(a, b) || actOrder(a) - actOrder(b); }
+function queueCmp(a, b){ return state.queueSort === "date" ? cmpU(a, b) || actOrder(a) - actOrder(b) : recCmp(a, b); }
 function queueRow(e){ return `<li>
     <button type="button" class="row${e.done ? " done" : ""}" data-id="${esc(e.id)}" aria-current="${state.sel === e.id}">
       <span class="dl2"${!e.eff && e.effShort ? ` title="${esc(e.effShort)}"` : ""}>${ddHtml(e)}${e.eff ? `<small class="tn">${md(e.eff)}${e.effQual ? ` <b class="qt" title="${esc(e.effQual)}">해석</b>` : ""}</small>` : e.effSeen ? `<small class="tn">${md(e.cd)}</small>` : ""}</span>
       <span class="t"><span class="qbadges">${qchips(e)}</span><b><span class="subj">${esc(e.m)}</span> ${esc(e.sum)}${e.done ? `<span class="tags"><span class="tg">결정됨</span></span>` : ""}</b><span><span class="qs t7">${esc(EV7[e.id] || "수집 확인")}</span>${esc(e.ch)}</span></span>
     </button></li>`; }
+// 변동 잦음 묶음: 정렬된 목록에서 묶음 구성원은 맨 앞 구성원 자리에 한 줄로 모은다. 날짜 칸은 묶인 카드 수와 기간이다.
+function bundled(list){ const seen = new Set();
+  return list.flatMap(e => !e.vg ? [e] : seen.has(e.vg) ? [] : (seen.add(e.vg), [{vg: e.vg}])); }
+function vgSum(id){ const l = VG[id], days = l.map(e => e.cd).filter(Boolean).sort();
+  return {l, e0: l[0], up: l.filter(e => dirOf(e) === "bad").length, down: l.filter(e => dirOf(e) === "good").length, res: l.filter(e => e.rv).length, from: days[0], to: days[days.length - 1]}; }
+function vgRow(b){ const {l, e0, up, down, res, from, to} = vgSum(b.vg), a = applicabilityOf(e0);
+  return `<li>
+    <button type="button" class="row vg" data-id="${esc(b.vg)}" aria-current="${state.sel === b.vg}">
+      <span class="dl2"><span class="dd none seen">${l.length}장</span><small class="tn">${md(from)}~</small><small class="tn">${md(to)}</small></span>
+      <span class="t"><span class="qbadges"><span class="qchip vgc">변동 잦음</span><span class="qchip ${a.cls}" title="렛서 적용 ${a.ko}${e0.relDemo ? " (시연용 가정)" : ""}">${a.en}${e0.relDemo && a !== APPSTAT.unk ? " · 가정" : ""}</span></span><b><span class="subj">${esc(e0.m)}</span> 가격이 자주 바뀜 · 인상 ${up} · 인하 ${down}${res ? ` · 되돌아감 ${res}` : ""}</b><span><span class="qs t7">가격 변경 묶음</span>${esc(e0.ch)}</span></span>
+    </button></li>`; }
+const rowOf = x => x.vg && !x.id ? vgRow(x) : queueRow(x);
 function renderQueue(){
   const list = EVENTS.filter(e => kindShown(e) && (showPast || !isPast(e)));
   // 선택은 거르기와 무관하다: 주소의 #id나 캘린더에서 고른 카드는 목록에서 숨겨져도 상세에 남는다. 처음 고를 때만 보이는 카드를 먼저 본다.
-  if (!state.sel || !EVENTS.some(e => e.id === state.sel)) state.sel = (list.length ? list : EVENTS).slice().sort((a, b) => actOrder(a) - actOrder(b) || cmpU(a, b))[0]?.id;
+  // 맨 위 카드가 변동 잦음 묶음에 들면 묶음을 고른다.
+  if (!state.sel || (!EVENTS.some(e => e.id === state.sel) && !VG[state.sel])) { const top = (list.length ? list : EVENTS).slice().sort(recCmp)[0]; state.sel = top && top.vg ? top.vg : top?.id; }
   renderFilter();
   document.getElementById("qsort").value = state.queueSort;
-  document.getElementById("lt").textContent = `전체 변화 ${list.length}`;
+  const lines = bundled(list).length;
+  document.getElementById("lt").textContent = `전체 변화 ${list.length}${lines < list.length ? ` · 묶어서 ${lines}줄` : ""}`;
   const none = EVENTS.length ? `<p class="lempty">${listOn.size ? "선택한 유형의 " : ""}${showPast ? "" : "최근 7일과 앞으로의 "}변화 0건</p>` : "";
-  if (state.queueSort !== "type") { document.getElementById("queue").innerHTML = list.length ? `<ul class="rows">${list.slice().sort(queueCmp).map(queueRow).join("")}</ul>` : none; return; }
+  if (state.queueSort !== "type") { document.getElementById("queue").innerHTML = list.length ? `<ul class="rows">${bundled(list.slice().sort(queueCmp)).map(rowOf).join("")}</ul>` : none; return; }
   const groups = Object.keys(TYPE).map(k => [k, list.filter(e => typeOf(e) === k).sort((a, b) => cmpU(a, b) || actOrder(a) - actOrder(b))]).filter(([, l]) => l.length);
-  document.getElementById("queue").innerHTML = groups.map(([k, l]) => `<section class="grp" aria-label="${TYPE[k].ko}"><h3><i class="ti-${k}"></i>${TYPE[k].ko} ${l.length}</h3><ul class="rows">${l.map(queueRow).join("")}</ul></section>`).join("") || none;
+  document.getElementById("queue").innerHTML = groups.map(([k, l]) => `<section class="grp" aria-label="${TYPE[k].ko}"><h3><i class="ti-${k}"></i>${TYPE[k].ko} ${l.length}</h3><ul class="rows">${bundled(l).map(rowOf).join("")}</ul></section>`).join("") || none;
 }
 
 // ---- 상세 ----
@@ -1214,8 +1323,10 @@ function changeTable(e){
 // COMPARE[모델] = {at 가격 기준 관측 시각, unit, items 가격 열 이름, disc 한시 할인 열 여부, groups [[묶음 이름, 행…]], ex 비교 제외 행, special 특이사항, foot}
 // 행: w [경로, 하위 공급처] · c 열마다 [값, lo 최저 | un 유일] · d [할인가, 종료일, 종료 후 가격]마다 [값, 구분] · p [적용 기간, 근거] · n 비고 · t 칩 [이름, 구분] · f 강조는 채움만
 const COMPARE = /*DATA:COMPARE*/;
-function compareTable(e){
-  const T = COMPARE[e.mid]; if (!T) return "";
+// 2026-10-28 가안: 표는 모델별 가격의 '현재 가격 표' 탭에 두고, 카드 상세에는 그 탭으로 가는 링크만 둔다. 표는 모델마다 하나라서
+// 같은 모델의 카드 여러 장에 같은 표가 되풀이되고, 이벤트 없이 모델 가격만 볼 자리가 없었다.
+function compareTable(mid){
+  const T = COMPARE[mid]; if (!T) return "";
   const span = T.items.length + (T.disc ? 3 : 0) + 3;
   const td = ([v, k], f, x) => `<td class="v${k ? " sct-" + k : ""}${f && (k === "lo" || k === "un") ? " sct-fill" : ""}${x ? " " + x : ""}">${esc(v)}</td>`;
   const tr = (r, ex) => `<tr${ex ? ` class="sct-ex"` : ""}><td class="sct-who"><span class="sct-rt">${esc(r.w[0])} · </span>${esc(r.w[1])}${(r.t || []).map(([t, k]) => `<span class="sct-tag sct-t-${k}">${esc(t)}</span>`).join("")}</td>`
@@ -1232,22 +1343,32 @@ function compareTable(e){
     <p class="sct-key"><span class="sct-lo">최저</span><span class="sct-un">유일</span><span class="sct-gy">종료·미확인</span><span class="sct-dash">비교 제외</span><span class="sct-tag sct-t-con">출처 상충</span>테두리는 정밀도가 적힌 행, 추정·상태 저하·가격 변동 큼·비공개 모델 행은 채움만${T.disc ? ` · 할인가·종료 후 가격은 ${esc(T.items.join(" / "))} 순` : ""}</p>
     ${T.special ? `<div class="sct-sp"><h5>특이사항</h5><p>${esc(T.special)}</p></div>` : ""}${(T.foot || []).map(x => `<p class="cnd note">${esc(x)}</p>`).join("")}</section>`;
 }
-const compareMeta = e => { const T = COMPARE[e.mid];
+const compareMeta = mid => { const T = COMPARE[mid];
   return `${T.groups.reduce((n, [, rows]) => n + rows.length, 0)}행 비교${T.ex.length ? ` · 제외 ${T.ex.length}행` : ""} · 가격 기준 ${esc(T.at)} 관측 · ${esc(T.unit)}`; };
 const sec = (title, meta, body, open) => `<details class="sec"${open ? " open" : ""}><summary>${title}${meta ? ` <small>${meta}</small>` : ""}</summary><div class="secb">${body}</div></details>`;
+function renderBundle(id){
+  const {l, e0, up, down, res, from, to} = vgSum(id), mid = e0.mid;
+  document.getElementById("detail").innerHTML = `<div class="dmeta"><span class="tg">가격 변경 묶음</span><span class="who">${esc(e0.m)}</span><span>${esc(e0.ch)}</span><span class="tg real">실제 · 공개 출처</span></div>
+    <h2 class="headline">${esc(e0.m)} 가격이 자주 바뀜 · 카드 ${l.length}장</h2>
+    <p class="vgnote">${md(from)}~${md(to)}에 이 경로의 가격 변경 카드가 ${l.length}장(인상 ${up} · 인하 ${down}) 생겼습니다.${res ? ` 그중 ${res}장은 바뀐 가격의 일부나 전부가 이후 원래 값으로 돌아왔습니다.` : ""} 같은 모델·경로의 가격 변경 카드가 7일 안에 3장 이상이면 목록에서 한 줄로 묶습니다(2026-10-28 가안). 가격 흐름은 가격 추이와 현재 가격 표에서 보세요.</p>
+    <div class="vgbtn">${TREND[mid] ? `<button type="button" class="tlink" data-trend="${esc(mid)}" data-tview="chart">가격 추이 보기 →</button>` : ""}${COMPARE[mid] ? `<button type="button" class="tlink" data-trend="${esc(mid)}" data-tview="table">현재 가격 표 보기 →</button>` : ""}</div>
+    <h3 class="vgh">묶인 카드 ${l.length}장</h3><ul class="rows">${l.slice().sort((a, b) => (b.cd || "").localeCompare(a.cd || "") || recCmp(a, b)).map(queueRow).join("")}</ul>`;
+}
 function renderDetail(){
+  if (VG[state.sel]) { renderBundle(state.sel); return; }
   const e = EVENTS.find(x => x.id === state.sel), el = document.getElementById("detail");
   if (!e) { el.innerHTML = `<p class="unknown">이 칸에 해당하는 변화가 없습니다.</p>`; return; }
   const eff = e.eff ? `${md(e.eff)} (${wd(e.eff)}) ${ddHtml(e)}${e.effQual ? ` <b class="qt" title="${esc(e.effQual)}">해석</b>` : ""}` : esc([e.effShort, e.effNote].filter(Boolean).join(" · ") || "미확인");
   let h = `${missingLink ? `<p class="linkmiss" role="status">링크한 카드(#${esc(missingLink)})를 이 페이지에서 찾지 못했습니다. 아래는 목록 맨 위 카드입니다.</p>` : ""}<div class="dmeta">${typeHead(e)}${costChip(e)}<span class="who">${esc(e.m)}</span><span>${esc(e.ch)}</span>${e.real ? `<span class="tg real">실제 · 공개 출처</span>` : `<span class="tg">시연 데이터</span>`}${e.done ? `<span class="tg">결정됨</span>` : ""}</div>
     <h2 class="headline">${e.head || esc(e.sum)}</h2>
+    ${e.rv ? `<p class="rvnote">${e.rv === e.rn ? `이후 수집에서 바뀐 가격 ${e.rn}개가 모두 원래 값으로 돌아왔습니다. 지금은 적용되지 않는 변화라 기록만 남깁니다(해소됨).` : `바뀐 가격 ${e.rn}개 중 ${e.rv}개가 이후 수집에서 원래 값으로 돌아왔습니다(일부 해소).`}</p>` : ""}
     <div class="decide"><div class="next"><div class="k">다음 할 일 <span class="qbadges" style="display:inline-flex">${qchips(e)}</span></div><div class="v">${nextHtml(e)}</div></div><div><div class="k">${esc(e.effLabel || "적용일")}</div><div class="v">${eff}</div></div>
       <div><div class="k">현재 사용 경로${e.relDemo ? ` <span class="tg">가정</span>` : ""}</div><div class="v">${esc(e.relShort || e.rel)}</div></div></div>
     ${e.link && EVENTS.some(x => x.id === e.link[0]) ? (l => `<div class="lk"><span>함께 볼 이벤트</span><b>${esc(l.m)} · ${esc(l.ch)}</b><span>${esc(e.link[1])}</span><button type="button" data-id="${esc(l.id)}">열기 →</button></div>`)(EVENTS.find(x => x.id === e.link[0])) : ""}
-    ${keyChange(e)}${TREND[e.mid] ? `<button type="button" class="tlink" data-trend="${esc(e.mid)}">${esc(TREND[e.mid].name)} 가격 추이 보기 →</button>` : ""}`;
+    ${e.vg ? `<div class="lk"><span>변동 잦음 묶음</span><b>${esc(e.m)} · ${esc(e.ch)}</b><span>이 경로의 가격 변경 카드 ${VG[e.vg].length}장을 목록에서 한 줄로 묶었습니다</span><button type="button" data-id="${esc(e.vg)}">묶음 보기 →</button></div>` : ""}
+    ${keyChange(e)}<div class="vgbtn">${TREND[e.mid] ? `<button type="button" class="tlink" data-trend="${esc(e.mid)}" data-tview="chart">${esc(TREND[e.mid].name)} 가격 추이 보기 →</button>` : ""}${COMPARE[e.mid] ? `<button type="button" class="tlink" data-trend="${esc(e.mid)}" data-tview="table">공급사 비교 표 보기 → <small>${compareMeta(e.mid)}</small></button>` : ""}</div>`;
   const parts = [];
   if (e.chg && e.chg.length) parts.push(sec("바뀐 내용", changeMeta(e), changeTable(e)));
-  if (COMPARE[e.mid]) parts.push(sec("공급사 비교 표", compareMeta(e), compareTable(e)));  // 따로 접고 편다(2026-10-27 박건 요청)
   parts.push(sec("렛서에 주는 영향", "", impactHtml(e), true));
   parts.push(sec("제안", "", suggestHtml(e), true));
   if (e.ev && e.ev.length) parts.push(sec("출처", `${e.ev.length}건`, `<ul class="srcs">${e.ev.map(([n, t]) => { const s = SRC[n] || {nm:n}; const q = t == null ? "" : Array.isArray(t) ? `이전 “${esc(t[0])}” → 현재 “${esc(t[1])}”` : esc(t);
@@ -1283,6 +1404,26 @@ function renderTrend(){
   document.getElementById("trend-t").innerHTML = tableHtml(["날짜", "건수", "변화"], ds.filter(d => by[d]).map(d => [d, by[d].length, by[d].map(e => e.m + " " + e.sum).join(" / ")]));
 }
 
+// ---- 수집 상태 (2026-10-28 박건 제안, 결정 기록 29절 렛서 답변: 수집 실패를 '변화 없음'과 구분) ----
+// 출처 페이지가 바뀌거나 모델이 새로 나오고 끝나면 누군가 등록부와 파서를 손봐야 시스템이 계속 돈다. 그 일을 한곳에 모은다.
+function renderHealth(){
+  const H = HEALTH, who = x => `<b>${esc(x.model || "모델 표기 없음")}</b><small>${esc(x.ch)} · ${esc(x.key)}</small>`;
+  const table = (head, rows) => `<table><thead><tr>${head.map(h => `<th>${h}</th>`).join("")}</tr></thead><tbody>${rows.join("")}</tbody></table>`;
+  const link = u => u ? `<small><a href="${esc(u)}" target="_blank" rel="noopener">${esc(u.replace(/^https?:\/\//, ""))}</a></small>` : "";
+  const fail = H.failing.length ? table(["출처", "오류", "실패"], H.failing.map(x => `<tr><td>${who(x)}${link(x.url)}</td><td>${esc(x.error)}</td><td><span class="hst bad">${x.since ? md(x.since) + "부터 · " : ""}${x.runs}회 연속</span></td></tr>`))
+    : `<p class="none">지금 실패 중인 출처가 없습니다.</p>`;
+  const recent = H.recent.length ? table(["출처", "실패한 수집", "마지막 오류", "지금"], H.recent.map(x => `<tr><td>${who(x)}</td><td>${md(x.first)}${x.first !== x.last ? "~" + md(x.last) : ""} · ${x.runs}회</td><td>${esc(x.error || "—")}</td><td><span class="hst ${x.now === "ok" ? "ok" : "gone"}">${x.now === "ok" ? "정상으로 돌아옴" : "등록부에서 빠짐"}</span></td></tr>`))
+    : `<p class="none">최근 ${H.days || 14}일 동안 실패한 출처가 없습니다.</p>`;
+  const recheck = H.recheck.length ? table(["출처", "건수"], H.recheck.map(x => `<tr><td>${who(x)}</td><td>${x.n}건</td></tr>`)) : `<p class="none">없습니다.</p>`;
+  const reg = EVENTS.filter(e => ["제공 종료", "모델 출시", "공급 경로 변경"].includes(EV7[e.id]) && !isPast(e)).sort(recCmp);
+  document.getElementById("health").innerHTML = `<div class="ch"><h2>수집 상태</h2></div>
+    <p class="hsum">마지막 수집 ${H.run ? esc(H.run.at) : "기록 없음"} · 출처 ${H.total}곳 중 정상 ${H.ok}곳 · 실패 ${H.failing.length}곳</p>
+    <section class="hsec"><h3>지금 실패 중인 출처</h3><p class="note">최근 수집에서 받지 못했거나 읽지 못한 출처입니다. 이 출처의 가격은 실패한 동안 모릅니다. 대시보드의 '변화 없음'이나 그래프의 이어진 선은 이 출처에 대해서는 확인된 결과가 아닙니다.</p>${fail}</section>
+    <section class="hsec"><h3>최근 ${H.days || 14}일 실패 기록</h3><p class="note">지금은 실패하지 않는 출처입니다. 다시 정상으로 받았는지, 등록부에서 빠졌는지 적습니다.</p>${recent}</section>
+    <section class="hsec"><h3>원문 재검증 필요</h3><p class="note">파서 코드가 바뀐 뒤 이전 관측을 원문으로 다시 확인하지 못한 가격입니다. 값이 틀렸다는 뜻은 아니고, 아직 확인하지 않았다는 뜻입니다.</p>${recheck}</section>
+    <section class="hsec"><h3>등록부 점검 후보</h3><p class="note">모델이 새로 나오거나 공급 경로가 생기고 끝나면 출처 등록부(sources.py)에 출처를 더하거나 빼야 할 수 있습니다. 최근 7일과 앞으로 일정이 있는 변화만 모았습니다.</p>${reg.length ? `<ul class="rows">${reg.map(queueRow).join("")}</ul>` : `<p class="none">해당하는 변화가 없습니다.</p>`}</section>`;
+}
+
 // ---- 상호작용 ----
 const tip = document.createElement("div"); tip.className = "tip"; tip.hidden = true; document.body.appendChild(tip);
 function showTip(t, x, y){ tip.textContent = ""; const b = document.createElement("b"); b.textContent = t.dataset.t1; tip.appendChild(b);
@@ -1296,20 +1437,36 @@ const REDUCE = matchMedia("(prefers-reduced-motion: reduce)").matches;
 function showSel(){ const q = document.getElementById("queue"), r = q.querySelector("[aria-current=true]"); if (!r) return;
   const a = q.getBoundingClientRect(), b = r.getBoundingClientRect();
   if (b.top < a.top || b.bottom > a.bottom) q.scrollTop += b.top - a.top - (q.clientHeight - b.height) / 2; }
-function select(id, scroll){ const e = EVENTS.find(x => x.id === id); if (!e) return;
+// 화면 탭(2026-10-28 박건 요청): 변화(요약·캘린더·목록·상세) | 모델별 가격(모델 목록·가격 추이·현재 가격 표).
+// 주소는 변화가 #카드id, 모델별 가격이 #m/모델이다. target이 있으면 그 칸(가격 추이 'chart', 현재 가격 표 'table')으로 내려간다.
+function setPage(p, model, target){
+  document.body.dataset.page = p;
+  document.querySelectorAll("[data-ptab]").forEach(b => b.setAttribute("aria-selected", String(b.dataset.ptab === p)));
+  document.getElementById("ptitle").textContent = {models: "모델별 가격", health: "수집 상태"}[p] || "확인할 변화";
+  if (p === "health") { renderHealth(); try { history.replaceState(null, "", "#health"); } catch (err) {} return; }
+  if (p !== "models") { try { history.replaceState(null, "", state.sel ? "#" + state.sel : location.pathname + location.search); } catch (err) {} return; }
+  if (model && TREND[model] && model !== trendModel) { trendModel = model; trendMeasure = 0; trendTier = "Standard"; }
+  renderPrice();
+  try { history.replaceState(null, "", "#m/" + encodeURIComponent(trendModel)); } catch (err) {}
+  const to = target === "table" && COMPARE[trendModel] ? "ptable" : target ? "trend" : null;
+  if (to) document.getElementById(to).scrollIntoView({behavior: REDUCE ? "auto" : "smooth", block: "start"});
+}
+function select(id, scroll){ const e = EVENTS.find(x => x.id === id); if (!e && !VG[id]) return;
+  if (document.body.dataset.page !== "changes") setPage("changes");
   state.sel = id; missingLink = ""; try { history.replaceState(null, "", "#" + id); } catch (err) {}
-  if (e.eff) calMonth = monthOf(e.eff);
+  if (e && e.eff) calMonth = monthOf(e.eff);
   renderCalendar(); renderQueue(); renderDetail();
   if (scroll) { showSel(); document.getElementById("detail").scrollIntoView({behavior: REDUCE ? "auto" : "smooth", block: "start"}); } }
 function refilter(){ renderQueue(); document.getElementById("queue").scrollTop = 0; }
 document.addEventListener("change", ev => { if (ev.target && ev.target.id === "qsort") { state.queueSort = ev.target.value; refilter(); } });
 document.addEventListener("click", ev => {
-  const md_ = ev.target.closest("[data-model]"); if (md_) { trendModel = md_.dataset.model; trendMeasure = 0; trendTier = "Standard"; renderPrice(); return; }
+  const pg = ev.target.closest("[data-ptab]"); if (pg) { setPage(pg.dataset.ptab); window.scrollTo(0, 0); return; }
+  const md_ = ev.target.closest("[data-model]"); if (md_) { setPage("models", md_.dataset.model); return; }
   const tt = ev.target.closest("[data-tier]"); if (tt) { trendTier = tt.dataset.tier; renderPrice(); return; }
   const ms = ev.target.closest("[data-meas]"); if (ms) { trendMeasure = +ms.dataset.meas; renderPrice(); return; }
   const cm = ev.target.closest("[data-cmp]"); if (cm) { trendCompare = cm.dataset.cmp; renderPrice(); return; }
   const rg = ev.target.closest("[data-rng]"); if (rg) { trendRange = rg.dataset.rng; renderPrice(); return; }
-  const tr = ev.target.closest("[data-trend]"); if (tr) { trendModel = tr.dataset.trend; trendMeasure = 0; trendTier = "Standard"; renderPrice(); document.getElementById("trend").scrollIntoView({behavior: REDUCE ? "auto" : "smooth", block: "start"}); return; }
+  const tr = ev.target.closest("[data-trend]"); if (tr) { setPage("models", tr.dataset.trend, tr.dataset.tview || "chart"); return; }
   const mn = ev.target.closest("[data-mon]");
   if (mn) { if (!mn.disabled) { calMonth = mn.dataset.mon === "today" ? monthOf(TODAY) : addMonth(calMonth, +mn.dataset.mon); renderCalendar(); } return; }
   const kb = ev.target.closest("[data-kind]"); if (kb) { const k = kb.dataset.kind; listOn.has(k) ? listOn.delete(k) : listOn.add(k); refilter(); return; }
@@ -1341,5 +1498,6 @@ function renderCollected(){
 }
 document.addEventListener("change", ev => { if (ev.target && ev.target.id === "collsel") { collModel = ev.target.value; renderCollected(); } });
 renderMeta(); renderCalendar(); renderPrice(); renderQueue(); renderDetail(); showSel();
+if (startModel !== null) setPage("models", startModel); else if (startHealth) setPage("health"); else document.body.dataset.page = "changes";
 let rzT; window.addEventListener("resize", () => { clearTimeout(rzT); rzT = setTimeout(renderPrice, 150); });
 </script>

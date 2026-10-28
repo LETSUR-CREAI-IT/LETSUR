@@ -43,11 +43,18 @@ def _clip(value, limit):
 
 def _schedule(card):
     days, label = card.get("days"), card.get("schedule_label", "일정")
+    if card.get("alert") == "health":  # 수집 점검 (2026-10-28)
+        since = next((item.get("since") for item in card.get("items") or [] if item.get("since")), "")
+        return f"수집 점검 · {since}부터 실패" if since else "수집 점검 · 최근 수집 실패"
+    # 2026-10-28 가안: a new change goes out once, not as a daily reminder.
+    new = "새로 확인된 변화 · 한 번만 알림" if card.get("alert") == "new" else None
     if days is None:
-        return "일정 재확인 필요 · 기존 긴급 상태 유지"
+        return new or "일정 재확인 필요 · 기존 긴급 상태 유지"
     if days < 0:
-        return f"{label}일 {abs(days)}일 경과"
-    return f"오늘 {label}" if days == 0 else f"{label}까지 {days}일"
+        text = f"{label}일 {abs(days)}일 경과"
+    else:
+        text = f"오늘 {label}" if days == 0 else f"{label}까지 {days}일"
+    return f"{text} · {new}" if new else text
 
 
 def _dashboard_cards(card):
@@ -66,12 +73,19 @@ def _card_text(card, names):
             shown.append(f"{_clip(name(names, 'conditions', key), 40)}: {_clip(value, 100)}")
     if shown:
         lines.append("조건 · " + " / ".join(shown))
+    # 2026-10-28 (결정 기록 29절 렛서 답변): whether LETSUR uses the route and what to check first
+    if card.get("usage"):
+        lines.append("렛서 사용 : " + _clip(card["usage"], 120))
+    if card.get("check"):
+        lines.append("확인할 것 : " + _clip(card["check"], 200))
     if card.get("date_basis") == "derived_from_publication":
         lines.append("종료 연도는 게시일에서 파생")
     for item in card["items"]:
         before, after = item.get("before") or {}, item.get("after") or {}
         label = name(names, "items", item.get("billing_item"))
-        if before.get("amount") is not None and after.get("amount") is not None:
+        if item.get("event_type") == "collection_failure":
+            lines.append("오류 : " + _clip(item.get("error") or "내용 없음", 200))
+        elif before.get("amount") is not None and after.get("amount") is not None:
             lines.append(f"{_clip(label or '가격', 80)}: {_clip(before['amount'], 40)} → {_clip(after['amount'], 40)} {_clip(after.get('currency', ''), 20)} / {_clip(name(names, 'units', after.get('unit', '')), 50)}")
         elif (item.get("change") or {}).get("discount_pct") is not None:
             lines.append(f"할인율: {_clip(item['change']['discount_pct'], 30)}%")
@@ -131,6 +145,13 @@ def _https_url(url):
     return url
 
 
+def _safe_url(url):
+    try:
+        return bool(_https_url(url))
+    except ValueError:
+        return False
+
+
 def _card_url(url, card):
     """The dashboard opened at the first dashboard card that holds the card's events, else the plain address (decision 26-6)."""
     ids = _dashboard_cards(card)
@@ -152,15 +173,24 @@ def message_batches(db, report, *, dashboard_url=None, max_blocks=40):
         _token_table(db)
         for start in range(0, len(cards), per_message):
             part = cards[start:start + per_message]
-            header = f"렛서 긴급 알림 · {report['as_of']} · 미확인 사건 {len(report['cards'])}개"
+            new = sum(card.get("alert") == "new" for card in report["cards"])
+            health = sum(card.get("alert") == "health" for card in report["cards"])
+            counts = [f"{word} {n}개" for word, n in (("긴급", len(report["cards"]) - new - health), ("새 변화", new), ("수집 점검", health)) if n]
+            header = (f"렛서 알림 · {report['as_of']} · " + " · ".join(counts) if new or health else
+                      f"렛서 긴급 알림 · {report['as_of']} · 미확인 사건 {len(report['cards'])}개")
             blocks = [{"type": "section", "text": {"type": "plain_text", "text": header}}]
             for card in part:
                 token = _snapshot_token(db, report["channel"], card)
                 elements = [{"type": "button", "text": {"type": "plain_text", "text": "확인함"},
                              "action_id": ACTION_ID, "value": token}]
                 if url:
+                    target = url.split("#", 1)[0] + "#health" if card.get("alert") == "health" else _card_url(url, card)
                     elements.append({"type": "button", "text": {"type": "plain_text", "text": "대시보드"},
-                                     "action_id": "open_dashboard", "url": _card_url(url, card)})
+                                     "action_id": "open_dashboard", "url": target})
+                source = next((link for link in card.get("links") or [] if _safe_url(link)), None)
+                if source:  # 근거 링크 (2026-10-28, 결정 기록 29절 렛서 답변)
+                    elements.append({"type": "button", "text": {"type": "plain_text", "text": "근거"},
+                                     "action_id": "open_source", "url": source})
                 blocks.extend([
                     {"type": "section", "text": {"type": "plain_text", "text": _card_text(card, names)}},
                     {"type": "actions", "block_id": "ack_" + secrets.token_hex(12), "elements": elements},

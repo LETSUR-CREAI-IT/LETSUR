@@ -173,7 +173,7 @@ class SlackAdapterTests(unittest.TestCase):
 
     def test_dashboard_button_opens_the_dashboard_card_that_holds_the_events(self):
         document = self.cards_document()
-        document["cards"][1]["action"] = "REVIEW"  # keep the discount alert so both buttons exist
+        document["cards"][1].update(action="REVIEW", applicability="APPLIES")  # keep the discount alert so both buttons exist
         cards = self.cards(self.judged_messages(document))
         links = {text.splitlines()[0].split(" / ")[0]: url for text, url in cards}
         self.assertEqual(links, {"가상 모델 A": DASHBOARD + "#g_0000000000a1", "가상 모델 B": DASHBOARD + "#g_0000000000b1"})
@@ -217,7 +217,7 @@ class SlackAdapterTests(unittest.TestCase):
         self.assertEqual({url for _, url in cards}, {DASHBOARD})
         self.assertFalse(any("대시보드 카드" in text for text, _ in cards))
         document = self.cards_document()
-        document["cards"][1]["action"] = "REVIEW"
+        document["cards"][1].update(action="REVIEW", applicability="APPLIES")
         document["cards"].pop(0)  # no dashboard card holds the two prices
         links = {text.split(" / ")[0]: url for text, url in self.cards(self.judged_messages(document))}
         self.assertEqual(links, {"가상 모델 A": DASHBOARD, "가상 모델 B": DASHBOARD + "#g_0000000000b1"})
@@ -226,6 +226,35 @@ class SlackAdapterTests(unittest.TestCase):
         report = prepare(self.db, self.today, "C_TEST", judged=parse(self.cards_document()))
         (text, url), = self.cards(build_messages(self.db, report, dashboard_url=DASHBOARD + "#old"))
         self.assertEqual(url, DASHBOARD + "#g_0000000000a1")
+
+    def test_a_health_card_says_so_and_links_its_source_and_the_health_screen(self):
+        # 수집 점검 (2026-10-28): its own count in the header, the failing source as 근거, the dashboard at #health
+        report = copy.deepcopy(self.report)
+        report["cards"][0].update(alert="health", links=["https://src.example/p"], usage=None, check=None)
+        report["cards"][0]["items"][0].update(event_type="collection_failure", error="ValueError: page changed", since="2026-10-24")
+        message = build_messages(self.db, report, dashboard_url=DASHBOARD)[0]
+        self.assertEqual(message["text"], f"렛서 알림 · 2026-10-26 · 긴급 {len(report['cards']) - 1}개 · 수집 점검 1개")
+        text = message["blocks"][1]["text"]["text"]
+        self.assertIn("수집 점검 · 2026-10-24부터 실패", text)
+        self.assertIn("오류 : ValueError: page changed", text)
+        buttons = {e["text"]["text"]: e.get("url") for e in message["blocks"][2]["elements"]}
+        self.assertEqual((buttons["근거"], buttons["대시보드"]), ("https://src.example/p", DASHBOARD + "#health"))
+
+    def test_usage_and_check_lines_and_a_bad_link_gets_no_button(self):
+        report = copy.deepcopy(self.report)
+        report["cards"][0].update(usage="이 경로로 사용 중 (가정)", check="렛서 계정에서 확인", links=["https://a b"])
+        message = build_messages(self.db, report, dashboard_url=DASHBOARD)[0]
+        self.assertIn("렛서 사용 : 이 경로로 사용 중 (가정)\n확인할 것 : 렛서 계정에서 확인", message["blocks"][1]["text"]["text"])
+        self.assertNotIn("근거", [e["text"]["text"] for e in message["blocks"][2]["elements"]])
+
+    def test_new_changes_are_counted_in_the_header_and_said_to_go_out_once(self):
+        # 2026-10-28 가안: a new change goes out once, so the message does not call every card urgent.
+        report = copy.deepcopy(self.report)
+        report["cards"][0]["alert"] = "new"
+        message = build_messages(self.db, report)[0]
+        self.assertEqual(message["text"], f"렛서 알림 · 2026-10-26 · 긴급 {len(report['cards']) - 1}개 · 새 변화 1개")
+        self.assertIn("새로 확인된 변화 · 한 번만 알림", message["blocks"][1]["text"]["text"])
+        self.assertTrue(self.messages[0]["text"].startswith("렛서 긴급 알림 · 2026-10-26"))
 
     def test_card_text_writes_names_the_way_the_dashboard_does(self):
         report = copy.deepcopy(self.report)

@@ -6,6 +6,7 @@ event has in events.json. The built page's data slots are read back as JSON.
 
 from __future__ import annotations
 
+import csv
 import json
 import re
 from datetime import datetime, timezone
@@ -415,6 +416,59 @@ def test_template_files_a_card_as_past_by_its_last_observed_day(tmp_path: Path) 
     # a card with no date at all counts as past
     assert rule == "e => { const day = [e.cd, e.ld].filter(Boolean).sort().pop(); return !day || days(day) <= -PAST_DAYS; }"
     assert "const PAST_DAYS = 7;" in page
+
+
+def test_template_recommended_order_puts_letsur_routes_first(tmp_path: Path) -> None:
+    """2026-10-28 가안: 추천 순 follows LETSUR's order of judgement as the 3rd team's report states it. Read off the built page
+    like the rule above; the browser check covers the order on real data."""
+    _write(tmp_path, [])
+    page = _build(tmp_path)[1]
+    tier = page[page.index("function tierOf(e){"):page.index("function recCmp")]
+    # RECORD last, then LETSUR's route: a stop of selling, a cost change, the rest; then unknown, other routes, unused models
+    assert 'if (actionKey(e) === "record") return 7;' in tier
+    assert ('if (r === "use") return t === "제공 종료" || (t === "공급 경로 변경" && /중단/.test(EV7SUB[e.id] || "")) ? 0 : '
+            '["가격 변경", "예정 변경", "한시 할인", "조건·가격 변경"].includes(t) ? 1 : 2;') in tier
+    assert 'if (r === "unk") return 3;' in tier and 'if (r === "other") return dirOf(e) === "good" ? 4 : 5;' in tier
+    assert "function recCmp(a, b){ return tierOf(a) - tierOf(b) || cmpU(a, b) || actOrder(a) - actOrder(b); }" in page
+    assert ': recCmp(a, b); }' in page and ".slice().sort(recCmp)[0]; state.sel = top && top.vg ? top.vg : top?.id;" in page
+
+
+def test_frequent_price_changes_of_one_route_share_a_bundle() -> None:
+    """2026-10-28 가안 (변동 잦음): 3 or more 가격 변경 cards of one model and route within 7 days of each other share a vg;
+    every 가격 변경 card of that route joins, and other types, routes and route-less notes stay apart."""
+    def card(day, t7="가격 변경", model="glm-5.3-flash", route="OpenRouter · openrouter"):
+        return {"t7": t7, "mid": model, "cd": day, "ch": route}
+    busy = [card("2026-10-17"), card("2026-10-17"), card("2026-10-20"), card("2026-10-30")]
+    calm = [card("2026-10-17", model="kimi-k3"), card("2026-10-24", model="kimi-k3"), card("2026-10-30", model="kimi-k3")]
+    others = [card("2026-10-18", t7="예정 변경"), card("2026-10-18", route=build.route_label("")),
+              card("2026-10-18", route=build.route_label("")), card("2026-10-18", route=build.route_label(""))]
+    cards = busy + calm + others
+    build.mark_volatile(cards)
+    assert len({c["vg"] for c in busy}) == 1 and busy[0]["vg"].startswith("v_")  # 10/30 joins: the bundle is the whole route
+    assert not any("vg" in c for c in calm + others)  # 7 days apart each; another type; no route
+    again = busy[:3]
+    build.mark_volatile(again)
+    assert again[0]["vg"] == busy[0]["vg"]  # the id comes from model and route, so links stay put
+
+
+def test_template_bundles_the_list_and_moves_the_table_to_the_model_view(tmp_path: Path) -> None:
+    """2026-10-28 가안: the list shows one row per 변동 잦음 bundle at its first member's place, a bundle opens its own detail
+    (#vg) with links to 모델별 가격, and the page has two screens, 변화 and 모델별 가격 (model list by maker, 가격 추이, 현재 가격
+    표). The browser check covers behaviour."""
+    _write(tmp_path, [])
+    page = _build(tmp_path)[1]
+    assert "const VG = {}; EVENTS.forEach(e => { if (e.vg) (VG[e.vg] = VG[e.vg] || []).push(e); });" in page
+    assert 'list.flatMap(e => !e.vg ? [e] : seen.has(e.vg) ? [] : (seen.add(e.vg), [{vg: e.vg}]))' in page
+    assert "bundled(list.slice().sort(queueCmp)).map(rowOf)" in page and "bundled(l).map(rowOf)" in page
+    assert "if (VG[state.sel]) { renderBundle(state.sel); return; }" in page
+    # two screens: the tabs live in the header, body[data-page] picks what shows, #m/<model> opens 모델별 가격
+    assert '<button type="button" role="tab" data-ptab="changes" aria-selected="true">변화</button>' in page
+    assert 'body:not([data-page="models"]) .mpage{display:none}' in page and 'if (h.startsWith("m/")) startModel' in page
+    assert '<section class="card trend" id="trend" aria-label="가격 추이"></section>' in page and 'id="ptable"' in page
+    assert 'setPage("models", tr.dataset.trend, tr.dataset.tview || "chart");' in page
+    # models grouped by maker (from the id), makers and models in name order
+    assert 'const MAKERS = [["claude", "Anthropic"], ["seedance", "ByteDance"], ["deepseek", "DeepSeek"], ["gemini", "Google"]' in page
+    assert "TREND[a].name.localeCompare(TREND[b].name, undefined, {numeric: true})" in page
 
 
 def test_observed_condition_change(tmp_path: Path) -> None:
@@ -886,11 +940,27 @@ def test_list_rows_lead_with_the_model(tmp_path):
     assert '${esc(e.m)} · ${esc(e.ch)}</span></span>' not in page
 
 
+def test_tab_names_are_short_and_the_comparison_line_keeps_the_source_words():
+    """2026-10-27 박건 request: long Bedrock and OpenAI wording pushed the tab row out of the panel."""
+    def key(**conditions):
+        return json.dumps(conditions, sort_keys=True, ensure_ascii=False), "1M tokens"
+    low = key(context_band="272K input tokens or fewer", inference_option="Global CRIS", region_group="Commercial Regions",
+              service_tier="standard", cache_write_ttl="30m")
+    rule = key(long_context_multiplier="Prompts with >272K input tokens are priced at 2x input and 1.5x output for the full request.",
+               service_tier="standard")
+    assert build.tab_names([low, rule]) == {low: "캐시 30분 · 입력 272K 이하 · Global CRIS · Standard",
+                                            rule: "272K 초과 요청 입력 2배·출력 1.5배 · Standard"}
+    assert "Commercial Regions" in build.tab_conditions([low])[low]
+    assert [build.tab_value("input_token_band", v) for v in ("<=200K", ">200K", "more than 272K input tokens")] == [
+        "입력 200K 이하", "입력 200K 초과", "입력 272K 초과"]
+
+
 def test_template_says_when_a_linked_card_is_not_on_the_page(tmp_path):
     """2026-10-27 decision 26-6: a #card id the page lacks opens the top card with a notice, cleared once a card is chosen."""
     _write(tmp_path, [])
     page = _build(tmp_path)[1]
-    assert "if (!EVENTS.some(e => e.id === state.sel)) missingLink = state.sel;" in page
+    # a 변동 잦음 bundle id (#v_…, 2026-10-28 가안) is on the page too
+    assert "if (!EVENTS.some(e => e.id === state.sel) && !VG[state.sel]) missingLink = state.sel;" in page
     assert "링크한 카드(#${esc(missingLink)})를 이 페이지에서 찾지 못했습니다." in page
     assert "state.sel = id; missingLink = \"\";" in page
 
@@ -950,3 +1020,76 @@ def test_build_writes_cards_json_next_to_the_page(tmp_path):
     assert card["id"] == data["EVENTS"][0]["id"] and card["events"] == data["ID"][card["id"]]
     assert card["action"] in ("REVIEW", "VERIFY", "MONITOR", "RECORD") and card["deadline"] == data["EVENTS"][0].get("eff")
     assert doc["names"]["items"]["input"] == "입력 토큰" and doc["names"]["conditions"]["quantization"] == "정밀도"
+
+
+def test_a_price_series_that_went_back_resolves_the_change(tmp_path: Path) -> None:
+    """2026-10-28 (결정 기록 29절 렛서 답변: 원래 가격으로 돌아온 건은 지금도 바뀐 것처럼 보이지 않게). A change whose series,
+    read in observation order, last stands at the price it started from is reverted; a card whose changed prices all went
+    back is RECORD in cards.json (judge) as in the page (actionKey)."""
+    up = _observed("e-up", "price_change", "1.00", "2.00")
+    back = _observed("e-back", "price_change", "2.00", "1.00")
+    back["dates"]["observed_after_utc"] = "2026-10-06T07:00:00Z"
+    again = _observed("e-again", "price_change", "1.00", "2.00")
+    again["dates"]["observed_after_utc"] = "2026-10-07T07:00:00Z"
+    other = _observed("e-other", "price_change", "3.00", "4.00", item="output")
+    assert build.reverted([up, back, other]) == {"e-up"}  # the last change of a series is never reverted
+    assert build.reverted([up, back, again]) == {"e-back"}  # up's price is in effect again; back's is not
+    _write(tmp_path, [up, back])
+    _, page, data = _build(tmp_path)
+    cards = {data["ID"][card["id"]][0]: card for card in data["EVENTS"]}
+    assert (cards["e-up"].get("rv"), cards["e-up"].get("rn")) == (1, 1) and "rv" not in cards["e-back"]
+    judged = {card["events"][0]: card for card in json.loads((tmp_path / "site" / "cards.json").read_text(encoding="utf-8"))["cards"]}
+    assert judged["e-up"]["action"] == "RECORD" and judged["e-back"]["action"] != "RECORD"
+    assert "const isReverted = e => !!e.rv && e.rv === e.rn;" in page and 'if (isReverted(e)) return "record";' in page
+
+
+def test_health_reads_the_newest_run_and_the_failure_gaps(tmp_path: Path) -> None:
+    """수집 상태 (2026-10-28): failing now comes from the newest run (the gaps' active flag is stale), the streak from the
+    source_failed gaps of the runs before it; earlier failures say whether the source is fine again or left the registry."""
+    runs = ["20261020T050000Z-a", "20261021T050000Z-b", "20261022T050000Z-c"]
+    folder = tmp_path / "root" / "runs" / runs[-1]
+    folder.mkdir(parents=True)
+    with (folder / "sources.csv").open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=["run_id", "source_key", "model_id", "route", "requested_url", "fetch_status", "parse_status", "error"])
+        writer.writeheader()
+        writer.writerow({"run_id": runs[-1], "source_key": "down", "model_id": "m1", "route": "openrouter", "requested_url": "https://x.example/a",
+                         "fetch_status": "ok", "parse_status": "failed", "error": "ValueError: layout changed"})
+        for key in ("fine", "back"):
+            writer.writerow({"run_id": runs[-1], "source_key": key, "model_id": "m0", "route": "openrouter", "requested_url": "",
+                             "fetch_status": "ok", "parse_status": "ok", "error": ""})
+    gaps = [{"kind": "source_failed", "source_key": "down", "run_id": runs[1], "model_id": "m1", "route": "openrouter", "error": "x", "active": True},
+            {"kind": "source_failed", "source_key": "back", "run_id": runs[0], "model_id": "m2", "route": "openrouter", "error": "old", "active": True},
+            {"kind": "source_failed", "source_key": "gone", "run_id": runs[1], "model_id": "m3", "route": "fal", "error": "gone err", "active": True},
+            {"kind": "parser_fingerprint_mismatch", "source_key": "fine"}, {"kind": "parser_fingerprint_mismatch", "source_key": "fine"}]
+    health = build.health(tmp_path / "root", {"status": "ok", "processed_runs": runs}, {"processed_runs": runs, "gaps": gaps}, "2026-10-22")
+    assert (health["total"], health["ok"], health["run"]["id"]) == (3, 2, runs[-1])
+    assert health["failing"] == [{"key": "down", "model": "m1", "route": "openrouter", "ch": build.route_label("openrouter"),
+                                  "error": "ValueError: layout changed", "since": "2026-10-21", "sinceRun": runs[1], "runs": 2,
+                                  "url": "https://x.example/a"}]
+    assert [(r["key"], r["now"], r["first"], r["last"], r["runs"]) for r in health["recent"]] == [
+        ("gone", "gone", "2026-10-21", "2026-10-21", 1), ("back", "ok", "2026-10-20", "2026-10-20", 1)]
+    assert health["recheck"] == [{"key": "fine", "model": "m0", "ch": build.route_label("openrouter"), "n": 2}]
+
+
+def test_cards_json_carries_usage_check_links_and_failing_sources() -> None:
+    """2026-10-28 (결정 기록 29절 렛서 답변: 알림에 현재 이용 중인 경로인지, 근거 링크와 추가 확인 사항)."""
+    data = {"TODAY": "2026-10-28", "ID": {"g1": ["e1"]}, "SRC": {"s1": {"url": "https://src.example/p"}, "s2": {"url": "http://plain.example"}},
+            "EVENTS": [{"id": "g1", "t7": "가격 변경", "relKey": "use", "relShort": "이 경로로 사용 중 (가정)", "m": "m", "ch": "c",
+                        "chk": [["first", "렛서 계정에서 확인"]], "ev": [["s1", "q"], ["s2", "q"], ["s1", "q2"]], "chg": []}],
+            "HEALTH": {"run": {"id": "r", "at": "t"}, "failing": [{"key": "k", "model": "m", "route": "r", "ch": "R", "error": "e",
+                                                                  "since": "2026-10-28", "sinceRun": "r1", "runs": 1, "url": "https://u.example"}]}}
+    judged = build.judgements(data, {"g1": []})
+    card = judged["cards"][0]
+    assert (card["usage"], card["check"], card["links"]) == ("이 경로로 사용 중 (가정)", "렛서 계정에서 확인", ["https://src.example/p"])
+    assert judged["health"]["failing"] == [{"key": "k", "model": "m", "route": "r", "ch": "R", "error": "e", "since": "2026-10-28",
+                                            "sinceRun": "r1", "url": "https://u.example"}]
+
+
+def test_template_has_the_health_screen(tmp_path: Path) -> None:
+    """수집 상태 화면 (2026-10-28 박건 제안): a third header tab, #health opens it, failing sources show on 변화 too."""
+    _write(tmp_path, [])
+    page = _build(tmp_path)[1]
+    assert '<button type="button" role="tab" data-ptab="health" aria-selected="false">수집 상태</button>' in page
+    assert 'if (h === "health") startHealth = true;' in page and "function renderHealth(){" in page
+    assert re.search(r"^const HEALTH = \{.*\};$", page, re.M) and 'body:not([data-page="health"]) .hpage{display:none}' in page
+    assert '<button type="button" data-ptab="health">수집 상태 보기 →</button>' in page
