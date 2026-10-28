@@ -14,7 +14,8 @@ from dataclasses import dataclass
 from scripts.market_collection.models import (BROKER_API_MODELS, BROKER_CATALOG_MODELS, FLARE_MODEL, GOOGLE_BROKER_MODEL,
                                               GOOGLE_LLM_MODEL, SEEDANCE_MODEL, SUNBURST_MODEL)
 from scripts.market_collection.models import (ANTHROPIC_DIRECT_MODELS, AZURE_RETAIL_GPT5_MODELS, AZURE_RETAIL_OPENAI_MODELS,
-                                              GATEWAY_EMBEDDING_MODELS, GATEWAY_MORE_MODELS, GOOGLE_DIRECT_MODELS, GOOGLE_IMAGE_MODELS,
+                                              GATEWAY_EMBEDDING_MODELS, GATEWAY_IMAGE_MODELS, GATEWAY_MORE_MODELS, GOOGLE_DIRECT_MODELS,
+                                              GOOGLE_IMAGE_MODELS,
                                               GPT_IMAGE_2_MODEL, KLING_PRICE_ROWS, KLING_VIDEO_MODELS, OPENAI_DIRECT_MODELS,
                                               SEEDANCE_VARIANT_MODELS, ZAI_DIRECT_MODELS)
 from scripts.market_collection.sources import _targets
@@ -65,7 +66,7 @@ def _exact_aliases() -> list[ModelAlias]:
     names[SEEDANCE_MODEL] = ["Seedance 2.5", SEEDANCE_MODEL]
     # The models added on 2026-10-28: the names their sources use, merged per model. gpt-5.6 is OpenAI's alias of GPT-5.6 Sol:
     # its own name would take the GPT-5.6 family's notices, so it only joins that family (below).
-    for model, title, openrouter_id, vercel_id in GATEWAY_MORE_MODELS + GATEWAY_EMBEDDING_MODELS:
+    for model, title, openrouter_id, vercel_id in GATEWAY_MORE_MODELS + GATEWAY_EMBEDDING_MODELS + GATEWAY_IMAGE_MODELS:
         names.setdefault(model, [title]).extend((openrouter_id, vercel_id, model))
     for model, title, *_ in ANTHROPIC_DIRECT_MODELS + GOOGLE_DIRECT_MODELS + GOOGLE_IMAGE_MODELS + ZAI_DIRECT_MODELS + OPENAI_DIRECT_MODELS:
         if model != "gpt-5.6":

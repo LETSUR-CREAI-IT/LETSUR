@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 
 from scripts.market_collection.adapters.image import parse_source, source_specs
+from scripts.market_collection.collectors.gateway_image_endpoints import PARSERS as GATEWAY_IMAGE_PARSERS
 from scripts.market_collection.core import _validate_parse, validate_registry
 
 
@@ -19,7 +20,7 @@ FILES = {
     "openrouter_sunburst": "openrouter.html",
     "vercel_sunburst": "vercel.html",
 }
-SPECS = {spec.source_key: spec for spec in source_specs() if spec.parser != "google_model_pricing"}
+SPECS = {spec.source_key: spec for spec in source_specs() if spec.parser != "google_model_pricing" and spec.parser not in GATEWAY_IMAGE_PARSERS}
 
 
 def _body(key: str) -> bytes:

@@ -8,6 +8,7 @@ from . import anthropic_models, openai_models
 from . import google_models
 from . import zai
 from . import kling, fal_llms, byteplus_video, vercel_video
+from . import gateway_image_endpoints
 
 SUPPLIERS = {
     "google_direct": google, "openai_direct": openai, "openai": openai,
@@ -37,6 +38,8 @@ def parser_module(spec: SourceSpec):
     for module in (fal_llms, byteplus_video, vercel_video):  # own modules too, so the fal, BytePlus and Vercel parsers keep theirs
         if spec.parser in module.PARSERS:
             return module
+    if spec.parser in gateway_image_endpoints.PARSERS:  # image listings of the two gateways, ahead of the route lookup
+        return gateway_image_endpoints
     module = SUPPLIERS.get(spec.route)
     if module is None:
         raise ValueError("unhandled source route")

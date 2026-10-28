@@ -10,7 +10,7 @@ from scripts.market_collection.core import CollectionError
 from scripts.market_collection import signals
 from scripts.market_collection.signals import __main__ as cli
 from scripts.market_collection.signals.matching import claims_in, date_phrases, entry_signals, models_in, normalize
-from scripts.market_collection.models import BROKER_API_MODELS, GATEWAY_EMBEDDING_MODELS, GATEWAY_MORE_MODELS
+from scripts.market_collection.models import BROKER_API_MODELS, GATEWAY_EMBEDDING_MODELS, GATEWAY_IMAGE_MODELS, GATEWAY_MORE_MODELS
 from scripts.market_collection.signals.parsers import (SignalParseError, atom_entries, openrouter_endpoint_signals, rss_entries,
                                                        vercel_endpoint_signals)
 from scripts.market_collection.signals.registry import SignalSourceSpec, signal_sources, validate
@@ -87,6 +87,7 @@ def test_a_model_name_before_a_variant_word_is_another_model():
     assert labels("DeepSeek V4 Flash Vision Exp is 50% off") == []
     assert labels("GPT-4.1 nano (OpenAI) retired") == [("GPT-4.1 Nano", "exact")]
     assert labels("Qwen 3.8 Max 0902 price cut") == [("Qwen 3.8 Max", "exact")]  # a dated snapshot is the same model
+    assert labels("Gemini 3 Pro Image Preview will be deprecated") == [("Gemini 3 Pro Image Preview", "exact")]
 
 
 def test_claim_terms_skip_comparisons_and_keep_kinds():
@@ -181,8 +182,10 @@ def test_gateway_api_sources_cover_every_listed_model_of_both_gateways():
         by_parser.setdefault(spec.parser, []).append(spec)
     # 2026-10-28: 4 feeds + OpenRouter 18 -> 49 (34 gateway-only models, 31 with an OpenRouter id) -> 99 (51 more, 50 with one)
     # + Vercel 49 -> 98 (49 of the 51 more: gemini-3-flash-preview and gpt-5.1 are OpenRouter only)
-    assert len(specs) == 201 and {parser: len(found) for parser, found in by_parser.items()} == {
-        "atom": 3, "rss": 1, "openrouter_endpoints": 99, "vercel_endpoints": 98}
+    # 2026-10-29: the 7 image models add 6 OpenRouter (gpt-image-2 is not in /api/v1/models) -> 105 and 6 Vercel (gemini-3-pro-image-preview is not
+    # in its model list) -> 104
+    assert len(specs) == 213 and {parser: len(found) for parser, found in by_parser.items()} == {
+        "atom": 3, "rss": 1, "openrouter_endpoints": 105, "vercel_endpoints": 104}
     assert all(spec.source_kind == "channel_api" and spec.model_id for parser in ("openrouter_endpoints", "vercel_endpoints")
                for spec in by_parser[parser])
     keys = {spec.source_key: spec for spec in specs}
@@ -202,13 +205,22 @@ def test_gateway_api_sources_cover_every_listed_model_of_both_gateways():
     assert len(more) == 51 and not added & more
     assert not {spec.model_id for spec in by_parser["openrouter_endpoints"][:18]} & (added | more)
     assert {spec.model_id for spec in by_parser["openrouter_endpoints"][18:49]} <= added
-    assert {spec.model_id for spec in by_parser["openrouter_endpoints"][49:]} <= more
+    images = {model for model, *_ in GATEWAY_IMAGE_MODELS}
+    assert len(images) == 7 and not images & (added | more)
+    assert {spec.model_id for spec in by_parser["openrouter_endpoints"][49:99]} <= more
+    assert [spec.model_id for spec in by_parser["openrouter_endpoints"][99:]] == [m for m, _, openrouter_id, _ in GATEWAY_IMAGE_MODELS if openrouter_id]
     for model, _, openrouter_id, vercel_id in GATEWAY_MORE_MODELS + GATEWAY_EMBEDDING_MODELS:
         key = re.sub(r"[^a-z0-9]+", "_", model)
         assert (f"openrouter_endpoints_{key}" in keys) == bool(openrouter_id) and (f"vercel_endpoints_{key}" in keys) == bool(vercel_id)
     assert keys["vercel_endpoints_claude_opus_4_5_20251101"].url == "https://ai-gateway.vercel.sh/v1/models/anthropic/claude-opus-4.5/endpoints"
     assert keys["openrouter_endpoints_glm_5_3"].url == "https://openrouter.ai/api/v1/models/z-ai/glm-5.3/endpoints"
     assert (keys["vercel_endpoints_text_embedding_3_large"].model_id, keys["vercel_endpoints_text_embedding_3_large"].model_label) == ("text-embedding-3-large", "text-embedding-3-large")
+    for model, _, openrouter_id, vercel_id in GATEWAY_IMAGE_MODELS:
+        key = re.sub(r"[^a-z0-9]+", "_", model)
+        assert (f"openrouter_endpoints_{key}" in keys) == bool(openrouter_id) and (f"vercel_endpoints_{key}" in keys) == bool(vercel_id)
+    assert keys["openrouter_endpoints_gemini_3_pro_image_preview"].url == "https://openrouter.ai/api/v1/models/google/gemini-3-pro-image-preview/endpoints"
+    assert keys["vercel_endpoints_gpt_image_2"].url == "https://ai-gateway.vercel.sh/v1/models/openai/gpt-image-2/endpoints"
+    assert "vercel_endpoints_gemini_3_pro_image_preview" not in keys and "openrouter_endpoints_gpt_image_2" not in keys
 
 
 def test_both_api_parsers_need_a_model_and_feeds_none():

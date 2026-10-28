@@ -1,0 +1,52 @@
+[
+  {
+    "fixture": "openrouter-gemini-3.1-flash-image.json",
+    "source_key": "openrouter_image_endpoints_gemini_3_1_flash_image",
+    "source_url": "https://openrouter.ai/api/v1/models/google/gemini-3.1-flash-image/endpoints",
+    "run_id": "20261028T151522Z-168c78cf39474c95b867fd672c0fdcfd",
+    "fetched_at_utc": "2026-10-28T15:15:23.464738Z",
+    "raw_sha256": "633b17428bbc741154c455d4f0efc737dc609539ba8c31150b673e4d1c28911d",
+    "raw_bytes": 3672,
+    "method": "Raw body of a local live core run (public endpoint API, no login), kept byte for byte."
+  },
+  {
+    "fixture": "openrouter-gemini-3-pro-image-preview.json",
+    "source_key": "openrouter_image_endpoints_gemini_3_pro_image_preview",
+    "source_url": "https://openrouter.ai/api/v1/models/google/gemini-3-pro-image-preview/endpoints",
+    "run_id": "20261028T151522Z-168c78cf39474c95b867fd672c0fdcfd",
+    "fetched_at_utc": "2026-10-28T15:15:22.810672Z",
+    "raw_sha256": "3252f9865b1f0c2fb511c84d35b4f69bb110c3563d9f0eb257302416a3420ac6",
+    "raw_bytes": 3070,
+    "method": "Raw body of a local live core run (public endpoint API, no login), kept byte for byte."
+  },
+  {
+    "fixture": "vercel-gemini-3.1-flash-image-preview.json",
+    "source_key": "vercel_image_endpoints_gemini_3_1_flash_image_preview",
+    "source_url": "https://ai-gateway.vercel.sh/v1/models/google/gemini-3.1-flash-image-preview/endpoints",
+    "run_id": "20261028T151522Z-168c78cf39474c95b867fd672c0fdcfd",
+    "fetched_at_utc": "2026-10-28T15:15:22.949383Z",
+    "raw_sha256": "b5a4aeccaecc51daacd212841e84764aa55053ef40fa2d9e6f98b41dfedeecc5",
+    "raw_bytes": 1520,
+    "method": "Raw body of a local live core run (public endpoint API, no login), kept byte for byte."
+  },
+  {
+    "fixture": "vercel-gpt-image-2.json",
+    "source_key": "vercel_image_endpoints_gpt_image_2",
+    "source_url": "https://ai-gateway.vercel.sh/v1/models/openai/gpt-image-2/endpoints",
+    "run_id": "20261028T151522Z-168c78cf39474c95b867fd672c0fdcfd",
+    "fetched_at_utc": "2026-10-28T15:15:23.612869Z",
+    "raw_sha256": "a634e57205fe0fe1931bfc15f65319e30bcf42b5996995c06afd15a130e39cf8",
+    "raw_bytes": 1125,
+    "method": "Raw body of a local live core run (public endpoint API, no login), kept byte for byte."
+  },
+  {
+    "fixture": "openrouter-images-catalog-gpt-image-2.json",
+    "source_key": "openrouter_image_catalog_endpoints_gpt_image_2",
+    "source_url": "https://openrouter.ai/api/v1/images/models/openai/gpt-image-2/endpoints",
+    "run_id": "20261028T151522Z-168c78cf39474c95b867fd672c0fdcfd",
+    "fetched_at_utc": "2026-10-28T15:15:23.675982Z",
+    "raw_sha256": "23861fb9c18a36763e4eab32f81c568b3bf6b8b59fc62c873aeb68fb7f843326",
+    "raw_bytes": 782,
+    "method": "Raw body of a local live core run (public endpoint API, no login), kept byte for byte."
+  }
+]
