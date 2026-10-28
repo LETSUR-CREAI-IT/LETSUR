@@ -55,6 +55,21 @@ def test_gateway_only_models_match_by_title_and_gateway_ids():
     assert labels("Muse Wonder is 50% off") == [("Muse Wonder", "exact")]
 
 
+def test_models_added_on_1028_match_and_a_name_inside_a_longer_model_name_is_that_model():
+    """The 70 models added on 2026-10-28 match by their sources' names; a registered name found only inside a longer
+    registered name (GPT-4o in GPT-4o mini, o3 in o3-pro, DeepSeek V4 Flash in DeepSeek V4 Flash 0731) is not a mention."""
+    assert labels("GPT-4o mini is cheaper") == [("GPT-4o-mini", "exact")]
+    assert labels("GPT-4o and GPT-4o mini") == [("GPT-4o", "exact"), ("GPT-4o-mini", "exact")]
+    assert labels("o3-pro and o4-mini retire on Azure") == [("o4-mini", "exact"), ("o3-pro", "exact")]
+    assert labels("DeepSeek V4 Flash 0731 is 50% off") == [("DeepSeek V4 Flash 0731", "exact")]
+    assert labels("Gemini 2.5 Flash Image will be deprecated") == [("Gemini 2.5 Flash Image", "exact")]
+    assert labels("GPT Image 2 pricing") == [("GPT Image 2", "exact")] and labels("GPT Image 2.5 pricing") == [("GPT Image 2.5", "family")]
+    assert [alias.model_ids for alias in models_in("GPT-5.4 retirement")] == [("gpt-5.4",), ("gpt-5.4-2026-03-05",)]
+    # gpt-5.6, OpenAI's alias of GPT-5.6 Sol, has no name of its own: it takes the family's notices, not Sol's or the family's name
+    assert [alias.model_ids for alias in models_in("GPT-5.6 has a price increase")] == [("gpt-5.6-sol", "gpt-5.6-terra", "gpt-5.6-luna", "gpt-5.6")]
+    assert labels("GPT-5.6 Sol is 50% off") == [("GPT-5.6 Sol", "exact")]
+
+
 def test_claim_terms_skip_comparisons_and_keep_kinds():
     assert claims_in("Both models work at a lower price than GPT-6 Astra.")[0] == []
     assert claims_in("OpenAI lowered list pricing for GPT-5.6 Sol.")[0] == ["price_decrease"]
@@ -225,7 +240,7 @@ def test_live_preserves_raw_records_failures_and_separates_origin_status(tmp_pat
     assert {row["origin_status"] for row in by_source["openrouter_endpoints_gpt_5_6_sol"]} == {"channel_stated"}
     blog = by_source["blog_feed"][0]
     assert (blog["model_label"], blog["model_match"], blog["claim_kinds"], blog["date_phrases"]) == ("GPT-5.6", "family", "price_increase", "for November")
-    assert blog["model_ids"] == "gpt-5.6-sol;gpt-5.6-terra;gpt-5.6-luna"
+    assert blog["model_ids"] == "gpt-5.6-sol;gpt-5.6-terra;gpt-5.6-luna;gpt-5.6"  # the gpt-5.6 alias joined the family (2026-10-28)
     assert all(row["linked_event"] == "" and row["next_check"] == "" for row in found)
     # Price CSVs are untouched: signals live under their own directory.
     assert not (tmp_path / "runs").exists()

@@ -13,6 +13,9 @@ from dataclasses import dataclass
 
 from scripts.market_collection.models import (BROKER_API_MODELS, BROKER_CATALOG_MODELS, FLARE_MODEL, GOOGLE_BROKER_MODEL,
                                               GOOGLE_LLM_MODEL, SEEDANCE_MODEL, SUNBURST_MODEL)
+from scripts.market_collection.models import (ANTHROPIC_DIRECT_MODELS, AZURE_RETAIL_GPT5_MODELS, AZURE_RETAIL_OPENAI_MODELS,
+                                              GATEWAY_EMBEDDING_MODELS, GATEWAY_MORE_MODELS, GOOGLE_DIRECT_MODELS, GOOGLE_IMAGE_MODELS,
+                                              GPT_IMAGE_2_MODEL, OPENAI_DIRECT_MODELS, ZAI_DIRECT_MODELS)
 from scripts.market_collection.sources import _targets
 
 MAX_QUOTES = 2
@@ -52,6 +55,17 @@ def _exact_aliases() -> list[ModelAlias]:
     names[SUNBURST_MODEL] = ["GPT Image 2.5 Sunburst", SUNBURST_MODEL]
     names[FLARE_MODEL] = ["GPT Image 2.5 Flare", FLARE_MODEL]
     names[SEEDANCE_MODEL] = ["Seedance 2.5", SEEDANCE_MODEL]
+    # The models added on 2026-10-28: the names their sources use, merged per model. gpt-5.6 is OpenAI's alias of GPT-5.6 Sol:
+    # its own name would take the GPT-5.6 family's notices, so it only joins that family (below).
+    for model, title, openrouter_id, vercel_id in GATEWAY_MORE_MODELS + GATEWAY_EMBEDDING_MODELS:
+        names.setdefault(model, [title]).extend((openrouter_id, vercel_id, model))
+    for model, title, *_ in ANTHROPIC_DIRECT_MODELS + GOOGLE_DIRECT_MODELS + GOOGLE_IMAGE_MODELS + ZAI_DIRECT_MODELS + OPENAI_DIRECT_MODELS:
+        if model != "gpt-5.6":
+            names.setdefault(model, [title]).append(model)
+    for model in AZURE_RETAIL_GPT5_MODELS + AZURE_RETAIL_OPENAI_MODELS:
+        names.setdefault(model, [model])
+    names["gpt-5.4-2026-03-05"] = names["gpt-5.4"] + ["gpt-5.4-2026-03-05"]  # a dated id: notices name the model, not the date
+    names[GPT_IMAGE_2_MODEL] = ["GPT Image 2", GPT_IMAGE_2_MODEL]
     return [ModelAlias(names[model][0], (model,), "exact", _compile(names[model])) for model in names]
 
 
@@ -61,6 +75,7 @@ def _family_aliases(exact: list[ModelAlias]) -> list[ModelAlias]:
         if re.fullmatch(r"GPT-[\d.]+ \w+", alias.label):
             families.setdefault(alias.label.rsplit(" ", 1)[0], []).extend(alias.model_ids)
     families["GPT Image 2.5"] = [SUNBURST_MODEL, FLARE_MODEL]
+    families["GPT-5.6"].append("gpt-5.6")  # OpenAI's gpt-5.6 alias routes to GPT-5.6 Sol
     return [ModelAlias(label, tuple(models), "family", _compile([label])) for label, models in families.items()]
 
 
@@ -107,14 +122,18 @@ def sentences(text: str) -> list[str]:
 
 
 def models_in(sentence: str) -> list[ModelAlias]:
-    """Exact model mentions first; a family counts only where no member model is named."""
+    """Exact model mentions first; a family counts only where no member model is named. A name found only inside a longer
+    model name ("GPT-4o" in "GPT-4o mini", "o3" in "o3-pro") is that longer model's mention (2026-10-28)."""
+    matched = [(alias, [match.span() for match in alias.pattern.finditer(sentence)]) for alias in EXACT_ALIASES]
+    matched = [(alias, spans) for alias, spans in matched if spans]
+    every = [span for _, spans in matched for span in spans]
     found: list[ModelAlias] = []
     covered: list[tuple[int, int]] = []
-    for alias in EXACT_ALIASES:
-        spans = [match.span() for match in alias.pattern.finditer(sentence)]
-        if spans:
-            found.append(alias)
-            covered.extend(spans)
+    for alias, spans in matched:
+        if all(any(start <= s and e <= end and end - start > e - s for start, end in every) for s, e in spans):
+            continue
+        found.append(alias)
+        covered.extend(spans)
     named = {model for alias in found for model in alias.model_ids}
     for alias in FAMILY_ALIASES:
         # "GPT-5.6 Sol, the flagship of the GPT-5.6 series" is about Sol, not the whole family.
