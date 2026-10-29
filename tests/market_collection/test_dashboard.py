@@ -1326,10 +1326,40 @@ def test_health_reads_the_newest_run_and_the_failure_gaps(tmp_path: Path) -> Non
     assert (health["total"], health["ok"], health["run"]["id"]) == (3, 2, runs[-1])
     assert health["failing"] == [{"key": "down", "model": "m1", "route": "openrouter", "ch": build.route_label("openrouter"),
                                   "error": "ValueError: layout changed", "since": "2026-10-21", "sinceRun": runs[1], "runs": 2,
+                                  "kind": "format", "label": "수집기 수정 필요", "action": "원문을 열어 바뀐 형식에 맞게 수집기를 고치세요", "fix": True,
                                   "url": "https://x.example/a"}]
     assert [(r["key"], r["now"], r["first"], r["last"], r["runs"]) for r in health["recent"]] == [
         ("gone", "gone", "2026-10-21", "2026-10-21", 1), ("back", "ok", "2026-10-20", "2026-10-20", 1)]
     assert health["recheck"] == [{"key": "fine", "model": "m0", "ch": build.route_label("openrouter"), "n": 2}]
+
+
+def test_health_judges_each_failure_and_puts_the_ones_to_act_on_first(tmp_path: Path) -> None:
+    """수집 상태 (2026-10-29 박건: 수집기를 고쳐야 하는 실패를 가려 알린다): kind, 판단, action and fix per failing source; a
+    temporary error needs action only from its second failed run on; the sources to act on come first, then the file order."""
+    runs = ["20261020T050000Z-a", "20261021T050000Z-b", "20261022T050000Z-c"]
+    folder = tmp_path / "root" / "runs" / runs[-1]
+    folder.mkdir(parents=True)
+    failures = [("blip", "error", "not_run", "", "TimeoutError: The read operation timed out"),  # first failed run
+                ("slow", "error", "not_run", "", "TimeoutError: The read operation timed out"),  # second in a row
+                ("busy", "http_error", "not_run", "503", ""),
+                ("moved", "http_error", "not_run", "404", ""),
+                ("layout", "ok", "error", "200", "ValueError: n prose/schema constraints disagree"),
+                ("fine", "ok", "ok", "200", "")]
+    with (folder / "sources.csv").open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=["run_id", "source_key", "model_id", "route", "requested_url", "http_status", "fetch_status", "parse_status", "error"])
+        writer.writeheader()
+        for key, fetch, parse, http, error in failures:
+            writer.writerow({"run_id": runs[-1], "source_key": key, "model_id": "m", "route": "openrouter", "requested_url": "",
+                             "http_status": http, "fetch_status": fetch, "parse_status": parse, "error": error})
+    gaps = [{"kind": "source_failed", "source_key": "slow", "run_id": runs[1], "model_id": "m", "route": "openrouter", "error": "x", "active": True}]
+    health = build.health(tmp_path / "root", {"status": "ok", "processed_runs": runs}, {"processed_runs": runs, "gaps": gaps}, "2026-10-22")
+    assert [(f["key"], f["kind"], f["label"], f["runs"], f["fix"]) for f in health["failing"]] == [
+        ("slow", "temporary", "일시 오류", 2, True), ("moved", "access", "접근 문제", 1, True), ("layout", "format", "수집기 수정 필요", 1, True),
+        ("blip", "temporary", "일시 오류", 1, False), ("busy", "temporary", "일시 오류", 1, False)]
+    actions = {f["key"]: f["action"] for f in health["failing"]}
+    assert actions["blip"] == "다음 수집에서 다시 시도합니다. 2회 연속이면 출처를 확인하세요"
+    assert actions["slow"] == "연속으로 실패했습니다. 출처가 열리는지, 주소나 접근이 바뀌었는지 확인하세요"
+    assert {f["key"]: f["error"] for f in health["failing"]}["moved"] == "HTTP 404"  # the status when the source gave no error text
 
 
 def test_cards_json_carries_usage_check_links_and_failing_sources() -> None:
@@ -1337,13 +1367,16 @@ def test_cards_json_carries_usage_check_links_and_failing_sources() -> None:
     data = {"TODAY": "2026-10-28", "ID": {"g1": ["e1"]}, "SRC": {"s1": {"url": "https://src.example/p"}, "s2": {"url": "http://plain.example"}},
             "EVENTS": [{"id": "g1", "t7": "가격 변경", "relKey": "use", "relShort": "이 경로로 사용 중 (가정)", "m": "m", "ch": "c",
                         "chk": [["first", "렛서 계정에서 확인"]], "ev": [["s1", "q"], ["s2", "q"], ["s1", "q2"]], "chg": []}],
-            "HEALTH": {"run": {"id": "r", "at": "t"}, "failing": [{"key": "k", "model": "m", "route": "r", "ch": "R", "error": "e",
-                                                                  "since": "2026-10-28", "sinceRun": "r1", "runs": 1, "url": "https://u.example"}]}}
+            "HEALTH": {"run": {"id": "r", "at": "t"}, "failing": [{"key": "k", "model": "m", "route": "r", "ch": "R", "error": "e", "since": "2026-10-28",
+                                                                  "sinceRun": "r1", "runs": 1, "kind": "format", "label": "수집기 수정 필요",
+                                                                  "action": "원문을 열어 바뀐 형식에 맞게 수집기를 고치세요", "fix": True,
+                                                                  "url": "https://u.example"}]}}
     judged = build.judgements(data, {"g1": []})
     card = judged["cards"][0]
     assert (card["usage"], card["check"], card["links"]) == ("이 경로로 사용 중 (가정)", "렛서 계정에서 확인", ["https://src.example/p"])
     assert judged["health"]["failing"] == [{"key": "k", "model": "m", "route": "r", "ch": "R", "error": "e", "since": "2026-10-28",
-                                            "sinceRun": "r1", "url": "https://u.example"}]
+                                            "sinceRun": "r1", "url": "https://u.example", "runs": 1, "kind": "format", "label": "수집기 수정 필요",
+                                            "action": "원문을 열어 바뀐 형식에 맞게 수집기를 고치세요", "fix": True}]
 
 
 def test_template_has_the_health_screen(tmp_path: Path) -> None:
@@ -1354,3 +1387,5 @@ def test_template_has_the_health_screen(tmp_path: Path) -> None:
     assert 'if (h === "health") startHealth = true;' in page and "function renderHealth(){" in page
     assert re.search(r"^const HEALTH = \{.*\};$", page, re.M) and 'body:not([data-page="health"]) .hpage{display:none}' in page
     assert '<button type="button" data-ptab="health">수집 상태 보기 →</button>' in page
+    # 2026-10-29: the failing table has a 판단 column and the section says how many sources need action
+    assert 'table(["출처", "판단", "오류", "실패"]' in page and "수집기 확인 필요 ${todo}곳" in page

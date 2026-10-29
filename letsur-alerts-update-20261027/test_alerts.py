@@ -545,6 +545,79 @@ class AlertTests(unittest.TestCase):
         finally:
             db.close()
 
+    def failing_source(self, key="src_a", **judgement):
+        return {"key": key, "sinceRun": "20261024T050000Z-x", "model": "가상 모델 A", "route": "가상 공급 경로",
+                "error": "ValueError: page changed", "since": "2026-10-24", "url": "https://src.example/p", **judgement}
+
+    FORMAT = {"kind": "format", "label": "수집기 수정 필요", "action": "원문을 열어 바뀐 형식에 맞게 수집기를 고치세요", "runs": 1, "fix": True}
+    TEMPORARY = {"kind": "temporary", "label": "일시 오류", "action": "연속으로 실패했습니다. 출처가 열리는지 확인하세요", "runs": 2, "fix": True}
+
+    def test_only_a_failure_the_dashboard_asks_to_act_on_becomes_an_event(self):
+        # 2026-10-29 (박건: 수집기를 고쳐야 하는 실패만 가려 알린다): a temporary error on its first failed run waits for the next run
+        waiting = self.failing_source("slow", **dict(self.TEMPORARY, runs=1, fix=False))
+        events = health_events([waiting, self.failing_source("again", **self.TEMPORARY), self.failing_source("fmt", **self.FORMAT),
+                                self.failing_source("older")])
+        self.assertEqual([event["source_key"] for event in events], ["again", "fmt", "older"])
+        self.assertEqual(events[0]["failure"], {"kind": "temporary", "label": "일시 오류", "action": self.TEMPORARY["action"], "runs": 2})
+        self.assertNotIn("failure", events[2])  # an older cards.json carries no judgement: the event is what it was
+        self.assertEqual(health_events(None), [])
+
+    def test_the_judgement_does_not_change_an_events_identity(self):
+        # a streak already sent before 2026-10-29 must not go out again because its event now carries a judgement
+        plain, judged = health_events([self.failing_source()])[0], health_events([self.failing_source(**self.FORMAT)])[0]
+        self.assertEqual(digest(material(plain)), digest(material(judged)))
+        sync(self.db, {"events": [plain]}, self.today, 5)
+        simulated_success(self.db, prepare(self.db, self.today, "test"))
+        tomorrow = self.today + timedelta(days=1)
+        sync(self.db, {"events": [judged]}, tomorrow, 5)
+        self.assertEqual(prepare(self.db, tomorrow, "test")["cards"], [])
+
+    def test_the_card_says_the_judgement_and_what_to_do(self):
+        sync(self.db, {"events": health_events([self.failing_source(**self.FORMAT)])}, self.today, 5)
+        text = render(prepare(self.db, self.today, "test"))
+        self.assertIn("1. 수집기 수정 필요 · 가상 모델 A · 가상 공급 경로\n수집 점검 · 2026-10-24부터 실패\n"
+                      "조치 : 원문을 열어 바뀐 형식에 맞게 수집기를 고치세요\n근거 : https://src.example/p\n  오류 : ValueError: page changed", text)
+        db = connect(Path(self.tmp.name) / "repeat.sqlite")
+        try:
+            sync(db, {"events": health_events([self.failing_source(**self.TEMPORARY)])}, self.today, 5)
+            text = render(prepare(db, self.today, "test"))
+        finally:
+            db.close()
+        self.assertIn("1. 일시 오류가 2회 이어짐 · 가상 모델 A · 가상 공급 경로\n", text)
+        self.assertIn("조치 : 연속으로 실패했습니다. 출처가 열리는지 확인하세요", text)
+        # no judgement (an older cards.json): the card reads as before
+        db = connect(Path(self.tmp.name) / "older.sqlite")
+        try:
+            sync(db, {"events": health_events([self.failing_source()])}, self.today, 5)
+            text = render(prepare(db, self.today, "test"))
+        finally:
+            db.close()
+        self.assertIn("1. 가상 모델 A / 가상 공급 경로\n수집 점검 · 2026-10-24부터 실패\n", text)
+        self.assertNotIn("조치 :", text)
+
+    def test_cards_of_two_judgements_are_not_mixed(self):
+        failing = [self.failing_source("fmt", **self.FORMAT), self.failing_source("slow", **self.TEMPORARY), self.failing_source("fmt2", **self.FORMAT)]
+        sync(self.db, {"events": health_events(failing)}, self.today, 5)
+        cards = prepare(self.db, self.today, "test")["cards"]
+        self.assertEqual(sorted((c["items"][0]["failure"]["kind"], len(c["items"])) for c in cards), [("format", 2), ("temporary", 1)])
+
+    def test_a_temporary_error_is_sent_once_it_has_failed_twice_in_a_row(self):
+        # day 1: first failed run, nothing; day 2: the second run fails too, one alert for the streak; day 3: not again
+        day1, day2, day3 = self.today, self.today + timedelta(days=1), self.today + timedelta(days=2)
+        sync(self.db, {"events": health_events([self.failing_source(**dict(self.TEMPORARY, runs=1, fix=False))])}, day1, 5)
+        self.assertEqual(prepare(self.db, day1, "test")["cards"], [])
+        sync(self.db, {"events": health_events([self.failing_source(**self.TEMPORARY)])}, day2, 5)
+        report = prepare(self.db, day2, "test")
+        self.assertEqual([c["alert"] for c in report["cards"]], ["health"])
+        self.assertEqual(report["cards"][0]["items"][0]["event_id"], "health:src_a:20261024T050000Z-x")
+        simulated_success(self.db, report)
+        sync(self.db, {"events": health_events([self.failing_source(**dict(self.TEMPORARY, runs=3))])}, day3, 5)
+        self.assertEqual(prepare(self.db, day3, "test")["cards"], [])
+        # a temporary error that cleared after one run was never sent, and a new streak is a new alert
+        sync(self.db, {"events": health_events([self.failing_source(**dict(self.TEMPORARY, runs=2), sinceRun="20261030T050000Z-y")])},
+             day3 + timedelta(days=1), 5)
+        self.assertEqual(len(prepare(self.db, day3 + timedelta(days=1), "test")["cards"]), 1)
+
     def test_the_message_says_whether_letsur_uses_the_route_and_what_to_check(self):
         # 2026-10-28 (결정 기록 29절 렛서 답변): 현재 이용 중인 경로인지, 근거 링크와 추가 확인 사항
         sync(self.db, self.document, self.today, 5)

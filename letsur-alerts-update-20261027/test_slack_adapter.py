@@ -240,6 +240,29 @@ class SlackAdapterTests(unittest.TestCase):
         buttons = {e["text"]["text"]: e.get("url") for e in message["blocks"][2]["elements"]}
         self.assertEqual((buttons["근거"], buttons["대시보드"]), ("https://src.example/p", DASHBOARD + "#health"))
 
+    def test_a_health_card_headline_says_the_judgement_and_the_card_says_what_to_do(self):
+        # 2026-10-29 (박건: 수집기를 고쳐야 하는 실패만 가려 알린다): '수집기 수정 필요 · 모델 · 경로', '일시 오류가 2회 이어짐 · …', 조치 line
+        for failure, headline, to_do in (
+                ({"kind": "format", "label": "수집기 수정 필요", "action": "원문을 열어 바뀐 형식에 맞게 수집기를 고치세요", "runs": 1},
+                 "수집기 수정 필요 · 가상 모델 A · 가상 공급 경로", "조치 : 원문을 열어 바뀐 형식에 맞게 수집기를 고치세요"),
+                ({"kind": "temporary", "label": "일시 오류", "action": "연속으로 실패했습니다. 출처가 열리는지 확인하세요", "runs": 2},
+                 "일시 오류가 2회 이어짐 · 가상 모델 A · 가상 공급 경로", "조치 : 연속으로 실패했습니다. 출처가 열리는지 확인하세요")):
+            with self.subTest(kind=failure["kind"]):
+                report = copy.deepcopy(self.report)
+                report["cards"][0].update(alert="health", model="가상 모델 A", route="가상 공급 경로", usage=None, check=None)
+                report["cards"][0]["items"][0].update(event_type="collection_failure", error="ValueError: page changed", since="2026-10-24", failure=failure)
+                text = build_messages(self.db, report, dashboard_url=DASHBOARD)[0]["blocks"][1]["text"]["text"]
+                self.assertEqual(text.split("\n")[:3], [headline, "수집 점검 · 2026-10-24부터 실패", to_do])
+                self.assertIn("오류 : ValueError: page changed", text)
+
+    def test_a_health_card_without_a_judgement_keeps_its_old_text(self):
+        report = copy.deepcopy(self.report)
+        report["cards"][0].update(alert="health", model="가상 모델 A", route="가상 공급 경로", usage=None, check=None)
+        report["cards"][0]["items"][0].update(event_type="collection_failure", error="ValueError: page changed", since="2026-10-24")
+        text = build_messages(self.db, report, dashboard_url=DASHBOARD)[0]["blocks"][1]["text"]["text"]
+        self.assertEqual(text.split("\n")[:2], ["가상 모델 A / 가상 공급 경로", "수집 점검 · 2026-10-24부터 실패"])
+        self.assertNotIn("조치 :", text)
+
     def test_usage_and_check_lines_and_a_bad_link_gets_no_button(self):
         report = copy.deepcopy(self.report)
         report["cards"][0].update(usage="이 경로로 사용 중 (가정)", check="렛서 계정에서 확인", links=["https://a b"])

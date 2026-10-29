@@ -119,9 +119,25 @@ class DashboardCardsTests(unittest.TestCase):
         event = judged["events"]["demo-input"]
         self.assertEqual((event["usage"], event["check"], event["links"]),
                          ("이 경로로 사용 중 (가정)", "렛서 계정에서 확인", ["https://ai.google.dev/pricing"]))
+        # an older cards.json has no judgement: nothing to say, and the source is to be sent at once
         self.assertEqual(judged["health"], [{"key": "src_a", "sinceRun": "20261027T051408Z-x", "model": "m", "route": "r",
-                                             "error": "e", "since": "2026-10-27", "url": "https://src.example/p"}])
+                                             "error": "e", "since": "2026-10-27", "url": "https://src.example/p",
+                                             "kind": "", "label": "", "action": "", "runs": 0, "fix": True}])
         self.assertEqual(parse(cards_document())["health"], [])
+
+    def test_the_dashboards_judgement_of_a_failing_source_is_kept(self):
+        # 2026-10-29 (박건: 수집기를 고쳐야 하는 실패만 가려 알린다): kind, label, action, runs and fix, with bad values made harmless
+        doc = cards_document()
+        item = {"key": "src_a", "sinceRun": "20261027T051408Z-x", "kind": "temporary", "label": "일시 오류", "action": "출처를 확인하세요",
+                "runs": 2, "fix": True}
+        doc["health"] = {"failing": [item, dict(item, key="src_b", fix=False, runs=1),
+                                     dict(item, key="src_c", fix="no", runs="2", kind=3, label=None),
+                                     dict(item, key="src_d", runs=True), dict(item, key="src_e", runs=0)]}
+        failing = {entry["key"]: entry for entry in parse(doc)["health"]}
+        self.assertEqual({key: (entry["kind"], entry["label"], entry["action"], entry["runs"], entry["fix"]) for key, entry in failing.items()}, {
+            "src_a": ("temporary", "일시 오류", "출처를 확인하세요", 2, True), "src_b": ("temporary", "일시 오류", "출처를 확인하세요", 1, False),
+            "src_c": ("", "", "출처를 확인하세요", 0, True), "src_d": ("temporary", "일시 오류", "출처를 확인하세요", 0, True),
+            "src_e": ("temporary", "일시 오류", "출처를 확인하세요", 0, True)})
 
 
 class FromSourceTests(unittest.TestCase):

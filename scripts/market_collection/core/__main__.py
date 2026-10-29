@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 
 from . import CollectionError, history, live, replay
+from .failures import classify
 
 # GitHub shows at most 10 error annotations per step; past that the step summary's "Failed source keys" line has them all.
 ANNOTATION_LIMIT = 10
@@ -18,18 +19,22 @@ def _escape(text: str, *, prop: bool = False) -> str:
 
 
 def failure_annotations(run_dir: Path) -> list[str]:
-    """One GitHub Actions error line per failed source naming its model, route and collector (parser), so the run page
-    says which supplier path broke and why instead of only "exit code 1" (2026-10-28, 박건)."""
+    """One GitHub Actions line per failed source naming its model, route and collector (parser), so the run page says which
+    supplier path broke and why instead of only "exit code 1" (2026-10-28, 박건). Since 2026-10-29 the title starts with the
+    판단 and the message with what to do (core/failures.py), the sources someone must act on come first, and a temporary
+    error is a warning: how many runs in a row it has failed is not known here, the dashboard and the Slack bot count that."""
     parsers = {item["spec"]["source_key"]: item["spec"]["parser"]
                for item in json.loads((run_dir / "manifest.json").read_text(encoding="utf-8"))["sources"]}
     with (run_dir / "sources.csv").open(newline="", encoding="utf-8") as stream:
-        failed = [row for row in csv.DictReader(stream) if row["fetch_status"] != "ok" or row["parse_status"] != "ok"]
+        failed = [(row, classify(row)) for row in csv.DictReader(stream) if row["fetch_status"] != "ok" or row["parse_status"] != "ok"]
+    failed.sort(key=lambda item: not item[1]["fix"])
     lines = []
-    for row in failed[:ANNOTATION_LIMIT - 1] if len(failed) > ANNOTATION_LIMIT else failed:
+    for row, verdict in failed[:ANNOTATION_LIMIT - 1] if len(failed) > ANNOTATION_LIMIT else failed:
         http = f" (HTTP {row['http_status']})" if row["http_status"] not in ("", "200") else ""
         reason = f"가져오기 {row['fetch_status']}{http} · 해석 {row['parse_status']}" + (f" · {row['error'][:300]}" if row["error"] else "")
-        title = f"수집 실패 · {row['model_id']} · {row['route']}"
-        lines.append(f"::error title={_escape(title, prop=True)}::{_escape(row['source_key'] + ' · 수집기 ' + parsers.get(row['source_key'], '?') + ' · ' + reason)}")
+        title = f"{verdict['label']} · {row['model_id']} · {row['route']}"
+        message = f"{verdict['action']} · {row['source_key']} · 수집기 {parsers.get(row['source_key'], '?')} · {reason}"
+        lines.append(f"::{'error' if verdict['fix'] else 'warning'} title={_escape(title, prop=True)}::{_escape(message)}")
     if len(failed) > ANNOTATION_LIMIT:
         lines.append(f"::error title={_escape(f'수집 실패 외 {len(failed) - len(lines)}개', prop=True)}::"
                      + _escape("나머지 출처는 Summarize collection 요약의 Failed source keys에 있습니다."))

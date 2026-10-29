@@ -34,6 +34,7 @@ from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
 
+from scripts.market_collection.core.failures import classify
 from scripts.market_collection.dashboard import compare
 from scripts.market_collection.events.catalog import ROUTE_PUBLISHERS, SIGNAL_PUBLISHERS, authority as route_authority, maker
 from scripts.market_collection.events.evidence import MUTABLE_CONDITIONS
@@ -1312,7 +1313,9 @@ def health(root: Path, report: dict | None, state: dict | None, today: str) -> d
     (one per failed run; their active flag is not kept up to date) give how long a failure has lasted: it started at the
     earliest run of the unbroken failed runs that ends at the newest run. Failures of the last HEALTH_DAYS days that
     are not failing now say whether the source is fine again or left the registry (not in the newest run). Gaps of
-    parser_fingerprint_mismatch count, per source, prices not yet checked again against their raw page (원문 재검증 필요)."""
+    parser_fingerprint_mismatch count, per source, prices not yet checked again against their raw page (원문 재검증 필요).
+    2026-10-29 (박건: 수집기를 고쳐야 하는 실패를 가려 알린다): each failing source also carries core.failures.classify's kind, label
+    (판단), action and fix (act now: a temporary error only from its second failed run on); fix rows come first."""
     out = {"run": None, "days": HEALTH_DAYS, "total": 0, "ok": 0, "failing": [], "recent": [], "recheck": []}
     run = compare.latest_run(root, report)
     rows: list[dict] = []
@@ -1338,9 +1341,12 @@ def health(root: Path, report: dict | None, state: dict | None, today: str) -> d
             if earlier not in failed.get(row["source_key"], {}):
                 break
             streak.append(earlier)
+        status = row.get("http_status") if row.get("fetch_status") == "http_error" else ""  # a source that answered with an error page has no error text
         out["failing"].append({"key": row["source_key"], "model": row.get("model_id") or "", "route": row.get("route") or "", "ch": route_label(row.get("route") or ""),
-                               "error": row.get("error") or f"{row.get('fetch_status')} / {row.get('parse_status')}",
-                               "since": day(streak[-1]), "sinceRun": streak[-1], "runs": len(streak), "url": row.get("requested_url") or ""})
+                               "error": row.get("error") or (f"HTTP {status}" if status else f"{row.get('fetch_status')} / {row.get('parse_status')}"),
+                               "since": day(streak[-1]), "sinceRun": streak[-1], "runs": len(streak), **classify(row, len(streak)),
+                               "url": row.get("requested_url") or ""})
+    out["failing"].sort(key=lambda item: not item["fix"])  # stable: the sources to act on first
     start = (date.fromisoformat(today) - timedelta(days=HEALTH_DAYS)).isoformat()
     for key, by_run in failed.items():
         if key in newest and bad(newest[key]):
@@ -1516,7 +1522,8 @@ def judgements(data: dict, groups: dict[str, list[dict]]) -> dict:
     uses, so the Slack bot filters (decision 26-4), links to the card (26-6) and writes names as the page does (26-7).
     2026-10-28 (결정 기록 29절 렛서 답변: 알림에 현재 이용 중인 경로인지, 근거 링크와 추가 확인 사항): each card also carries
     usage (현재 사용 경로 as the page writes it), check (its first 확인할 것) and links (up to two https source pages), and
-    health.failing lists the sources failing in the newest run for the bot's 수집 점검 alert."""
+    health.failing lists the sources failing in the newest run for the bot's 수집 점검 alert, each with its kind, label, action,
+    runs and fix (2026-10-29): the bot sends at once what needs a collector fix and waits for a second failed run on temporary errors."""
     routes = {e.get("route"): route_label(e.get("route")) for members in groups.values() for e in members if e.get("route")}
 
     def links(card: dict) -> list[str]:
@@ -1533,7 +1540,7 @@ def judgements(data: dict, groups: dict[str, list[dict]]) -> dict:
                        "usage": card.get("relShort") or card.get("rel") or None, "check": (card.get("chk") or [[None, None]])[0][1],
                        "links": links(card)} for card in data["EVENTS"]],
             "health": {"run": (data.get("HEALTH") or {}).get("run"),
-                       "failing": [{key: item[key] for key in ("key", "model", "route", "ch", "error", "since", "sinceRun", "url")}
+                       "failing": [{key: item[key] for key in ("key", "model", "route", "ch", "error", "since", "sinceRun", "url", "runs", "kind", "label", "action", "fix")}
                                    for item in (data.get("HEALTH") or {}).get("failing") or []]}}
 
 

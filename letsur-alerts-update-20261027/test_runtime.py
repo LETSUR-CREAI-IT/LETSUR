@@ -192,6 +192,28 @@ run_cycle(sys.argv[1],json.loads(Path(sys.argv[2]).read_text()),date(2026,10,27)
             payloads = [row[0] for row in db.execute('SELECT payload FROM delivery_outbox')]
         self.assertEqual(sum('수집 점검' in payload for payload in payloads), 1)
 
+    def test_a_temporary_failure_is_sent_only_from_its_second_failed_run(self):
+        # 2026-10-29 (박건: 수집기를 고쳐야 하는 실패만 가려 알린다): cards.json says fix false on the first run, true on the second
+        def cards(**judgement):
+            doc = json.loads((ROOT / 'fixtures_cards.json').read_text(encoding='utf-8'))
+            doc['health'] = {'failing': [{'key': 'src_a', 'sinceRun': '20261027T050000Z-x', 'model': '가상 모델 A', 'route': 'r',
+                                          'error': 'TimeoutError: The read operation timed out', 'since': '2026-10-27',
+                                          'url': 'https://src.example/p', 'kind': 'temporary', 'label': '일시 오류',
+                                          'action': '연속으로 실패했습니다. 출처가 열리는지 확인하세요', **judgement}]}
+            return parse(doc)
+
+        self.document['events'] = []
+        link = 'https://dashboard.example/LETSUR/'
+        first = run_cycle(self.db, self.document, DAY, 'CTEST', self.send, link, judged=cards(runs=1, fix=False))
+        self.assertEqual((first['sent_messages'], len(self.calls)), (0, 0))
+        second = run_cycle(self.db, self.document, DAY + timedelta(days=1), 'CTEST', self.send, link, judged=cards(runs=2, fix=True))
+        self.assertEqual(second['sent_messages'], 1)
+        with closing(connect(self.db)) as db:
+            text = json.loads(db.execute('SELECT payload FROM delivery_outbox').fetchone()[0])['blocks'][1]['text']['text']
+        self.assertEqual(text.split('\n')[:2], ['일시 오류가 2회 이어짐 · 가상 모델 A · r', '수집 점검 · 2026-10-27부터 실패'])
+        run_cycle(self.db, self.document, DAY + timedelta(days=2), 'CTEST', self.send, link, judged=cards(runs=3, fix=True))
+        self.assertEqual(len(self.calls), 1)
+
     def test_dashboard_judgement_decides_what_is_sent_and_where_the_button_goes(self):
         cards = json.loads((ROOT / 'fixtures_cards.json').read_text(encoding='utf-8'))
         link = 'https://dashboard.example/LETSUR/'

@@ -63,10 +63,15 @@ def parse(document):
         raise CardsError("names")
     names = {table: {key: value for key, value in tables.get(table, {}).items() if _text(value)} for table in TABLES}
     # health.failing: sources failing in the newest run, for the 수집 점검 alert (2026-10-28). Optional; bad items are skipped.
+    # 2026-10-29: the dashboard's judgement of each (kind, label = 판단, action, runs in a row, fix = act now). An older
+    # cards.json has none of it: such a source is sent at once, as before, with the old message.
     health = document.get("health") if isinstance(document.get("health"), dict) else {}
     failing = [{"key": item["key"], "sinceRun": item["sinceRun"], "model": _text(item.get("model")) or "",
                 "route": _text(item.get("route")) or "", "error": _text(item.get("error")) or "", "since": _text(item.get("since")) or "",
-                "url": (_links([item.get("url")]) or [""])[0]}
+                "url": (_links([item.get("url")]) or [""])[0],
+                "kind": _text(item.get("kind")) or "", "label": _text(item.get("label")) or "", "action": _text(item.get("action")) or "",
+                "runs": item["runs"] if type(item.get("runs")) is int and item["runs"] > 0 else 0,
+                "fix": item["fix"] if isinstance(item.get("fix"), bool) else True}
                for item in health.get("failing") or [] if isinstance(item, dict) and _text(item.get("key")) and _text(item.get("sinceRun"))]
     return {"base_day": document.get("base_day"), "names": names, "events": events, "health": failing}
 

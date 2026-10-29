@@ -88,7 +88,7 @@ CLI는 `runs/` 아래 모든 회차를 먼저 검증하고, 새 결과를 `<root
 ### 수동 실행과 결과 확인
 
 1. 머지 후 저장소의 **Actions → Market collection → Run workflow**에서 `develop`을 선택해 첫 실행을 확인한다.
-2. 완료된 실행을 열어 Summary의 회차·출처·가격 관측·조건 수와 실패 출처 키를 확인한다. 수집 단계는 실패한 출처마다 제목 '수집 실패 · 모델 · 경로'에 출처 키·수집기(parser)·가져오기/해석 상태·오류 내용을 적은 오류 줄(annotation)을 남겨 실행 페이지 맨 위에 보인다(2026-10-29, `core/__main__.py`의 `failure_annotations`, GitHub Actions 안에서만 출력, 한 단계에 10줄까지라 넘치면 개수로 묶는다). 단계의 성공·실패 판정은 그대로이고, 실패 메일 본문에 이 줄이 실리는지는 확인하지 않았다.
+2. 완료된 실행을 열어 Summary의 회차·출처·가격 관측·조건 수와 실패 출처 키를 확인한다. 수집 단계는 실패한 출처마다 제목 '판단 · 모델 · 경로'에 할 일·출처 키·수집기(parser)·가져오기/해석 상태·오류 내용을 적은 줄(annotation)을 남겨 실행 페이지 맨 위에 보인다(2026-10-29, `core/__main__.py`의 `failure_annotations`, GitHub Actions 안에서만 출력, 한 단계에 10줄까지라 넘치면 개수로 묶는다). 판단은 `core/failures.py`가 가져오기·해석 상태와 오류 문구로 정한다: 일시 오류(시간 초과·연결 끊김, HTTP 408·429·5xx, BytePlus 빈 페이지), 접근 문제(HTTP 4xx·3xx, 다른 주소로 넘어감), 항목 없음(파서가 모델·행·구역이 없다고 함), 수집기 수정 필요(그 밖의 해석 실패, 본문 이상), 확인 필요(원인을 알 수 없음). 조치할 출처가 먼저 오고, 일시 오류는 몇 회째 실패인지 여기서는 알 수 없어 오류 줄이 아닌 경고 줄이다(2회 연속 여부는 대시보드와 슬랙봇이 센다). 단계의 성공·실패 판정은 그대로이고, 실패 메일 본문에 이 줄이 실리는지는 확인하지 않았다.
 3. **Artifacts**의 `market-collection-<GitHub 실행 ID>-<재실행 번호>`를 내려받는다.
 4. 다운로드한 ZIP 안의 `market-collection.tar.xz`를 다시 풀면 `market_collection/runs/<수집 회차 ID>/`에 CSV 세 개, manifest, 원문이 있다.
 5. 같은 아카이브의 `market_collection/events/`에는 `Build events` 단계가 만든 이벤트(`events.json`, `state.json`, `report.json`, `continuity.json`)가 있다. 구조와 한계는 [이벤트 문서](events.md)를 참고한다.
