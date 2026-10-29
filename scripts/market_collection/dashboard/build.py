@@ -57,6 +57,8 @@ GAP_KO = {
     "account_actual_price": "렛서 계정·등급·지역의 실제 가격은 미확인 · 렛서 계정에서 확인",
     "shutdown_confirmed": "실제 호출 중단은 확인 안 됨 · 날짜가 지나면 다시 확인",
     "undocumented_field": "종료일은 Vercel API 문서에 없는 필드(deprecated_at)에서 읽음 · Vercel 모델 페이지·changelog·문의로 확인",
+    "earliest_date": "원문은 가장 이른 종료일만 밝힘(그 전에는 끝나지 않음) · 실제 종료일은 퇴역 일정표에서 다시 확인",
+    "deployment_version": "이 모델은 버전마다 종료일이 다름 · 렛서 배포가 어느 버전인지 확인",
     "scope": "모델 전체·endpoint·경로 중 무엇이 끝나는지 미확인 · 공지 원문에서 범위와 날짜 확인",
     "before": "같은 조건의 현재가가 하나로 정해지지 않음",
     "effective_from_or_rate": "적용일과 새 가격이 둘 다 있어야 확정",
@@ -84,7 +86,7 @@ UNIT_KO = {"1M tokens": "100만 토큰", "1000 tokens": "1,000 토큰"}
 CONDITION_KO = {"service_tier": "등급", "cache_read_multiplier": "캐시 읽기 배율", "context_length": "컨텍스트", "endpoint_tag": "엔드포인트",
                 "endpoint_provider": "제공자", "endpoint_model_slug": "모델 slug", "quantization": "정밀도", "endpoint_status": "상태",
                 "endpoint_discount": "엔드포인트 할인", "discount_application": "할인 적용", "price_basis": "가격 기준",
-                "region": "지역", "input_token_band": "입력 구간", "precision": "정밀도", "meter_scope": "배포 방식"}
+                "region": "지역", "input_token_band": "입력 구간", "precision": "정밀도", "meter_scope": "배포 방식", "model_version": "버전"}
 # Condition values stay as the source wrote them; only tiers and regions get the dashboard's names (2026-10-27 decision 26-1).
 TIER_NAMES = {"standard": "Standard", "priority": "Priority", "ultrafast": "Ultrafast", "flex": "Flex", "batch": "Batch"}
 REGION_NAMES = {"us": "US", "eu": "EU"}
@@ -742,6 +744,9 @@ def event_rows(event: dict, t7: str | None, eff: str, refs: list, sources: Sourc
             first = row(rule_value(before), rule_value(after), None, seen, condition_name(key), 0)
             moved = delta_cell(change.get("delta"), change.get("pct"), before.get("amount"), currency)
         return [first] + ([row(b, a, moved, seen)] if b and a else [])
+    if t7 == "제공 종료":  # a retirement schedule's replacement: the template's 전환 대상 is a row labelled 대체
+        replacement = change.get("replacement")
+        return [row(event.get("model_id") or "", replacement, None, f"{md(eff)}부터" if eff else "", "대체 모델", 0)] if replacement else []
     if t7 in ("가격 변경", None):
         conflicted = event.get("status") == "conflicted"
         if conflicted:
@@ -795,7 +800,9 @@ def member_eff(event: dict, fields: tuple[str, ...]) -> tuple[str, str] | None:
     for field in fields:
         if field != "period_end":
             if iso(dates.get(field)):
-                return dates[field], ""
+                # a retirement schedule's earliest date (the Gemini table, a "Not sooner than" date) is not the end date
+                earliest = field == "effective_from" and dates.get("date_basis") == "not_before"
+                return dates[field], f"가장 이른 날짜(이 날짜 전에는 끝나지 않음) · 원문 “{dates.get('date_text') or dates[field]}”" if earliest else ""
             continue
         end = part(event, "period_end")
         if iso(end.get("date")):
@@ -879,8 +886,11 @@ def summary_text(t7, members, eff, sub, q1, remove, added, ends=(), route="") ->
         return f"{sub} {t7} {verb}" if sub else f"{t7} {verb}"
     if t7 == "모델 출시":
         return f"모델 출시 · {when} 제공" if eff else "모델 출시 · 제공일 미확인"
-    if t7 == "제공 종료":
-        return f"모델 제공 종료 {when}" if eff else "모델 제공 종료 · 날짜 미확인"
+    if t7 == "제공 종료":  # an earliest date reads '이후'; a retirement schedule's version is part of what ends
+        later = any(part(e, "dates").get("date_basis") == "not_before" and part(e, "dates").get("effective_from") == eff for e in members)
+        versions = sorted({str(part(e, "conditions")["model_version"]) for e in members if part(e, "conditions").get("model_version")})
+        text = f"모델 제공 종료 {when}{' 이후' if later else ''}" if eff else "모델 제공 종료 · 날짜 미확인"
+        return text + (f" · 버전 {', '.join(versions)}" if versions else "")
     if q1:
         return f"경로 추가 {when} · 모델 첫 출시일 미확인" if eff else "경로 추가 · 날짜 미확인 · 모델 첫 출시일 미확인"
     if t7 == "공급 경로 변경":
@@ -985,6 +995,8 @@ def build_card(card_id: str, members: list[dict], sources: Sources, routes: dict
     label, fields = eff_rule(t7, remove, added, ends)
     dated = sorted(filter(None, (member_eff(e, fields) for e in members)))
     eff, qual = dated[0] if dated else ("", "")
+    if t7 == "제공 종료" and qual:
+        label = "제공 종료 가능일"  # the earliest date (member_eff), never called the end date
     ch = route_label(rep.get("route") or "")
     changed, unchanged, said = [], {}, []
     for index, event in enumerate(members):

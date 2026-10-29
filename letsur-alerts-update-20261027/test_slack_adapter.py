@@ -247,6 +247,13 @@ class SlackAdapterTests(unittest.TestCase):
         self.assertIn("렛서 사용 : 이 경로로 사용 중 (가정)\n확인할 것 : 렛서 계정에서 확인", message["blocks"][1]["text"]["text"])
         self.assertNotIn("근거", [e["text"]["text"] for e in message["blocks"][2]["elements"]])
 
+    def test_an_earliest_retirement_date_is_said_to_be_one(self):
+        report = copy.deepcopy(self.report)
+        report["cards"][0]["date_basis"] = "not_before"  # a retirement schedule's earliest date, the Gemini table's (2026-10-29)
+        texts = [text for text, _ in self.cards(build_messages(self.db, report))]
+        self.assertIn("가장 이른 종료일 · 이 날짜 전에는 끝나지 않음", texts[0])
+        self.assertFalse(any("가장 이른 종료일" in text for text in texts[1:]))
+
     def test_new_changes_are_counted_in_the_header_and_said_to_go_out_once(self):
         # 2026-10-28 가안: a new change goes out once, so the message does not call every card urgent.
         report = copy.deepcopy(self.report)

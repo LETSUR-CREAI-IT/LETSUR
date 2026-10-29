@@ -77,7 +77,8 @@ def deadline(event):
         basis, label = "stated", "적용"
     elif kind == "model_end":
         raw = dates.get("effective_from") or dates.get("end_date") or dates.get("retirement_date")
-        basis, label = "stated", "모델 종료"
+        # 2026-10-29: a retirement schedule's earliest date (the Gemini table, a "Not sooner than" date) is said to be one
+        basis, label = ("not_before" if dates.get("date_basis") == "not_before" else "stated"), "모델 종료"
     elif kind == "route_change" and "remove" in (event.get("subtags") or []):
         raw = dates.get("effective_from") or dates.get("end_date") or dates.get("removal_date")
         basis, label = "stated", "경로 종료"
@@ -471,6 +472,8 @@ def render(report):
         lines.extend([f"{number}. {card['model']} / {card['route']}", schedule])
         if card["date_basis"] == "derived_from_publication":
             lines.append("※ 종료 연도는 게시일에서 파생한 날짜입니다.")
+        elif card["date_basis"] == "not_before":
+            lines.append("※ 가장 이른 종료일입니다. 이 날짜 전에는 끝나지 않으며 정확한 종료일은 아닙니다.")
         if card["conditions"]:
             lines.append("조건: " + encode(card["conditions"]))
         if card.get("usage"):
