@@ -221,6 +221,41 @@ AWS Haiku 카드의 버전이 붙은 Global inference ID는 현재 카드에서 
 
 한 번의 실행에서 등록된 출처를 제외하려면 `--disable-source <source-key>`를 사용한다. 키는 [Core registry](../scripts/market_collection/core/__init__.py)의 `registry()` 결과에서 확인한다. 이 옵션은 그 실행의 live 수집에서만 제외하며 등록 코드나 이미 저장된 원본·이력을 삭제하지 않는다.
 
+## 렛서 공급 경로 다시 확인
+
+[경로 파일](../samples/market_collection/demo_internal_routes.json)의 `observed`·`inferred` 기록은 렛서 게이트웨이에 모델마다 한 줄짜리 요청을 보내고 응답에 남은 상류 표시로 경로를 읽은 것이다. [letsur_routes.py](../scripts/market_collection/letsur_routes.py)가 이 확인을 되풀이해 새 파일을 제안한다(2026-10-29, 표준 라이브러리만 쓴다). 게이트웨이 주소와 키는 환경변수로만 받고 저장소·출력 파일·화면 어디에도 쓰지 않는다. 공개 저장소이므로 키는 각자 컴퓨터에만 둔다.
+
+```bash
+export LETSUR_API_BASE=<게이트웨이 주소, /v1 앞까지> LETSUR_API_KEY=<키>
+python3 -B -m scripts.market_collection.letsur_routes                         # 목록의 모든 모델. 제안만 data/market_collection/letsur_routes.proposed.json에 씀
+python3 -B -m scripts.market_collection.letsur_routes --models gpt-5.6,glm-5  # 일부만 (모델 목록을 조회하지 않음)
+python3 -B -m scripts.market_collection.letsur_routes --include-images        # gpt-image 모델에 저화질 이미지 1장 요청 (유료)
+python3 -B -m scripts.market_collection.letsur_routes --write                 # 제안을 경로 파일에도 덮어씀
+```
+
+비용과 안전: 텍스트·임베딩 요청은 모델당 1~2회(출력 16토큰)이다. 저장해 둔 10/28~29 응답으로 다시 계산하면 요청 137회의 합계가 약 0.027(렛서의 비용 단위, 이미지 1장 약 0.006 포함)이고, 이미지는 `--include-images`가 있을 때만 요청한다. 영상은 어떤 옵션으로도 요청하지 않고 경로 미확인으로 둔다. 재시도는 없고, 요청마다 `--timeout`(기본 90초) 안에 답이 없으면 그 모델은 '답 없음'이다. 키가 거부되면(401) 바로 멈추고, 쓸 만한 답을 준 모델이 하나도 없으면(종료 코드 1) 아무것도 쓰지 않는다.
+
+경로를 읽는 규칙은 위에서부터 먼저 맞는 것을 쓴다.
+
+| 응답에서 본 것 | 경로 | 근거 |
+|---|---|---|
+| 헤더 `x-letsur-ai-gateway-model-id`가 `<모델>-azure-<지역>`(지역은 note에), 또는 본문의 `prompt_filter_results`·`content_filter_results`·`content_filters`·`serving_pipereplica` | `azure_foundry` | observed |
+| id `gen-<숫자>-…`와 `provider`(하위 공급자는 note에) | `openrouter` | observed |
+| `provider_metadata.gateway.routing`(하위 공급자 `finalProvider`, 없으면 `resolvedProvider`는 note에) | `vercel_ai_gateway` | observed |
+| Claude의 `/v1/messages` id가 `msg_01…`, `msg_bdrk_…`, `msg_vrtx_…` | `anthropic_direct`, `aws_bedrock`, `google_vertex` | observed |
+| 본문의 `billing.payer`(OpenAI Responses 응답) | `openai_direct` | observed |
+| Gemini 형식 id와 `vertex_ai_*` 필드 | `google_direct` | observed (AI Studio와 Vertex는 가를 수 없어 note에 적음) |
+| OpenAI 모델의 chat 응답이나 gpt-image 응답에 Azure 필드가 없음 | `openai_direct` | inferred |
+| 그 밖(GLM의 게이트웨이 자체 id, 임베딩, 영상, 오류 응답) | 경로 미확인 | 파일의 `unresolved`에 id 모양·눈에 띈 필드·오류 코드를 note로 |
+
+OpenAI 계열 모델은 chat 응답으로 정해지지 않을 때만 `/v1/responses`를 한 번 더 부르고, Claude는 `/v1/messages`만, 임베딩은 `/v1/embeddings`만 부른다. 실패한 요청은 상태 코드와 렛서의 오류 코드만 남기고 메시지는 남기지 않는다.
+
+`endpoint_id`는 어떤 기록에도 채우지 않는다. OpenRouter·Vercel은 요청마다 하위 공급사가 바뀌므로(10/28 정리) 한 번의 호출이 본 하위 공급자는 고정 기록이 아니라 note에만 적고(Vercel은 계획한 공급자와 달랐을 때 그것도), Azure 배포 지역도 note에 적는다. note는 공급로 현황 탭에 그대로 보이므로 쉬운 한국어로 쓴다(예: `이번 호출의 하위 공급자 Alibaba(요청마다 바뀔 수 있음)`, `Azure 배포 지역 uk-south`, `chat 200: id 형식 chatcmpl-<uuid>, 경로 표시 없음`, 실패는 `chat 404 service_error`).
+
+반영 순서: 실행하면 화면에 `added`(새 기록)·`changed`(경로·endpoint·근거가 바뀜)·`unchanged`(개수)·`now unresolved`(전엔 기록이 있었는데 이번엔 경로가 안 보임)가 나오고, 답이 없던 모델(`kept`, 이전 기록을 그대로 둠)과 `settings`·`manual` 기록이 이미 같은 경로를 말하는 모델(`covered`, 새 기록을 만들지 않음)과 경로 미확인 목록이 따라온다. `settings`·`manual` 기록과 `purpose`·`basis_note` 같은 설명 글은 건드리지 않고(날짜와 설명은 사람이 고친다), 새 기록에는 `checked_at`(한국 시각 날짜)을 단다. 제안 파일을 훑고 `--write`로 반영한 뒤 `git diff`와 `python3 -B -s -m pytest -q -p no:cacheprovider tests`를 확인하고 커밋한다. 호출 한 번은 지나간 경로를 보여 줄 뿐 다른 경로를 쓰지 않는다는 뜻이 아니다.
+
+경로가 같은 기존 기록은 `unchanged`로 나오고 note와 `checked_at`만 붙는다. 렛서의 `claude-haiku-4-5-20251001`은 파일에서 `claude-haiku-4-5`로 적는다.
+
 ## 구조 변경 검증 기록
 
 2026-10-05 supplier layout QA에서 당시 구성은 21개 model ID와 83개 source spec을 유지했다. 저장된 원문을 검증한 QA는 73개 테스트 통과와 348개 가격 관측·731개 조건의 전체 행 일치를 기록했다. 별도 integration QA는 보존 live 원문을 offline replay해 같은 83/348/731 개수와 원문 해시·조회 시각 보존을 확인했다. 이것은 이전 단계 기록이며 아래 새 확장 결과와 혼동하지 않는다.
