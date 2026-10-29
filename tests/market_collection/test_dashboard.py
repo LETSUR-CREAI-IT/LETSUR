@@ -774,14 +774,14 @@ def test_committed_routes_mark_each_route_and_leave_glm_52_unknown(tmp_path: Pat
             for key, card in found.items()} == {
         ("gpt-6-astra", "azure_foundry"): ("use", "이 경로로 사용 중 (호출 확인)", False, False, True),
         ("gpt-6-astra", "openai_direct"): ("use", "이 경로로 사용 중 (렛서 설정)", False, True, False),
-        ("gpt-6-astra", "vercel_ai_gateway"): ("other", "모델 제공 중 : OpenAI · openai_direct, Microsoft · azure_foundry 경로로 사용 (렛서 설정·호출 확인)", False, False, False),
+        ("gpt-6-astra", "vercel_ai_gateway"): ("other", "모델 제공 중 : OpenAI · openai_direct, Microsoft · azure_foundry, AWS · aws_bedrock 경로로 사용 (렛서 설정·호출 확인)", False, False, False),
         ("gpt-5.6-sol", "azure_foundry"): ("use", "이 경로로 사용 중 (호출 확인)", False, False, True),
         ("claude-opus-5-5", "anthropic_direct"): ("use", "이 경로로 사용 중 (호출 확인)", False, False, True),
         ("claude-opus-5-5", "vercel_ai_gateway"): ("other", "모델 제공 중 : Anthropic · anthropic_direct 경로로 사용 (호출 확인)", False, False, True),
         ("claude-fable-5-1", "anthropic_direct"): ("use", "이 경로로 사용 중 (렛서 설정)", False, True, False),
         ("glm-5.2", "vercel_ai_gateway"): ("unk", "사용 경로 확인 필요", False, False, False),
     }
-    assert data["MODELS"]["gpt-6-astra"]["use"] == "OpenAI · openai_direct, Microsoft · azure_foundry 경로로 사용 (렛서 설정·호출 확인)"
+    assert data["MODELS"]["gpt-6-astra"]["use"] == "OpenAI · openai_direct, Microsoft · azure_foundry, AWS · aws_bedrock 경로로 사용 (렛서 설정·호출 확인)"
     assert data["MODELS"]["claude-opus-5-5"]["use"] == "Anthropic · anthropic_direct 경로로 사용 (호출 확인)"
     assert "use" not in data["MODELS"]["glm-5.2"]
     judged = {tuple(card["events"]): card for card in json.loads((tmp_path / "site" / "cards.json").read_text(encoding="utf-8"))["cards"]}
@@ -798,18 +798,21 @@ GATEWAY_MODELS = {  # the 34 models one LETSUR API call on 2026-10-28 reached th
 }
 
 
-def test_committed_routes_hold_one_observed_record_for_each_of_the_34_gateway_models() -> None:
-    """2026-10-28: 25 records became 59; each added model has one record, observed, on the gateway its call went through.
-    (The 46 direct-route records added afterwards and the 11 of 2026-10-29 are checked below.)"""
+def test_committed_routes_hold_an_observed_record_for_each_of_the_34_gateway_models() -> None:
+    """2026-10-28: 25 records became 59, one observed record per added model on the gateway its call went through. The
+    rechecks of 10/29-30 (scripts/market_collection/letsur_routes.py) add a route seen later as a record of its own, so a
+    model may also hold the other gateway now; the 10/28 one stays with its date."""
     records = json.loads(DEMO_ROUTES.read_text(encoding="utf-8"))["records"]
     bases = [record.get("basis") for record in records]
-    assert (len(records), bases.count("settings"), bases.count("observed"), bases.count("inferred")) == (116, 10, 103, 3)
+    assert (len(records), bases.count("settings"), bases.count("observed"), bases.count("inferred")) == (138, 10, 124, 4)
     assert not any(build.record_problem(record) for record in records)
     expected = sorted((model, route) for route, models in GATEWAY_MODELS.items() for model in models)
     assert len(expected) == 34 and [len(models) for models in GATEWAY_MODELS.values()] == [16, 18]
-    added = [record for record in records if record["model_id"] in dict(expected)]
-    assert sorted((record["model_id"], record["route_id"]) for record in added) == expected  # one each: a repeated model would show twice
-    assert all(record["endpoint_id"] is None and record["basis"] == "observed" for record in added)
+    have = {(record["model_id"], record["route_id"]): record for record in records}
+    assert all(key in have and have[key]["basis"] == "observed" and have[key]["checked_at"] >= "2026-10-28" for key in expected)
+    assert all(record["endpoint_id"] is None for record in records if record["model_id"] in dict(expected))
+    assert ("glm-4.5-air", "vercel_ai_gateway") in have and ("glm-4.5-air", "openrouter") in have  # 10/28 OpenRouter, 10/30 Vercel
+    assert have[("gemini-2.5-flash-lite", "google_direct")]["checked_at"] == "2026-10-30"  # 10/28 through Vercel, 10/30 Google
 
 
 DIRECT_MODELS = {  # the 46 models one LETSUR API call on 2026-10-28 reached through Azure or a maker's own API, by route
@@ -823,18 +826,18 @@ DIRECT_MODELS = {  # the 46 models one LETSUR API call on 2026-10-28 reached thr
 }
 
 
-def test_committed_routes_hold_one_observed_record_for_each_of_the_46_direct_route_models() -> None:
+def test_committed_routes_hold_an_observed_record_for_each_of_the_46_direct_route_models() -> None:
     """2026-10-28 (박건 '70개도 모두 보도록'): the calls that went to Azure, Google, Anthropic or OpenAI directly are recorded
-    too. Calls whose route was not found (GLM, embeddings) have no record but a line under unresolved (2026-10-29); gpt-5.6
-    and gpt-5.5-2026-04-23, only inferred on 10/28, were confirmed on 10/29 (checked below)."""
+    too, each still there with its 10/28 date after the 10/29-30 rechecks added other routes beside them (the GPT-6/5.6 models
+    went through AWS Bedrock on 10/29-30). Models whose route is still not found are listed under unresolved."""
     doc = json.loads(DEMO_ROUTES.read_text(encoding="utf-8"))
     records = doc["records"]
     expected = sorted((model, route) for route, models in DIRECT_MODELS.items() for model in models)
     assert [len(models) for models in DIRECT_MODELS.values()] == [23, 10, 9, 4]
-    added = [record for record in records if record["model_id"] in dict(expected)]
-    assert sorted((record["model_id"], record["route_id"]) for record in added) == expected
-    assert all(record["endpoint_id"] is None and record["basis"] == "observed" and not build.record_problem(record) for record in added)
-    unknown = {"glm-4.7", "glm-5", "glm-5.2", "glm-5.3", "glm-5.3-flashx", "text-embedding-3-large", "text-embedding-3-small", "text-embedding-ada-002"}
+    have = {(record["model_id"], record["route_id"]): record for record in records}
+    assert all(key in have and have[key]["basis"] == "observed" and have[key]["endpoint_id"] is None for key in expected)
+    assert not any(build.record_problem(record) for record in records)
+    unknown = {"glm-5.2", "glm-5.3", "glm-5.3-flashx", "text-embedding-3-large", "text-embedding-3-small", "text-embedding-ada-002"}
     assert not unknown & {record["model_id"] for record in records} and unknown <= set(doc["unresolved"])
 
 
@@ -847,18 +850,25 @@ FINDINGS_1029 = [  # 2026-10-29 LETSUR API calls by the lead: (model, route, bas
 ]
 
 
-def test_committed_routes_add_the_10_29_findings_after_the_105_earlier_records() -> None:
-    """2026-10-29: 8 observed and 3 inferred records come after the 105 earlier ones, which stay as they were (no checked_at,
-    no note: observed without checked_at means the 10/28 calls); each new record says its day and evidence, and the 14 models
-    whose route could not be told are listed under unresolved with why."""
+BEDROCK_1030 = ("gpt-5.6-luna", "gpt-5.6-sol", "gpt-5.6-terra", "gpt-6-astra", "gpt-6-luna", "gpt-6-sol", "gpt-6.1-sol", "gpt-6.1-terra")
+
+
+def test_committed_routes_keep_the_10_29_findings_and_add_the_10_30_recheck() -> None:
+    """2026-10-29: 8 observed and 3 inferred records with their day and evidence. 2026-10-30: the route tool's recheck dated
+    every route it saw again (notes already written stay), added the routes seen for the first time (the GPT-6/5.6 models'
+    AWS Bedrock deployment named in the gateway header, glm-5 through Vercel, glm-4.7 inferred as Bedrock), and every
+    observed record now has its day (the ones without one were the 10/28 calls)."""
     doc = json.loads(DEMO_ROUTES.read_text(encoding="utf-8"))
-    old, new = doc["records"][:105], doc["records"][105:]
-    assert all(set(record) == {"model_id", "route_id", "endpoint_id", "basis"} and record["basis"] in ("settings", "observed") for record in old)
-    assert [(record["model_id"], record["route_id"], record["basis"]) for record in new] == FINDINGS_1029
-    assert all(record["checked_at"] == "2026-10-29" and record["note"] and record["endpoint_id"] is None for record in new)
-    assert new[8]["note"].startswith("10/29 이미지 생성 응답에 Azure 콘텐츠 필터 필드가 없음")
+    have = {(record["model_id"], record["route_id"]): record for record in doc["records"]}
+    assert all(have[(model, route)]["basis"] == basis and have[(model, route)]["checked_at"] >= "2026-10-29" and have[(model, route)]["note"]
+               for model, route, basis in FINDINGS_1029)
+    assert have[("gpt-image-2", "openai")]["note"].startswith("10/29 이미지 생성 응답에 Azure 콘텐츠 필터 필드가 없음")
+    assert all(have[(model, "aws_bedrock")] == {"model_id": model, "route_id": "aws_bedrock", "endpoint_id": None, "basis": "observed",
+                                                "note": "Bedrock 배포 지역 us-east-1", "checked_at": "2026-10-30"} for model in BEDROCK_1030)
+    assert have[("glm-5", "vercel_ai_gateway")]["basis"] == "observed" and have[("glm-4.7", "aws_bedrock")]["basis"] == "inferred"
+    assert all(record.get("checked_at") for record in doc["records"] if record["basis"] == "observed")
     kling = [model for model in doc["unresolved"] if model.startswith("kling-")]
-    assert len(doc["unresolved"]) == 14 and len(kling) == 6 and all(doc["unresolved"][model] == doc["unresolved"][kling[0]] for model in kling)
+    assert len(doc["unresolved"]) == 12 and len(kling) == 6 and all(doc["unresolved"][model] == doc["unresolved"][kling[0]] for model in kling)
     assert doc["unresolved"]["glm-5.3"] == "UUID 형식 응답 id. 렛서 단가 1.26/3.96이 Friendli 가격과 같음(Z.ai 정가 1.4/4.4)"
     assert not set(doc["unresolved"]) & {record["model_id"] for record in doc["records"]}
     assert build.internal_routes(DEMO_ROUTES) == (doc, "")
