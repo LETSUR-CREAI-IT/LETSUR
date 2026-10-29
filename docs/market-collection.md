@@ -10,7 +10,7 @@
 | 이미지 | GPT Image 2.5 Sunburst, GPT Image 2.5 Flare | OpenAI Direct, fal, OpenRouter, Vercel AI Gateway, Azure Foundry retail API | 33 |
 | 영상 | Seedance 2.5 | fal, Vercel AI Gateway, BytePlus ModelArk | 4 |
 
-현재 registry에는 399개 `SourceSpec`(출처 사양, 2026-10-29에 렛서의 나머지 모델 70개 출처 191개 추가(아래 '구성과 출처 확장'), 그 전 208개는 2026-10-17에 OpenRouter·Vercel LLM endpoint API 36개 추가, 2026-10-22에 Google 직접 Veo 3.1 3개 퇴역, 2026-10-28에 렛서 모델 목록에 없는 Veo 3.1 fal·Vercel 6개와 Ideogram 4.5 6개 퇴역, 같은 날 Azure Foundry GPT 7개를 카탈로그 페이지에서 Azure Retail Prices API 사양으로 교체(수는 그대로)하고 렛서가 OpenRouter·Vercel로만 쓰는 LLM 34개의 endpoint API 62개 추가(아래 '구성과 출처 확장'); 가격 행 478→2,037, 상세는 [events.md](events.md)), 334개 모델/경로 조합, 125개 정규 모델 ID가 있다: LLM 324개/107개 모델, 이미지 51개/9개 모델, 영상 24개/9개 모델. 사양 수는 URL 수가 아니다. 기존 83·97·103·111·113·146·208개 단계의 수치와 검증 결과는 해당 시점의 기록으로 유지한다. GPT Image 2.5의 첫 API 조건 문서 8개에 12개 보충 문서를 더했다. 보충 문서는 두 모델×6종의 문서 유형이며 가격 관측을 만들지 않는다. 이미지 모델은 `gpt-image-2.5-sunburst`, `gpt-image-2.5-flare`; 영상은 `seedance-2.5`다. 수집기는 등록된 공개 HTTPS URL을 요청하며 로그인이나 유료 모델 호출은 하지 않는다. 문서별 판단 범위는 [수집 범위 검토](collector-coverage-review.md), 상세 정책은 [비교 규칙](image25-comparison-rules.md)을 참고한다.
+현재 registry에는 400개 `SourceSpec`(출처 사양, 2026-10-30에 렛서가 Bedrock으로 부르기 시작한 gpt-6.1-terra의 AWS 모델 카드 1개 추가(아래 '렛서 공급 경로 다시 확인'), 그 전 399개는 2026-10-29에 렛서의 나머지 모델 70개 출처 191개 추가(아래 '구성과 출처 확장'), 그 전 208개는 2026-10-17에 OpenRouter·Vercel LLM endpoint API 36개 추가, 2026-10-22에 Google 직접 Veo 3.1 3개 퇴역, 2026-10-28에 렛서 모델 목록에 없는 Veo 3.1 fal·Vercel 6개와 Ideogram 4.5 6개 퇴역, 같은 날 Azure Foundry GPT 7개를 카탈로그 페이지에서 Azure Retail Prices API 사양으로 교체(수는 그대로)하고 렛서가 OpenRouter·Vercel로만 쓰는 LLM 34개의 endpoint API 62개 추가(아래 '구성과 출처 확장'); 가격 행 478→2,037, 상세는 [events.md](events.md)), 335개 모델/경로 조합, 125개 정규 모델 ID가 있다: LLM 325개/107개 모델, 이미지 51개/9개 모델, 영상 24개/9개 모델. 사양 수는 URL 수가 아니다. 기존 83·97·103·111·113·146·208개 단계의 수치와 검증 결과는 해당 시점의 기록으로 유지한다. GPT Image 2.5의 첫 API 조건 문서 8개에 12개 보충 문서를 더했다. 보충 문서는 두 모델×6종의 문서 유형이며 가격 관측을 만들지 않는다. 이미지 모델은 `gpt-image-2.5-sunburst`, `gpt-image-2.5-flare`; 영상은 `seedance-2.5`다. 수집기는 등록된 공개 HTTPS URL을 요청하며 로그인이나 유료 모델 호출은 하지 않는다. 문서별 판단 범위는 [수집 범위 검토](collector-coverage-review.md), 상세 정책은 [비교 규칙](image25-comparison-rules.md)을 참고한다.
 
 ### LLM 경로 범위
 
@@ -227,34 +227,44 @@ AWS Haiku 카드의 버전이 붙은 Global inference ID는 현재 카드에서 
 
 ```bash
 export LETSUR_API_BASE=<게이트웨이 주소, /v1 앞까지> LETSUR_API_KEY=<키>
-python3 -B -m scripts.market_collection.letsur_routes                         # 목록의 모든 모델. 제안만 data/market_collection/letsur_routes.proposed.json에 씀
+python3 -B -m scripts.market_collection.letsur_routes                         # 우리 registry에 있는 모델 전부. 제안만 data/market_collection/letsur_routes.proposed.json에 씀
 python3 -B -m scripts.market_collection.letsur_routes --models gpt-5.6,glm-5  # 일부만 (모델 목록을 조회하지 않음)
 python3 -B -m scripts.market_collection.letsur_routes --include-images        # gpt-image 모델에 저화질 이미지 1장 요청 (유료)
 python3 -B -m scripts.market_collection.letsur_routes --write                 # 제안을 경로 파일에도 덮어씀
 ```
 
-비용과 안전: 텍스트·임베딩 요청은 모델당 1~2회(출력 16토큰)이다. 저장해 둔 10/28~29 응답으로 다시 계산하면 요청 137회의 합계가 약 0.027(렛서의 비용 단위, 이미지 1장 약 0.006 포함)이고, 이미지는 `--include-images`가 있을 때만 요청한다. 영상은 어떤 옵션으로도 요청하지 않고 경로 미확인으로 둔다. 재시도는 없고, 요청마다 `--timeout`(기본 90초) 안에 답이 없으면 그 모델은 '답 없음'이다. 키가 거부되면(401) 바로 멈추고, 쓸 만한 답을 준 모델이 하나도 없으면(종료 코드 1) 아무것도 쓰지 않는다.
+비용과 안전: 텍스트·임베딩 요청은 모델당 1~2회(출력 16토큰)이다. 저장해 둔 10/28~29 응답으로 다시 계산하면 요청 118회의 합계가 약 0.027(렛서의 비용 단위, 이미지 1장 약 0.006 포함)이고, 이미지는 `--include-images`가 있을 때만 요청한다. 영상은 어떤 옵션으로도 요청하지 않고 경로 미확인으로 둔다. 재시도는 없고, 요청마다 `--timeout`(기본 90초) 안에 답이 없으면 그 모델은 '답 없음'이다. 키가 거부되면(401) 바로 멈추고, 쓸 만한 답을 준 모델이 하나도 없으면(종료 코드 1) 아무것도 쓰지 않는다.
 
 경로를 읽는 규칙은 위에서부터 먼저 맞는 것을 쓴다.
 
 | 응답에서 본 것 | 경로 | 근거 |
 |---|---|---|
-| 헤더 `x-letsur-ai-gateway-model-id`가 `<모델>-azure-<지역>`(지역은 note에), 또는 본문의 `prompt_filter_results`·`content_filter_results`·`content_filters`·`serving_pipereplica` | `azure_foundry` | observed |
+| 헤더 `x-letsur-ai-gateway-model-id`가 이름 붙은 배포 `<모델>-azure-<지역>`, `<모델>-bedrock-<지역>`, `<모델>-vertex-<지역>`(지역은 note에), `<모델>-openai[-<이름>]` | `azure_foundry`, `aws_bedrock`, `google_vertex`, `openai_direct` | observed |
 | id `gen-<숫자>-…`와 `provider`(하위 공급자는 note에) | `openrouter` | observed |
 | `provider_metadata.gateway.routing`(하위 공급자 `finalProvider`, 없으면 `resolvedProvider`는 note에) | `vercel_ai_gateway` | observed |
 | Claude의 `/v1/messages` id가 `msg_01…`, `msg_bdrk_…`, `msg_vrtx_…` | `anthropic_direct`, `aws_bedrock`, `google_vertex` | observed |
+| 본문의 `prompt_filter_results`·`content_filter_results`·`content_filters`·`serving_pipereplica`(헤더에 지역이 없을 때) | `azure_foundry` | observed |
 | 본문의 `billing.payer`(OpenAI Responses 응답) | `openai_direct` | observed |
 | Gemini 형식 id와 `vertex_ai_*` 필드 | `google_direct` | observed (AI Studio와 Vertex는 가를 수 없어 note에 적음) |
-| OpenAI 모델의 chat 응답이나 gpt-image 응답에 Azure 필드가 없음 | `openai_direct` | inferred |
-| 그 밖(GLM의 게이트웨이 자체 id, 임베딩, 영상, 오류 응답) | 경로 미확인 | 파일의 `unresolved`에 id 모양·눈에 띈 필드·오류 코드를 note로 |
+| OpenAI 모델의 chat 응답이나 gpt-image 응답에 Azure 필드가 없음 | `openai_direct`(gpt-image는 `openai`) | inferred |
+| chat 응답의 id가 `chatcmpl-<uuid>`이고 `usage`에 `cache_creation_input_tokens`와 `cache_read_input_tokens`가 둘 다 있으며 위 표시는 없음 | `aws_bedrock` | inferred |
+| 그 밖(`chatcmpl-<uuid>`만 있는 GLM, 임베딩, 영상, 오류 응답) | 경로 미확인 | 파일의 `unresolved`에 id 모양·눈에 띈 필드·오류 코드를 note로 |
 
-OpenAI 계열 모델은 chat 응답으로 정해지지 않을 때만 `/v1/responses`를 한 번 더 부르고, Claude는 `/v1/messages`만, 임베딩은 `/v1/embeddings`만 부른다. 실패한 요청은 상태 코드와 렛서의 오류 코드만 남기고 메시지는 남기지 않는다.
+헤더 규칙은 10/28 응답(`-azure-` 11개, `gpt-6.1-terra-openai-letsur-2`)과 10/30 응답(`gpt-6-sol`·`gpt-5.6-sol`·`gpt-6.1-terra`의 `-bedrock-us-east-1`)에서 본 모양이다. `-vertex-`는 아직 본 적 없고 같은 이름 짓기를 따른 것이다. Bedrock 모양 추정은 같은 모양의 답이 Anthropic 형식 상류(예: Z.ai의 호환 API)에서도 나올 수 있어 약한 근거다(glm-4.7·glm-5가 이렇게 잡힌다). OpenAI 계열 모델은 chat 응답으로 정해지지 않을 때만 `/v1/responses`를 한 번 더 부르고, Claude는 `/v1/messages`만, 임베딩은 `/v1/embeddings`만 부른다. 실패한 요청은 상태 코드와 렛서의 오류 코드만 남기고 메시지는 남기지 않는다.
 
-`endpoint_id`는 어떤 기록에도 채우지 않는다. OpenRouter·Vercel은 요청마다 하위 공급사가 바뀌므로(10/28 정리) 한 번의 호출이 본 하위 공급자는 고정 기록이 아니라 note에만 적고(Vercel은 계획한 공급자와 달랐을 때 그것도), Azure 배포 지역도 note에 적는다. note는 공급로 현황 탭에 그대로 보이므로 쉬운 한국어로 쓴다(예: `이번 호출의 하위 공급자 Alibaba(요청마다 바뀔 수 있음)`, `Azure 배포 지역 uk-south`, `chat 200: id 형식 chatcmpl-<uuid>, 경로 표시 없음`, 실패는 `chat 404 service_error`).
+`endpoint_id`는 어떤 기록에도 채우지 않는다. OpenRouter·Vercel은 요청마다 하위 공급사가 바뀌므로(10/28 정리) 한 번의 호출이 본 하위 공급자는 고정 기록이 아니라 note에만 적고(Vercel은 계획한 공급자와 달랐을 때 그것도), 배포 지역도 note에 적는다. note는 공급로 현황 탭에 그대로 보이므로 쉬운 한국어로 쓴다(예: `이번 호출의 하위 공급자 Alibaba(요청마다 바뀔 수 있음)`, `Bedrock 배포 지역 us-east-1`, `chat 200: id 형식 chatcmpl-<uuid>, 경로 표시 없음`, 실패는 `chat 404 service_error`).
 
-반영 순서: 실행하면 화면에 `added`(새 기록)·`changed`(경로·endpoint·근거가 바뀜)·`unchanged`(개수)·`now unresolved`(전엔 기록이 있었는데 이번엔 경로가 안 보임)가 나오고, 답이 없던 모델(`kept`, 이전 기록을 그대로 둠)과 `settings`·`manual` 기록이 이미 같은 경로를 말하는 모델(`covered`, 새 기록을 만들지 않음)과 경로 미확인 목록이 따라온다. `settings`·`manual` 기록과 `purpose`·`basis_note` 같은 설명 글은 건드리지 않고(날짜와 설명은 사람이 고친다), 새 기록에는 `checked_at`(한국 시각 날짜)을 단다. 제안 파일을 훑고 `--write`로 반영한 뒤 `git diff`와 `python3 -B -s -m pytest -q -p no:cacheprovider tests`를 확인하고 커밋한다. 호출 한 번은 지나간 경로를 보여 줄 뿐 다른 경로를 쓰지 않는다는 뜻이 아니다.
+반영은 더하기다(2026-10-30). 10/29 실제 실행에서 렛서의 경로가 며칠 사이에 바뀌거나 여러 경로로 나뉜다는 것이 드러났다(10개 모델이 OpenRouter와 Vercel 사이를 오갔고, Gemini 3개는 Google 직접과 Vercel 사이를 오갔으며, GPT-6·5.6 모델은 Azure에서 Bedrock으로 갔다). 그래서 이번 실행에서 처음 본 경로는 다른 기록을 지우지 않고 그날 `checked_at`을 단 새 기록으로 더하고, 이미 있는 경로를 다시 보면 `checked_at`(과 새 note)만 바꾼다. 추정(`inferred`) 기록은 같은 경로를 `observed`로 보면 그것으로 바뀌고, `observed` 기록은 `inferred`로만 보여도 날짜를 건드리지 않는다. 다른 경로의 기록은 자기 날짜 그대로 남는다. `settings`·`manual` 기록과 `purpose`·`basis_note` 같은 설명 글은 건드리지 않고(날짜와 설명은 사람이 고친다), 같은 경로의 `settings`·`manual` 기록이 이미 있으면 새 기록을 만들지 않는다. 다시 본 기록에 사람이 쓴 note가 있으면 새 note로 바뀐다(새 note가 비어 있을 때만 그대로 둔다). `unresolved`는 경로 기록이 하나도 없는 모델의 이유이고, 이미 적힌 항목은 그대로 둔다.
 
-경로가 같은 기존 기록은 `unchanged`로 나오고 note와 `checked_at`만 붙는다. 렛서의 `claude-haiku-4-5-20251001`은 파일에서 `claude-haiku-4-5`로 적는다.
+우리 registry에 없는 모델은 부르지도 기록하지도 않는다. 렛서 목록의 id는 `ALIASES`로 우리 id에 맞춘다(`claude-haiku-4-5-20251001`→`claude-haiku-4-5`, `byteplus-seedance-2.5`→`seedance-2.5`). 목록에만 있고 registry에 없는 13개(gpt-3.5-turbo, gpt-4, gpt-4-turbo, gpt-audio-1.5, gpt-audio-mini, jev-1.13.0, jev-latest, o1-pro, qwen3-coder, qwen3-coder-plus, qwen3-max, qwen3-max-thinking, qwen3.5-flash)는 화면에 이름만 나오고 기록과 `unresolved`에는 들어가지 않는다.
+
+실행하면 화면에 `new route`(처음 본 경로, 같은 모델의 다른 기록이 날짜와 함께 따라온다)·`upgraded to observed`·`re-seen`(이름)·`older-dated, not seen this run`(이번에 안 보여 옛 날짜로 남은 기록)·`covered by a settings or manual record`·`no usable answer, nothing recorded`·`unresolved`·`not registered, skipped`가 나온다. 제안 파일을 훑고 `--write`로 반영한 뒤 `git diff`와 `python3 -B -s -m pytest -q -p no:cacheprovider tests`를 확인하고 커밋한다. 호출 한 번은 지나간 경로를 보여 줄 뿐 다른 경로를 쓰지 않는다는 뜻이 아니다.
+
+### gpt-6.1-terra의 Bedrock 가격 출처 (2026-10-30)
+
+렛서가 gpt-6.1-terra를 Bedrock으로 부르기 시작해(`gpt-6.1-terra-bedrock-us-east-1`) 그 AWS 모델 카드를 수집에 더했다. 출처 `bedrock_gpt_6_1_terra`(`cloud_bedrock_gpt_6_1_terra`)는 `AWS_OPENAI_MORE_MODELS`에서 만들고 새 수집기 `aws_bedrock_models.py`가 읽는다. 기존 `aws_bedrock.py`가 `_AWS_OPENAI`로 모델을 찾기 때문에 거기에 한 줄을 더하면 Bedrock 출처 전부의 parser fingerprint가 바뀐다. 새 수집기를 따로 둬서 기존 399개 출처의 fingerprint는 그대로다(`events.evidence.parser_fingerprint`로 대조). 읽는 방식은 기존 OpenAI 카드와 같고(`Commercial Regions` 표, 짧은/긴 컨텍스트, 30분 캐시 쓰기), 이 카드는 지역 옵션을 `Geo CRIS`로 적어(기존 카드는 `US Geo CRIS`) 새 수집기가 그대로 읽는다. 카드에는 In-Region·Geo CRIS·Global CRIS 3개 옵션이 있어 가격 24개가 나온다(짧은 컨텍스트 Global CRIS 입력 $1.00·캐시 쓰기 $1.25·캐시 읽기 $0.05·출력 $5.00, In-Region은 $1.10·$1.375·$0.055·$5.50). 카드는 `Commercial In-Region prices include a 10% fee over OpenAI rates`라고 적는다.
+
+GLM-4.7·GLM-5도 Bedrock으로 보여(위 추정) 확인했다. AWS에 모델 카드가 있지만(`zai.glm-4.7`, `zai.glm-5`, 그리고 `zai.glm-5.3`, GLM 4.7 Flash) 가격 칸이 없고 Bedrock 요금 페이지로 안내하기만 해서 출처에 넣지 않았다. 요금 페이지(aws.amazon.com/bedrock/pricing/)에는 지역 묶음별 표가 있다(GLM 5: 미국 동부·서부 입력 $1.00·출력 $3.20, 아시아 태평양 일부·상파울루·스톡홀름 $1.20·$3.84, 런던 $1.55·$4.96, 시드니 $1.03·$3.30. GLM 4.7: 미국 $0.60·$2.20, 아시아 태평양 일부·상파울루·스톡홀름 $0.72·$2.64, 시드니 $0.6180·$2.2660). 이 페이지를 읽는 수집기는 지역 표 구조가 달라 따로 만들어야 한다.
 
 ## 구조 변경 검증 기록
 

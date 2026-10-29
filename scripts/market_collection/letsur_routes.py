@@ -4,13 +4,21 @@
         [--models id[,id...]] [--include-images] [--routes FILE] [--output FILE] [--write]
 
 No gateway endpoint names a model's route, so each model gets one tiny request per endpoint it needs (no retries) and the
-route is read from what the upstream leaves in the answer: ids, provider fields, content-filter fields. An answer with no
-such mark leaves the model unresolved and the note keeps the evidence. Video generation is never requested and image
-generation only with --include-images (both cost money). The base URL and the key come only from the environment and are
-never printed or written. The proposal goes to --output; --routes is rewritten only with --write. Records get note and
-checked_at (the run date, KST); models with no route go to the top-level "unresolved" map as {model_id: note}. No record
-gets an endpoint_id: OpenRouter and Vercel pick a sub-provider per request, so the one seen goes into the note, which is
-plain Korean because the admin's route tab shows it as written.
+route is read from what the upstream leaves in the answer: the named deployment in a header, ids, provider fields,
+content-filter fields. An answer with no such mark leaves the model unresolved and the note keeps the evidence. Video
+generation is never requested and image generation only with --include-images (both cost money). The base URL and the key
+come only from the environment and are never printed or written. The proposal goes to --output; --routes is rewritten only
+with --write.
+
+LETSUR's route for a model changes over days and can spread over several routes, so a run adds to the file instead of
+replacing: a route seen for the first time becomes a record of its own with that day's checked_at, a route seen again only
+gets a new checked_at, and the older records of other routes stay with their own dates. Only observed and inferred records
+are touched (an inferred one is replaced by an observed one of the same route); settings and manual records never are. Only
+models in our registry (models.py, plus ALIASES for LETSUR's other ids) are asked and recorded; the rest of LETSUR's list is
+named in the diff only. Records get note and checked_at (the run date, KST); models with no route anywhere go to the top-level
+"unresolved" map as {model_id: note}, and an entry already there is left as it is. No record gets an endpoint_id: OpenRouter
+and Vercel pick a sub-provider per request, so the one seen goes into the note, which is plain Korean because the admin's
+route tab shows it as written.
 Exit codes: 0 done, 1 no model gave a usable answer (nothing written), 2 refused (bad setup or the key was refused).
 """
 from __future__ import annotations
@@ -26,6 +34,8 @@ import urllib.request
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
+from scripts.market_collection.models import MODEL_MODALITIES
+
 BASE_ENV, KEY_ENV = "LETSUR_API_BASE", "LETSUR_API_KEY"
 DEFAULT_ROUTES = Path("samples/market_collection/demo_internal_routes.json")
 DEFAULT_OUTPUT = Path("data/market_collection/letsur_routes.proposed.json")
@@ -34,24 +44,33 @@ MAX_BODY_BYTES = 8 * 1024 * 1024  # one low-quality gpt-image answer is about 1 
 LONG_TEXT = 200  # longer strings (image data, reasoning text) are cut: nothing here reads them
 KEEP_HEADERS = ("x-letsur-ai-gateway-model-id", "x-letsur-ai-gateway-response-cost")
 MANAGED = ("observed", "inferred")  # the bases this tool writes; settings and manual records are a person's and stay
-ALIASES = {"claude-haiku-4-5-20251001": "claude-haiku-4-5"}  # LETSUR's dated id -> the id the collectors and the routes file use
+ALIASES = {"claude-haiku-4-5-20251001": "claude-haiku-4-5", "byteplus-seedance-2.5": "seedance-2.5"}  # LETSUR's id -> the one our registry uses
 ASK = "Reply with: ok"
 ASK_NO_DRAW = "Reply with the word ok only. Do not draw."  # a Gemini image model would otherwise answer with a picture
 PATHS = {"chat": "/v1/chat/completions", "messages": "/v1/messages", "responses": "/v1/responses",
          "images": "/v1/images/generations", "embeddings": "/v1/embeddings"}
 OPENAI_FAMILY = re.compile(r"(gpt-|o\d)")
-AZURE_DEPLOYMENT = re.compile(r".+?-azure-(?P<region>[a-z0-9][a-z0-9-]*)")  # header model id of a named Azure deployment
+# The header model id of a named deployment reads <model>-<where>: -azure-<region> (11 seen on 10/28), -bedrock-<region> (3 on
+# 10/30) and -openai[-<account>] (gpt-6.1-terra-openai-letsur-2 on 10/28). -vertex-<region> has not been seen; it is the same naming.
+DEPLOYMENTS = (
+    (re.compile(r".+?-azure-([a-z0-9][a-z0-9-]*)"), "azure_foundry", lambda where: f"Azure 배포 지역 {where}"),
+    (re.compile(r".+?-bedrock-([a-z0-9][a-z0-9-]*)"), "aws_bedrock", lambda where: f"Bedrock 배포 지역 {where}"),
+    (re.compile(r".+?-vertex-([a-z0-9][a-z0-9-]*)"), "google_vertex", lambda where: f"Vertex 배포 지역 {where}"),
+    (re.compile(r".+?-openai(?:-([a-z0-9][a-z0-9-]*))?"), "openai_direct", lambda where: f"OpenAI 직접 배포 {where}" if where else "OpenAI 직접 배포"),
+)
 AZURE_KEYS = ("prompt_filter_results", "content_filter_results", "content_filters", "serving_pipereplica")
 OPENROUTER_ID = re.compile(r"gen-\d+-")
 GEMINI_ID = re.compile(r"[A-Za-z0-9_-]{20,26}")
 OPENAI_CHAT_ID = re.compile(r"chatcmpl-[A-Za-z0-9]{20,40}")
 UUID = re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")
+CHAT_UUID_ID = re.compile("chatcmpl-" + UUID.pattern)  # an id the gateway made itself
+BEDROCK_USAGE = {"cache_creation_input_tokens", "cache_read_input_tokens"}  # usage fields of the Anthropic/Bedrock style
 PLAIN_FIELDS = {"id", "object", "created", "created_at", "model", "choices", "usage", "estimated_cost", "data", "type",
                 "role", "content", "stop_reason", "stop_sequence"}  # fields every answer has: not worth a note
 # Notes below and in the rules are Korean: they are shown to the admin as written.
 NOT_PROBED = {"video": "렛서 영상 API는 자체 입력 형식이라 생성 없이 경로가 드러나지 않음(호출하지 않음)",
               "image": "이미지 생성은 비용이 들어 호출하지 않음"}
-DIFF_PARTS = ("added", "changed", "unchanged", "now_unresolved", "unresolved", "kept", "covered")
+DIFF_PARTS = ("new_route", "upgraded", "re_seen", "older", "covered", "unresolved", "no_answer", "not_registered")
 
 
 class GatewayError(Exception):
@@ -200,11 +219,13 @@ def id_shape(value) -> str:
     return text if not text or "<uuid>" in text else f"{prefix}<{len(text) - len(prefix)}자>"
 
 
-def azure_header(model, ok):
+def named_deployment(model, ok):
     for answer in ok.values():
-        match = AZURE_DEPLOYMENT.fullmatch(answer["headers"].get("x-letsur-ai-gateway-model-id", ""))
-        if match:
-            return "azure_foundry", None, "observed", f"Azure 배포 지역 {match['region']}"
+        header = answer["headers"].get("x-letsur-ai-gateway-model-id", "")
+        for pattern, route, note in DEPLOYMENTS:
+            match = pattern.fullmatch(header)
+            if match:
+                return route, None, "observed", note(match[1])
 
 
 def openrouter(model, ok):
@@ -259,8 +280,16 @@ def openai_guess(model, ok):
         return "openai" if "images" in ok else "openai_direct", None, "inferred", "Azure 콘텐츠 필터 필드가 없음(필터를 끈 Azure 배포도 같아 보임)"
 
 
-# Most specific first: a gateway's own marks cannot come from anywhere else, content-filter fields can also be passed through.
-RULES = (azure_header, openrouter, vercel, anthropic, azure_body, openai_billing, google, openai_guess)
+def bedrock_shape(model, ok):
+    chat = ok.get("chat")
+    usage = chat["body"].get("usage") if chat else None
+    if chat and CHAT_UUID_ID.fullmatch(str(chat["body"].get("id"))) and isinstance(usage, dict) and BEDROCK_USAGE <= usage.keys():
+        return "aws_bedrock", None, "inferred", "응답 형식이 Bedrock을 거친 GPT 응답과 같음(chatcmpl-uuid id, cache_creation_input_tokens)"
+
+
+# Most specific first: a deployment named in the header and a gateway's own marks cannot come from anywhere else, content-filter
+# fields can also be passed through, and the two shapes that only fit one route come last.
+RULES = (named_deployment, openrouter, vercel, anthropic, azure_body, openai_billing, google, openai_guess, bedrock_shape)
 
 
 def classify(model: str, responses: dict) -> tuple[str | None, str | None, str | None, str]:
@@ -296,11 +325,12 @@ def unresolved_note(model: str, responses: dict) -> str:
 
 
 def answered(responses: dict) -> bool:
-    """False when the gateway said nothing usable about the model: nothing asked, or no 200 and some endpoint without a firm
-    answer (no connection, a timeout, a rate limit, a 5xx). That says nothing about the route, so the old record must stand."""
+    """False when the gateway said nothing usable about the model: no 200 and some endpoint without a firm answer (no
+    connection, a timeout, a rate limit, a 5xx). That is no finding, so it is not written to the unresolved map. Nothing asked
+    (video, images) is a finding: the note says why (all() of no answers is true)."""
     states = [answer.get("status") for answer in responses.values()]
-    return any(state == 200 for state in states) or (bool(states) and all(
-        isinstance(state, int) and 400 <= state < 500 and state not in (408, 429) for state in states))
+    return any(state == 200 for state in states) or all(
+        isinstance(state, int) and 400 <= state < 500 and state not in (408, 429) for state in states)
 
 
 def resolve(model: str, responses: dict) -> dict:
@@ -348,51 +378,60 @@ def load_routes(path: Path) -> dict:
 
 
 def merge(current: dict, results: dict, checked_at: str) -> tuple[dict, dict]:
-    """The routes document with this run's results applied, and what changed model by model.
+    """The routes document with this run's results added, and what happened to each model's records.
 
-    Only observed and inferred records belong to this tool: a settings or manual record stays as it is, and when one already
-    names the route a model was seen on the model gets no second record (nor an unresolved entry when no route was seen).
-    A model with no usable answer keeps what the file already knew about it. New records go where the model's old one was,
-    else at the end."""
+    A route seen for the first time becomes a record of its own with `checked_at`, next to the model's other records; a route
+    seen again only gets a new date (and a note when it had none), but an inferred record is replaced by an observed
+    one; an observed record seen only as inferred keeps its date. Records of other routes stay as they were, with their own
+    dates, and so do settings and manual records, which also stop a new record of the same route. A model with a route anywhere
+    needs no unresolved entry; one with none gets one when the gateway answered, and an entry already there stays as written."""
     records, unresolved = [dict(record) for record in current["records"]], dict(current.get("unresolved") or {})
     diff = {part: [] for part in DIFF_PARTS}
     for model in sorted(results):
         result, name = results[model], ALIASES.get(model, model)
+        route, refreshed, weaker = result["route_id"], None, None
         mine = [i for i, r in enumerate(records) if r["model_id"] == name and r.get("basis") in MANAGED]
-        held = [r for r in records if r["model_id"] == name and r.get("basis") not in MANAGED]
-        before = [(records[i].get("route_id"), records[i].get("endpoint_id"), records[i].get("basis")) for i in mine]
-        if not result["answered"] and (mine or name in unresolved):
-            diff["kept"].append((name, before, result["note"]))
-            continue
-        at = mine[0] if mine else len(records)
-        records = [r for i, r in enumerate(records) if i not in mine]
-        if result["route_id"] is None:
-            named = any(r.get("route_id") for r in held)  # a settings or manual record already names its route
-            if named:
-                unresolved.pop(name, None)
+        if route:
+            same = next((i for i in mine if records[i].get("route_id") == route), None)
+            new = {"model_id": name, "route_id": route, "endpoint_id": result["endpoint_id"], "basis": result["basis"],
+                   **({"note": result["note"]} if result["note"] else {}), "checked_at": checked_at}
+            after = (route, result["endpoint_id"], result["basis"])
+            if any(r["model_id"] == name and r.get("basis") not in MANAGED and r.get("route_id") == route for r in records):
+                diff["covered"].append((name, after))
+            elif same is None:
+                own = [i for i, r in enumerate(records) if r["model_id"] == name]
+                others = [tuple(records[i].get(key) for key in ("route_id", "endpoint_id", "basis", "checked_at")) for i in own]
+                refreshed = own[-1] + 1 if own else len(records)
+                records.insert(refreshed, new)
+                diff["new_route"].append((name, after, others))
+            elif records[same].get("basis") == "inferred" and result["basis"] == "observed":
+                records[same], refreshed = new, same
+                diff["upgraded"].append((name, route))
+            elif records[same].get("basis") == result["basis"]:
+                if result["note"] and not records[same].get("note"):  # a note already there (a person's or an earlier run's) stays
+                    records[same]["note"] = result["note"]
+                records[same]["checked_at"] = checked_at
+                refreshed = same
+                diff["re_seen"].append(name)
             else:
-                unresolved[name] = result["note"]
-            if mine or not named:
-                diff["now_unresolved" if mine else "unresolved"].append((name, before, result["note"]))
-            continue
-        new = {"model_id": name, "route_id": result["route_id"], "endpoint_id": result["endpoint_id"], "basis": result["basis"],
-               **({"note": result["note"]} if result["note"] else {}), "checked_at": checked_at}
-        after, was_unresolved = (new["route_id"], new["endpoint_id"], new["basis"]), unresolved.pop(name, None) is not None
-        if any(r.get("route_id") == new["route_id"] for r in held):
-            diff["covered"].append((name, after))
-            continue
-        records.insert(at, new)
-        if not mine:
-            diff["added"].append((name, after, was_unresolved))
-        elif before == [after]:
-            diff["unchanged"].append(name)
+                weaker = same
+        for i in mine:
+            if i != refreshed:
+                why = "inferred only this run" if i == weaker else "" if route else result["note"]
+                record = tuple(records[i].get(key) for key in ("route_id", "endpoint_id", "basis"))
+                diff["older"].append((name, record, records[i].get("checked_at"), why))
+        if any(r["model_id"] == name and r.get("route_id") for r in records):
+            unresolved.pop(name, None)
+        elif name in unresolved or result["answered"]:
+            unresolved.setdefault(name, result["note"])
+            diff["unresolved"].append(name)
         else:
-            diff["changed"].append((name, before, after))
-    return {**current, "records": records, "unresolved": dict(sorted(unresolved.items()))}, diff
+            diff["no_answer"].append((name, result["note"]))
+    return {**current, "records": records, "unresolved": unresolved}, diff
 
 
 def describe(parts) -> str:
-    return " + ".join(f"{route}{'/' + endpoint if endpoint else ''} [{basis}]" for route, endpoint, basis in parts) or "no record"
+    return " + ".join(f"{route}{'/' + endpoint if endpoint else ''} [{basis}]" for route, endpoint, basis in parts)
 
 
 def format_diff(diff: dict) -> str:
@@ -402,14 +441,18 @@ def format_diff(diff: dict) -> str:
         if rows:
             lines.extend([f"{title} ({len(rows)})", *(f"  {row}" for row in rows)])
 
-    section("added", [f"{name}: {describe([after])}" + (" (was unresolved)" if was else "") for name, after, was in diff["added"]])
-    section("changed", [f"{name}: {describe(before)} -> {describe([after])}" for name, before, after in diff["changed"]])
-    section("now unresolved", [f"{name}: was {describe(before)} -> {note}" for name, before, note in diff["now_unresolved"]])
-    section("kept, no usable answer", [f"{name}: {describe(before)} ({note})" for name, before, note in diff["kept"]])
+    def dated(route, endpoint, basis, day):
+        return f"{describe([(route, endpoint, basis)])} {day or 'no date'}" if basis in MANAGED else describe([(route, endpoint, basis)])
+
+    section("new route", [f"{name}: {describe([after])}" + (f" (also {', '.join(dated(*other) for other in others)})" if others else "")
+                          for name, after, others in diff["new_route"]])
+    section("upgraded to observed", [f"{name}: {route}" for name, route in diff["upgraded"]])
+    section("older-dated, not seen this run", [f"{name}: {dated(*record, day)}" + (f" ({why})" if why else "") for name, record, day, why in diff["older"]])
     section("covered by a settings or manual record", [f"{name}: {describe([after])}" for name, after in diff["covered"]])
-    lines.append(f"unchanged ({len(diff['unchanged'])})")
-    if diff["unresolved"]:
-        lines.append(f"unresolved ({len(diff['unresolved'])}): " + ", ".join(name for name, _, _ in diff["unresolved"]))
+    section("no usable answer, nothing recorded", [f"{name}: {note}" for name, note in diff["no_answer"]])
+    for title, names in (("re-seen", diff["re_seen"]), ("unresolved", diff["unresolved"]), ("not registered, skipped", diff["not_registered"])):
+        if names:
+            lines.append(f"{title} ({len(names)}): " + ", ".join(names))
     return "\n".join(lines)
 
 
@@ -438,7 +481,9 @@ def main(argv=None, env=None, opener=None) -> int:
         current = load_routes(args.routes)
         gateway = Gateway(base, key, args.timeout, opener)
         listed = [(model.strip(), ()) for part in args.models for model in part.split(",") if model.strip()] or gateway.models()
-        models, results, answers = sorted(dict(listed).items()), {}, {}
+        wanted = sorted(dict(listed).items())
+        models = [(model, modality) for model, modality in wanted if ALIASES.get(model, model) in MODEL_MODALITIES]
+        results, answers = {}, {}
         for number, (model, modality) in enumerate(models, 1):
             answers[model] = probe(gateway, model, kind(model, modality), args.include_images)
             results[model] = resolve(model, answers[model])
@@ -452,6 +497,7 @@ def main(argv=None, env=None, opener=None) -> int:
         print("no model gave a usable answer; nothing written", file=sys.stderr)
         return 1
     proposal, diff = merge(current, results, today())
+    diff["not_registered"] = [model for model, _ in wanted if ALIASES.get(model, model) not in MODEL_MODALITIES]
     text = json.dumps(proposal, ensure_ascii=False, indent=2) + "\n"
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(text, encoding="utf-8")

@@ -205,6 +205,13 @@ _AWS_ANTHROPIC = (
     ("claude-haiku-4-5", "claude-haiku-4-5", "Claude Haiku 4.5"),
 )
 
+# OpenAI models LETSUR started to call on AWS Bedrock after _AWS_OPENAI was made (2026-10-30: the gateway header of gpt-6.1-terra reads
+# gpt-6.1-terra-bedrock-us-east-1). A tuple of its own, same shape: aws_bedrock.py reads _AWS_OPENAI, so a row added there would
+# change the parser fingerprint of every Bedrock source.
+AWS_OPENAI_MORE_MODELS = (
+    ("gpt-6.1-terra", "gpt-6-1-terra", "GPT-6.1 Terra"),
+)
+
 # Azure Foundry catalog pages (no numeric rate); the GPT models are priced from Azure retail meters since 2026-10-28.
 _AZURE_MODELS = ("claude-fable-5-1",) + tuple(model for model, _, _ in _AWS_ANTHROPIC)
 _AZURE_RETAIL_MODELS = tuple(model for model, _, _ in _AWS_OPENAI)

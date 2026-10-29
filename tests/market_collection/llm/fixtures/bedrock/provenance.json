@@ -58,5 +58,11 @@
     "source": "/tmp/letsur-health-20261015/latest-bedrock_gpt_6_1_sol.html",
     "source_sha256": "6a18439da56fb56cef7e66a60f4d800d9f9312f421dddcb79eee6d9c7d594bed",
     "extraction": "Semantic HTML projection of exact h1, Pricing prose, Standard Commercial table headings/cells, and Programmatic Access table cells via existing _Page; HTML attributes and other sections omitted."
+  },
+  {
+    "fixture": "latest-gpt_6_1_terra.html",
+    "source": "https://docs.aws.amazon.com/bedrock/latest/userguide/model-card-openai-gpt-6-1-terra.html (fetched 2026-10-30)",
+    "source_sha256": "633666d8e21efbe5b35542e0752a1341779cfa9ad897359f97d111d28b9221ae",
+    "extraction": "Semantic HTML projection of exact h1, Pricing prose, Commercial Regions table headings/cells, and Programmatic Access table cells via existing _Page; HTML attributes and other sections omitted. This card has no Standard prefix on the headings and calls the geographic option Geo CRIS."
   }
 ]
