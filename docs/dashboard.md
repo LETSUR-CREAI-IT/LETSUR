@@ -9,7 +9,7 @@ python3 -B -m scripts.market_collection.dashboard --root data/market_collection 
 ```
 
 - `--output`은 아직 없는 경로여야 한다(있으면 아무것도 쓰지 않고 exit 2). 결과는 `<output>/index.html` 한 파일이다.
-- `--internal-routes <파일>`(선택): 렛서가 모델마다 쓰는 공급 경로 파일. 주면 카드의 렛서 관계와 모델별 사용 경로(`MODELS`의 `use`, 지금 화면에는 나오지 않음)를 이 파일로 정하고, 빼면 모든 카드가 "사용 경로 확인 필요"다(아래 "렛서 관계"). workflow는 `samples/market_collection/demo_internal_routes.json`을 넘긴다(2026-10-28부터 레코드마다 근거가 있어 시연용 가정이 아니다. 파일 이름은 그대로 뒀다).
+- `--internal-routes <파일>`(선택): 렛서가 모델마다 쓰는 공급 경로 파일. 주면 카드의 렛서 관계와 모델별 사용 경로(`MODELS`의 `use`, 지금 화면에는 나오지 않음)를 이 파일로 정하고, 빼면 모든 카드가 "사용 경로 확인 필요"다(아래 "렛서 관계"). workflow는 `samples/market_collection/demo_internal_routes.json`을 넘긴다(2026-10-28부터 레코드마다 근거가 있어 시연용 가정이 아니다. 파일 이름은 그대로 뒀다). 같은 파일이 '공급로 현황' 탭에도 통째로 들어간다(아래 "공급로 현황 탭").
 - 종료 코드: 0 정상(입력 문제로 실패 화면을 쓴 경우, 경로 파일을 쓰지 못해 경고를 붙인 경우 포함), 1 예기치 못한 오류(이때도 실패 화면은 쓴다), 2 출력 경로가 이미 있음.
 - 기준일(D-day, 캘린더의 오늘)은 생성 시점의 KST 날짜다. 주소 뒤에 `?base=2026-10-12`를 붙이면 그 날짜로 바꿔 볼 수 있다(원본 템플릿 기능). 변화 목록의 날짜 필터도 이 기준일을 쓴다(2026-10-27 결정, 아래 "목록 필터").
 
@@ -141,10 +141,12 @@ python3 -B -m scripts.market_collection.dashboard --root data/market_collection 
 ### 렛서 관계 (`--internal-routes`)
 
 - 카드의 렛서 관계(`relKey`, `relShort`, `relDemo`)는 `--internal-routes` 파일로만 정한다. 엔진 `letsur_usage`는 지금 항상 `unknown`이라 쓰지 않는다. 옵션이 없으면 모든 카드가 `relKey: "unk"`, `relShort: "사용 경로 확인 필요"`, `relDemo: false`다(옵션이 생기기 전과 같은 결과).
-- 파일 형식: `{"is_demo": true 또는 false, "records": [{"model_id": "...", "route_id": "..." 또는 null, "endpoint_id": "..." 또는 null, "basis": "settings" 또는 "observed" 또는 없음}, ...]}`. `endpoint_id`와 `basis`는 빠져도 된다. 그 밖의 키(`purpose`, `basis_note` 등)는 읽지 않는다.
+- 파일 형식: `{"is_demo": true 또는 false, "records": [{"model_id": "...", "route_id": "..." 또는 null, "endpoint_id": "..." 또는 null, "basis": "settings"·"observed"·"manual"·"inferred" 또는 없음, "checked_at": "YYYY-MM-DD" 또는 null, "note": "..." 또는 null}, ...], "unresolved": {"모델 id": "이유", ...}}`. `endpoint_id`, `basis`, `checked_at`(그 경로를 확인·추정·지정한 날), `note`(근거, 일반 글)와 `unresolved`(경로를 알아내지 못한 모델과 이유, 2026-10-29)는 빠져도 된다. 카드는 `checked_at`·`note`·`unresolved`를 쓰지 않고 공급로 현황 탭이 보인다. 그 밖의 키(`purpose`, `basis_note` 등)는 읽지 않는다.
 - `basis: "settings"`(2026-10-28 박건 결정): 렛서 QnA 답변(9/23) 질문 2의 '설정에 등록된 공급 경로'다. 렛서는 설정에 경로가 있어도 실제 트래픽이 흐르는지는 따로 확인해야 한다고 했다. 이 근거의 카드는 `relDemo: false`, `relSet: true`이고 `relShort` 끝에 " (렛서 설정)"이 붙는다(`route_basis`). 화면은 적용 배지에 "· 설정", 상세 "현재 사용 경로"에 '렛서 설정' 태그, 제안 근거에 "(렛서 관계는 9/23 답변의 렛서 설정 경로 기준, 실제 트래픽 미확인)"을 붙인다.
-- `basis: "observed"`(2026-10-28 박건 결정): 같은 날 렛서 API를 모델마다 한 번 호출해 응답 헤더·필드로 판별한, 그 호출이 실제로 지나간 경로다. 그 경로를 쓰고 있다는 확인일 뿐 다른 경로를 쓰지 않는다는 뜻은 아니다. 이 근거의 카드는 `relDemo: false`, `relObs: true`이고 `relShort` 끝에 " (호출 확인)"이 붙는다. 화면은 적용 배지에 "· 호출 확인", 상세 "현재 사용 경로"에 '호출 확인' 태그, 제안 근거에 "(렛서 관계는 10/28 렛서 API 호출로 확인한 경로 기준)"을 붙이고, 마우스 설명은 "10/28 렛서 API 호출 1회로 확인한 경로 · 다른 경로도 쓸 수 있음"이다.
-- 끝 표시를 정하는 레코드(`route_basis`): 카드 경로에 그 모델의 레코드가 있으면 그 레코드의 근거, 없으면(`other`·`none`) 그 모델 레코드 전체의 근거다. 모두 settings면 " (렛서 설정)", 모두 observed면 " (호출 확인)", 섞이면 " (렛서 설정·호출 확인)"이고 이때는 `relSet`도 `relObs`도 없다(`relSet`·`relObs`는 각각 그 근거 하나일 때만 붙는다). 예: gpt-6-astra는 OpenAI 직접 카드가 "(렛서 설정)", Azure 카드가 "(호출 확인)", 그 밖의 경로 카드가 "(렛서 설정·호출 확인)"이다. 할인 끝남 주의 줄(`risk`)의 짧은 표기("렛서 설정 경로", "렛서 호출 확인 경로")는 그 줄이 말하는 경로의 레코드를 따른다.
+- `basis: "observed"`(2026-10-28 박건 결정): 렛서 API를 모델마다 한 번 호출해 응답 헤더·필드로 판별한, 그 호출이 실제로 지나간 경로다. `checked_at`이 없으면 2026-10-28 호출이고, 2026-10-29 호출은 `checked_at`과 `note`가 있다. 그 경로를 쓰고 있다는 확인일 뿐 다른 경로를 쓰지 않는다는 뜻은 아니다. 이 근거의 카드는 `relDemo: false`, `relObs: true`이고 `relShort` 끝에 " (호출 확인)"이 붙는다. 화면은 적용 배지에 "· 호출 확인", 상세 "현재 사용 경로"에 '호출 확인' 태그, 제안 근거에 "(렛서 관계는 렛서 API 호출로 확인한 경로 기준)"을 붙이고, 마우스 설명은 "렛서 API 호출 1회로 확인한 경로 · 다른 경로도 쓸 수 있음"이다(2026-10-29에 10/29 호출이 생겨 날짜 "10/28"을 뺐다).
+- `basis: "manual"`(2026-10-29): 관리자가 공급로 현황 탭에서 지정한 경로다. settings·observed처럼 렛서가 쓰는 경로로 본다. 카드는 `relMan: true`이고 `relShort` 끝에 " (관리자 지정)"이 붙는다. 화면은 적용 배지에 "· 관리자 지정", 상세 "현재 사용 경로"에 '관리자 지정' 태그, 제안 근거에 "(렛서 관계는 관리자가 지정한 경로 기준)"을 붙인다.
+- `basis: "inferred"`(2026-10-29): 호출로 경로를 확인하지 못했지만 응답 형식·렛서 모델 id·단가로 추정한 경로다(근거는 `note`). 추정 경로는 보이기만 하고 렛서가 쓰는 경로로 보지 않는다(`model_records`). 그 경로의 카드와, 그 모델에 다른 기록이 없으면 모든 카드가 `relKey: "unk"`(적용 배지 UNKNOWN, 추천 행동 VERIFY)이고 `relShort`가 "사용 경로 추정 : OpenAI · openai (호출 추정)"처럼 추정 경로를 적으며 `relInf: true`다. 화면은 상세 "현재 사용 경로"에 '호출 추정' 태그를 붙이고 적용 배지의 마우스 설명에 "렛서 API 호출로 추정한 경로 · 확인 전"을 적는다. 다른 기록(settings·observed·manual)이 있는 모델은 그 기록이 자기 경로와 그 밖의 경로 카드를 전처럼 정하고, 추정 경로의 카드만 확인 필요로 남는다. 할인 끝남 주의 줄(`risk`)도 추정 경로에는 붙지 않는다. `MODELS`의 `use`는 추정 기록만 있는 모델에 같은 "사용 경로 추정 : …" 문구를 넣는다.
+- 끝 표시를 정하는 레코드(`route_basis`): 카드 경로에 그 모델의 레코드가 있으면 그 레코드의 근거, 없으면(`other`·`none`) 그 모델 레코드 전체의 근거다. 모두 settings면 " (렛서 설정)", 모두 observed면 " (호출 확인)", 모두 manual이면 " (관리자 지정)", 섞이면 " (렛서 설정·호출 확인)"처럼 설정·호출 확인·관리자 지정 순으로 잇고 이때는 `relSet`·`relObs`·`relMan`이 없다(각각 그 근거 하나일 때만 붙는다). inferred 기록은 여기서 읽지 않는다. 예: gpt-6-astra는 OpenAI 직접 카드가 "(렛서 설정)", Azure 카드가 "(호출 확인)", 그 밖의 경로 카드가 "(렛서 설정·호출 확인)"이다. 할인 끝남 주의 줄(`risk`)의 짧은 표기("렛서 설정 경로", "렛서 호출 확인 경로", "렛서 관리자 지정 경로")는 그 줄이 말하는 경로의 레코드를 따른다.
 - 한 모델에 basis가 없는 레코드가 하나라도 있으면 그 모델 전체를 `is_demo`로 본다(아래).
 - 카드의 모델(대표 이벤트 `model_id`)로 레코드를 찾고 카드 경로(대표 이벤트 `route`)와 `route_id`를 비교한다.
 
@@ -162,7 +164,7 @@ python3 -B -m scripts.market_collection.dashboard --root data/market_collection 
 - `is_demo`
   - true: basis가 없는 레코드가 있는 모델의 카드(`use`, `other`, `none`)에 `relDemo: true`를 넣고 `relShort` 끝에 " (가정)"을 붙인다. 템플릿은 제안 근거 끝에 "(렛서 관계는 시연용 가정)"을, 상세 "현재 사용 경로"에 가정 태그를 붙인다. 영향 줄 "제공·사용"은 태그 없이 `relShort`만 보여서 " (가정)"을 문구에 넣었다(1011 원본 표기와 같다). 모든 레코드에 basis가 있으면 true여도 아무것도 붙지 않는다.
   - false: 둘 다 붙이지 않는다(basis가 없는 레코드는 표시 없이 사실처럼 보이니 레코드마다 basis를 단다). 레코드가 없는 카드(`unk`)는 is_demo와 상관없이 `relDemo: false`다.
-  - 공급사 비교 표(`compare.py`)는 레코드마다 그 경로의 행(결정 17: 직접 경로는 Standard 행, 게이트웨이는 제조사 자신의 상류 Standard 행)에 칩을 붙인다. 칩은 그 레코드의 basis를 따른다: settings는 "렛서 설정", observed는 "호출 확인", basis가 없으면 true일 때 "가정", false일 때 "사용 경로"다. 한 행이 레코드 여럿에 맞으면 파일에서 앞선 레코드를 따른다. gpt-6-astra는 OpenAI 직접 행이 "렛서 설정", Azure 행이 "호출 확인"이다(2026-10-28 전에는 모델의 첫 레코드 경로 행만 basis와 상관없이 칩을 받았다).
+  - 공급사 비교 표(`compare.py`)는 레코드마다 그 경로의 행(결정 17: 직접 경로는 Standard 행, 게이트웨이는 제조사 자신의 상류 Standard 행)에 칩을 붙인다. 칩은 그 레코드의 basis를 따른다: settings는 "렛서 설정", observed는 "호출 확인", manual은 "관리자 지정", inferred는 "호출 추정"(2026-10-29), basis가 없으면 true일 때 "가정", false일 때 "사용 경로"다. 한 행이 레코드 여럿에 맞으면 파일에서 앞선 레코드를 따른다. gpt-6-astra는 OpenAI 직접 행이 "렛서 설정", Azure 행이 "호출 확인"이다(2026-10-28 전에는 모델의 첫 레코드 경로 행만 basis와 상관없이 칩을 받았다).
 - 제안·다음 할 일은 템플릿 규칙이 `relKey`로 계산하고, 이 규칙은 바꾸지 않았다. 예: `other`인 단가 인상 예정 카드는 "기존 조건 유지 검토", "현재 경로 유지 : Google · google_direct 새 단가는 비교용으로 기록"이다. `unk` 카드는 사용 중으로 가정하되 "확인 후 "와 "먼저 렛서 사용 경로 확인"이 붙는다.
 - 모델별 사용 경로(`MODELS[model].use`)는 카드 경로와 상관없이 모델 단위로 같은 파일에서 채운다(2026-10-21 박건 요청). 카드에 나온 모델만 다룬다.
 - 이 값은 지금 화면에 나오지 않는다. 이 값을 보일 템플릿의 "모델별 현황" 표(`renderModels()`, 1037행)는 정의만 있고 호출되지 않으며, 표를 넣을 `id="models"` 요소도 없다. 1011 원본도 같다(1221행에 정의, 호출 없음). 아래 규칙은 페이지 데이터 기준이다.
@@ -178,7 +180,7 @@ python3 -B -m scripts.market_collection.dashboard --root data/market_collection 
 - `use`의 끝 표시는 그 모델의 레코드 전체로 정한다: 모두 settings면 " (렛서 설정)", 모두 observed면 " (호출 확인)", 섞이면 " (렛서 설정·호출 확인)"이다. basis가 없는 레코드가 있으면 is_demo가 true일 때 " (가정)"이고 false면 붙이지 않는다. 시연 파일로는 gemini-3.8-flash가 "Google · google_direct, OpenRouter · openrouter, Vercel · vercel_ai_gateway 경로로 사용 (렛서 설정)"(10/28 전에는 "Vercel · vercel_ai_gateway 경로로 사용 (가정)"), gpt-6-astra가 "OpenAI · openai_direct, Microsoft · azure_foundry 경로로 사용 (렛서 설정·호출 확인)"이다.
 - 1011 원본 `MODELS` 예시("제공 중 · Vercel 경로 (가정)", "미도입 (가정)")와 달리 "제공 중 · "을 붙이지 않고 경로를 카드와 같은 표기로 쓴다.
 - 옵션이 없거나 파일을 쓸 수 없으면 어느 모델에도 `use`를 넣지 않는다(옵션이 생기기 전과 같은 결과).
-- 파일을 쓸 수 없으면 페이지는 그대로 만들고, 경고 배너에 파일 이름과 사유를 적고, 모든 카드를 `unk`로 둔다(exit 0). 시연 파일 문제로 일일 페이지가 멈추지 않게 하려는 것이다. 사유: 파일 없음, JSON으로 읽을 수 없음, `is_demo`가 true·false가 아님, `records`가 목록이 아님, 레코드에 `model_id`(빈 문자열 제외)나 `route_id` 키가 없음, `route_id`·`endpoint_id`가 빈 문자열이거나 문자열·null이 아님, `basis`가 settings·observed·null이 아님.
+- 파일을 쓸 수 없으면 페이지는 그대로 만들고, 경고 배너에 파일 이름과 사유를 적고, 모든 카드를 `unk`로 둔다(exit 0). 시연 파일 문제로 일일 페이지가 멈추지 않게 하려는 것이다. 사유: 파일 없음, JSON으로 읽을 수 없음, `is_demo`가 true·false가 아님, `records`가 목록이 아님, 레코드에 `model_id`(빈 문자열 제외)나 `route_id` 키가 없음, `route_id`·`endpoint_id`·`note`가 빈 문자열이거나 문자열·null이 아님, `basis`가 settings·observed·manual·inferred·null이 아님, `checked_at`이 실제 YYYY-MM-DD 날짜·null이 아님, `unresolved`가 모델 id와 빈 문자열이 아닌 메모의 묶음이 아님.
 - 템플릿 510행 데이터 출처 주석("렛서 사용 경로는 엔진 letsur_usage가 unknown이라 relKey "unk".")은 이 옵션 전 설명이고, 고치지 않고 두었다.
 - 시연 파일 `samples/market_collection/demo_internal_routes.json`: LETSUR-events `deliverables/event-json-handoff-20261009/demo_internal_routes.json`을 2026-10-21에 바이트 그대로 복사했다(617 bytes, SHA256 `f27733b9a9c01edb54a6b34b3b6ca4aadc4e785056bf2da1632fa3b212c51f0a`). `is_demo: true`와 `purpose`는 원본 그대로였고 실제 렛서 경로가 아니라 시연용 가정이었다(아래 2026-10-28 결정 전까지).
   - 레코드 4개: gemini-3.8-flash · vercel_ai_gateway, claude-sonnet-5-5 · anthropic_direct, veo-3.1-standard · fal(endpoint fal-ai/veo3.1), gpt-6.1-sol · null(미도입).
@@ -188,6 +190,7 @@ python3 -B -m scripts.market_collection.dashboard --root data/market_collection 
   - 2026-10-28: 호출 확인 경로가 카드 배지·태그·제안 근거(`relObs`)에 settings와 같은 방식으로 보이고, 공급사 비교 표 칩이 레코드마다 basis대로 붙는다(위 "렛서 관계"). 모델별 현황 표의 고정 머리글도 바꿨다.
   - 2026-10-28 (OpenRouter·Vercel 34개 모델): 호출이 OpenRouter나 Vercel을 지나간 34개 모델의 `basis: "observed"` 기록을 더했다(OpenRouter 16, Vercel 18, `endpoint_id` 없음). 기록은 25개에서 59개(settings 10, observed 49)가 됐고 기존 25개는 그대로다. 수집에 이 모델들이 들어오기 전에는 화면에 나오지 않는다. qwen3.5-plus는 호출이 OpenRouter를 지나갔지만 OpenRouter에 그 id의 엔드포인트 목록이 없어(Vercel만 있음) 그 모델의 Vercel 카드가 '모델 제공 중 : OpenRouter · openrouter 경로로 사용 (호출 확인)'으로 읽힌다. 비교 표 칩은 제조사 자신의 상류 행을 `norm()` 이름으로 찾는다. MiniMax·Meta·Alibaba는 OpenRouter 공급자 이름(MiniMax, Meta, Alibaba)과 Vercel id(minimax, meta, alibaba) 모두 별칭 없이 제조사 이름과 같아진다. xAI는 Vercel이 모델 소유자를 `spacexai`, OpenRouter가 모델 이름을 SpaceXAI로 적는데(10/28 공개 목록) 엔드포인트의 공급자 표기는 아직 못 봐서, `ALIAS`에 `spacexai`→`xai`를 더해 어느 쪽이든 맞게 했다. `OPEN_WEIGHT`는 deepseek·glm·kimi 그대로라 새 모델은 모두 '비공개'로 묶인다. MiniMax처럼 가중치가 공개된 모델의 정밀도 묶음은 따로 정할 일이다.
   - 2026-10-29 (나머지 70개 모델, 박건 '70개도 모두 보도록'): 호출이 Azure(23)·Google 직접(10)·Anthropic 직접(9)·OpenAI 직접(4)을 지나간 46개 모델의 `basis: "observed"` 기록을 더했다. 기록은 59개에서 105개(settings 10, observed 95)가 됐다. gpt-5.6·gpt-5.5-2026-04-23은 응답에 Azure 필드가 없어 OpenAI 직접으로 보이지만 확인이 아니라 추정이라, GLM 5개(glm-4.7·glm-5·glm-5.2·glm-5.3·glm-5.3-flashx)와 임베딩 3개는 경로를 알아내지 못해, 이미지·영상 15개는 호출하지 않아 기록이 없다(카드는 '사용 경로 확인 필요'). GLM의 Z.ai 직접 행은 공개 가중치 모델인데 정밀도가 적혀 있지 않아 비교 표에서 '정밀도 미상 · 직접 확인 필요'로 빠진다.
+  - 2026-10-29 (렛서 API 호출 2차): 8개 모델에 `basis: "observed"` 기록을 더했다(`checked_at` 2026-10-29, `note`에 근거). gpt-5.6·gpt-5.5-2026-04-23은 OpenAI 직접(Responses API 응답에 OpenAI 자체 과금 필드 billing {payer: developer}, gpt-5.2-pro·gpt-6.1-terra와 같은 형식), Gemini 이미지 6개(gemini-nano-banana-2.1, gemini-2.5-flash-image, gemini-3-pro-image와 -preview, gemini-3.1-flash-image와 -preview)는 Google 직접(Gemini 형식 responseId와 필드)이다. 3개는 `basis: "inferred"`다. gpt-image-2는 OpenAI(이미지 생성 응답에 Azure 콘텐츠 필터 필드가 없음, 렛서 설정상 GPT Image 2.5도 OpenAI 직접), byteplus-seedance-2.5-reference-to-video·video-to-video는 BytePlus ModelArk(렛서 모델 id가 byteplus-로 시작하고 단가가 BytePlus 공개가와 같음)다. 경로를 알아내지 못한 14개(GLM 5개, 임베딩 3개, Kling 영상 6개)는 `unresolved`에 이유를 적었다. 기록은 105개에서 116개(settings 10, observed 103, inferred 3)가 됐고 기존 105개는 그대로다. `purpose`·`basis_note`도 고쳤다. 10/29 자료(수집 run 10/29 00:25 KST, 카드 117장)에서 바뀐 카드는 gemini-nano-banana-2.1의 Vercel 경로 추가 1장이다(UNKNOWN · VERIFY → NOT APPLIES · MONITOR, '모델 제공 중 : Google · google_direct 경로로 사용 (호출 확인)'). 추정 기록 3개의 모델에는 아직 카드가 없다. 공급사 비교 표는 Gemini 이미지 4개의 Google 행과 gpt-5.6·gpt-5.5-2026-04-23의 OpenAI 행에 '호출 확인' 칩이 붙는다. gemini-3-pro-image-preview·gemini-3.1-flash-image-preview는 Google 직접 가격을 수집하지 않아 공급로 현황에 '렛서가 쓰는데 가격 수집 안 함'으로 나온다.
 - 실제 연동: 실제 렛서 사용 경로가 생기면 workflow `Build dashboard` 단계에서 `--internal-routes`를 빼거나(모든 카드가 "사용 경로 확인 필요"로 돌아간다), 같은 형식의 실제 경로 파일(`is_demo: false`)로 바꾼다. 시연 파일은 그때 지우면 된다.
 
 ### 상세페이지 필드 (박기범, 2026-10-26)
@@ -213,7 +216,7 @@ python3 -B -m scripts.market_collection.dashboard --root data/market_collection 
 
 기준: Notion "연우 메인페이지"의 메인페이지 정규화 규칙과 김연우 시안(렛서_대시보드_메인페이지_정규화_1027.html). 시안은 샘플 데이터용이라 같은 규칙을 실데이터 카드 필드로 다시 만들었다. 엔진 출력은 바꾸지 않고 화면에서 만든다(`act`는 계속 `pending`).
 
-- Applicability: `relKey`가 use면 APPLIES, unk면 UNKNOWN, other·none이면 NOT APPLIES. `relDemo`면 "· 가정", `relSet`(렛서 설정 경로)이면 "· 설정"을 붙인다. `relObs`(호출로 확인한 경로)이면 "· 호출 확인"을 붙인다.
+- Applicability: `relKey`가 use면 APPLIES, unk면 UNKNOWN, other·none이면 NOT APPLIES. `relDemo`면 "· 가정", `relSet`(렛서 설정 경로)이면 "· 설정"을 붙인다. `relObs`(호출로 확인한 경로)이면 "· 호출 확인", `relMan`(관리자 지정)이면 "· 관리자 지정"을 붙인다. `relInf`(호출 추정)는 UNKNOWN이라 칩 글자는 그대로이고 마우스 설명에만 나온다.
 - Suggested Action: 상세 제안(`suggestOf`)과 같은 판단에서 나와 목록·달력·상세가 같은 값을 보인다. 상세 "다음 할 일" 옆에도 같은 배지를 둔다.
 - 목록 줄 제목은 모델 이름을 앞에 둔 "glm-5.3-flash 20개 항목 단가 인하 관측" 꼴이고, 아래 줄은 유형과 경로다(2026-10-27 박건 요청: 어떤 모델의 변화인지 주어가 보이게).
 - 상세 "다음 할 일" 아래 줄은 "확인 : …", "대응 : …", "주의 : …"처럼 라벨과 내용을 쌍점으로 잇는다(2026-10-27 박건 요청, 이전 "먼저 확인 · …", "대응 방향 · …"). "확인"에는 엔진의 다음 수집 확인(`next`)도 들어간다. 굵은 첫 줄(예: "현재 경로 유지 : Google · google_direct 새 단가는 비교용으로 기록", "고객 할인 : 할인 기간에만 한정해 검토, 판매가 기본값은 유지")과 "현재 사용 경로"(예: "모델 제공 중 : Vercel · vercel_ai_gateway 경로로 사용 (가정)")도 같은 꼴이다. "Vercel · vercel_ai_gateway"처럼 경로 이름 안의 "·"는 그대로다.
@@ -266,6 +269,28 @@ python3 -B -m scripts.market_collection.dashboard --root data/market_collection 
 - 탭마다 선은 6개까지다(템플릿 색 s1~s6). 이벤트가 있는 선을 먼저 남기고, 뺀 선의 개수와 이름은 설명에 적는다("선이 6개를 넘어 뺀 선 N개: ...").
 - 예정 점을 그리지 않은 선은 마지막 관측의 `effective_until`(하나일 때)까지만 그린다.
 
+## 공급로 현황 탭 (2026-10-29 박건 요청)
+
+모델마다 어느 공급사에서 가격을 수집하는지와 렛서가 어느 경로를 쓰는지를 한 표에서 보고, 관리자가 렛서 사용 경로를 고칠 수 있게 한 화면이다(박건 요청: 행은 수집하는 모델, 열은 공급사, 렛서 API로 확인한 사용 경로 표시와 관리자 수정).
+
+- 머리줄 네 번째 탭('변화 | 모델별 가격 | 수집 상태 | 공급로 현황', 주소 `#supply`). 화면 탭 4개는 640px 이하에서 줄을 바꾼다. 다른 탭처럼 `#supply`로 열면 브라우저가 같은 id의 카드로 내려간다(`#health`와 같다).
+- 데이터: build.py `supply()`가 슬롯 `SUPPLY`를 채운다. `cols`는 공급사 열 `[[이름, [route_id…]]]`, `models`는 `{모델: [가격을 수집하는 route_id…]}`(출처 등록부 `sources.py`의 `source_specs()`, 지금 125개 모델), `routes`는 `--internal-routes` 파일 전체다(옵션이 없거나 파일을 쓸 수 없으면 null). 경로 파일에만 있는 모델(등록부에 없음)도 수집 경로 없이 행이 생긴다. 생성 실패 화면에도 `SUPPLY`는 채운다(이벤트가 필요 없다). 예기치 못한 오류 화면에서는 비어 있다.
+- 행: 모델별 가격 목록처럼 만든 회사(템플릿 `MAKERS`)별로 묶고 이름순이다. 열: 게시자(`ROUTE_PUBLISHERS`)마다 하나라 openai_direct·openai는 OpenAI, vercel_ai_gateway·vercel은 Vercel 한 열이다. 순서는 제조사 직접(Anthropic, Google, Kling AI, OpenAI, Z.ai), 클라우드(AWS, BytePlus, Databricks, Google Cloud, Microsoft), 게이트웨이·fal(OpenRouter, Vercel, fal)이다(build.py `SUPPLIERS`). 수집 경로도 기록도 없는 게시자(지금 Ideogram)는 빼고, `ROUTE_PUBLISHERS`에 없는 경로는 맨 뒤에 제 이름으로 붙는다.
+- 칸: '수집'(회색 글자, 그 공급사 경로에 가격 출처가 있음), 렛서 사용(민트 채움, 칩이 근거: 렛서 설정·호출 확인·관리자 지정), 호출 추정(민트 점선, 렛서 사용으로 보지 않음), 렛서가 쓰는데 가격을 수집하지 않는 경로(주황, '수집 안 함'), 빈칸이다. `unresolved`에 있는 모델은 이름 옆에 '경로 미확인', route_id가 null인 기록이 있으면 '미도입'을 붙인다. 칸이나 모델 이름에 마우스를 올리면 설명이 뜨고, 누르면(폰은 탭) 아래 칸 정보 상자가 수집하는 route_id, 기록마다 근거·날짜(settings는 '9/23 답변', `checked_at`이 없는 observed는 '10/28 호출')·route_id·note, 경로 미확인 이유를 보인다.
+- 머리줄은 기록의 근거와 날짜("렛서 사용 경로: 9/23 설정 답변, 10/28·10/29 렛서 API 호출 기준", 관리자 지정 기록이 있으면 ", 관리자 지정(날짜)")와 개수를 적는다. 개수는 모델마다 하나로 센다: 렛서 사용 경로 기록 있음(settings·observed·manual 기록), 추정만(inferred 기록뿐), 경로 미확인(`unresolved`), 기록 없음(있을 때만), 그리고 렛서가 쓰는데 가격을 수집하지 않는 경로 수다. 10/29 파일로는 모델 125개 · 렛서 사용 경로 기록 있음 108개 · 추정만 3개 · 경로 미확인 14개 · 수집하지 않는 사용 경로 5곳(qwen3.5-plus·OpenRouter, gemini-3.5-flash·Google, gemini-3.7-flash·Google, gemini-3-pro-image-preview·Google, gemini-3.1-flash-image-preview·Google)이다.
+- 폰 폭: 표만 가로·세로로 스크롤하고(페이지에는 가로 스크롤이 없다) 모델 열과 머리글은 고정된다. 칸 정보 상자는 화면 아래에 고정된다.
+
+### 편집 (페이지 안에서만, 백엔드 없음)
+
+- '편집'을 켜면 칸을 누를 때 그 경로의 렛서 사용을 바꾼다. 빈 칸과 '수집' 칸은 관리자 지정 기록(`basis: "manual"`, `checked_at` 바꾼 날(브라우저 날짜), route_id는 그 공급사에서 가격을 수집하는 경로, 없으면 열의 첫 경로)을 더하고, 다시 누르면 되돌린다. 호출 추정 칸은 누를 때마다 관리자 지정(그 기록의 `basis`와 `checked_at`만 바꾸고 `note`는 남김) → 지움 → 원래대로다.
+- 렛서 설정·호출 확인·관리자 지정 기록은 칸을 눌러도 바뀌지 않는다. 칸 정보 상자의 '이 기록 지우기'(카드가 이 경로를 쓰지 않는 것으로 바뀔 수 있다는 경고와 함께)를 눌러야 지워지고, 지운 칸은 빨간 점선·취소선으로 남는다. 다시 누르면 되돌린다.
+- 경로 미확인 모델에 경로를 지정하면 그 모델의 `unresolved` 줄도 지운다(목록에 '경로 미확인 메모도 지움'). 바꾼 칸은 표 아래 '바꾼 칸' 목록(지정·바꿈·지움, 날짜, 되돌리기, 모두 되돌리기)에 모두 나온다.
+- '변경한 경로 파일 내려받기'(`demo_internal_routes.json`)와 'JSON 복사'는 바꾼 파일 전체를 저장소 파일과 같은 꼴(들여쓰기 2칸, 끝 줄바꿈)로 준다. 새 기록은 맨 뒤에 붙고, 지운 기록은 빠지고, 나머지 키와 순서는 그대로다. 바꾼 것이 없으면 저장소 파일과 바이트 단위로 같다. 브라우저가 복사를 막으면 JSON을 글상자에 펼친다.
+- 'GitHub에서 파일 편집'은 develop의 이 파일 편집 화면(https://github.com/LETSUR-CREAI-IT/LETSUR/edit/develop/samples/market_collection/demo_internal_routes.json)을 연다. 내용을 모두 지우고 붙여 넣어 develop에 커밋하면(저장소 쓰기 권한 필요) 다음 수집 실행(매일 09:17 KST, 또는 Actions에서 Market collection 직접 실행)이 화면과 카드를 새 파일로 다시 만든다. 형식이 틀린 파일은 다음 화면 맨 위 경고와 함께 모든 카드를 '사용 경로 확인 필요'로 둔다(위 "렛서 관계").
+- 커밋 전 편집 초안은 이 브라우저의 localStorage(`letsur-supply-draft`)에만 두고 다른 사람에게는 보이지 않는다. 초안을 만든 뒤 경로 파일이 바뀌었으면(파일 내용의 해시가 다르면) 초안을 버리고 그렇다고 알린다. 저장소를 쓸 수 없는 브라우저에서도 화면과 편집은 되고 초안만 남지 않는다. 경로 파일이 없거나 쓸 수 없으면 편집 버튼이 꺼진다.
+- 페이지는 공개라 경로 파일 전체(기록과 note)가 그대로 보인다. 이 파일에는 경로와 근거만 적고 키·토큰 같은 비밀은 넣지 않는다. 화면의 글자(note 포함)는 모두 이스케이프해서 넣는다.
+- 확인(2026-10-29): 10/29 자료로 만든 페이지를 headless Chrome 156으로 file:// 열어 확인했다. 콘솔 오류 0건, 행 125개·열 13개·그룹 12개, 위 개수와 '수집 안 함' 5칸·호출 추정 3칸, 편집 흐름(빈 칸 지정과 경로 미확인 메모 삭제, 호출 추정 3단계, 렛서 설정 칸은 버튼으로만 지움, 되돌리기·모두 되돌리기), 내려받을 JSON(바꾼 것 없으면 저장소 파일과 같음, 바꾼 파일은 build.py 검사를 통과), 초안 저장·다시 열기, 저장소를 막은 브라우저, 375px·360px 폭(페이지 가로 스크롤 없음, 모델 열 고정), 라이트·다크.
+
 ## 공급사 비교 표 (2026-10-25~27 검토 결정)
 
 2026-10-28 가안: 표는 모델별 가격 화면의 '현재 가격 표'(가격 추이 아래, `renderTable`)에 있고, 카드 상세에는 그리로 가는 '공급사 비교 표 보기 →' 링크(비교 행 수, 제외 행 수, 가격 기준 시각)만 둔다. 비교 표가 없는 모델(영상·이미지)은 이 칸을 숨긴다. 표는 모델마다 하나라서 같은 모델의 카드 여러 장에 같은 표가 되풀이되었고, 이벤트 없이 모델 가격만 볼 자리가 없었다. 표는 매일 빌드할 때 가장 최근 수집(`latest_run`)으로 다시 계산하므로 지난 카드에서 열어도 최신 가격이다. 이벤트 당시 값은 카드의 '바뀐 내용'에 남는다.
@@ -300,7 +325,7 @@ python3 -B -m scripts.market_collection.dashboard --root data/market_collection 
 
 기존 단계·cron·permissions·concurrency는 그대로 두고 `collect` 잡 끝에 2단계를, 그 뒤에 `deploy` 잡을 더했다(박건 승인 2026-10-20). 배포 대상은 2026-10-22에 Cloudflare Pages에서 같은 저장소의 GitHub Pages로 바꿨다(저장소 공개는 박건 결정).
 
-1. `Build dashboard`(`if: always()`): 위 실행 명령에 `--internal-routes samples/market_collection/demo_internal_routes.json`을 붙인다(2026-10-21 박건 요청). 배포 페이지의 렛서 관계는 파일의 근거대로 "(렛서 설정)"·"(호출 확인)"으로 표시된다(2026-10-28 전에는 시연용 가정이라 "(가정)"이었다). 앞 단계가 실패해도 실패 화면을 만든다.
+1. `Build dashboard`(`if: always()`): 위 실행 명령에 `--internal-routes samples/market_collection/demo_internal_routes.json`을 붙인다(2026-10-21 박건 요청). 배포 페이지의 렛서 관계는 파일의 근거대로 "(렛서 설정)"·"(호출 확인)"·"(관리자 지정)"·"(호출 추정)"으로 표시된다(2026-10-28 전에는 시연용 가정이라 "(가정)"이었다). 앞 단계가 실패해도 실패 화면을 만든다.
 2. `Upload Pages artifact`(`if: always()`이고 `dashboard-site/index.html`이 있을 때): `actions/upload-pages-artifact` v5.0.0(커밋 `fc324d3547104276b827a68afc52ff2a11cc49c9`로 고정, 2026-04-10 릴리스)으로 `dashboard-site`를 artifact `github-pages`(1일 보관)로 올린다. 이 단계 결과(`steps.pages.outcome`)가 `collect` 잡 output `dashboard`다.
 3. `deploy` 잡(`needs: collect`, `if: always() && needs.collect.outputs.dashboard == 'success'`): `actions/deploy-pages` v5.0.1(커밋 `368f82528645a54fb793d4d04e342629a3f51346`로 고정, 2026-09-01 릴리스)으로 배포한다. 잡 권한은 `pages: write`, `id-token: write`이고 환경은 `github-pages`(배포 주소를 환경 url로 보인다)다.
 

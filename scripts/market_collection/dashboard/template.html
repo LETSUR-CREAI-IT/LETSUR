@@ -580,12 +580,66 @@ tr.gh td{padding-top:12px;font-size:12px;font-weight:700;color:var(--muted);back
 .sct-sp{margin-top:10px;padding:8px 10px;border-left:3px solid var(--line-strong);border-radius:0 8px 8px 0;background:var(--surface-2)}
 .sct-sp h5{margin:0 0 2px;font-size:12px;font-weight:700;color:var(--ink)}
 .sct-sp p{margin:0;font-size:12.5px;color:var(--body)}
+/* ---- 공급로 현황 (2026-10-29 박건 요청): 행은 수집하는 모델, 열은 공급사. 민트 렛서 사용 · 민트 점선 호출 추정 · 주황 렛서가 쓰는데 가격 수집 안 함 · 회색 글자 수집만 ---- */
+body[data-page="supply"] .summary-grid,body[data-page="supply"] .hero,body[data-page="supply"] .work,body[data-page="supply"] #hwarn{display:none}
+body:not([data-page="supply"]) .spage{display:none}
+@media (max-width:640px){.ptabs{flex-wrap:wrap;row-gap:4px}.ptabs button{padding:0 9px}}  /* 화면 탭 4개가 폰 폭을 넘지 않게 */
+.spsum{margin:4px 0 0;font-size:13px;color:var(--body)}
+.spkey{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;margin:8px 0 10px;font-size:11.5px;color:var(--muted)}
+.spkey>span{display:inline-flex;align-items:center;gap:5px}
+.spkey i{display:inline-block;width:20px;height:13px;border:1px solid transparent;border-radius:4px}
+.spkey .col{font-size:10.5px;font-weight:500;color:var(--muted)}
+.spbar{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin:0 0 10px;padding:8px 10px;border:1px solid var(--line-strong);border-radius:10px;background:var(--surface-2);font-size:12.5px;color:var(--body)}
+.spbar b{color:var(--ink)}
+.spbar button,.spbar a,.spedit button{display:inline-flex;align-items:center;height:30px;padding:0 11px;border:1px solid var(--line-strong);border-radius:8px;background:var(--surface);font-size:12.5px;color:var(--ink);text-decoration:none;cursor:pointer}
+.spbar button:disabled{opacity:.45;cursor:default}
+.spbar .msg{flex-basis:100%;font-size:12px;color:var(--mint-ink)}
+.spscroll{overflow:auto;max-height:max(420px,72vh);border-top:1px solid var(--line)}
+.sptab{width:auto;min-width:100%;border-collapse:separate;border-spacing:0;font-size:12px}
+.sptab th,.sptab td{padding:3px;border-bottom:1px solid var(--line);text-align:center;vertical-align:middle}
+.sptab thead th{position:sticky;top:0;z-index:2;background:var(--surface);color:var(--muted);font-size:11px;white-space:nowrap}
+.sptab th:first-child{position:sticky;left:0;z-index:1;min-width:150px;max-width:200px;padding:3px 8px;background:var(--surface);text-align:left;white-space:normal;box-shadow:inset -1px 0 0 var(--line)}
+.sptab thead th:first-child{z-index:3}
+@media (max-width:640px){.sptab th:first-child{min-width:112px;max-width:132px;padding-inline:6px}.spm{font-size:12px}}  /* 폰에서는 공급사 칸을 하나라도 더 보이게 */
+.sptab tr.spg th,.sptab tr.spg td{padding-top:10px;background:var(--surface-2);font-size:11.5px;font-weight:700;color:var(--muted)}
+.spm{display:flex;flex-wrap:wrap;align-items:center;gap:2px 5px;width:100%;padding:2px 0;border:0;background:none;text-align:left;font-size:12.5px;font-weight:650;color:var(--ink);cursor:pointer}
+.spm small{font-size:10.5px;font-weight:600;color:var(--muted)}
+.spun{display:inline-flex;align-items:center;height:17px;padding:0 5px;border:1px solid var(--amber);border-radius:4px;background:var(--amber-soft);font-size:10.5px;font-weight:700;color:var(--amber);white-space:nowrap}
+.spc{display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;min-width:68px;min-height:32px;padding:2px 4px;border:1px solid transparent;border-radius:6px;background:none;font-size:10.5px;font-weight:700;line-height:1.25;color:var(--muted);cursor:pointer}
+.spc.col{font-weight:500}
+.spc.use,.spkey .use{background:var(--mint-soft);border-color:var(--mint);color:var(--mint-ink)}
+.spc.inf,.spkey .inf{border:1px dashed var(--mint);color:var(--mint-ink)}
+.spc.warn,.spkey .warn{background:var(--amber-soft);border-color:var(--amber);color:var(--amber)}
+.spc.warn.inf{border-style:dashed}
+.spc small{font-size:9.5px;font-weight:650}
+.spc.add,.spkey .add{box-shadow:inset 0 0 0 2px var(--ink)}
+.spc.del,.spkey .del{border:1px dashed var(--up);background:none;color:var(--up);text-decoration:line-through}
+.spc:hover{border-color:var(--ink)}
+.spc[aria-current="true"],.spm[aria-current="true"]{outline:2px solid var(--ink);outline-offset:1px}
+.spedit{margin-top:14px}
+.spedit h3{margin:0 0 6px;font-size:13.5px;font-weight:700;color:var(--ink)}
+.spchg{list-style:none;margin:0 0 8px;padding:0;display:grid;gap:5px;font-size:12.5px;color:var(--body)}
+.spchg li{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px}
+.spchg .k{font-weight:750;color:var(--mint-ink)} .spchg .k.del{color:var(--up)}
+.spchg button{height:24px;padding:0 8px;font-size:11.5px}
+.spedit textarea{width:100%;height:160px;margin-top:8px;padding:8px;border:1px solid var(--line-strong);border-radius:8px;background:var(--surface);color:var(--ink);font:12px/1.5 ui-monospace,Menlo,monospace}
+.sphow{margin:8px 0 0;padding-left:20px;font-size:12.5px;line-height:1.65;color:var(--body)}
+.spedit p.note{margin:6px 0 0}
+.sppanel{position:fixed;z-index:15;left:50%;bottom:12px;transform:translateX(-50%);width:min(640px,calc(100% - 24px));max-height:46vh;overflow:auto;padding:12px 14px;border:1px solid var(--line-strong);border-radius:12px;background:var(--surface);box-shadow:0 6px 24px rgba(0,0,0,.18);font-size:13px;color:var(--body)}
+.sppanel h3{margin:0 36px 6px 0;font-size:14px;font-weight:700;color:var(--ink);overflow-wrap:anywhere}
+.sppanel ul{margin:0;padding-left:18px;display:grid;gap:3px}
+.sppanel .x{position:absolute;top:8px;right:8px;width:28px;height:28px;border:1px solid var(--line-strong);border-radius:8px;background:var(--surface);color:var(--ink);font-size:16px;line-height:1;cursor:pointer}
+.sppanel .act{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin-top:10px}
+.sppanel .act button{height:30px;padding:0 11px;border:1px solid var(--line-strong);border-radius:8px;background:var(--surface);font-size:12.5px;color:var(--ink);cursor:pointer}
+.sppanel .act button.danger{border-color:var(--up);color:var(--up);font-weight:700}
+.sppanel .warnl{margin:8px 0 0;font-size:12.5px;color:var(--amber);font-weight:650}
+body.spopen .spage{padding-bottom:46vh}  /* 아래 칸 정보 상자가 표 끝을 가리지 않게 */
 </style>
 
 <header class="top">
   <img src="data:image/png;base64,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" alt="LETSUR" width="130" height="17">
   <span class="tool">모델 가격·조건 모니터</span>
-  <nav class="ptabs" role="tablist" aria-label="화면"><button type="button" role="tab" data-ptab="changes" aria-selected="true">변화</button><button type="button" role="tab" data-ptab="models" aria-selected="false">모델별 가격</button><button type="button" role="tab" data-ptab="health" aria-selected="false">수집 상태</button></nav>
+  <nav class="ptabs" role="tablist" aria-label="화면"><button type="button" role="tab" data-ptab="changes" aria-selected="true">변화</button><button type="button" role="tab" data-ptab="models" aria-selected="false">모델별 가격</button><button type="button" role="tab" data-ptab="health" aria-selected="false">수집 상태</button><button type="button" role="tab" data-ptab="supply" aria-selected="false">공급로 현황</button></nav>
   <span class="base" id="base"></span>
 </header>
 
@@ -620,6 +674,11 @@ tr.gh td{padding-top:12px;font-size:12px;font-weight:700;color:var(--muted);back
     <div class="card" id="health"></div>
   </section>
 
+  <section class="spage" aria-label="공급로 현황">
+    <div class="card" id="supply"></div>
+    <div class="sppanel" id="sppanel" role="region" aria-label="선택한 칸" aria-live="polite" hidden></div>
+  </section>
+
   <section class="mpage" aria-label="모델별 가격">
     <nav class="card mlist" id="mlist" aria-label="모델 목록"></nav>
     <div class="mcol">
@@ -641,7 +700,7 @@ const BASE = (/[?&]base=(\d{4}-\d{2}-\d{2})/.exec(location.search) || [])[1];
 const TODAY = BASE || /*DATA:TODAY*/;
 const SRC = /*DATA:SRC*/;
 const ID = /*DATA:ID*/;
-// 필드: t7 7유형 · sub 하위 태그 · relKey use/other/none/unk · relDemo 가정 여부 · relSet 렛서 설정 경로(9/23 답변) 여부 · relObs 렛서 API 호출로 확인한 경로(10/28) 여부
+// 필드: t7 7유형 · sub 하위 태그 · relKey use/other/none/unk · relDemo 가정 여부 · relSet 렛서 설정 경로(9/23 답변) 여부 · relObs 렛서 API 호출로 확인한 경로(10/28·10/29) 여부 · relMan 관리자가 지정한 경로 여부 · relInf 호출로 추정한 경로뿐이라 미확인(relKey unk) 여부
 // 목록 거르기: kind 유형 칩 키(7유형, 유형을 못 정했으면 "유형 미정") · cd 최근 7일 안인지 가르는 날짜(적용일·종료일·경로 추가일, 없으면 발표일·관측일, 그것도 없으면 피드 글의 게시일이나 마지막 관측일. 날짜가 없으면 키 자체가 없다) · ld 묶음 카드의 마지막 관측일(구성원 중 가장 늦게 관측된 날. 묶음이 아니거나 관측한 구성원이 없으면 키 자체가 없다)
 // 수정안: mid = events.json subject.model_id (그래프 연결 키) · effQual 해석한 날짜 · link 함께 볼 이벤트 [ID, 이유] · risk 다음 할 일에 붙는 주의
 // 수정안: 목록·캘린더 묶음은 type4 대신 7유형에서 한 표(T7GROUP)로 정함
@@ -686,9 +745,9 @@ const VG = {}; EVENTS.forEach(e => { if (e.vg) (VG[e.vg] = VG[e.vg] || []).push(
 let state = {filter:"all", sel:null, queueSort:"recommended"};
 // 주소의 #카드id가 이 페이지에 없으면 맨 위 카드를 보이되 그렇다고 알린다(2026-10-27 결정 26-6). 카드 id는 엔진 묶음 키로 만들어서,
 // 묶음이 바뀌면 옛 슬랙 메시지의 링크가 없는 id가 될 수 있다. 다른 카드를 고르면 안내는 사라진다.
-let missingLink = "", startModel = null, startHealth = false;
-// 주소 #m/모델은 모델별 가격, #health는 수집 상태 화면이다(2026-10-28).
-try { const h = location.hash.slice(1); if (h === "health") startHealth = true; else if (h.startsWith("m/")) startModel = decodeURIComponent(h.slice(2)); else if (h) { state.sel = decodeURIComponent(h); if (!EVENTS.some(e => e.id === state.sel) && !VG[state.sel]) missingLink = state.sel; } } catch (e) {}
+let missingLink = "", startModel = null, startHealth = false, startSupply = false;
+// 주소 #m/모델은 모델별 가격, #health는 수집 상태, #supply는 공급로 현황 화면이다(2026-10-28, 2026-10-29).
+try { const h = location.hash.slice(1); if (h === "health") startHealth = true; else if (h === "supply") startSupply = true; else if (h.startsWith("m/")) startModel = decodeURIComponent(h.slice(2)); else if (h) { state.sel = decodeURIComponent(h); if (!EVENTS.some(e => e.id === state.sel) && !VG[state.sel]) missingLink = state.sel; } } catch (e) {}
 
 // ---- 변화 종류 ----
 const TYPE = {price:{ko:"가격 알림"}, model:{ko:"모델·경로 변경"}, cond:{ko:"조건 변경"}, data:{ko:"표기 확인"}};
@@ -938,7 +997,7 @@ function suggestHtml(e){
   const g = suggestOf(e), cf = CHECKFIRST[e.id] || [];
   return `<div class="sg"><div class="sgh"><span class="pre">${esc(g.pre || "")}</span><span class="resp ${g.resp}">${RESP[g.resp]}${g.note ? ` · ${esc(g.note)}` : ""}</span>${g.resp === "hold" ? "" : " 검토"}${e.done ? ` <span class="tg">결정됨 · ${esc(e.next)}</span>` : ""}${g.due ? ` <span class="due">${esc(g.due)}</span>` : ""}</div>
     <div class="sgw"><b>검토할 것</b> ${esc(g.text)}</div>
-    <div class="sgy">제안 근거 · ${esc(g.why)}${EV7[e.id] !== null && relOf(e) !== "unk" && e.relDemo ? " (렛서 관계는 시연용 가정)" : EV7[e.id] !== null && relOf(e) !== "unk" && e.relSet ? " (렛서 관계는 9/23 답변의 렛서 설정 경로 기준, 실제 트래픽 미확인)" : EV7[e.id] !== null && relOf(e) !== "unk" && e.relObs ? " (렛서 관계는 10/28 렛서 API 호출로 확인한 경로 기준)" : ""}</div></div>`;
+    <div class="sgy">제안 근거 · ${esc(g.why)}${EV7[e.id] !== null && relOf(e) !== "unk" && e.relDemo ? " (렛서 관계는 시연용 가정)" : EV7[e.id] !== null && relOf(e) !== "unk" && e.relSet ? " (렛서 관계는 9/23 답변의 렛서 설정 경로 기준, 실제 트래픽 미확인)" : EV7[e.id] !== null && relOf(e) !== "unk" && e.relObs ? " (렛서 관계는 렛서 API 호출로 확인한 경로 기준)" : EV7[e.id] !== null && relOf(e) !== "unk" && e.relMan ? " (렛서 관계는 관리자가 지정한 경로 기준)" : ""}</div></div>`;
 }
 // 상단 원가 칩: 유리/불리 판정이 아니라 단가 방향 사실만 (▲ 인상 빨강 / ▼ 인하 파랑 / 회색)
 function costChip(e){
@@ -973,10 +1032,11 @@ const CAL = byEv("cal");
 // ---- 메인페이지 정규화 (김연우 10/27 규칙, 상세 제안과 한 판단으로 합침) ----
 // Applicability: 이 이벤트의 경로가 렛서의 현재 사용 경로에 해당하는지(relKey). relDemo면 시연용 가정이라 "가정"을 붙인다.
 // relSet이면 렛서가 9/23 QnA 답변에서 알려 준 설정 등록 경로라 "설정"을 붙인다(실제 트래픽은 미확인, 2026-10-28 박건 결정).
-// relObs이면 10/28에 렛서 API를 한 번 호출해 확인한 경로라 "호출 확인"을 붙인다(다른 경로도 쓸 수 있음, 2026-10-28).
+// relObs이면 렛서 API를 한 번 호출해 확인한 경로(10/28·10/29)라 "호출 확인"을 붙인다(다른 경로도 쓸 수 있음, 2026-10-28).
+// relMan이면 관리자가 공급로 현황 탭에서 지정한 경로라 "관리자 지정"을 붙인다. relInf는 호출로 추정만 한 경로라 적용은 미확인이고 칩 설명에만 나온다(2026-10-29).
 const APPSTAT = {use:{en:"APPLIES", ko:"적용", cls:"applies"}, unk:{en:"UNKNOWN", ko:"미확인", cls:"unknown"}, no:{en:"NOT APPLIES", ko:"비적용", cls:"not-applies"}};
 const applicabilityOf = e => { const r = relOf(e); return r === "use" ? APPSTAT.use : r === "unk" ? APPSTAT.unk : APPSTAT.no; };
-const relMark = e => e.relDemo ? {chip: "가정", note: "시연용 가정"} : e.relSet ? {chip: "설정", note: "렛서 설정 경로, 9/23 답변 · 실제 트래픽 미확인"} : e.relObs ? {chip: "호출 확인", note: "10/28 렛서 API 호출 1회로 확인한 경로 · 다른 경로도 쓸 수 있음"} : null;
+const relMark = e => e.relDemo ? {chip: "가정", note: "시연용 가정"} : e.relSet ? {chip: "설정", note: "렛서 설정 경로, 9/23 답변 · 실제 트래픽 미확인"} : e.relObs ? {chip: "호출 확인", note: "렛서 API 호출 1회로 확인한 경로 · 다른 경로도 쓸 수 있음"} : e.relMan ? {chip: "관리자 지정", note: "관리자가 공급로 현황에서 지정한 경로"} : e.relInf ? {chip: "호출 추정", note: "렛서 API 호출로 추정한 경로 · 확인 전"} : null;
 const appChip = e => { const a = applicabilityOf(e), m = relMark(e);
   return `<span class="qchip ${a.cls}" title="렛서 적용 ${a.ko}${m ? ` (${m.note})` : ""}">${a.en}${m && a !== APPSTAT.unk ? " · " + m.chip : ""}</span>`; };
 // Suggested Action: 담당자가 다음에 할 작업 구분(조달 결정이 아님). 상세의 제안(suggestOf)과 같은 판단에서 나와 목록·달력·상세가 같은 말을 한다.
@@ -1376,7 +1436,7 @@ function renderDetail(){
     <h2 class="headline">${e.head || esc(e.sum)}</h2>
     ${e.rv ? `<p class="rvnote">${e.rv === e.rn ? `이후 수집에서 바뀐 가격 ${e.rn}개가 모두 원래 값으로 돌아왔습니다. 지금은 적용되지 않는 변화라 기록만 남깁니다(해소됨).` : `바뀐 가격 ${e.rn}개 중 ${e.rv}개가 이후 수집에서 원래 값으로 돌아왔습니다(일부 해소).`}</p>` : ""}
     <div class="decide"><div class="next"><div class="k">다음 할 일 <span class="qbadges" style="display:inline-flex">${qchips(e)}</span></div><div class="v">${nextHtml(e)}</div></div><div><div class="k">${esc(e.effLabel || "적용일")}</div><div class="v">${eff}</div></div>
-      <div><div class="k">현재 사용 경로${e.relDemo ? ` <span class="tg">가정</span>` : e.relSet ? ` <span class="tg" title="렛서 9/23 QnA 답변의 설정 등록 경로 · 실제 트래픽 미확인">렛서 설정</span>` : e.relObs ? ` <span class="tg" title="10/28 렛서 API 호출 1회로 확인한 경로 · 다른 경로도 쓸 수 있음">호출 확인</span>` : ""}</div><div class="v">${esc(e.relShort || e.rel)}</div></div></div>
+      <div><div class="k">현재 사용 경로${e.relDemo ? ` <span class="tg">가정</span>` : e.relSet ? ` <span class="tg" title="렛서 9/23 QnA 답변의 설정 등록 경로 · 실제 트래픽 미확인">렛서 설정</span>` : e.relObs ? ` <span class="tg" title="렛서 API 호출 1회로 확인한 경로 · 다른 경로도 쓸 수 있음">호출 확인</span>` : e.relMan ? ` <span class="tg" title="관리자가 공급로 현황에서 지정한 경로">관리자 지정</span>` : e.relInf ? ` <span class="tg" title="렛서 API 호출로 추정한 경로 · 확인 전">호출 추정</span>` : ""}</div><div class="v">${esc(e.relShort || e.rel)}</div></div></div>
     ${e.link && EVENTS.some(x => x.id === e.link[0]) ? (l => `<div class="lk"><span>함께 볼 이벤트</span><b>${esc(l.m)} · ${esc(l.ch)}</b><span>${esc(e.link[1])}</span><button type="button" data-id="${esc(l.id)}">열기 →</button></div>`)(EVENTS.find(x => x.id === e.link[0])) : ""}
     ${e.vg ? `<div class="lk"><span>변동 잦음 묶음</span><b>${esc(e.m)} · ${esc(e.ch)}</b><span>이 경로의 가격 변경 카드 ${VG[e.vg].length}장을 목록에서 한 줄로 묶었습니다</span><button type="button" data-id="${esc(e.vg)}">묶음 보기 →</button></div>` : ""}
     ${keyChange(e)}<div class="vgbtn">${TREND[e.mid] ? `<button type="button" class="tlink" data-trend="${esc(e.mid)}" data-tview="chart">${esc(TREND[e.mid].name)} 가격 추이 보기 →</button>` : ""}${COMPARE[e.mid] ? `<button type="button" class="tlink" data-trend="${esc(e.mid)}" data-tview="table">공급사 비교 표 보기 → <small>${compareMeta(e.mid)}</small></button>` : ""}</div>`;
@@ -1437,6 +1497,147 @@ function renderHealth(){
     <section class="hsec"><h3>등록부 점검 후보</h3><p class="note">모델이 새로 나오거나 공급 경로가 생기고 끝나면 출처 등록부(sources.py)에 출처를 더하거나 빼야 할 수 있습니다. 최근 7일과 앞으로 일정이 있는 변화만 모았습니다.</p>${reg.length ? `<ul class="rows">${reg.map(queueRow).join("")}</ul>` : `<p class="none">해당하는 변화가 없습니다.</p>`}</section>`;
 }
 
+// ---- 공급로 현황 (2026-10-29 박건 요청) ----
+// 행은 수집하는 모델(sources.py 등록부, 모델별 가격처럼 만든 회사별로 묶음), 열은 공급사. 칸은 그 공급사 경로의 가격 수집 여부와 렛서 사용 경로 기록이다.
+// SUPPLY(build.py supply): cols [[공급사, [route_id…]]] · models {모델: [가격을 수집하는 route_id…]} · routes 렛서 사용 경로 파일 전체(없거나 형식이 다르면 null)
+// 렛서 사용은 settings·observed·manual 기록이고, inferred(호출 추정)는 보이기만 하고 사용으로 보지 않는다(build.py model_records와 같다).
+// 편집은 이 브라우저 안에서만 한다. 바꾼 파일 전체를 내려받거나 복사해 GitHub에서 develop에 커밋하면 다음 수집 실행이 화면을 다시 만든다.
+// 화면 글자는 모두 esc()를 거쳐 넣는다(경로 파일의 note도 관리자가 고칠 수 있는 글이다).
+const SUPPLY = /*DATA:SUPPLY*/;
+const SP_FILE = "https://github.com/LETSUR-CREAI-IT/LETSUR/edit/develop/samples/market_collection/demo_internal_routes.json";
+const SP_CALL_DAY = "2026-10-28";  // checked_at이 없는 observed 기록의 호출일(경로 파일 basis_note)
+const SP_CHIP = {settings: "렛서 설정", observed: "호출 확인", manual: "관리자 지정", inferred: "호출 추정"};
+const SP_DRAFT = "letsur-supply-draft";  // 커밋 전 편집 초안: 이 브라우저에만 두고, 없어도 화면은 그대로 돈다
+const spHas = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
+const SP_GROUPS = [...new Set(Object.keys(SUPPLY.models).map(makerOf))].sort((a, b) => (a === "기타") - (b === "기타") || a.localeCompare(b))
+  .map(g => [g, Object.keys(SUPPLY.models).filter(k => makerOf(k) === g).sort((a, b) => a.localeCompare(b, undefined, {numeric: true}))]);
+const spEdits = {};  // "모델\t공급사" → {on: true 렛서 사용으로 지정 · false 그 칸의 기록을 지움, at: 바꾼 날}
+let spEditing = false, spSel = null, spMsg = "", spText = false;
+const spKey = (m, c) => m + "\t" + c[0];
+const spCell = (doc, m, c) => doc ? doc.records.filter(r => r.model_id === m && c[1].includes(r.route_id)) : [];
+const spUse = r => r.basis !== "inferred";
+const spChip = r => SP_CHIP[r.basis] || (SUPPLY.routes && SUPPLY.routes.is_demo ? "가정" : "사용 경로");
+const spWhen = r => r.basis === "settings" ? "9/23 답변" : r.checked_at || r.basis === "observed" ? md(r.checked_at || SP_CALL_DAY) + ({observed: " 호출", inferred: " 추정", manual: " 지정"}[r.basis] || "") : "";
+const spLine = r => [spChip(r), spWhen(r), r.route_id || "미도입", r.endpoint_id ? "endpoint " + r.endpoint_id : "", r.note ? "근거: " + r.note : ""].filter(Boolean).join(" · ");
+const spGot = (m, c) => c[1].filter(r => SUPPLY.models[m].includes(r));
+const spRoute = (m, c) => spGot(m, c)[0] || c[1][0];  // 새 기록의 route_id: 그 공급사에서 가격을 수집하는 경로, 없으면 그 열의 첫 경로
+const spToday = () => { const d = new Date(), p = n => String(n).padStart(2, "0"); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`; };
+// 편집을 반영한 경로 파일: 파일 그대로에서 시작해 바꾼 칸만 적용한다. 지정은 그 칸의 호출 추정 기록을 관리자 지정으로 바꾸거나(근거 note는 남김)
+// 새 기록을 맨 뒤에 더하고, 그 모델의 경로 미확인 메모를 지운다. 지움은 그 칸의 기록을 모두 뺀다.
+function spDoc(){
+  if (!SUPPLY.routes) return null;
+  const doc = JSON.parse(JSON.stringify(SUPPLY.routes));
+  Object.entries(spEdits).forEach(([k, e]) => {
+    const [m, name] = k.split("\t"), c = SUPPLY.cols.find(x => x[0] === name), here = r => r.model_id === m && c[1].includes(r.route_id);
+    if (!e.on) { doc.records = doc.records.filter(r => !here(r)); return; }
+    const guessed = doc.records.filter(r => here(r) && !spUse(r));
+    guessed.forEach(r => { r.basis = "manual"; r.checked_at = e.at; });
+    if (!guessed.length) doc.records.push({model_id: m, route_id: spRoute(m, c), endpoint_id: null, basis: "manual", checked_at: e.at});
+    if (spHas(doc.unresolved, m)) delete doc.unresolved[m];
+  });
+  return doc;
+}
+const spJson = () => JSON.stringify(spDoc(), null, 2) + "\n";  // 저장소 파일과 같은 꼴(들여쓰기 2칸, 끝 줄바꿈)
+const spHash = s => { let h = 5381; for (let i = 0; i < s.length; i++) h = h * 33 + s.charCodeAt(i) >>> 0; return h.toString(36); };
+const SP_BASE = SUPPLY.routes ? spHash(JSON.stringify(SUPPLY.routes)) : "";
+function spSave(){ try { if (Object.keys(spEdits).length) localStorage.setItem(SP_DRAFT, JSON.stringify({base: SP_BASE, edits: spEdits})); else localStorage.removeItem(SP_DRAFT); } catch (err) {} }
+try { const d = JSON.parse(localStorage.getItem(SP_DRAFT) || "null");  // 초안을 만든 뒤 파일이 바뀌었으면 쓰지 않는다
+  if (d && SUPPLY.routes && d.base !== SP_BASE) { localStorage.removeItem(SP_DRAFT); spMsg = "이 브라우저에 남아 있던 편집 초안은 그 뒤 경로 파일이 바뀌어 지웠습니다."; }
+  else if (d && SUPPLY.routes) Object.entries(d.edits || {}).forEach(([k, e]) => { const [m, name] = k.split("\t");
+    if (spHas(SUPPLY.models, m) && SUPPLY.cols.some(c => c[0] === name) && e && typeof e.on === "boolean" && /^\d{4}-\d{2}-\d{2}$/.test(e.at)) spEdits[k] = {on: e.on, at: e.at}; });
+} catch (err) {}
+function spState(D, m, c){  // 칸 하나의 꼴(cls), 칸 글자(label), 설명 줄(lines)
+  const now = spCell(D, m, c), was = spCell(SUPPLY.routes, m, c), e = spEdits[spKey(m, c)], got = spGot(m, c);
+  const use = now.filter(spUse), guess = now.filter(r => !spUse(r)), off = !!e && !e.on, warn = (use.length > 0 || guess.length > 0) && !got.length;
+  const cls = [use.length ? "use" : guess.length ? "inf" : off ? "del" : got.length ? "col" : "", warn ? "warn" : "", e && e.on ? "add" : ""].filter(Boolean).join(" ");
+  const label = use.length ? [...new Set(use.map(spChip))].join("·") : guess.length ? "호출 추정" : off ? [...new Set(was.map(spChip))].join("·") : got.length ? "수집" : "";
+  const lines = [got.length ? `가격 수집: ${got.join(", ")}` : "가격 수집 안 함 (이 공급사 경로에 출처 없음)", ...(off ? was.map(r => "지울 기록: " + spLine(r)) : now.map(spLine)),
+    ...(e ? [e.on ? (was.length ? "편집: 호출 추정 → 관리자 지정 (커밋 전)" : `편집: 관리자 지정으로 더함 · ${spRoute(m, c)} (커밋 전)`) : "편집: 이 칸의 기록을 지움 (커밋 전)"] : []),
+    ...(!now.length && !off ? ["렛서 사용 기록 없음"] : [])];
+  return {cls, label, lines, warn, use: use.length > 0, e, was};
+}
+function spBasis(D){
+  const on = b => D.records.filter(r => r.basis === b), day = r => r.checked_at || (r.basis === "observed" ? SP_CALL_DAY : "");
+  const days = rs => [...new Set(rs.map(day).filter(Boolean))].sort().map(md).join("·"), calls = days([...on("observed"), ...on("inferred")]), set = days(on("manual"));
+  const parts = [on("settings").length ? "9/23 설정 답변" : "", calls ? `${calls} 렛서 API 호출` : "", on("manual").length ? `관리자 지정${set ? `(${set})` : ""}` : ""].filter(Boolean);
+  return parts.length ? `렛서 사용 경로: ${parts.join(", ")} 기준` : "렛서 사용 경로 기록 없음";
+}
+function spEditBox(){
+  const list = Object.entries(spEdits).map(([k, e]) => { const [m, name] = k.split("\t"), i = SUPPLY.cols.findIndex(c => c[0] === name), c = SUPPLY.cols[i], was = spCell(SUPPLY.routes, m, c);
+    const what = !e.on ? was.map(r => `${spChip(r)} 기록 (${r.route_id})`).join(", ") : was.length ? "호출 추정 → 관리자 지정" : `관리자 지정 (${spRoute(m, c)})`;
+    return `<li><span class="k${e.on ? "" : " del"}">${!e.on ? "지움" : was.length ? "바꿈" : "지정"}</span><b>${esc(m)} · ${esc(name)}</b><span>${esc(what)}${e.on && spHas(SUPPLY.routes.unresolved, m) ? " · 경로 미확인 메모도 지움" : ""} · ${md(e.at)}</span><button type="button" data-sp="undo" data-m="${esc(m)}" data-c="${i}">되돌리기</button></li>`; });
+  return `<section class="spedit" aria-label="바꾼 칸"><h3>바꾼 칸 ${list.length}개</h3>${list.length ? `<ul class="spchg">${list.join("")}</ul><button type="button" data-sp="reset">모두 되돌리기</button>` : `<p class="note">아직 바꾼 칸이 없습니다.</p>`}
+    ${spText ? `<textarea readonly aria-label="변경한 경로 파일 JSON">${esc(spJson())}</textarea>` : ""}
+    <ol class="sphow"><li>칸을 누르면 그 경로를 렛서 사용으로 지정하고, 다시 누르면 되돌립니다. 새로 지정한 칸은 관리자 지정(바꾼 날짜)이 됩니다. 호출 추정 칸은 누를 때마다 관리자 지정 → 지움 → 원래대로 바뀝니다.</li>
+      <li>렛서 설정·호출 확인·관리자 지정 기록은 칸을 누른 뒤 아래 칸 정보의 '이 기록 지우기'를 눌러야 지워집니다.</li>
+      <li>'변경한 경로 파일 내려받기'나 'JSON 복사'로 바뀐 파일 전체를 받고, 'GitHub에서 파일 편집'에서 내용을 모두 지운 뒤 붙여 넣어 develop 브랜치에 커밋합니다(저장소 쓰기 권한 필요).</li>
+      <li>다음 수집 실행(매일 09:17 KST, 또는 GitHub Actions에서 Market collection을 직접 실행)이 이 화면과 카드를 새 파일로 다시 만듭니다. 파일 형식이 틀리면 화면 맨 위에 경고가 나오고 모든 카드가 '사용 경로 확인 필요'가 됩니다.</li></ol>
+    <p class="note">편집 초안은 이 브라우저에만 남고 다른 사람에게는 보이지 않습니다. 커밋하기 전에는 대시보드가 바뀌지 않습니다.</p></section>`;
+}
+function renderSupply(){
+  const el = document.getElementById("supply"), box = el.querySelector(".spscroll"), pos = box ? [box.scrollTop, box.scrollLeft] : null;
+  const D = spDoc() || {records: []}, ms = SP_GROUPS.flatMap(([, l]) => l), C = SUPPLY.cols, n = Object.keys(spEdits).length, editing = spEditing || n > 0;
+  const has = (m, f) => D.records.some(r => r.model_id === m && f(r)), sel = (m, i) => !!spSel && spSel.m === m && spSel.c === i;
+  const known = ms.filter(m => has(m, r => spUse(r) && r.route_id)), guessed = ms.filter(m => !known.includes(m) && has(m, r => !spUse(r)));
+  const unres = ms.filter(m => !known.includes(m) && !guessed.includes(m) && spHas(D.unresolved, m)), rest = ms.length - known.length - guessed.length - unres.length;
+  let warn = 0;
+  const rows = SP_GROUPS.map(([g, l]) => `<tr class="spg"><th scope="rowgroup">${esc(g)} <small>${l.length}</small></th><td colspan="${C.length}"></td></tr>` + l.map(m => {
+    const note = spHas(D.unresolved, m) ? D.unresolved[m] : "", none = has(m, r => !r.route_id), got = SUPPLY.models[m].length > 0;
+    const cells = C.map((c, i) => { const s = spState(D, m, c); if (s.warn && s.use) warn++;
+      if (!s.cls && !spEditing) return "<td></td>";
+      return `<td><button type="button" class="spc ${s.cls}" data-sp="cell" data-m="${esc(m)}" data-c="${i}" aria-current="${sel(m, i)}" data-t1="${esc(m + " · " + c[0])}" data-t2="${esc(s.lines.join("\n"))}" aria-label="${esc([m, c[0], ...s.lines].join(" · "))}">${esc(s.label)}${s.warn ? "<small>수집 안 함</small>" : ""}</button></td>`; }).join("");
+    const t2 = [got ? "" : "가격을 수집하지 않는 모델", note ? "경로 미확인: " + note : "", none ? "미도입 기록 있음" : "", "누르면 이 모델의 경로 기록"].filter(Boolean).join("\n");
+    return `<tr><th scope="row"><button type="button" class="spm" data-sp="row" data-m="${esc(m)}" aria-current="${sel(m, null)}" data-t1="${esc(m)}" data-t2="${esc(t2)}">${esc(m)}${note ? `<span class="spun">경로 미확인</span>` : ""}${none ? "<small>미도입</small>" : ""}${got ? "" : "<small>수집 안 함</small>"}</button></th>${cells}</tr>`; }).join("")).join("");
+  const sum = !ms.length ? "공급로 현황을 만들지 못했습니다(화면 맨 위 안내 참고)."
+    : SUPPLY.routes ? `모델 ${ms.length}개 · 렛서 사용 경로 기록 있음 ${known.length}개 · 추정만 ${guessed.length}개 · 경로 미확인 ${unres.length}개${rest ? ` · 기록 없음 ${rest}개` : ""} · 렛서가 쓰는데 가격을 수집하지 않는 경로 ${warn}곳`
+    : `모델 ${ms.length}개 · 렛서 사용 경로 파일이 없거나 쓸 수 없어 가격 수집 여부만 보입니다. 편집도 할 수 없습니다.`;
+  el.innerHTML = `<div class="ch"><h2>공급로 현황</h2><span>${esc(SUPPLY.routes ? spBasis(D) : "렛서 사용 경로 파일 없음")}</span><span class="keys"><button type="button" class="allb" data-sp="edit" aria-pressed="${spEditing}"${SUPPLY.routes ? "" : " disabled"}>편집</button></span></div>
+    <p class="spsum">${esc(sum)}</p>
+    <p class="spkey"><span><i class="use"></i>렛서 사용 · 칩은 근거(렛서 설정 9/23 답변 · 호출 확인 · 관리자 지정)</span><span><i class="inf"></i>호출 추정 · 사용으로 보지 않음</span><span><i class="warn"></i>렛서가 쓰는데 가격 수집 안 함</span><span><b class="col">수집</b>가격 수집만</span><span><span class="spun">경로 미확인</span>경로를 알아내지 못한 모델</span>${editing ? `<span><i class="add"></i>편집으로 지정</span><span><i class="del"></i>편집으로 지움</span>` : ""}<span>칸이나 모델 이름을 누르면 근거와 날짜</span></p>
+    ${editing ? `<div class="spbar"><b>${spEditing ? "편집 중" : "편집 멈춤"}</b><span>바꾼 칸 ${n}개</span><button type="button" data-sp="dl"${n ? "" : " disabled"}>변경한 경로 파일 내려받기</button><button type="button" data-sp="copy"${n ? "" : " disabled"}>JSON 복사</button><a href="${SP_FILE}" target="_blank" rel="noopener">GitHub에서 파일 편집 →</a>${spMsg ? `<span class="msg" role="status">${esc(spMsg)}</span>` : ""}</div>` : spMsg ? `<p class="note" role="status">${esc(spMsg)}</p>` : ""}
+    <div class="spscroll"><table class="sptab"><thead><tr><th>모델</th>${C.map(c => `<th title="${esc(c[1].join(", "))}">${esc(c[0])}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table></div>
+    ${editing ? spEditBox() : ""}`;
+  const nb = el.querySelector(".spscroll"); if (pos && nb) [nb.scrollTop, nb.scrollLeft] = pos;
+  spPanel();
+}
+function spPanel(){  // 아래 칸 정보 상자: 누른 칸(또는 모델)의 수집 경로, 기록과 근거, 편집 버튼
+  const el = document.getElementById("sppanel");
+  if (!spSel) { el.hidden = true; document.body.classList.remove("spopen"); return; }
+  const m = spSel.m, i = spSel.c, c = i == null ? null : SUPPLY.cols[i], D = spDoc() || {records: []};
+  let body;
+  if (c) { const s = spState(D, m, c), del = spEditing && !s.e && s.was.some(spUse);
+    body = `<ul>${s.lines.map(x => `<li>${esc(x)}</li>`).join("")}</ul>${del ? `<p class="warnl">이 기록을 지우면 이 모델의 카드가 이 경로를 쓰지 않는 것으로 바뀔 수 있습니다.</p>` : ""}
+      <div class="act">${del ? `<button type="button" class="danger" data-sp="del" data-m="${esc(m)}" data-c="${i}">이 기록 지우기 (${esc([...new Set(s.was.filter(spUse).map(spChip))].join("·"))})</button>` : ""}${s.e ? `<button type="button" data-sp="undo" data-m="${esc(m)}" data-c="${i}">되돌리기</button>` : ""}${!spEditing && SUPPLY.routes ? `<span class="note">바꾸려면 위의 '편집'을 켜세요.</span>` : ""}</div>`; }
+  else { const rs = D.records.filter(r => r.model_id === m), un = spHas(D.unresolved, m);
+    body = `<ul><li>${SUPPLY.models[m].length ? `가격 수집: ${esc(SUPPLY.models[m].join(", "))}` : "가격 수집 안 함 (등록부에 없는 모델)"}</li>${rs.map(r => `<li>${esc(spLine(r))}</li>`).join("")}${un ? `<li>경로 미확인: ${esc(D.unresolved[m])}</li>` : ""}${!rs.length && !un ? "<li>렛서 사용 기록 없음</li>" : ""}</ul>`; }
+  el.innerHTML = `<button type="button" class="x" data-sp="close" aria-label="칸 정보 닫기">×</button><h3>${esc(m)}${c ? " · " + esc(c[0]) : ""}</h3>${body}`;
+  el.hidden = false; document.body.classList.add("spopen");
+}
+function spAct(t, key){  // key: Enter·Space로 누른 것. 다시 그린 뒤 같은 버튼(없으면 그 칸)에 포커스를 둔다
+  const a = t.dataset.sp, m = t.dataset.m, i = t.dataset.c == null ? null : +t.dataset.c, c = i == null ? null : SUPPLY.cols[i], prev = spSel;
+  if (a === "copy") { const done = () => { spMsg = "JSON을 복사했습니다. GitHub에서 파일 편집을 열어 내용을 모두 지우고 붙여 넣으세요."; renderSupply(); },
+      fail = () => { spText = true; spMsg = "자동 복사가 막혀 아래에 JSON을 펼쳤습니다. 직접 복사하세요."; renderSupply(); const x = document.querySelector(".spedit textarea"); if (x) x.select(); };
+    try { navigator.clipboard.writeText(spJson()).then(done, fail); } catch (err) { fail(); } return; }
+  if (a === "edit") { spEditing = !spEditing; spText = false; }
+  else if (a === "close") spSel = null;
+  else if (a === "row") spSel = {m, c: null};
+  else if (a === "cell") { spSel = {m, c: i}; spMsg = "";
+    if (spEditing && SUPPLY.routes) { const k = spKey(m, c), e = spEdits[k], was = spCell(SUPPLY.routes, m, c);
+      if (e) { if (e.on && was.length) spEdits[k] = {on: false, at: spToday()}; else delete spEdits[k]; }  // 호출 추정 칸은 지정 → 지움 → 원래대로
+      else if (!was.some(spUse)) spEdits[k] = {on: true, at: spToday()}; } }  // 렛서 설정·호출 확인·관리자 지정 기록은 '이 기록 지우기'로만 지운다
+  else if (a === "del") spEdits[spKey(m, c)] = {on: false, at: spToday()};
+  else if (a === "undo") delete spEdits[spKey(m, c)];
+  else if (a === "reset") Object.keys(spEdits).forEach(k => delete spEdits[k]);
+  else if (a === "dl") { const link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([spJson()], {type: "application/json"}));
+    link.download = "demo_internal_routes.json"; document.body.appendChild(link); link.click(); link.remove(); setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+    spMsg = "변경한 경로 파일을 내려받았습니다. GitHub에서 파일 편집을 열어 내용을 모두 지우고 붙여 넣으세요."; }
+  spSave(); renderSupply();
+  if (key) { const all = [...document.querySelectorAll("#supply [data-sp], #sppanel:not([hidden]) [data-sp]")], to = a === "close" ? prev || {} : {m, c: i};
+    const b = all.find(x => x.dataset.sp === a && x.dataset.m === t.dataset.m && x.dataset.c === t.dataset.c)
+      || all.find(x => x.dataset.m === to.m && (to.c == null ? x.dataset.sp === "row" : x.dataset.sp === "cell" && +x.dataset.c === to.c));
+    if (b) b.focus({preventScroll: true}); }
+}
+
 // ---- 상호작용 ----
 const tip = document.createElement("div"); tip.className = "tip"; tip.hidden = true; document.body.appendChild(tip);
 function showTip(t, x, y){ tip.textContent = ""; const b = document.createElement("b"); b.textContent = t.dataset.t1; tip.appendChild(b);
@@ -1455,8 +1656,9 @@ function showSel(){ const q = document.getElementById("queue"), r = q.querySelec
 function setPage(p, model, target){
   document.body.dataset.page = p;
   document.querySelectorAll("[data-ptab]").forEach(b => b.setAttribute("aria-selected", String(b.dataset.ptab === p)));
-  document.getElementById("ptitle").textContent = {models: "모델별 가격", health: "수집 상태"}[p] || "확인할 변화";
+  document.getElementById("ptitle").textContent = {models: "모델별 가격", health: "수집 상태", supply: "공급로 현황"}[p] || "확인할 변화";
   if (p === "health") { renderHealth(); try { history.replaceState(null, "", "#health"); } catch (err) {} return; }
+  if (p === "supply") { renderSupply(); try { history.replaceState(null, "", "#supply"); } catch (err) {} return; }
   if (p !== "models") { try { history.replaceState(null, "", state.sel ? "#" + state.sel : location.pathname + location.search); } catch (err) {} return; }
   if (model && MODEL_IDS.includes(model) && model !== trendModel) { trendModel = model; trendMeasure = 0; trendTier = "Standard"; }
   renderPrice();
@@ -1474,6 +1676,7 @@ function refilter(){ renderQueue(); document.getElementById("queue").scrollTop =
 document.addEventListener("change", ev => { if (ev.target && ev.target.id === "qsort") { state.queueSort = ev.target.value; refilter(); } });
 document.addEventListener("click", ev => {
   const pg = ev.target.closest("[data-ptab]"); if (pg) { setPage(pg.dataset.ptab); window.scrollTo(0, 0); return; }
+  const sp = ev.target.closest("[data-sp]"); if (sp) { spAct(sp, ev.detail === 0); return; }
   const md_ = ev.target.closest("[data-model]"); if (md_) { setPage("models", md_.dataset.model); return; }
   const tt = ev.target.closest("[data-tier]"); if (tt) { trendTier = tt.dataset.tier; renderPrice(); return; }
   const ms = ev.target.closest("[data-meas]"); if (ms) { trendMeasure = +ms.dataset.meas; renderPrice(); return; }
@@ -1511,6 +1714,6 @@ function renderCollected(){
 }
 document.addEventListener("change", ev => { if (ev.target && ev.target.id === "collsel") { collModel = ev.target.value; renderCollected(); } });
 renderMeta(); renderCalendar(); renderPrice(); renderQueue(); renderDetail(); showSel();
-if (startModel !== null) setPage("models", startModel); else if (startHealth) setPage("health"); else document.body.dataset.page = "changes";
+if (startModel !== null) setPage("models", startModel); else if (startHealth) setPage("health"); else if (startSupply) setPage("supply"); else document.body.dataset.page = "changes";
 let rzT; window.addEventListener("resize", () => { clearTimeout(rzT); rzT = setTimeout(renderPrice, 150); });
 </script>
