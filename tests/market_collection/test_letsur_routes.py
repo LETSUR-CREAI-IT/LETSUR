@@ -139,7 +139,7 @@ def test_video_and_unrequested_images_stay_unresolved_with_the_reason():
 
 def test_an_image_answer_without_azure_fields_is_an_inference_and_with_them_an_observation():
     plain = {"created": 1, "data": [{"b64_json": "x", "revised_prompt": None}], "usage": {"total_tokens": 2}}
-    assert classify("gpt-image-2", images=answer(plain))[:3] == ("openai_direct", None, "inferred")
+    assert classify("gpt-image-2", images=answer(plain))[:3] == ("openai", None, "inferred")  # the registry's image route name
     filtered = {**plain, "data": [{"b64_json": "x", "content_filter_results": FILTERS}]}
     assert classify("gpt-image-2", images=answer(filtered)) == ("azure_foundry", None, "observed", NO_REGION)
 

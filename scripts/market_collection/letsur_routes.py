@@ -255,7 +255,8 @@ def google(model, ok):
 def openai_guess(model, ok):
     chat = ok.get("chat")
     if "images" in ok or (chat and OPENAI_FAMILY.match(model) and OPENAI_CHAT_ID.fullmatch(str(chat["body"].get("id")))):
-        return "openai_direct", None, "inferred", "Azure 콘텐츠 필터 필드가 없음(필터를 끈 Azure 배포도 같아 보임)"
+        # the registry names OpenAI's image route "openai" (its image sources), its text route "openai_direct"
+        return "openai" if "images" in ok else "openai_direct", None, "inferred", "Azure 콘텐츠 필터 필드가 없음(필터를 끈 Azure 배포도 같아 보임)"
 
 
 # Most specific first: a gateway's own marks cannot come from anywhere else, content-filter fields can also be passed through.
