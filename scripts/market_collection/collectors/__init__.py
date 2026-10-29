@@ -6,6 +6,7 @@ from scripts.market_collection.sources import source_specs
 from . import google, openai, anthropic, openrouter, vercel, aws_bedrock, azure_foundry, fal, byteplus, google_vertex, azure_databricks, image25_api, image25_supplement, azure_retail_llm, azure_retail_models
 from . import anthropic_models, openai_models
 from . import google_models
+from . import aws_bedrock_models
 from . import zai
 from . import kling, fal_llms, byteplus_video, vercel_video
 from . import gateway_image_endpoints
@@ -35,6 +36,8 @@ def parser_module(spec: SourceSpec):
         return openai_models
     if spec.parser in google_models.PARSERS:  # its own module, so google.py keeps its fingerprint
         return google_models
+    if spec.parser in aws_bedrock_models.PARSERS:  # likewise for the Bedrock cards of the models aws_bedrock.py does not list
+        return aws_bedrock_models
     for module in (fal_llms, byteplus_video, vercel_video):  # own modules too, so the fal, BytePlus and Vercel parsers keep theirs
         if spec.parser in module.PARSERS:
             return module

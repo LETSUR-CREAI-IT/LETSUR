@@ -9,6 +9,7 @@ from scripts.market_collection.models import GOOGLE_DIRECT_MODELS, GOOGLE_IMAGE_
 from scripts.market_collection.models import GATEWAY_MORE_MODELS, GATEWAY_EMBEDDING_MODELS, ZAI_DIRECT_MODELS
 from scripts.market_collection.models import KLING_VIDEO_MODELS, SEEDANCE_VARIANT_MODELS
 from scripts.market_collection.models import GATEWAY_IMAGE_MODELS, GATEWAY_IMAGE_CATALOG_MODELS
+from scripts.market_collection.models import AWS_OPENAI_MORE_MODELS
 
 def _targets() -> dict[str, tuple[str, str, str, str, str]]:
     targets = {
@@ -105,6 +106,12 @@ def cloud_source_specs() -> list[SourceSpec]:
                             f"cloud_azure_{model.replace('-', '_').replace('.', '_')}")
                  for model in _AZURE_MODELS)
     return specs
+
+
+def bedrock_more_source_specs() -> list[SourceSpec]:
+    """AWS Bedrock model cards of the OpenAI models LETSUR calls there that _AWS_OPENAI does not list (2026-10-30)."""
+    return [SourceSpec(f"bedrock_{_key(model)}", "llm", model, "aws_bedrock", "text_generation", f"{_AWS_BASE}openai-{slug}.html", f"cloud_bedrock_{_key(model)}")
+            for model, slug, _ in AWS_OPENAI_MORE_MODELS]
 
 
 _AZURE_IMAGE_PRICING = "https://prices.azure.com/api/retail/prices?$filter=contains(productName,'OpenAI')%20and%20contains(meterName,'2.5')%20and%20armRegionName%20eq%20'koreacentral'"
@@ -210,7 +217,7 @@ def video_source_specs() -> list[SourceSpec]:
 
 
 def source_specs() -> list[SourceSpec]:
-    specs = llm_source_specs() + image_source_specs() + video_source_specs() + image25_api_source_specs() + image25_openrouter_endpoint_source_specs() + image25_supplement_source_specs() + llm_endpoint_source_specs() + azure_retail_llm_source_specs() + azure_retail_models_source_specs() + maker_direct_source_specs() + google_model_source_specs() + zai_source_specs() + kling_seedance_source_specs() + gateway_image_source_specs()
+    specs = llm_source_specs() + image_source_specs() + video_source_specs() + image25_api_source_specs() + image25_openrouter_endpoint_source_specs() + image25_supplement_source_specs() + llm_endpoint_source_specs() + azure_retail_llm_source_specs() + azure_retail_models_source_specs() + maker_direct_source_specs() + google_model_source_specs() + zai_source_specs() + kling_seedance_source_specs() + gateway_image_source_specs() + bedrock_more_source_specs()
     for spec in specs:
         if MODEL_MODALITIES.get(spec.model_id) != spec.modality:
             raise CollectionError(f"source model/modality mismatch: {spec.source_key}")
