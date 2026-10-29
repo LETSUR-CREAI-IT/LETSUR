@@ -237,6 +237,10 @@ def test_every_record_marks_its_own_route_with_its_own_basis(astra_root):
     assert chips([{"route_id": "openrouter"}, {"route_id": "vercel_ai_gateway", "basis": "settings"}]) == {
         "OpenRouter · openai": "사용 경로", "Vercel · openai": "렛서 설정"}
     assert chips([{"route_id": None, "basis": "observed"}]) == {}  # not offered: no row
+    # 2026-10-29: a route an admin set, and the row of a route LETSUR's calls only suggest
+    assert chips([{"route_id": "openrouter", "basis": "manual", "checked_at": "2026-10-29"}, {"route_id": "vercel_ai_gateway", "basis": "inferred",
+                                                                                             "note": "응답 형식으로 추정"}]) == {
+        "OpenRouter · openai": "관리자 지정", "Vercel · openai": "호출 추정"}
 
 
 def test_astra_openai_direct_row_says_settings_and_its_azure_row_says_observed():

@@ -743,11 +743,12 @@ def dropped(state: dict | None, run_id: str, run_obs: list[dict], statuses: list
 
 # ---- assembly ----------------------------------------------------------------------------------------------------------
 
-RECORD_CHIP = {"settings": "렛서 설정", "observed": "호출 확인"}  # by the record's basis, as on the cards (build.py route_basis)
+# by the record's basis, as on the cards (build.py route_basis); an inferred record marks the row LETSUR's calls suggest (2026-10-29)
+RECORD_CHIP = {"settings": "렛서 설정", "observed": "호출 확인", "manual": "관리자 지정", "inferred": "호출 추정"}
 
 
 def assumed_routes(model_id: str, routes: dict | None) -> list[tuple[str, str, str | None]]:
-    """(route, endpoint, basis) of every record that says LETSUR uses a route for the model; none when it has no record or is not offered."""
+    """(route, endpoint, basis) of every record that names a route for the model; none when it has no record or is not offered."""
     return [(r["route_id"], r.get("endpoint_id") or "", r.get("basis")) for r in (routes or {}).get("records", [])
             if r.get("model_id") == model_id and r.get("route_id")]
 

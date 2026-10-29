@@ -11,10 +11,12 @@ not make (headline, risk, suggestion text) stay empty, and the template's own ru
 compute the rest. LETSUR's route for each card, and for each model in MODELS, comes only
 from --internal-routes, a file of the routes LETSUR uses per model; without it, or when
 the file cannot be used, every card says the route is unconfirmed and no model gets one.
-A record may say its basis: settings (LETSUR's registered routes from its 9/23 QnA answer) or observed (the route one
-LETSUR API call on 2026-10-28 went through). A card whose route has a record takes that record's mark, any other card
-and MODELS the mark of all the model's records. A model with a record without basis is marked as assumed when the file
-has is_demo true. MODELS is page data only for now: the template reads it in renderModels(), which nothing calls.
+A record may say its basis: settings (LETSUR's registered routes from its 9/23 QnA answer), observed (the route one
+LETSUR API call went through, 2026-10-28 or its checked_at), manual (set by an admin in the 공급로 현황 tab) or inferred
+(a route the calls only suggest: shown as 사용 경로 추정, never taken as LETSUR's use). A card whose route has a record takes
+that record's mark, any other card and MODELS the mark of all the model's records. A model with a record without basis is
+marked as assumed when the file has is_demo true. MODELS is page data only for now: the template reads it in
+renderModels(), which nothing calls. SUPPLY carries the registry's routes per model and the whole file for the tab.
 When events.json is missing or unreadable, or the build or the
 continuity step failed, a page is still written and says today's build failed, so
 yesterday's page never stays up as if it were current. Mapping rules: docs/dashboard.md.
@@ -39,6 +41,7 @@ from scripts.market_collection.dashboard import compare
 from scripts.market_collection.events.catalog import ROUTE_PUBLISHERS, SIGNAL_PUBLISHERS, authority as route_authority, maker
 from scripts.market_collection.events.evidence import MUTABLE_CONDITIONS
 from scripts.market_collection.models import MODEL_MODALITIES
+from scripts.market_collection.sources import source_specs
 from scripts.market_collection.signals.parsers import SignalParseError, atom_entries, rss_entries, utc_text
 
 KST = timezone(timedelta(hours=9))
@@ -509,21 +512,43 @@ def mark_reverted(cards: list[dict], groups: dict[str, list[dict]], gone: set[st
             card["rv"], card["rn"] = back, len(priced)
 
 
-BASIS_MARK = {"settings": " (렛서 설정)", "observed": " (호출 확인)", "mixed": " (렛서 설정·호출 확인)", "demo": " (가정)"}
-COMPACT_MARK = {"settings": " 설정", "observed": " 호출 확인", "mixed": " 설정·호출 확인", "demo": " 가정"}  # inside a sentence
+BASIS_NAME = {"settings": "렛서 설정", "observed": "호출 확인", "manual": "관리자 지정", "inferred": "호출 추정", "demo": "가정"}
+USE_BASES = ("settings", "observed", "manual")  # LETSUR uses the route; inferred is only the route its calls suggest (2026-10-29)
+FLAGS = {"settings": "relSet", "observed": "relObs", "manual": "relMan"}  # a card's flag for exactly one basis (a mix has none)
+
+
+def basis_mark(basis: str, compact: bool = False) -> str:
+    """' (렛서 설정)', ' (렛서 설정·호출 확인)' for a mix (route_basis joins bases with '+'), ' (가정)', '' for none; compact
+    (' 설정', ' 설정·호출 확인') goes inside a sentence."""
+    names = ["설정" if compact and part == "settings" else BASIS_NAME[part] for part in basis.split("+") if part]
+    return "" if not names else f" {'·'.join(names)}" if compact else f" ({'·'.join(names)})"
+
+
+def model_records(model_id: str, routes: dict | None) -> tuple[list[dict], list[dict]]:
+    """The model's --internal-routes records that say which route LETSUR uses (or that it does not offer the model), and its
+    inferred records: routes LETSUR's API calls only suggest, shown as 사용 경로 추정 but never as LETSUR's use (2026-10-29)."""
+    records = [record for record in (routes or {}).get("records", []) if record["model_id"] == model_id]
+    return [r for r in records if r.get("basis") != "inferred"], [r for r in records if r.get("basis") == "inferred"]
+
+
+def guess_text(guessed: list[dict]) -> str:
+    """'사용 경로 추정 : OpenAI · openai (호출 추정)', '' when no inferred record names a route."""
+    found = list(dict.fromkeys(record["route_id"] for record in guessed if record["route_id"]))
+    return f"사용 경로 추정 : {', '.join(map(route_label, found))}{basis_mark('inferred')}" if found else ""
 
 
 def route_basis(model_id: str, routes: dict | None, route: str = "") -> str:
     """Where the --internal-routes records come from, read for the model's records on `route` or, when it has none there,
     for all of them: 'settings' (LETSUR's registered routes from its 9/23 QnA answer, question 2; LETSUR says their traffic
-    is not confirmed, 2026-10-28 박건 결정), 'observed' (the route one LETSUR API call on 2026-10-28 went through: the route
-    is in use, maybe not alone) or 'mixed' (both). 'demo' when a record of the model has no basis and the file is a demo
+    is not confirmed, 2026-10-28 박건 결정), 'observed' (the route one LETSUR API call went through: the route is in use,
+    maybe not alone), 'manual' (an admin set it, 2026-10-29) or a mix joined with '+' ('settings+observed'). Inferred
+    records are not read here (model_records). 'demo' when a record of the model has no basis and the file is a demo
     file, else ''; one such record keeps the whole model an assumption."""
-    records = [record for record in (routes or {}).get("records", []) if record["model_id"] == model_id]
+    records = model_records(model_id, routes)[0]
     bases = {record.get("basis") for record in records}
-    if records and bases <= {"settings", "observed"}:
+    if records and bases <= set(USE_BASES):
         bases = {record["basis"] for record in records if route and record["route_id"] == route} or bases
-        return next(iter(bases)) if len(bases) == 1 else "mixed"
+        return "+".join(basis for basis in USE_BASES if basis in bases)
     return "demo" if (routes or {}).get("is_demo") else ""
 
 
@@ -533,12 +558,16 @@ def relation(rep: dict, routes: dict | None) -> dict:
     A model with no record stays unconfirmed: no record does not mean LETSUR does not use it.
     A card with no route stays unconfirmed too: its source never said which route changed (2026-10-27 decision).
     endpoint_id only adds detail when the route matches. The mark after relShort is the basis of the record on the
-    card's route, else of all the model's records (route_basis); relSet and relObs are there for exactly settings and
-    exactly observed (a mix has neither: its mark says both)."""
-    records = [record for record in (routes or {}).get("records", []) if record["model_id"] == rep.get("model_id")]
+    card's route, else of all the model's records (route_basis); relSet, relObs and relMan are there for exactly settings,
+    observed and manual (a mix has none: its mark says which). An inferred route stays unconfirmed with relInf: it decides
+    a card on that route, or every card of a model with no other record, and the card says which route is suspected."""
+    records, guessed = model_records(rep.get("model_id"), routes)
+    route, used = rep.get("route") or "", list(dict.fromkeys(record["route_id"] for record in records if record["route_id"]))
+    guess = guess_text(guessed)
+    if guess and route not in used and (not records or route in {record["route_id"] for record in guessed}):
+        return {"relKey": "unk", "relShort": guess, "relDemo": False, "relInf": True}
     if not records:
         return {"relKey": "unk", "relShort": "사용 경로 확인 필요", "relDemo": False}
-    route, used = rep.get("route") or "", list(dict.fromkeys(record["route_id"] for record in records if record["route_id"]))
     if not route and used:
         return {"relKey": "unk", "relShort": "경로 표기 없음 : 사용 경로 확인 필요", "relDemo": False}
     if route in used:
@@ -549,20 +578,20 @@ def relation(rep: dict, routes: dict | None) -> dict:
     else:
         key, short = "none", "미도입"
     basis = route_basis(rep.get("model_id"), routes, route)
-    return {"relKey": key, "relShort": short + BASIS_MARK.get(basis, ""), "relDemo": basis == "demo",
-            **({"relSet": True} if basis == "settings" else {}), **({"relObs": True} if basis == "observed" else {})}
+    return {"relKey": key, "relShort": short + basis_mark(basis), "relDemo": basis == "demo", **({FLAGS[basis]: True} if basis in FLAGS else {})}
 
 
 def model_use(model_id: str, routes: dict | None) -> dict:
     """MODELS[model].use from the --internal-routes file: every route LETSUR uses for the model, whatever the card's
-    route, in relation()'s words. A model with no record gets no use, left to the template's default."""
-    records = [record for record in (routes or {}).get("records", []) if record["model_id"] == model_id]
+    route, in relation()'s words. A model with no record gets no use, left to the template's default; one with only
+    inferred records gets relation()'s 사용 경로 추정 text."""
+    records, guessed = model_records(model_id, routes)
     if not records:
-        return {}
+        return {"use": guess} if (guess := guess_text(guessed)) else {}
     used = list(dict.fromkeys(record["route_id"] for record in records if record["route_id"]))
     endpoints = dict.fromkeys(record["endpoint_id"] for record in records if record["route_id"] and record.get("endpoint_id"))
     use = " · ".join([f"{', '.join(map(route_label, used))} 경로로 사용", *(f"endpoint {endpoint}" for endpoint in endpoints)]) if used else "미도입"
-    return {"use": use + BASIS_MARK.get(route_basis(model_id, routes), "")}
+    return {"use": use + basis_mark(route_basis(model_id, routes))}
 
 
 def undecided_release(event: dict) -> bool:
@@ -1401,6 +1430,9 @@ def internal_routes(path: Path) -> tuple[dict | None, str]:
         problem = f"{path.name} 형식이 다름 (is_demo가 true·false가 아님)"
     elif not isinstance(doc.get("records"), list):
         problem = f"{path.name} 형식이 다름 (records 목록 없음)"
+    elif doc.get("unresolved") is not None and not (isinstance(doc["unresolved"], dict) and all(
+            model and isinstance(note, str) and note for model, note in doc["unresolved"].items())):
+        problem = f"{path.name} 형식이 다름 (unresolved가 모델 id와 메모 문자열의 묶음이 아님)"
     else:
         problem = next((f"{path.name} 형식이 다름 (records {number}번째 {reason})"
                         for number, reason in enumerate(map(record_problem, doc["records"]), 1) if reason), "")
@@ -1411,22 +1443,53 @@ def internal_routes(path: Path) -> tuple[dict | None, str]:
 
 def record_problem(record) -> str:
     """Why one --internal-routes record cannot be used, or "". route_id must be there (null: the model is not
-    offered); endpoint_id may be left out, and so may basis ('settings' or 'observed', see route_basis)."""
+    offered); endpoint_id may be left out, and so may basis ('settings', 'observed', 'manual' or 'inferred', see
+    route_basis and model_records), note (the evidence, plain text) and checked_at (YYYY-MM-DD)."""
     if not isinstance(record, dict) or not isinstance(record.get("model_id"), str) or not record["model_id"]:
         return "model_id 없음"
     if "route_id" not in record:
         return "route_id 없음"
-    for key in ("route_id", "endpoint_id"):
+    for key in ("route_id", "endpoint_id", "note"):
         if record.get(key) is not None and not (isinstance(record[key], str) and record[key]):
             return f"{key}가 문자열이나 null이 아님"
-    if record.get("basis") not in (None, "settings", "observed"):
-        return "basis가 settings·observed나 null이 아님"
+    if record.get("basis") not in (None, *USE_BASES, "inferred"):
+        return "basis가 settings·observed·manual·inferred나 null이 아님"
+    if record.get("checked_at") is not None and not iso(record["checked_at"]):
+        return "checked_at이 YYYY-MM-DD 날짜나 null이 아님"
     return ""
+
+
+# 공급로 현황 탭(2026-10-29 박건 요청)의 공급사 열: 제조사 직접, 클라우드, 게이트웨이·fal 순. 열은 게시자(ROUTE_PUBLISHERS)마다 하나라
+# openai_direct·openai와 vercel_ai_gateway·vercel이 한 열이 된다. 여기 없는 게시자나 등록 안 된 경로는 맨 뒤에 붙는다.
+SUPPLIERS = ("Anthropic", "Google", "Ideogram", "Kling AI", "OpenAI", "Z.ai", "AWS", "BytePlus", "Databricks", "Google Cloud", "Microsoft",
+             "OpenRouter", "Vercel", "fal")
+
+
+def supply(routes: dict | None) -> dict:
+    """SUPPLY for the 공급로 현황 tab: per model the routes the registry (sources.py) collects a price on, the supplier columns
+    that have a collected route or a record, and the whole --internal-routes document (None without a usable one), which
+    the tab shows and its editor writes back in the same format. A model of the file the registry does not have gets a
+    row with no collected route."""
+    found: dict[str, list[str]] = {}
+    for spec in source_specs():
+        found.setdefault(spec.model_id, [])
+        if spec.route not in found[spec.model_id]:
+            found[spec.model_id].append(spec.route)
+    records = (routes or {}).get("records", [])
+    for model_id in [*(record["model_id"] for record in records), *((routes or {}).get("unresolved") or {})]:
+        found.setdefault(model_id, [])
+    order = list(ROUTE_PUBLISHERS)
+    present = sorted({route for got in found.values() for route in got} | {record["route_id"] for record in records if record["route_id"]},
+                     key=lambda route: (order.index(route) if route in order else len(order), route))
+    name = lambda route: ROUTE_PUBLISHERS.get(route, route)
+    names = sorted(dict.fromkeys(map(name, present)), key=lambda n: SUPPLIERS.index(n) if n in SUPPLIERS else len(SUPPLIERS))
+    return {"cols": [[n, [route for route in present if name(route) == n]] for n in names], "models": found, "routes": routes}
 
 
 def empty(today: str, runs: dict) -> dict:
     return {"TODAY": today, "SRC": {}, "ID": {}, "EVENTS": [], "MODELS": {}, "TREND": {}, "COLLECTED": runs, "COMPARE": {},
-            "HEALTH": {"run": None, "total": 0, "ok": 0, "failing": [], "recent": [], "recheck": []}}
+            "HEALTH": {"run": None, "total": 0, "ok": 0, "failing": [], "recent": [], "recheck": []},
+            "SUPPLY": {"cols": [], "models": {}, "routes": None}}
 
 
 def render(template: str, data: dict, status: str) -> str:
@@ -1560,7 +1623,7 @@ def link_promotions(cards: list[dict], groups: dict[str, list[dict]], tables: di
                 sales.setdefault(route[card["id"]], []).append(card)
         pairs = [(m, changes[m["direct"]]) for m in matches
                  if m["direct"] in changes and changes[m["direct"]]["eff"] == m["start"] and m["route"] in sales]
-        used = {record["route_id"] for record in (routes or {}).get("records", []) if record["model_id"] == model_id}
+        used = {record["route_id"] for record in model_records(model_id, routes)[0]}  # an inferred route is not LETSUR's
         for gateway in dict.fromkeys(m["route"] for m, _ in pairs):
             change = next(c for m, c in pairs if m["route"] == gateway)
             for sale in sales[gateway]:
@@ -1571,7 +1634,7 @@ def link_promotions(cards: list[dict], groups: dict[str, list[dict]], tables: di
             change["link"] = [sales[gateway][0]["id"], sales[gateway][0]["sum"]]
             if gateway in used:
                 end = sales[gateway][0].get("eff") or (date.fromisoformat(change["eff"]) - timedelta(days=1)).isoformat()
-                mark = COMPACT_MARK.get(route_basis(model_id, routes, gateway), "")
+                mark = basis_mark(route_basis(model_id, routes, gateway), compact=True)
                 change["risk"] = (f"렛서{mark} 경로({ROUTE_PUBLISHERS.get(gateway, gateway)})도 {md(end)}에 할인이 끝나 "
                                   f"{md(change['eff'])}부터 같은 가격이 될 수 있음(추정)")
         for gateway in dict.fromkeys(m["route"] for m, _ in pairs if m["route"] in used):
@@ -1604,8 +1667,8 @@ def collect(root: Path, today: str, routes: dict | None) -> tuple[dict, str]:
     if report is not None and report.get("status") != "ok":
         errors = "; ".join(map(str, report.get("errors") or []))
         problems.append(f"report.json status {report.get('status')}" + (f" (errors {errors})" if errors else ""))
-    if problems:
-        return empty(today, collected(report)), banner("fail", "오늘 생성 실패", " · ".join(problems))
+    if problems:  # the 공급로 현황 tab needs no events: it still shows the registry and the routes file
+        return dict(empty(today, collected(report)), SUPPLY=supply(routes)), banner("fail", "오늘 생성 실패", " · ".join(problems))
     groups: dict[str, list[dict]] = {}
     for event in sorted((e for e in doc["events"] if isinstance(e, dict) and not endpoint_discount(e)), key=lambda e: str(e.get("event_id") or "")):
         cid = "g_" + hashlib.sha256(json.dumps(card_key(event), ensure_ascii=False).encode("utf-8")).hexdigest()[:12]
@@ -1626,7 +1689,7 @@ def collect(root: Path, today: str, routes: dict | None) -> tuple[dict, str]:
     shown = list(dict.fromkeys([*(card["mid"] for card in cards if card["mid"]), *compare.observed_models(root, report)]))
     data = {"TODAY": today, "SRC": sources.entries(), "ID": {cid: [e.get("event_id") for e in groups[cid]] for cid in order},
             "EVENTS": cards, "MODELS": models(cards, routes), "TREND": trend(cards, groups, state, doc.get("gaps") or [], shown),
-            "COLLECTED": collected(report), "HEALTH": health(root, report, state, today)}
+            "COLLECTED": collected(report), "HEALTH": health(root, report, state, today), "SUPPLY": supply(routes)}
     # 공급사 비교 표 per LLM model of `shown` (compare.py; reads the newest processed run under <root>/runs)
     data["COMPARE"] = compare.tables(root, shown, [e for e in doc["events"] if isinstance(e, dict)],
                                      doc.get("gaps") or [], state, report, routes, today)
