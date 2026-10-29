@@ -1,0 +1,46 @@
+[
+  {
+    "fixture": "azure_retirement_schedule.md",
+    "source_key": "azure_retirement_schedule",
+    "source_url": "https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/model-retirement-schedule?accept=text/markdown",
+    "run_id": "20261029T144759Z-342eb78a04e84cb88d30dd0132e8d789",
+    "fetched_at_utc": "2026-10-29T14:47:59.797730Z",
+    "raw_sha256": "6174b1fde52da9625f9873c9cee807ae7a4987a319766c7dc29dc9a947ba5829",
+    "raw_bytes": 18889,
+    "fixture_bytes": 13538,
+    "method": "Raw body of a local live signals run (public page, no login), trimmed to its headings and tables (and the Gemini page's earliest-date note); the lines kept are byte for byte."
+  },
+  {
+    "fixture": "openai_deprecations.md",
+    "source_key": "openai_deprecations",
+    "source_url": "https://developers.openai.com/api/docs/deprecations.md",
+    "run_id": "20261029T144759Z-342eb78a04e84cb88d30dd0132e8d789",
+    "fetched_at_utc": "2026-10-29T14:47:59.899048Z",
+    "raw_sha256": "3fddf4c625d689e43e559c236bcdd675de8a3b3d035070ba205827d8ad0a2fc2",
+    "raw_bytes": 41574,
+    "fixture_bytes": 27024,
+    "method": "Raw body of a local live signals run (public page, no login), trimmed to its headings and tables (and the Gemini page's earliest-date note); the lines kept are byte for byte."
+  },
+  {
+    "fixture": "anthropic_deprecations.md",
+    "source_key": "anthropic_deprecations",
+    "source_url": "https://platform.claude.com/docs/en/about-claude/model-deprecations.md",
+    "run_id": "20261029T144759Z-342eb78a04e84cb88d30dd0132e8d789",
+    "fetched_at_utc": "2026-10-29T14:48:00.413530Z",
+    "raw_sha256": "7c01727a08cc32c5812ccecc6dd36caa667ae5bd4e9d907b3b7b4272ce950c28",
+    "raw_bytes": 14620,
+    "fixture_bytes": 7838,
+    "method": "Raw body of a local live signals run (public page, no login), trimmed to its headings and tables (and the Gemini page's earliest-date note); the lines kept are byte for byte."
+  },
+  {
+    "fixture": "google_deprecations.md",
+    "source_key": "google_deprecations",
+    "source_url": "https://ai.google.dev/gemini-api/docs/deprecations.md.txt",
+    "run_id": "20261029T144759Z-342eb78a04e84cb88d30dd0132e8d789",
+    "fetched_at_utc": "2026-10-29T14:48:00.881260Z",
+    "raw_sha256": "3342ebac18090931abc3a2f58e42a07f2f1f4c7f411dc6587c4faf64831c4601",
+    "raw_bytes": 12536,
+    "fixture_bytes": 10926,
+    "method": "Raw body of a local live signals run (public page, no login), trimmed to its headings and tables (and the Gemini page's earliest-date note); the lines kept are byte for byte."
+  }
+]

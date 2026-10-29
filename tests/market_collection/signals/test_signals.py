@@ -183,9 +183,12 @@ def test_gateway_api_sources_cover_every_listed_model_of_both_gateways():
     # 2026-10-28: 4 feeds + OpenRouter 18 -> 49 (34 gateway-only models, 31 with an OpenRouter id) -> 99 (51 more, 50 with one)
     # + Vercel 49 -> 98 (49 of the 51 more: gemini-3-flash-preview and gpt-5.1 are OpenRouter only)
     # 2026-10-29: the 7 image models add 6 OpenRouter (gpt-image-2 is not in /api/v1/models) -> 105 and 6 Vercel (gemini-3-pro-image-preview is not
-    # in its model list) -> 104
-    assert len(specs) == 213 and {parser: len(found) for parser, found in by_parser.items()} == {
-        "atom": 3, "rss": 1, "openrouter_endpoints": 105, "vercel_endpoints": 104}
+    # in its model list) -> 104; the four retirement schedule pages come last -> 217
+    assert len(specs) == 217 and {parser: len(found) for parser, found in by_parser.items()} == {
+        "atom": 3, "rss": 1, "openrouter_endpoints": 105, "vercel_endpoints": 104, "azure_retirements": 1, "openai_deprecations": 1,
+        "anthropic_deprecations": 1, "google_deprecations": 1}
+    assert [spec.source_key for spec in specs[-4:]] == ["azure_retirement_schedule", "openai_deprecations", "anthropic_deprecations",
+                                                        "google_deprecations"]
     assert all(spec.source_kind == "channel_api" and spec.model_id for parser in ("openrouter_endpoints", "vercel_endpoints")
                for spec in by_parser[parser])
     keys = {spec.source_key: spec for spec in specs}

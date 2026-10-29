@@ -84,6 +84,8 @@ def _card_text(card, names):
         lines.append("조치 : " + _clip(to_do, 200))
     if card.get("date_basis") == "derived_from_publication":
         lines.append("종료 연도는 게시일에서 파생")
+    elif card.get("date_basis") == "not_before":  # a retirement schedule's earliest date (2026-10-29)
+        lines.append("가장 이른 종료일 · 이 날짜 전에는 끝나지 않음")
     for item in card["items"]:
         before, after = item.get("before") or {}, item.get("after") or {}
         label = name(names, "items", item.get("billing_item"))

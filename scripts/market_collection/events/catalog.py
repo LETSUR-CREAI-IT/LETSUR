@@ -15,7 +15,7 @@ from dataclasses import asdict
 
 from scripts.market_collection.core import CollectionError
 from scripts.market_collection.models import MODEL_MODALITIES
-from scripts.market_collection.signals.registry import SignalSourceSpec, signal_sources
+from scripts.market_collection.signals.registry import RETIREMENT_PARSERS, SignalSourceSpec, signal_sources
 from scripts.market_collection.sources import source_specs
 
 # Publisher of each registered route. A route missing here is "unknown" and
@@ -38,8 +38,11 @@ FAMILY_MAKERS = (("gemini", "Google"), ("veo", "Google"), ("gpt", "OpenAI"), ("c
                  # OpenAI's o-series and embedding models, Kling and LETSUR's "byteplus-" Seedance ids (2026-10-28).
                  ("o1", "OpenAI"), ("o3", "OpenAI"), ("o4", "OpenAI"), ("text-embedding", "OpenAI"),
                  ("kling", "Kling AI"), ("byteplus-seedance", "ByteDance"))
-# Signal feeds: publisher and the route a channel notice speaks for.
-SIGNAL_PUBLISHERS = {"vercel_changelog": ("Vercel", "vercel_ai_gateway"), "openai_news": ("OpenAI", "")}
+# Signal feeds: publisher and the route a channel notice speaks for. A retirement schedule page (2026-10-29) speaks for the
+# route its publisher sells on, the maker's own page too (retirement_route).
+SIGNAL_PUBLISHERS = {"vercel_changelog": ("Vercel", "vercel_ai_gateway"), "openai_news": ("OpenAI", ""),
+                     "azure_retirement_schedule": ("Microsoft", "azure_foundry"), "openai_deprecations": ("OpenAI", "openai_direct"),
+                     "anthropic_deprecations": ("Anthropic", "anthropic_direct"), "google_deprecations": ("Google", "google_direct")}
 # Channel API signal parsers: the route whose own endpoint listing they read.
 API_ROUTES = {"openrouter_endpoints": "openrouter", "vercel_endpoints": "vercel_ai_gateway"}
 SIGNAL_ROLES = {"channel_notice": "notice", "supplier_notice": "notice", "developer_blog": "blog",
@@ -69,6 +72,15 @@ def authority(model_id: str, route: str) -> str:
     if publisher == "unknown":
         return "unregistered"
     return "manufacturer_official" if publisher == maker(model_id) else "channel_official"
+
+
+def retirement_route(spec: dict, model_id: str) -> str:
+    """The route a retirement schedule page speaks for, "" for any other signal source. OpenAI sells its image models on
+    route openai, its other models on openai_direct."""
+    if spec.get("parser") not in RETIREMENT_PARSERS:
+        return ""
+    route = SIGNAL_PUBLISHERS.get(spec.get("source_key", ""), ("", ""))[1]
+    return "openai" if route == "openai_direct" and MODEL_MODALITIES.get(model_id) == "image" else route
 
 
 class Catalog:
@@ -114,7 +126,7 @@ class Catalog:
         if spec["source_kind"] in ("developer_blog", "price_tracker") or publisher == "unknown":
             return {"role": role, "authority": "unofficial", "publisher": publisher, "route": "", "scope": []}
         if publisher == maker(model_id):
-            return {"role": role, "authority": "manufacturer_official", "publisher": publisher, "route": "",
+            return {"role": role, "authority": "manufacturer_official", "publisher": publisher, "route": retirement_route(spec, model_id),
                     "scope": ["model_lifecycle", "route_price", "route_availability"]}
         if route:
             return {"role": role, "authority": "channel_official", "publisher": publisher, "route": route,

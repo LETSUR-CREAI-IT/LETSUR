@@ -255,6 +255,43 @@ def test_a_route_end_with_a_whole_route_member_keeps_the_route_wording(tmp_path:
     assert build.upstreams([upstream, dict(upstream, endpoint_id="bedrock")]) == ["minimax", "bedrock"]
 
 
+def _retirement(event_id: str, model_id: str, route: str, day: str, key: str, version: str = "", replacement: str | None = None,
+                basis: str = "stated", text: str = "", gaps: tuple[str, ...] = ("shutdown_confirmed",)) -> dict:
+    """The engine's card of a retirement schedule row (2026-10-29): a confirmed model_end on the page owner's route."""
+    return _claim(event_id, "model_end", key, f"row of {model_id}", status="confirmed", model_id=model_id, route=route, claim_kind="retirement",
+                  conditions={"model_version": version} if version else {}, change={"replacement": replacement},
+                  dates={"effective_from": day, "published": None, "date_basis": basis, "date_text": text or day, "note": ""},
+                  gaps=[{"field": field, "class": "check_first" if field == "deployment_version" else "limits_value", "reason": "",
+                         "next_check": ""} for field in gaps])
+
+
+def test_a_retirement_schedule_row_is_a_dated_end_card_with_its_replacement(tmp_path: Path) -> None:
+    """2026-10-29: Azure retires o3 on 2026-11-19 (replacement gpt-5.6-sol), the Gemini table gives gemini-3.1-flash-lite an earliest
+    date, Azure's two claude-haiku-4-5 versions end the same day. LETSUR's routes file says Azure for o3, Google for Gemini 3.1 Flash
+    Lite and Anthropic for Claude."""
+    _write(tmp_path, [
+        _retirement("r1", "o3", "azure_foundry", "2026-11-19", "azure_retirement_schedule", "2025-04-16", "gpt-5.6-sol"),
+        _retirement("r2", "gemini-3.1-flash-lite", "google_direct", "2027-05-07", "google_deprecations", replacement="gemini-3.5-flash-lite",
+                    basis="not_before", text="May 7, 2027", gaps=("earliest_date", "shutdown_confirmed")),
+        _retirement("r3", "claude-haiku-4-5", "azure_foundry", "2026-11-15", "azure_retirement_schedule", "1", gaps=("deployment_version", "shutdown_confirmed")),
+        _retirement("r4", "claude-haiku-4-5", "azure_foundry", "2026-11-15", "azure_retirement_schedule", "2", gaps=("deployment_version", "shutdown_confirmed"))])
+    _, _, data = _build(tmp_path, args=["--internal-routes", str(DEMO_ROUTES)])
+    cards = {card["mid"]: card for card in data["EVENTS"]}
+    o3, lite, haiku = cards["o3"], cards["gemini-3.1-flash-lite"], cards["claude-haiku-4-5"]
+    assert (o3["t7"], o3["ch"], o3["sum"], o3["eff"], o3["effLabel"], o3.get("effQual")) == (
+        "제공 종료", "Microsoft · azure_foundry", "모델 제공 종료 11/19 · 버전 2025-04-16", "2026-11-19", "제공 종료일", None)
+    assert o3["chg"] == [["대체 모델", "o3", "gpt-5.6-sol", None, "11/19부터", "ok", ["s1"]]]  # the template's 전환 대상 row
+    assert ["버전", "2025-04-16"] in o3["cond"]
+    assert (lite["sum"], lite["eff"], lite["effLabel"]) == ("모델 제공 종료 5/7 이후", "2027-05-07", "제공 종료 가능일")
+    assert lite["effQual"] == "가장 이른 날짜(이 날짜 전에는 끝나지 않음) · 원문 “May 7, 2027”"
+    assert lite["chk"][0] == ["limit", build.GAP_KO["earliest_date"]] and lite["chg"][0][:3] == ["대체 모델", "gemini-3.1-flash-lite", "gemini-3.5-flash-lite"]
+    assert data["ID"][haiku["id"]] == ["r3", "r4"] and haiku["sum"] == "모델 제공 종료 11/15 · 버전 1, 2"
+    assert haiku["chk"][0] == ["first", build.GAP_KO["deployment_version"]]
+    judged = {model: build.judge(card, data["TODAY"]) for model, card in cards.items()}
+    assert {model: (item["applicability"], item["action"]) for model, item in judged.items()} == {
+        "o3": ("APPLIES", "REVIEW"), "gemini-3.1-flash-lite": ("APPLIES", "REVIEW"), "claude-haiku-4-5": ("NOT APPLIES", "RECORD")}
+
+
 def test_discount_end_year_read_from_publication(tmp_path: Path) -> None:
     event = _claim("d1", "limited_discount", "openrouter_endpoints", "20% off until Oct 31", status="confirmed", route="openrouter",
                    claim_kind="discount", billing_item="input",

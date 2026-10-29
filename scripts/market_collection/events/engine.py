@@ -12,7 +12,7 @@ Rules (team taxonomy sections 1-3, user decisions of 2026-10-15):
 from __future__ import annotations
 
 import re
-from datetime import datetime
+from datetime import date, datetime, timedelta
 from decimal import Decimal
 from pathlib import Path
 
@@ -41,6 +41,10 @@ NEGATED_GAP = {"field": "negated_statement", "class": "check_first",
                "reason": "the sentence negates, cancels or postpones the claim; it is not read as a positive statement",
                "next_check": "read the notice and confirm what is actually in effect"}
 VERCEL_DEPRECATED_AT = re.compile(r"data\.endpoints\[\d+\]\.deprecated_at")  # signals parser vercel_endpoint_signals
+# A retirement schedule row dated further out than this from the build day makes no event yet (2026-10-29 가안). Azure dates
+# every model version 18 months from launch and the Gemini table gives earliest dates, so the whole schedule would put each
+# model's lifecycle term on the dashboard; within 90 days the pages name the near retirements.
+RETIREMENT_HORIZON_DAYS = 90
 
 
 def empty_state() -> dict:
@@ -451,6 +455,9 @@ class Builder:
                 self.state["gaps"].append({"kind": "signal_source_" + status["status"], **status})
         self.state["gaps"].extend(gaps)
         for claim in claims:
+            if claim["kind"] == "retirement":
+                self._retirement(claim)
+                continue
             if claim["claim_id"] in self.state["claims_seen"]:
                 continue
             self.state["claims_seen"].append(claim["claim_id"])
@@ -498,6 +505,33 @@ class Builder:
         if claim.get("effective_from"):
             event["dates"] = dict(event["dates"], effective_from=claim["effective_from"])
         self._put(event, f"{claim['kind']} claim from {claim['source_key']}")
+
+    def _retirement(self, claim: dict) -> None:
+        """One retirement schedule row is one event per model, route and version: a later run that states another date,
+        date basis or replacement revises it, the same row again changes nothing (claims_seen would keep a stale date).
+        A row with no event yet whose date is past RETIREMENT_HORIZON_DAYS from the build day is left for a later run."""
+        if not claim.get("effective_from"):
+            return  # the raw was not re-read (signal_raw_unparsable): the row stays a lead
+        event_id = "ev_" + digest(["retirement", claim["model_id"], claim["route"], claim.get("version", ""), claim["source_key"]])
+        old = self.state["events"].get(event_id)
+        if old is None and self.as_of and \
+                claim["effective_from"] > (date.fromisoformat(self.as_of) + timedelta(days=RETIREMENT_HORIZON_DAYS)).isoformat():
+            return
+        event_type, subtags, status, gaps, extra = classify_claim(claim)
+        event = base_event(event_id, event_type, claim["model_id"], claim["route"], status)
+        event.update(subtags=subtags, source_key=claim["source_key"], evidence_level=evidence_level(claim["authority"]),
+                     evidence_refs=[ref(claim)], lineages=1, gaps=gaps, dates=extra["dates"], change=extra["change"],
+                     sources=[{"source_key": claim["source_key"], "authority": claim["authority"], "role": claim["role"],
+                               "scope": claim.get("scope", []), "lineage": claim["lineage"], "quote": claim["quote"]}],
+                     conditions={"model_version": claim["version"]} if claim.get("version") else {},
+                     unknown_reason="LETSUR's deployment and usage on this route are not in the inputs",
+                     suggestion=extra["suggestion"], claim_kind="retirement")
+        kept = ("evidence_refs", "revision", "history")
+        if old is not None and {k: v for k, v in event.items() if k not in kept} == {k: v for k, v in old.items() if k not in kept}:
+            return  # the same row again: the event keeps its first evidence
+        before = (old or {}).get("dates", {}).get("effective_from")
+        self._put(event, f"retirement schedule row from {claim['source_key']}" if old is None else
+                  f"retirement schedule row changed on {claim['source_key']} (date {before} -> {event['dates']['effective_from']})")
 
     def _attach(self, claim: dict, event_type: str | None) -> bool:
         """Attach a claim to an existing event only on a strong anchor: the same article sentence of the same
@@ -699,6 +733,27 @@ def classify_claim(claim: dict) -> tuple[str | None, list[str], str, list[dict],
         if "model_lifecycle" in claim.get("scope", []) and claim.get("model_wide"):
             return "model_end", [], "candidate" if negated else "confirmed", gaps, extra
         return "route_change", ["remove"], "confirmed" if official_route and not negated else "candidate", gaps, extra
+    if kind == "retirement":
+        # A route owner's retirement schedule row (2026-10-29): the model ends on that route (a 제공 종료 card), other routes
+        # may go on. The quote is the row's own cells, so "Not sooner than" qualifies the date and is not read as a negation.
+        extra["dates"] = {"effective_from": claim.get("effective_from"), "published": claim.get("published_at_utc") or None,
+                          "date_basis": claim.get("date_basis"), "date_text": claim.get("date_text"),
+                          "note": "retirement of the model on this route by the route owner's schedule; other routes may continue"}
+        extra["change"] = {"replacement": claim.get("replacement") or None}
+        extra["suggestion"] = "move to the replacement or another route before the date"
+        gaps = []
+        if claim.get("date_basis") == "not_before":
+            gaps.append({"field": "earliest_date", "class": "limits_value",
+                         "reason": "the schedule states the earliest date the model may retire, not its retirement date",
+                         "next_check": "re-check the schedule for the retirement date"})
+        if claim.get("versions", 1) > 1:
+            gaps.append({"field": "deployment_version", "class": "check_first",
+                         "reason": f"the schedule lists {claim['versions']} versions of the model with their own dates; LETSUR's version is unknown",
+                         "next_check": "confirm which version LETSUR's deployment on this route runs"})
+        gaps.append({"field": "shutdown_confirmed", "class": "limits_value", "reason": "retirement schedule only; call stop not observed",
+                     "next_check": "confirm call stop on this route after the date"})
+        official = auth in OFFICIAL and route and "route_availability" in claim.get("scope", []) and claim.get("effective_from")
+        return "model_end", [], "confirmed" if official else "candidate", gaps, extra
     if kind == "availability":
         release = claim.get("maker_first_release_date")
         added = claim.get("route_added_date")

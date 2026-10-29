@@ -449,6 +449,27 @@ class AlertTests(unittest.TestCase):
         later = prepare(self.db, date(2026, 11, 15), "test", judged=judged)
         self.assertEqual([(c["alert"], c["days"]) for c in later["cards"]], [("urgent", 5)])
 
+    def test_a_retirement_schedules_earliest_date_goes_out_and_says_it_is_the_earliest(self):
+        # 2026-10-29: a date of the Gemini deprecations table is a confirmed model_end on Google's route whose date is the
+        # earliest possible one; an exact retirement date gets no such line.
+        event = copy.deepcopy(self.document["events"][0])  # demo-input, in the APPLIES card of fixtures_cards.json
+        event.update(event_type="model_end", dates={"effective_from": "2026-11-24", "published": None, "date_basis": "not_before",
+                                                    "date_text": "November 24, 2026"},
+                     evidence_refs=[{"run_id": "20261026T013000Z-a"}])
+        sync(self.db, {"events": [event]}, self.today, 5)
+        report = prepare(self.db, self.today, "test", judged=parse(self.cards_document()))
+        self.assertEqual([(c["alert"], c["stage"], c["days"], c["date_basis"]) for c in report["cards"]], [("new", 0, 29, "not_before")])
+        self.assertIn("※ 가장 이른 종료일입니다. 이 날짜 전에는 끝나지 않으며 정확한 종료일은 아닙니다.", render(report))
+        exact = dict(event, dates=dict(event["dates"], date_basis="stated"))
+        db = connect(Path(self.tmp.name) / "exact.sqlite")
+        try:
+            sync(db, {"events": [exact]}, self.today, 5)
+            report = prepare(db, self.today, "test", judged=parse(self.cards_document()))
+            self.assertEqual([(c["days"], c["date_basis"]) for c in report["cards"]], [(29, "stated")])
+            self.assertNotIn("가장 이른 종료일", render(report))
+        finally:
+            db.close()
+
     def test_a_stop_of_selling_comes_before_a_cost_change_whatever_the_deadline(self):
         stop = copy.deepcopy(self.document["events"][0])
         stop.update(event_id="demo-stop", event_type="model_end", dates={"effective_from": "2026-10-30"})
