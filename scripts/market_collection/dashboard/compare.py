@@ -52,7 +52,11 @@ OPEN_WEIGHT = evidence.OPEN_WEIGHT  # model families with public weights; the da
 # OpenRouter endpoint status (decision 8, analysis or-endpoint-status-20261027.md): -1 and -2 stay compared, the rest are excluded.
 STATUS = {-1: ("우선순위 낮춤", ""), -2: ("성능 저하", ""), -3: ("순위 하향", "일시적으로 순위가 내려가 대체 경로로만 쓰임"),
           -5: ("중단", "지금 요청이 실패하고 있어 대체 경로로만 쓰임"), -10: ("사용 중지", "품질 문제로 사용 중지, 어떤 요청에도 쓰이지 않음")}
-REPRESENTATIVE = ("model_page_rate", "listed_model_rate", "prices_from_minimum")  # a gateway's headline price, no upstream named
+# A gateway's headline price, no upstream named; the last two are the image model pages' (Vercel's GPT Image 2.5 pages).
+REPRESENTATIVE = ("model_page_rate", "listed_model_rate", "prices_from_minimum", "displayed model quote", "starting listing quote")
+# The routes a gateway model page is filed under: a price there that names no endpoint or upstream is the page's headline
+# (OpenRouter's and Vercel's GPT Image 2.5 pages state no price basis, 2026-10-30).
+PAGE_ROUTES = (*GATEWAYS, "vercel")
 # Conditions that tell rows apart or describe them without deciding the group; any other stated key keeps a row out.
 QUIET = {"endpoint_tag", "endpoint_provider", "endpoint_model_slug", "context_length", "price_basis", "endpoint_discount", "endpoint_status",
          "quantization", "service_tier", "prompt_tokens", "utc_start", "utc_end", "utc_days", "context_tier_min_tokens",
@@ -375,7 +379,7 @@ def place(row: dict) -> None:
                precision=c.get("quantization") or None)
     raw_status = c.get("endpoint_status", row["unknown"].get("endpoint_status"))
     row["status"] = int(raw_status) if re.fullmatch(r"-?\d+", str(raw_status or "")) else None
-    if c.get("price_basis") in REPRESENTATIVE:
+    if c.get("price_basis") in REPRESENTATIVE or (route in PAGE_ROUTES and not {"endpoint_tag", "endpoint_provider", "provider"} & set(c)):
         row["who"] = [ROUTE_PUBLISHERS.get(route, route), "모델 페이지 대표가"]
         row["why"].append("모델 페이지 대표가 (하위 공급처·조건 미지정)")
         return

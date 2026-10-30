@@ -1130,24 +1130,62 @@ def test_a_different_service_tier_still_gets_its_own_tab(tmp_path: Path) -> None
 
 
 
-def test_only_unsettled_lines_are_reference_lines(tmp_path: Path) -> None:
-    """2026-10-27 decision 26-2: endpoint lines compare inside their tab; a model-level display price states no precision or
-    region, so it is a reference line in every tab of its tier and its own tab goes; each tab names its unit."""
+def test_a_model_page_headline_price_is_not_drawn(tmp_path: Path) -> None:
+    """2026-10-30 (박건: 애매한 경우가 없어야): a gateway price that names no endpoint is its model page's headline (the 공급사 비교
+    표's 모델 페이지 대표가, now also the image pages' displayed model quote and a page price stating no basis), so it is no
+    line: the gateway's endpoint lines stand for it, and the note says how many were left out."""
     state = {"series": {"a": _gateway("g1-2", "openrouter", OPENROUTER, "Alibaba", "0.20", **ALIBABA),
                         "p": _gateway("p-2", "openrouter", OPENROUTER, "Alibaba", "0.60", service_tier="priority", **ALIBABA),
-                        "v": _gateway("v-2", "vercel", "vercel_models", "Vercel", "0.15", price_basis="displayed model quote")}}
+                        "v": _gateway("v-2", "vercel", "vercel_models", "Vercel", "0.15", price_basis="displayed model quote"),
+                        "o": _gateway("o-2", "openrouter", "openrouter_model_page", "OpenRouter", "0.14")}}
     _write(tmp_path, [_gateway_change("g1", ALIBABA, "0.30", "0.20")], state=state)
     trend = _build(tmp_path)[2]["TREND"]["deepseek-v4-pro"]
-    tiers = trend["tiers"]
-    assert set(tiers) == {"fp8 · US", "fp8 · US · Priority"}
-    assert [bool(line.get("ref")) for line in tiers["fp8 · US"]] == [False, True]
-    assert not any(line.get("ref") for line in tiers["fp8 · US · Priority"])
+    assert {tab: [line["name"] for line in lines] for tab, lines in trend["tiers"].items()} == {
+        "fp8 · US": ["OpenRouter · openrouter · alibaba/fp8/us-east-1"], "fp8 · US · Priority": ["OpenRouter · openrouter · alibaba/fp8/us-east-1"]}
+    assert not any(line.get("ref") for lines in trend["tiers"].values() for line in lines)
+    assert "하위 공급자를 적지 않은 중개사 모델 페이지 대표가 선 2개는 그리지 않았습니다" in trend["note"]
     assert trend["units"] == {"fp8 · US": "USD / 100만 토큰", "fp8 · US · Priority": "USD / 100만 토큰"}
 
 
+def test_a_tier_the_source_leaves_unsaid_is_the_tables(tmp_path: Path) -> None:
+    """2026-10-30: the trend groups token prices as the 공급사 비교 표 does. Vercel's untiered price is Standard (decision 18), and so
+    is a direct route's price that names no tier, so both join Google's Standard line instead of a tab called 조건 없음."""
+    vercel = _stored("v-2", "input", "0.50")
+    vercel["obs"].update(route="vercel_ai_gateway", source_key="vercel_llm_endpoints_gemini_3_8_flash", upstream_provider="google",
+                         conditions={"price_basis": "endpoint_listed_rate", "endpoint_provider": "google", "endpoint_status": "0"},
+                         unknown_conditions=["quantization", "service_tier"])
+    untiered = _stored("u-2", "input", "0.50")
+    untiered["obs"].update(source_key="google_gemini_38_flash_page", conditions={})
+    state = {"series": {"in": _stored("t1-2", "input", "0.50"), "v": vercel, "u": untiered}}
+    _write(tmp_path, [_observed("t1", "price_change", "0.75", "0.50")], state=state)
+    trend = _build(tmp_path)[2]["TREND"]["gemini-3.8-flash"]
+    assert "tiers" not in trend and list(trend["conds"]) == ["Standard"]
+    assert len(trend["series"]) == 3 and not any(line.get("ref") for line in trend["series"])
+    assert "Vercel · vercel_ai_gateway · google" in [line["name"] for line in trend["series"]]
+
+
+def test_a_line_of_unknown_precision_stands_dotted_beside_both_precisions(tmp_path: Path) -> None:
+    """2026-10-30: the table leaves an open-weight model's line out when no source states its precision (정밀도 미상, decision 5).
+    Here it is a 비교 제외 line, drawn in every tab it would be compared in (fp4 and fp8 of its tier) and never compared; the
+    tab of its own goes."""
+    unknown = {**NOVITA, "endpoint_tag": "example", "quantization": ""}
+    state = {"series": {"a": _gateway("g1-2", "openrouter", OPENROUTER, "Alibaba", "0.20", **ALIBABA),
+                        "n": _gateway("n-2", "openrouter", OPENROUTER, "Novita", "0.25", **NOVITA),
+                        "d": _gateway("d-2", "vercel_ai_gateway", VERCEL, "DeepInfra", "0.30", **DEEPINFRA),
+                        "x": _gateway("x-2", "openrouter", OPENROUTER, "Example", "0.18", **unknown)}}
+    _write(tmp_path, [_gateway_change("g1", ALIBABA, "0.30", "0.20")], state=state)
+    trend = _build(tmp_path)[2]["TREND"]["deepseek-v4-pro"]
+    assert {tab: [(line["name"], line.get("ref")) for line in lines] for tab, lines in trend["tiers"].items()} == {
+        "fp8 · US": [("OpenRouter · openrouter · alibaba/fp8/us-east-1", None)],
+        "fp4 · Standard": [("OpenRouter · openrouter · novita/fp4", None), ("OpenRouter · openrouter · example", "정밀도 미상")],
+        "fp8 · Standard": [("Vercel · vercel_ai_gateway · DeepInfra · fp8", None), ("OpenRouter · openrouter · example", "정밀도 미상")]}
+    assert trend["tiers"]["fp4 · Standard"][1]["refWhy"] == "정밀도 미상 · 직접 확인 필요"
+    assert "비교 표가 비교에서 빼는 선 1개(정밀도 미상)는 점선으로 두고 그래프 안 최저와 숫자 칸에서 뺐습니다." in trend["note"]
+
+
 def test_status_lines_follow_the_comparison_table(tmp_path: Path) -> None:
-    """Decisions 8 and 26-2: the 공급사 비교 표 compares OpenRouter's -1 and -2 with a chip and leaves -3, -5 and -10 out, so
-    only those are reference lines here."""
+    """Decision 8: the 공급사 비교 표 compares OpenRouter's -1 and -2 with a chip and leaves -3, -5 and -10 out, so only those are
+    비교 제외 lines here, with the table's reason (2026-10-30: always drawn, there is no 엄격 비교·전체 관측 switch)."""
     state = {"series": {"a": _gateway("g1-2", "openrouter", OPENROUTER, "Alibaba", "0.20", **ALIBABA),
                         "b": _gateway("b-2", "openrouter", OPENROUTER, "Baidu", "0.25",
                                       **{**ALIBABA, "endpoint_tag": "baidu/fp8/us-east-1", "endpoint_status": "-2"}),
@@ -1155,8 +1193,70 @@ def test_status_lines_follow_the_comparison_table(tmp_path: Path) -> None:
                                       **{**ALIBABA, "endpoint_tag": "crusoe/fp8/us-east-1", "endpoint_status": "-5"})}}
     _write(tmp_path, [_gateway_change("g1", ALIBABA, "0.30", "0.20")], state=state)
     lines = _build(tmp_path)[2]["TREND"]["deepseek-v4-pro"]["series"]  # one tab (fp8 · US), so no tiers
-    assert {line["name"].rsplit(" · ", 1)[-1]: bool(line.get("ref")) for line in lines} == {
-        "alibaba/fp8/us-east-1": False, "baidu/fp8/us-east-1": False, "crusoe/fp8/us-east-1": True}
+    assert {line["name"].rsplit(" · ", 1)[-1]: line.get("ref") for line in lines} == {
+        "alibaba/fp8/us-east-1": None, "baidu/fp8/us-east-1": None, "crusoe/fp8/us-east-1": "중단"}
+    assert [line["refWhy"] for line in lines if line.get("ref")] == ["OpenRouter 상태: 중단, 지금 요청이 실패하고 있어 대체 경로로만 쓰임"]
+
+
+def test_the_image_reviews_own_reading_is_not_drawn() -> None:
+    """2026-10-30: the image review reads OpenRouter's images catalog per token, its endpoint a hashed profile id, and those
+    tabs were named by a rate line's raw JSON. The catalog's price source draws the same rates per 1M tokens, so the review's
+    observations are left out."""
+    def obs(oid: str, source: str, unit: str, amount: str, **conditions: str) -> dict:
+        return {"obs": {"observation_id": oid, "run_id": RUN2, "observed_at_utc": AT2, "model_id": "gpt-image-2.5-flare", "route": "openrouter",
+                        "source_key": source, "upstream_provider": "OpenAI", "provider_model_id": "openai/gpt-image-2.5-flare",
+                        "task": "text-to-image", "billing_item": "image_output", "amount": amount, "currency": "USD", "unit": unit,
+                        "conditions": conditions}}
+    series = {"r": obs("r-1", "image25_openrouter_flare_endpoints", "1 token", "0.00003", billable="output_image",
+                       pricing_line='{"billable":"output_image","unit":"token","cost_usd":0.00003}'),
+              "c": obs("c-1", "openrouter_image_catalog_endpoints_gpt_image_2_5_flare", "1M tokens", "30", endpoint_tag="openai",
+                       price_basis="endpoint_listed_rate")}
+    review = {spec.source_key for spec in build.source_specs() if spec.parser in build.REVIEW_PARSERS}
+    entry = build.model_trend("gpt-image-2.5-flare", [], {}, series, set(), None, review)
+    assert [line["name"] for line in entry["series"]] == ["OpenRouter · openrouter · openai"] and list(entry["conds"]) == ["Standard"]
+    assert "이미지 검토용 출처의 토큰 단가 관측 1건은 그리지 않았습니다" in entry["note"]
+
+
+def test_two_names_of_one_condition_are_one_tab_condition() -> None:
+    """2026-10-30: OpenRouter's and Bedrock's cache_write_ttl is Anthropic's cache_duration, and OpenAI's image pages state their
+    tier as processing; a stated tier is never overwritten."""
+    assert build.one_name({"cache_write_ttl": "1h", "service_tier": "Standard"}) == {"service_tier": "Standard", "cache_duration": "1h"}
+    assert build.one_name({"processing": "Batch"}) == {"service_tier": "Batch"}
+    assert build.one_name({"processing": "Batch", "service_tier": "Flex"}) == {"processing": "Batch", "service_tier": "Flex"}
+
+
+def test_tabs_named_alike_add_the_unit_then_korean_condition_names() -> None:
+    """2026-10-30: two tabs of one name read 'service_tier Standard · 1 image' and 'service_tier Standard · 100만 토큰'."""
+    standard = json.dumps({"service_tier": "Standard"})
+    keys = [(standard, "1M tokens"), (standard, "1 image")]
+    assert build.tab_names(keys) == {keys[0]: "Standard · 100만 토큰", keys[1]: "Standard · 이미지 1장"}
+    quiet = json.dumps({"region_group": "Commercial Regions", "service_tier": "Standard"}, sort_keys=True)
+    assert build.tab_names([(standard, "1M tokens"), (quiet, "1M tokens")])[(standard, "1M tokens")] == "등급 Standard · 100만 토큰"
+    assert build.tab_value("promotion_note", "promotional pricing is available at least through November 21, 2026.") == "프로모션 가격 11/21까지"
+
+
+def test_letsurs_line_is_never_the_one_past_the_limit(tmp_path: Path) -> None:
+    """A tab draws six lines; LETSUR's line comes first, then a line with a change, then the rest by name (2026-10-30: more lines
+    share a tab now that untiered lines join their tier)."""
+    endpoints = {f"p{n}": {**NOVITA, "endpoint_tag": f"p{n}/fp8", "quantization": "fp8"} for n in range(8)}
+    state = {"series": {tag: _gateway(f"{tag}-2" if tag != "p7" else "g1-2", "openrouter", OPENROUTER, tag, "0.20", **endpoint)
+                        for tag, endpoint in endpoints.items()}}
+    _write(tmp_path, [_gateway_change("g1", endpoints["p7"], "0.30", "0.20")], state=state)
+    records = [{"model_id": "deepseek-v4-pro", "route_id": "openrouter", "endpoint_id": "p6/fp8", "basis": "observed", "checked_at": "2026-10-30"}]
+    trend = _build(tmp_path, args=_routes(tmp_path, {"is_demo": False, "records": records}))[2]["TREND"]["deepseek-v4-pro"]
+    assert [(line["name"], line.get("letsur")) for line in trend["series"]] == [
+        *((f"OpenRouter · openrouter · p{n}/fp8", None) for n in (0, 1, 2, 3)), ("OpenRouter · openrouter · p6/fp8", True),
+        ("OpenRouter · openrouter · p7/fp8", None)]
+    assert "선이 6개를 넘어 뺀 선 2개: fp8 · Standard: OpenRouter · openrouter · p4/fp8, fp8 · Standard: OpenRouter · openrouter · p5/fp8." in trend["note"]
+
+
+def test_template_has_no_comparison_mode_and_draws_excluded_lines_dotted() -> None:
+    """2026-10-30 (박건: 애매한 경우가 없어야): the 엄격 비교·전체 관측 switch is gone. A 비교 제외 line is always drawn, dotted in the
+    graph and the legend, and kept out of the lowest, the number tiles and the tooltip's comparison."""
+    html = Path(build.__file__).with_name("template.html").read_text(encoding="utf-8")
+    assert not any(word in html for word in ("data-cmp", "cmpmode", "trendCompare", "comparableSeries"))
+    assert ".tplot .ln.ref line{stroke-dasharray:2 5}" in html and ".lg .ref i{border-top-style:dotted}" in html
+    assert "M.series.filter(s => !s.old && !s.ref)" in html and 'o.se.ref ? "비교 제외"' in html
 
 
 def test_lines_over_the_limit_say_how_many_were_left_out(tmp_path: Path) -> None:

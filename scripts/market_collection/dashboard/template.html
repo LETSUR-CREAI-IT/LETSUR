@@ -190,11 +190,7 @@ a{color:var(--ink)}
 .callg .dkey.effective i{background:var(--mint)} .callg .dkey.end i{background:var(--up)} .callg .dkey.next_check i{background:var(--slate)}
 .cmpbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin:8px 0 8px;padding:8px 12px;border:1px solid var(--line);border-radius:var(--r-m);background:var(--surface-2);font-size:12px;color:var(--muted)}
 .cmpbar b{color:var(--ink);font-weight:700}
-.cmpmode{display:inline-flex;gap:2px;margin-left:auto;padding:2px;border:1px solid var(--line);border-radius:var(--r-pill);background:var(--surface)}  /* 묶음 테두리(선택 묶음과 같은 모양) */
-.cmpmode button{height:24px;padding:0 12px;border:0;border-radius:var(--r-pill);background:transparent;color:var(--body);font:inherit;font-size:12px;cursor:pointer}
-.cmpmode button[aria-pressed="true"]{background:var(--mint-soft);color:var(--mint-ink);font-weight:750}
 .cmpwarn{color:var(--amber);font-weight:650}
-@media (max-width:700px){.cmpmode{margin-left:0}}
 .grp{margin-top:8px}
 .grp h3{display:flex;align-items:center;gap:8px;margin:8px 8px 4px;font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.02em}
 .grp h3 i{width:8px;height:8px;border-radius:50%}
@@ -392,6 +388,7 @@ td small{display:block;font-size:12px;color:var(--muted)}
 .lg span.on{background:var(--surface-2)}
 .lg i{display:inline-block;width:14px;height:0;border-top:2px solid;border-radius:var(--r-xs)}
 .lg .lr i{border-top-width:3px}
+.lg .ref i{border-top-style:dotted}  /* 비교 제외 선(그래프의 점선과 같음) */
 .lg b{font-weight:700;color:var(--ink)}
 .lg small{color:var(--muted)}
 .lg .via{padding-left:0;font-weight:700;color:var(--muted)}
@@ -507,6 +504,7 @@ body:not([data-page="health"]) .hpage{display:none}
 .tplot .ln circle.v.fut,.tplot .ln circle.v.miss{fill:var(--surface);stroke:var(--lc)}
 .tplot .ln.on circle.v.fut,.tplot .ln.on circle.v.miss{stroke:var(--fc)}
 .tplot .ln line.miss{stroke-width:2}
+.tplot .ln.ref line{stroke-dasharray:2 5}  /* 비교 제외 선: 공급사 비교 표가 비교에서 빼는 선, 늘 보이되 최저·숫자 칸에서 뺀다 */
 .tplot svg.focus .ln{opacity:.3}
 .tplot svg.focus .ln.on{opacity:1}
 .tplot .ttip{position:absolute;top:8px;z-index:2;min-width:220px;max-width:min(340px,100%);padding:8px 12px;border:1px solid var(--line-strong);border-radius:var(--r-l);background:var(--surface);box-shadow:0 4px 14px rgba(0,0,0,.12);font-size:12px;line-height:1.45;color:var(--body);pointer-events:none}
@@ -1180,14 +1178,9 @@ const MODEL_GROUPS = [...new Set(MODEL_IDS.map(makerOf))].sort((a, b) => (a === 
 // 처음 여는 모델: 목록 순서에서 변화 카드와 그래프가 둘 다 있는 첫 모델. 카드 없는 모델이 목록 앞에 와도 빈 그래프로 시작하지 않게 한다(2026-10-28).
 const MODEL_ORDER = MODEL_GROUPS.flatMap(([, ks]) => ks), hasCard = k => EVENTS.some(e => e.mid === k);
 let trendModel = MODEL_ORDER.find(k => TREND[k] && hasCard(k)) || MODEL_ORDER.find(hasCard) || MODEL_ORDER[0], trendMeasure = 0, trendTier = "Standard";
-// 비교 모드: 탭은 정밀도·지역·등급까지 나뉘어 한 탭 안의 선은 공급처가 달라도 같은 조건이다. 엄격 비교는 그 선만, 전체 관측은 조건이 정해지지 않은
-// 참고 선(ref: 표시 최소가 같은 대표가, 비교 표가 상태로 빼는 엔드포인트)도 함께 본다(2026-10-27 결정 26-2).
-let trendCompare = "strict";
-function comparableSeries(series){
-  if (trendCompare !== "strict") return {shown: series, excluded: []};
-  const shown = series.filter(s => !s.ref), excluded = series.filter(s => s.ref);
-  return shown.length ? {shown, excluded} : {shown: series, excluded: []};  // 참고 선만 있으면 그대로 보이고 비교 조건 줄에 적는다
-}
+// 탭은 공급사 비교 표의 묶음(정밀도·지역·등급)이라 한 탭 안의 선은 공급처가 달라도 같은 조건이다. 비교 표가 비교에서 빼는 선(ref: 상태 이상·
+// 정밀도 미상·출처 상충 등, refWhy는 표의 사유)은 점선으로 늘 보이되 그래프 안 최저·숫자 칸·말풍선의 최저 대비에서 뺀다. 엄격 비교·전체 관측
+// 버튼은 없앴다(2026-10-30 박건: 애매한 경우가 없어야. 모델 페이지 대표가는 build.py가 그리지 않는다).
 function comparisonKeyText(M, mi, tier){
   const unit = (M.units && tier && M.units[tier]) || M.unit;
   const conds = (M.conds && (tier ? M.conds[tier] : Object.values(M.conds)[0])) || tier || "기본";  // 탭 이름은 짧게, 여기는 원문 그대로
@@ -1212,8 +1205,8 @@ const relTxt = (v, low) => { const r = v / low; if (r >= 2) return (r < 10 ? r.t
   const p = (r - 1) * 100; return p < 0.05 ? "±0%" : "+" + (p < 10 ? p.toFixed(1) : p.toFixed(0)).replace(/\.0$/, "") + "%"; };
 const relWord = (v, low) => v / low >= 2 ? `최저의 ${relTxt(v, low)}` : `최저보다 ${relTxt(v, low).slice(1)} 비쌈`;
 // 선 이름과 색(2026-10-30 C안·3번 그래프, docs/design-system.md '가격 추이 그래프'). 중개 경로 선은 경로 id를 빼고, 모든 선이 같은 중개
-// 경로면 그 이름을 범례 머리로 올린다. 색은 탭의 선 전체(참고 선 포함)를 이름순으로 놓고 s1~s6을 차례로 주어, 엄격 비교·전체 관측을
-// 바꿔도 같은 선은 같은 색이다. 렛서 경로 선은 민트, 일곱 번째부터는 회색이다. soft는 평소의 낮은 채도 색이다.
+// 경로면 그 이름을 범례 머리로 올린다. 색은 탭의 선 전체(비교 제외 선 포함)를 이름순으로 놓고 s1~s6을 차례로 준다. 렛서 경로 선은
+// 민트, 일곱 번째부터는 회색이다. soft는 평소의 낮은 채도 색이다.
 function seriesLook(all){
   const raw = s => plain(s.name).split(" · "), parts = s => raw(s).length > 2 ? [raw(s)[0], ...raw(s).slice(2)] : raw(s);
   const firsts = new Set(all.map(s => raw(s).length > 2 ? raw(s)[0] : "")), via = firsts.size === 1 && !firsts.has("") ? [...firsts][0] : "";
@@ -1242,19 +1235,24 @@ function trendSpan(M, mi){
   return {d0, d1, inView, out, vals: M.series.filter(s => !out.has(s)).flatMap(seen)};
 }
 function trendStats(M, mi, look){
-  // 그래프 안 최저: 그려진 선 중 가장 최근 수집에 있는 선만 센다(old 선 제외, 결정 9절·21절). 같은 조건의 시장 최저가는 카드의 공급사 비교 표가 맡는다.
-  const cur = M.series.filter(s => !s.old).map(s => { const p = valueAt(s, TODAY, mi); return p && pv(p, mi) != null ? [s, pv(p, mi)] : null; }).filter(Boolean).sort((a, b) => a[1] - b[1]);
+  // 그래프 안 최저: 그려진 선 중 가장 최근 수집에 있는 선만 센다(old 선 제외, 결정 9절·21절). 비교 제외 선(ref)은 숫자 칸 어디에도 넣지 않는다.
+  // 같은 조건의 시장 최저가는 카드의 공급사 비교 표가 맡는다.
+  const nowV = s => { const p = valueAt(s, TODAY, mi); return p && pv(p, mi) != null ? pv(p, mi) : null; };
+  const cur = M.series.filter(s => !s.old && !s.ref).map(s => [s, nowV(s)]).filter(r => r[1] != null).sort((a, b) => a[1] - b[1]);
   let last = null, next = null;
-  M.series.forEach(s => s.pts.forEach((p, i) => { if (!i) return; const v = pv(p, mi), pr = pv(s.pts[i - 1], mi); if (v == null || pr == null || v === pr) return;
+  M.series.filter(s => !s.ref).forEach(s => s.pts.forEach((p, i) => { if (!i) return; const v = pv(p, mi), pr = pv(s.pts[i - 1], mi); if (v == null || pr == null || v === pr) return;
     const o = {d:p[0], s, pct:(v - pr) / pr * 100, v, pr};
     if (day(p[0]) <= TODAY) { if (!last || p[0] > last.d) last = o; } else if (!next || p[0] < next.d) next = o; }));
   const note = (M.notes || []).filter(n => n[0] > TODAY).sort((a, b) => dt(a[0]) - dt(b[0]))[0];
   const tile = (k, v, s, cls) => `<div class="tstat${cls ? " " + cls : ""}"><div class="k">${k}</div><div class="v tn">${v}</div><div class="s">${s}</div></div>`;
   const pct = o => `<small class="${o.pct > 0 ? "up" : "down"}">${o.pct > 0 ? "▲" : "▼"}${Math.abs(o.pct).toFixed(o.pct % 1 ? 1 : 0)}%</small>`;
-  const item = esc(M.measures[mi]), low = cur[0], mine = cur.find(([s]) => s.letsur);
-  // 렛서 경로 칸(C안): 렛서 경로 선이 있을 때만 앞에 두고 그래프 안 최저와의 차이를 적는다. 변동 칸의 퍼센트는 직전 가격 대비다.
-  return (mine ? tile(`렛서 경로 현재 ${item}가`, money2(mine[1]), `${esc(look.name(mine[0]))} · ${mine[1] === low[1] ? "그래프 안 최저" : relWord(mine[1], low[1])}`, "let") : "") +
-    tile(`그래프 안 최저 ${item}가`, cur.length ? money2(low[1]) : "—", cur.length ? esc(look.name(low[0])) + (cur.length > 1 ? ` · 최고 ${money2(cur[cur.length - 1][1])}` : "") : "값 없음") +
+  const item = esc(M.measures[mi]), low = cur[0], lr = M.series.find(s => s.letsur && !s.old), mine = lr && nowV(lr) != null ? [lr, nowV(lr)] : null;
+  // 렛서 경로 칸(C안): 렛서 경로 선이 있을 때만 앞에 두고 그래프 안 최저와의 차이를 적는다. 렛서 경로 선이 비교 제외이면 값만 두고 사유를 적는다.
+  // 변동 칸의 퍼센트는 직전 가격 대비다.
+  const versus = v => !low ? "비교할 선 없음" : v === low[1] ? "그래프 안 최저" : relWord(v, low[1]);
+  return (mine ? tile(`렛서 경로 현재 ${item}가`, money2(mine[1]), `${esc(look.name(mine[0]))} · ${mine[0].ref ? `비교 제외(${esc(mine[0].ref)})` : versus(mine[1])}`, "let") : "") +
+    tile(`그래프 안 최저 ${item}가`, cur.length ? money2(low[1]) : "—", cur.length ? esc(look.name(low[0])) + (cur.length > 1 ? ` · 최고 ${money2(cur[cur.length - 1][1])}` : "")
+      : M.series.some(s => s.ref) ? "비교할 선 없음(모두 비교 제외)" : "값 없음") +
     tile("최근 변동 · 직전 대비", last ? `${md(last.d)}${pct(last)}` : "없음", last ? `${esc(look.name(last.s))} · ${money2(last.pr)} → ${money2(last.v)}` : "기간 안에 변동 없음") +
     tile(next ? "다음 예정 · 직전 대비" : "다음 예정", next ? `${md(next.d)}${pct(next)}` : note ? `${md(note[0])}<small class="up">${ddTxt(note[0])}</small>` : "없음",
       next ? `${esc(look.name(next.s))} · ${ddTxt(next.d)}` : note ? esc(note[1]) : "알려진 예정 없음");
@@ -1275,25 +1273,25 @@ function renderPrice(){
   // 처음 보이는 가격 조건 탭(2026-10-30): 'Standard' 탭이 있으면 그 탭, 없으면 렛서 경로 선이 있는 탭, 그것도 없으면 선이 가장 많은 탭(같으면 앞 탭)
   const M0 = TREND[trendModel], tierKeys = M0.tiers ? Object.keys(M0.tiers) : [];
   const tier = M0.tiers && M0.tiers[trendTier] ? trendTier : tierKeys.find(k => M0.tiers[k].some(s => s.letsur)) || tierKeys.reduce((a, k) => M0.tiers[k].length > M0.tiers[a].length ? k : a, tierKeys[0]);
-  const cmp = comparableSeries(M0.tiers ? M0.tiers[tier] : M0.series), onlyRef = trendCompare === "strict" && !cmp.excluded.length && cmp.shown.length && cmp.shown.every(x => x.ref);
-  const M = Object.assign({}, M0, {series: cmp.shown}), mi = M.measures.length > 1 ? trendMeasure : 0, el = document.getElementById("trend");
+  const all = M0.tiers ? M0.tiers[tier] : M0.series, refs = all.filter(s => s.ref);
+  const M = Object.assign({}, M0, {series: all}), mi = M.measures.length > 1 ? trendMeasure : 0, el = document.getElementById("trend");
   const look = seriesLook(M0.tiers ? M0.tiers[tier] : M0.series), span = trendSpan(M, mi);
   const nowV = s => { const p = valueAt(s, TODAY, mi); return p ? pv(p, mi) : undefined; };  // undefined: 아직 없음, null: 미게시
   // 범례(3번 그래프): 렛서 경로 선을 앞에, 나머지는 현재 값이 싼 순서. 올리면 그 선이 진해진다(drawPrice).
   const lg = M.series.map((s, i) => [s, i]).sort(([a], [b]) => !!b.letsur - !!a.letsur || (nowV(a) ?? Infinity) - (nowV(b) ?? Infinity)).map(([s, i]) => { const v = nowV(s);
-    return `<span data-k="${i}"${s.letsur ? ' class="lr"' : ""} title="${esc(plain(s.name))}"><i style="border-color:${look.soft(s)}"></i>${s.letsur ? `<b>렛서 · ${esc(look.name(s))}</b>` : esc(look.name(s))}<small class="tn">${v === undefined ? "아직 없음" : v == null ? "미게시" : money2(v)}${span.out.has(s) ? " · 위쪽 범위 밖" : ""}${s.obsOnly ? " · 관측" : ""}</small></span>`; }).join("");
+    const cls = [s.letsur ? "lr" : "", s.ref ? "ref" : ""].filter(Boolean).join(" ");
+    return `<span data-k="${i}"${cls ? ` class="${cls}"` : ""} title="${esc(plain(s.name) + (s.ref ? " · 비교 제외: " + s.refWhy : ""))}"><i style="border-color:${look.soft(s)}"></i>${s.letsur ? `<b>렛서 · ${esc(look.name(s))}</b>` : esc(look.name(s))}<small class="tn">${v === undefined ? "아직 없음" : v == null ? "미게시" : money2(v)}${span.out.has(s) ? " · 위쪽 범위 밖" : ""}${s.obsOnly ? " · 관측" : ""}${s.est ? " · 정밀도 추정" : ""}${s.ref ? ` · 비교 제외(${esc(s.ref)})` : ""}</small></span>`; }).join("");
   const said = M0.letsurRoutes || [];
   el.innerHTML = `<div class="th"><h2>가격 추이</h2><span class="mname">${esc(M.name)}</span><span class="unit">${esc(M.unit)}${M.real ? " · 실제" : " · 시연 데이터"}</span></div>
     <div class="tctl"><span class="tlab" id="tl-rng">기간</span><span class="seg" role="group" aria-labelledby="tl-rng" data-pick="rng">${T_RANGES.map(([k, l]) => `<button type="button" data-rng="${k}" aria-pressed="${k === trendRange}">${l}</button>`).join("")}</span>
       ${tierKeys.length ? `<span class="tlab" id="tl-tier">가격 조건</span><span class="seg" role="group" aria-labelledby="tl-tier" data-pick="tier">${tierKeys.map(k => `<button type="button" data-tier="${esc(k)}" aria-pressed="${k === tier}" title="${esc((M.conds || {})[k] || k)}">${esc(k)}</button>`).join("")}</span>` : ""}
       ${M.measures.length > 1 ? `<span class="tlab" id="tl-meas">항목</span><span class="seg" role="group" aria-labelledby="tl-meas" data-pick="meas">${M.measures.map((m, i) => `<button type="button" data-meas="${i}" aria-pressed="${i === mi}">${m}</button>`).join("")}</span>` : ""}</div>
     ${(down => down.length ? `<p class="hwarn" role="status">이 모델의 출처 ${down.length}곳이 최근 수집에 실패했습니다(${down.map(x => `${esc(x.ch)} ${md(x.since)}부터`).join(", ")}). 실패한 기간의 선은 마지막 값을 이은 것이라 '변화 없음'으로 읽으면 안 됩니다.</p>` : "")(HEALTH.failing.filter(x => x.model === trendModel))}
-    <div class="cmpbar"><b>비교 조건</b><span>${esc(comparisonKeyText(M, mi, tier))}</span>${cmp.excluded.length ? `<span class="cmpwarn">엄격 비교에서 참고 선 ${cmp.excluded.length}개 뺌</span>` : onlyRef ? `<span class="cmpwarn">같은 조건으로 확인된 선이 없어 참고 선을 그대로 보임</span>` : ""}
-      <span class="cmpmode" role="group" aria-label="비교 모드"><button type="button" data-cmp="strict" aria-pressed="${trendCompare === "strict"}">엄격 비교</button><button type="button" data-cmp="all" aria-pressed="${trendCompare === "all"}">전체 관측</button></span></div>
+    <div class="cmpbar"><b>비교 조건</b><span>${esc(comparisonKeyText(M, mi, tier))}</span>${refs.length ? `<span class="cmpwarn">비교 제외 ${refs.length}개는 점선, 최저에서 뺌</span>` : ""}</div>
     <div class="tstats">${trendStats(M, mi, look)}</div>
     <div class="lg">${look.via ? `<span class="via">${esc(look.via)} 하위 공급자</span>` : ""}${lg}</div>${said.length ? `<p class="lrn"><b>렛서 경로</b>${said.map(esc).join(" / ")}</p>` : ""}<div class="tplot" id="tplot"></div>
     <div class="tfoot"><p class="tnote">${overlapNote(M, mi, look)}올리면 그 날 가격을 싼 순서로(같은 조건 최저 대비), 점을 누르면 상세로 이동</p>
-      <details class="tv"><summary>출처·설명 · 표로 보기</summary><p>${esc(M.note)}</p>${cmp.excluded.length ? `<p class="cmpwarn">엄격 비교에서 뺀 참고 선(조건이 정해지지 않은 선: 표시 최소가·중단 등 비교에서 빠진 상태의 엔드포인트):${esc(cmp.excluded.map(x => plain(x.name)).join(", "))}. 전체 관측에서 볼 수 있습니다.</p>` : ""}<div id="trend-tv"></div></details></div>`;
+      <details class="tv"><summary>출처·설명 · 표로 보기</summary><p>${esc(M.note)}</p>${refs.length ? `<p class="cmpwarn">비교 제외 선(점선): ${esc(refs.map(x => `${plain(x.name)} · ${x.refWhy}`).join(", "))}. 공급사 비교 표가 같은 이유로 비교에서 빼는 선이라 그래프 안 최저·숫자 칸·말풍선의 최저 대비에서 뺐습니다.</p>` : ""}<div id="trend-tv"></div></details></div>`;
   // 선택 묶음(2026-10-30 박건 결정: 묶음마다 한 줄에 이름과 테두리). 한 줄에 다 들어가지 않는 묶음(gpt-6-astra의 가격 조건 10개 등)은
   // 누르면 펼쳐지는 목록으로 바꾼다. 화면 폭이 바뀌면 renderPrice가 다시 그려 다시 잰다.
   el.querySelectorAll(".seg[data-pick]").forEach(g => { if (g.scrollWidth <= g.clientWidth + 1) return;
@@ -1341,10 +1339,10 @@ function drawPrice(M, mi, look, span){
       if (i && prev === v) return;
       const fut = day(p[0]) > TODAY, kind = i === 0 ? (se.obsOnly ? "관측" : "시작") : fut ? "예정" : "변경";
       const pc = prev != null && i ? (v - prev) / prev * 100 : null;
-      const t2 = `${M.measures[mi]} ${pc != null ? money2(prev) + " → " : ""}${money2(v)}${pc != null ? ` (직전 대비 ${fmtPct(pc)})` : ""} · ${kind}${p[2] ? "\n누르면 상세로 이동" : ""}`;
+      const t2 = `${M.measures[mi]} ${pc != null ? money2(prev) + " → " : ""}${money2(v)}${pc != null ? ` (직전 대비 ${fmtPct(pc)})` : ""} · ${kind}${se.ref ? `\n비교 제외: ${se.refWhy}` : ""}${p[2] ? "\n누르면 상세로 이동" : ""}`;
       g += `<g class="pt" tabindex="0" data-t1="${esc(mdt(p[0]) + " · " + look.name(se))}" data-t2="${esc(t2)}"${id}><circle r="12" cx="${x(p[0])}" cy="${y(v)}" fill="transparent"/><circle class="v${fut ? " fut" : ""}" r="${se.letsur ? 4.5 : p[2] ? 4 : 3}" cx="${x(p[0])}" cy="${y(v)}"/></g>`;
     });
-    return `<g class="ln${se.letsur ? " lr" : ""}" data-k="${si}" style="--lc:${look.soft(se)};--fc:${look.color(se)}">${g}</g>`; };
+    return `<g class="ln${se.letsur ? " lr" : ""}${se.ref ? " ref" : ""}" data-k="${si}" style="--lc:${look.soft(se)};--fc:${look.color(se)}">${g}</g>`; };
   const lines = M.series.map((se, si) => se.letsur ? "" : group(se, si)).join("") + M.series.map((se, si) => se.letsur ? group(se, si) : "").join("");
   // 오른쪽 끝 글자(3번 그래프): 렛서 경로 값과 그래프 안 최저 값만
   let ends = "";
@@ -1378,7 +1376,7 @@ function drawPrice(M, mi, look, span){
     const priced = rows.filter(o => o.v != null && !o.se.ref), low = priced.length ? Math.min(...priced.map(o => o.v)) : null;
     rows.sort((a, b) => (a.v == null) - (b.v == null) || a.v - b.v);
     tip.innerHTML = `<b>${esc(d)} (${wd(d)})${d === TODAY ? " · 오늘" : d > TODAY ? " · 예정 포함" : ""}</b><small>싼 순서 · 같은 조건 최저 대비</small><table>${rows.map(o =>
-      `<tr${o === near ? ' class="on"' : ""}><td><i style="background:${o === near || o.se.letsur ? look.color(o.se) : look.soft(o.se)}"></i>${esc(look.name(o.se))}${o.se.letsur ? '<span class="lrt">렛서</span>' : ""}${o.unk ? "<em>시작 시점 미상</em>" : ""}</td><td class="n">${o.v == null ? "미게시" : money2(o.v) + (o.v > yMax ? " ↑" : "")}</td><td class="d">${o.v == null || priced.length < 2 ? "" : o.se.ref ? "참고" : o.v === low ? "최저" : relTxt(o.v, low)}</td></tr>`).join("")}</table>`;
+      `<tr${o === near ? ' class="on"' : ""}><td><i style="background:${o === near || o.se.letsur ? look.color(o.se) : look.soft(o.se)}"></i>${esc(look.name(o.se))}${o.se.letsur ? '<span class="lrt">렛서</span>' : ""}${o.unk ? "<em>시작 시점 미상</em>" : ""}${o.se.ref ? `<em>${esc(o.se.ref)}</em>` : ""}</td><td class="n">${o.v == null ? "미게시" : money2(o.v) + (o.v > yMax ? " ↑" : "")}</td><td class="d">${o.v == null ? "" : o.se.ref ? "비교 제외" : priced.length < 2 ? "" : o.v === low ? "최저" : relTxt(o.v, low)}</td></tr>`).join("")}</table>`;
     tip.hidden = false;
     const cx = x(d) * (r.width / W), tw = tip.offsetWidth;
     tip.style.left = Math.max(0, cx + 16 + tw > box.clientWidth ? cx - 16 - tw : cx + 16) + "px";
@@ -1699,7 +1697,6 @@ document.addEventListener("click", ev => {
   const md_ = ev.target.closest("[data-model]"); if (md_) { setPage("models", md_.dataset.model); return; }
   const tt = ev.target.closest("[data-tier]"); if (tt) { trendTier = tt.dataset.tier; renderPrice(); return; }
   const ms = ev.target.closest("[data-meas]"); if (ms) { trendMeasure = +ms.dataset.meas; renderPrice(); return; }
-  const cm = ev.target.closest("[data-cmp]"); if (cm) { trendCompare = cm.dataset.cmp; renderPrice(); return; }
   const rg = ev.target.closest("[data-rng]"); if (rg) { trendRange = rg.dataset.rng; renderPrice(); return; }
   const tr = ev.target.closest("[data-trend]"); if (tr) { setPage("models", tr.dataset.trend, tr.dataset.tview || "chart"); return; }
   const mn = ev.target.closest("[data-mon]");
