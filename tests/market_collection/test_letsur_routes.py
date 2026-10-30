@@ -1,13 +1,16 @@
-"""LETSUR route re-detection: classification rules, merge and diff, request shapes, key masking.
+"""LETSUR route re-detection: classification rules, a model's samples together, merge and diff, request shapes, key masking.
 
-Every answer is small hand-written JSON shaped like the gateway's (made-up ids and names); nothing touches the network.
+Every answer is small hand-written JSON shaped like the gateway's (made-up ids, names and deployment headers); nothing touches
+the network.
 """
 
 import copy
 import io
 import json
+import threading
 import urllib.error
 import urllib.parse
+from collections import Counter
 from pathlib import Path
 
 import pytest
@@ -67,28 +70,20 @@ def test_the_header_holds_for_every_endpoint_and_beats_what_the_body_looks_like(
 
 
 BEDROCK_USAGE = {"prompt_tokens": 10, "completion_tokens": 5, "cache_creation_input_tokens": 0, "cache_read_input_tokens": 0}
-BEDROCK_NOTE = "응답 형식이 Bedrock을 거친 GPT 응답과 같음(chatcmpl-uuid id, cache_creation_input_tokens)"
 
 
-def test_a_bedrock_shaped_answer_without_a_named_header_is_only_an_inference():
-    body = chat("chatcmpl-" + UUID, usage=BEDROCK_USAGE)
-    assert classify("glm-x", chat=answer(body, model_id="0" * 64)) == ("aws_bedrock", None, "inferred", BEDROCK_NOTE)
-    assert classify("gpt-x", chat=answer(body))[:3] == ("aws_bedrock", None, "inferred")
+def test_answers_that_only_fit_a_route_name_none_and_keep_what_was_seen():
+    """Earlier versions inferred a route from these shapes; a guess is no longer recorded (2026-10-30)."""
+    bedrock_like = chat("chatcmpl-" + UUID, usage=BEDROCK_USAGE)  # what glm-4.7 and glm-5 answered
+    assert classify("glm-x", chat=answer(bedrock_like, model_id="0" * 64)) == (None, None, None, "chat 200: id 형식 chatcmpl-<uuid>, 경로 표시 없음")
+    assert classify("gpt-x", chat=answer(bedrock_like))[:3] == (None, None, None)
+    assert classify("gpt-x", chat=answer(chat())) == (None, None, None, "chat 200: id 형식 chatcmpl-<29자>, 경로 표시 없음")  # no Azure field
+    assert classify("o3-x", chat=answer(chat()))[:3] == (None, None, None)
+    image = {"created": 1, "data": [{"b64_json": "x", "revised_prompt": None}], "usage": {"total_tokens": 2}}
+    assert classify("gpt-image-2", images=answer(image)) == (None, None, None, "images 200: 경로 표시 없음")
 
 
-@pytest.mark.parametrize("ident, usage", [
-    ("chatcmpl-" + UUID, {"cache_read_input_tokens": 0}),                 # one of the two fields
-    ("chatcmpl-" + UUID, {"cache_creation_input_tokens": 0}),
-    ("chatcmpl-" + UUID, {"prompt_tokens": 10, "prompt_tokens_details": {"cached_tokens": 0}}),  # the glm-5.2 shape
-    (UUID, BEDROCK_USAGE),                                                # a bare uuid is another gateway family
-    ("chatcmpl-Edq2nQri2DqJDktB7VHa39J0nlEPX", BEDROCK_USAGE),            # OpenAI's own id shape (inferred as OpenAI for gpt-*)
-    ("gen_01ABCDEFGHJKMNPQRSTVWXYZ12", BEDROCK_USAGE),
-])
-def test_the_bedrock_shape_needs_the_gateways_uuid_id_and_both_usage_fields(ident, usage):
-    assert classify("glm-x", chat=answer(chat(ident, usage=usage)))[:3] == (None, None, None)
-
-
-def test_a_mark_that_names_a_route_beats_the_bedrock_shape():
+def test_a_mark_that_names_a_route_is_still_read_on_those_shapes():
     shaped = chat("chatcmpl-" + UUID, usage=BEDROCK_USAGE)
     assert classify("gpt-x", chat=answer({**shaped, "prompt_filter_results": []}))[:3] == ("azure_foundry", None, "observed")
     assert classify("gpt-x", chat=answer({**shaped, "billing": {"payer": "developer"}}))[:3] == ("openai_direct", None, "observed")
@@ -96,10 +91,10 @@ def test_a_mark_that_names_a_route_beats_the_bedrock_shape():
     assert classify("gpt-x", chat=answer(shaped), responses=answer(billing))[:3] == ("openai_direct", None, "observed")
 
 
-def test_a_bedrock_shaped_chat_answer_still_gets_the_responses_probe_that_could_settle_it():
+def test_an_unmarked_chat_answer_still_gets_the_responses_probe_that_could_settle_it():
     gateway = FakeGateway({"chat": answer(chat("chatcmpl-" + UUID, usage=BEDROCK_USAGE)), "responses": answer({"id": "resp_" + "x" * 40, "object": "response"})})
     responses = lr.probe(gateway, "gpt-x", "chat", False)
-    assert gateway.calls == ["chat", "responses"] and lr.classify("gpt-x", responses)[:3] == ("aws_bedrock", None, "inferred")
+    assert gateway.calls == ["chat", "responses"] and lr.classify("gpt-x", responses)[:3] == (None, None, None)
 
 
 @pytest.mark.parametrize("extra", [
@@ -140,13 +135,27 @@ def test_a_gateways_own_marks_beat_content_filter_fields_passed_through():
     assert classify("m", chat=answer(body))[0] == "vercel_ai_gateway"
 
 
-def test_gemini_answer_is_google_direct_without_telling_ai_studio_from_vertex():
-    body = chat("x" * 22, vertex_ai_grounding_metadata=[], vertex_ai_safety_results=[])
-    assert classify("gemini-x", chat=answer(body)) == ("google_direct", None, "observed", "Gemini 응답(AI Studio와 Vertex는 구별하지 못함)")
+GEMINI_REFUSAL = {"type": "invalid_parameter", "title": "Invalid Parameter", "status": 400, "detail": "detail not copied"}
+GEMINI_BODY = chat("x" * 22, vertex_ai_grounding_metadata=[], vertex_ai_safety_results=[])
+REFUSED = "Gemini API가 Vertex 전용 안전 설정 칸(method)을 거절함"
+
+
+def test_the_gemini_api_refuses_the_vertex_only_safety_field_and_vertex_takes_it():
+    assert classify("gemini-x", chat=answer(GEMINI_REFUSAL, 400)) == ("google_direct", None, "observed", REFUSED)
+    assert classify("gemini-x", chat=answer(GEMINI_BODY)) == ("google_vertex", None, "observed", "Vertex 전용 안전 설정 칸(method)을 받아들임")
+
+
+def test_the_gemini_rules_hold_only_for_the_request_that_carried_the_field():
+    assert classify("glm-x", chat=answer(GEMINI_REFUSAL, 400)) == (None, None, None, "chat 400 invalid_parameter")  # asked without it
+    assert classify("m", chat=answer(GEMINI_BODY))[0] is None  # without the field the Gemini shape fits AI Studio and Vertex alike
+    assert classify("gemini-x", chat=answer({"error": {"code": "validation_error"}}, 400))[0] is None  # another refusal
+    assert classify("gemini-x", embeddings=answer(GEMINI_REFUSAL, 400))[0] is None
+    assert classify("gemini-x", chat=answer(vercel_body(finalProvider="google")))[0] == "vercel_ai_gateway"  # the gateways take it
 
 
 def test_vertex_fields_need_a_gemini_style_id():
     assert classify("m", chat=answer(chat("chatcmpl-" + UUID, vertex_ai_safety_results=[])))[0] is None
+    assert classify("gemini-x", chat=answer(chat("chatcmpl-" + UUID, vertex_ai_safety_results=[])))[0] is None
 
 
 @pytest.mark.parametrize("ident, route", [("msg_011CgU28vnYHk9rwjN2bBdHG", "anthropic_direct"),
@@ -170,13 +179,7 @@ def test_billing_payer_in_an_openai_response_object_is_openai_direct():
     assert classify("gpt-x", chat=answer(translated)) == ("openai_direct", None, "observed", "")
 
 
-def test_a_chat_answer_with_no_azure_field_is_only_an_inference_for_an_openai_model():
-    assert classify("gpt-x", chat=answer(chat())) == ("openai_direct", None, "inferred", "Azure 콘텐츠 필터 필드가 없음(필터를 끈 Azure 배포도 같아 보임)")
-    assert classify("o3-x", chat=answer(chat()))[2] == "inferred"
-    assert classify("glm-x", chat=answer(chat()))[:3] == (None, None, None)  # the same id shape from another maker proves nothing
-
-
-def test_the_responses_answer_settles_what_the_chat_answer_only_suggested():
+def test_the_responses_answer_settles_what_the_chat_answer_left_open():
     billing = {"id": "resp_" + "x" * 40, "object": "response", "billing": {"payer": "developer"}}
     assert classify("gpt-x", chat=answer(chat()), responses=answer(billing)) == ("openai_direct", None, "observed", "")
     filters = {"id": "resp_" + "x" * 40, "object": "response", "content_filters": [{"blocked": False}]}
@@ -194,9 +197,9 @@ def test_video_and_unrequested_images_stay_unresolved_with_the_reason():
     assert lr.classify("gpt-image-2", {}) == (None, None, None, "이미지 생성은 비용이 들어 호출하지 않음")
 
 
-def test_an_image_answer_without_azure_fields_is_an_inference_and_with_them_an_observation():
+def test_an_image_answer_shows_azure_only_through_its_filter_fields():
     plain = {"created": 1, "data": [{"b64_json": "x", "revised_prompt": None}], "usage": {"total_tokens": 2}}
-    assert classify("gpt-image-2", images=answer(plain))[:3] == ("openai", None, "inferred")  # the registry's image route name
+    assert classify("gpt-image-2", images=answer(plain))[:3] == (None, None, None)  # no Azure field is no proof of OpenAI
     filtered = {**plain, "data": [{"b64_json": "x", "content_filter_results": FILTERS}]}
     assert classify("gpt-image-2", images=answer(filtered)) == ("azure_foundry", None, "observed", NO_REGION)
 
@@ -238,6 +241,98 @@ def test_answered_is_false_for_silence_and_for_trouble_that_says_nothing_about_t
     assert lr.answered({"chat": answer(None, 500), "responses": answer(chat())})
     assert lr.answered({"chat": answer(None, 404), "responses": answer(None, 404)})
     assert not lr.answered({"chat": silent, "responses": answer(None, 404)})
+
+
+# ---- a model's samples together ----------------------------------------------------------------------------------------
+
+SILENT_ANSWER = {"status": None, "headers": {}, "body": None, "error": "TimeoutError"}
+BILLING = {"id": "resp_" + "x" * 40, "object": "response", "billing": {"payer": "developer"}}
+B, V, O = "b" * 64, "v" * 64, "o" * 64  # deployment headers: usually a hash, the same on every answer of one deployment
+
+
+def test_samples_that_land_on_different_deployments_give_every_route_with_its_count():
+    alpha, beta = vercel_body(resolvedProvider="alpha", finalProvider="alpha"), vercel_body(resolvedProvider="alpha", finalProvider="beta")
+    samples = [{"chat": answer(GEMINI_REFUSAL, 400)}, {"chat": answer(alpha, model_id=V)}, {"chat": answer(beta, model_id=V)},
+               {"chat": answer(alpha, model_id=V)}, {"chat": answer(chat("gen-1700000000-a", provider="Baidu"), model_id=O)},
+               {"chat": answer(chat("gen-1700000000-b", provider="Alibaba"), model_id=O)}]
+    result = lr.summarize("gemini-x", samples)
+    assert result["routes"] == {"google_direct": REFUSED,
+                                "openrouter": "이번 확인의 하위 공급자 Alibaba·Baidu(요청마다 바뀔 수 있음)",
+                                "vercel_ai_gateway": "이번 확인의 하위 공급자 alpha·beta(계획 alpha, 요청마다 바뀔 수 있음)"}
+    assert result["tally"] == {"google_direct": 1, "openrouter": 2, "vercel_ai_gateway": 3} and list(result["tally"])[0] == "google_direct"
+    assert (result["answered"], result["checked"], result["unidentified"]) == (True, True, False)
+    assert lr.summarize("gemini-x", samples[::-1])["routes"] == result["routes"]  # the order of the answers does not matter
+
+
+def test_deployments_that_answered_without_a_mark_are_counted_by_their_header():
+    unmarked, other = chat("chatcmpl-" + UUID), chat("Unzhari6KuzI2roP_K26EQ")
+    vercel = vercel_body(finalProvider="alpha")
+    samples = [{"chat": answer(vercel, model_id=V)}, {"chat": answer(unmarked, model_id=B)}, {"chat": answer(unmarked, model_id=B)},
+               {"chat": answer(other, model_id=O)}, {"chat": answer(vercel, model_id=V)}, {"chat": answer(unmarked, model_id=B)}]
+    result = lr.summarize("glm-x", samples)
+    assert result["routes"] == {"vercel_ai_gateway": "이번 확인의 하위 공급자 alpha(요청마다 바뀔 수 있음)"}
+    assert result["tally"] == {"vercel_ai_gateway": 2, "unresolved": 4} and list(result["tally"]) == ["vercel_ai_gateway", "unresolved"]
+    assert result["unidentified"] and result["note"] == (
+        "배포 3개 중 2개 경로 표시 없음: chat 200: id 형식 <22자>, 경로 표시 없음; chat 200: id 형식 chatcmpl-<uuid>, 경로 표시 없음")
+
+
+def test_a_deployment_that_one_of_its_answers_identified_is_known_where_another_showed_nothing():
+    samples = [{"chat": answer(chat(), model_id=O), "responses": answer(BILLING, model_id=O)},  # the Responses answer settled it
+               {"chat": answer(chat(), model_id=O), "responses": answer(BILLING, model_id=V)}]
+    result = lr.summarize("gpt-x", samples)
+    assert (result["routes"], result["tally"], result["unidentified"]) == ({"openai_direct": ""}, {"openai_direct": 2}, False)
+    # an answer without the header names no deployment, so nothing ties it to the one the Responses answer showed
+    assert lr.summarize("gpt-x", [{"chat": answer(chat()), "responses": answer(BILLING)}])["note"] \
+        == "배포 1개 중 1개 경로 표시 없음: chat 200: id 형식 chatcmpl-<29자>, 경로 표시 없음"
+
+
+def test_errors_silence_and_nothing_asked_each_say_why_in_the_note():
+    errors = lr.summarize("m", [{"chat": answer(None, 404)}, {"chat": answer({"error": {"code": "model_not_found"}}, 404)}])
+    assert (errors["routes"], errors["unidentified"], errors["note"]) == ({}, True, "chat 404; chat 404 model_not_found")
+    quiet = lr.summarize("m", [{"chat": SILENT_ANSWER}, {"chat": answer(None, 503)}])
+    assert (quiet["answered"], quiet["checked"], quiet["unidentified"], quiet["tally"]) == (False, False, False, {"no answer": 2})
+    assert quiet["note"] == "chat 503; chat 응답 없음(TimeoutError)"
+    video = lr.summarize("kling-x", [{}])
+    assert (video["answered"], video["checked"], video["unidentified"], video["tally"], video["note"]) == (True, False, False, {}, lr.NOT_PROBED["video"])
+    mixed = lr.summarize("m", [{"chat": answer(vercel_body(finalProvider="alpha"), model_id=V)}, {"chat": SILENT_ANSWER}])
+    assert mixed["tally"] == {"vercel_ai_gateway": 1, "no answer": 1} and not mixed["unidentified"]  # silence is no finding
+    partial = lr.summarize("gpt-x", [{"chat": answer(chat(), model_id=O), "responses": SILENT_ANSWER}])
+    assert partial["note"] == "배포 1개 중 1개 경로 표시 없음: chat 200: id 형식 chatcmpl-<29자>, 경로 표시 없음; responses 응답 없음(TimeoutError)"
+
+
+def bedrock_answers(standard, bogus, unknown):
+    """PERFORMANCE answers by the deployment header that answered each request; None is a refusal from every deployment."""
+    def one(header):
+        return answer(chat("chatcmpl-" + UUID), model_id=header) if header else answer({"type": "invalid_parameter"}, 400)
+    return {"standard": [one(h) for h in standard], "bogus": [one(h) for h in bogus], "unknown": [one(h) for h in unknown]}
+
+
+def test_a_deployment_that_answers_standard_and_an_unknown_field_but_never_bogus_is_bedrock():
+    assert lr.bedrock({B}, bedrock_answers([B, V, B, B, V, B], [V] * 6, [B, B, V, B, V, V])) == {B}  # the gateway gave bogus to V
+    assert lr.bedrock({B}, bedrock_answers([B] * 6, [None] * 6, [B] * 6)) == {B}  # the model's only deployment refused every bogus
+
+
+def test_the_bedrock_check_needs_every_part_of_the_evidence():
+    assert lr.bedrock({B}, bedrock_answers([B] * 6, [B, V, V, V, V, V], [B] * 6)) == set()  # it took bogus once: any value goes
+    assert lr.bedrock({B}, bedrock_answers([B] * 6, [V] * 6, [V] * 6)) == set()  # never seen taking the unknown field
+    assert lr.bedrock({B}, bedrock_answers([V] * 6, [V] * 6, [B] * 6)) == set()  # never seen taking standard
+    # 2 of 12 answers: it would miss six bogus draws by chance a third of the time
+    assert lr.bedrock({B}, bedrock_answers([B, V, V, V, V, V], [V] * 6, [B, V, V, V, V, V])) == set()
+    assert lr.bedrock({B}, {**bedrock_answers([B] * 6, [], [B] * 6), "bogus": [SILENT_ANSWER] * 6}) == set()  # no bogus reached it
+
+
+def test_only_unmarked_chat_answers_with_the_gateways_own_id_are_bedrock_candidates():
+    samples = [{"chat": answer(chat("chatcmpl-" + UUID), model_id=B)}, {"chat": answer(chat("chatcmpl-" + UUID))},  # no header
+               {"chat": answer(chat(), model_id=O)}, {"chat": answer(chat("chatcmpl-" + UUID), model_id="m-azure-uk-south")},
+               {"embeddings": answer({"id": "chatcmpl-" + UUID, "data": []}, model_id=V)}]
+    assert lr.uuid_deployments("glm-x", samples) == {B}
+
+
+def test_a_deployment_the_bedrock_check_showed_counts_as_aws_bedrock():
+    samples = [{"chat": answer(chat("chatcmpl-" + UUID), model_id=B)}, {"chat": answer(vercel_body(finalProvider="bedrock"), model_id=V)}]
+    result = lr.summarize("glm-x", samples, {B})
+    assert result["routes"] == {"aws_bedrock": lr.BEDROCK_NOTE, "vercel_ai_gateway": "이번 확인의 하위 공급자 bedrock(요청마다 바뀔 수 있음)"}
+    assert not result["unidentified"] and lr.summarize("glm-x", samples)["unidentified"]
 
 
 # ---- what to ask -------------------------------------------------------------------------------------------------------
@@ -337,7 +432,19 @@ def test_each_endpoint_gets_its_own_request_shape_and_the_key_stays_in_headers()
 def test_a_gemini_image_model_is_asked_not_to_draw():
     opener = FakeOpener(lambda path, body: (200, {}, {}))
     lr.Gateway(BASE, KEY, 5, opener).probe("chat", "gemini-3-pro-image")
-    assert "Do not draw" in opener.requests[0]["body"]["messages"][0]["content"]
+    assert "Do not draw" in opener.requests[0]["body"]["messages"][0]["content"] and "safety_settings" in opener.requests[0]["body"]
+
+
+def test_only_a_gemini_models_chat_request_carries_the_vertex_only_safety_setting():
+    opener = FakeOpener(lambda path, body: (200, {}, {}))
+    gateway = lr.Gateway(BASE, KEY, 5, opener)
+    for model in ("gemini-2.5-flash", "glm-5", "gpt-5.4", "deepseek-v4-pro"):
+        gateway.probe("chat", model)
+    gateway.probe("responses", "gemini-2.5-flash")
+    sent = [r["body"] for r in opener.requests]
+    assert sent[0] == {"model": "gemini-2.5-flash", "messages": [{"role": "user", "content": "Reply with: ok"}], "max_tokens": 16,
+                       "safety_settings": [{"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_ONLY_HIGH", "method": "SEVERITY"}]}
+    assert not any("safety_settings" in body for body in sent[1:])
 
 
 def test_key_and_base_url_are_masked_and_long_text_is_cut_on_receipt():
@@ -377,10 +484,13 @@ def test_a_dead_connection_while_reading_an_error_body_is_still_no_answer():
 
 
 def test_a_refused_key_stops_the_run_and_a_redirect_is_never_followed():
-    gateway = lr.Gateway(BASE, KEY, 5, FakeOpener(lambda path, body: (401, {}, {"error": {"code": "invalid_api_key"}})))
+    opener = FakeOpener(lambda path, body: (401, {}, {"error": {"code": "invalid_api_key"}}))
+    gateway = lr.Gateway(BASE, KEY, 5, opener)
     with pytest.raises(lr.GatewayError) as refused:
         gateway.probe("chat", "m")
-    assert KEY not in str(refused.value)
+    with pytest.raises(lr.GatewayError):
+        gateway.probe("chat", "other")  # refused without being sent: other threads stop too
+    assert KEY not in str(refused.value) and len(opener.requests) == 1
     assert any(isinstance(handler, lr._NoRedirect) for handler in lr.Gateway(BASE, KEY, 5).opener.handlers)
     assert lr._NoRedirect().redirect_request(None, None, 302, "Found", {}, "https://elsewhere.test/") is None
 
@@ -398,140 +508,163 @@ def record(model, route, endpoint=None, basis="observed", **more):
     return {"model_id": model, "route_id": route, "endpoint_id": endpoint, "basis": basis, **more}
 
 
-def result(route=None, endpoint=None, basis=None, note="", answered=True):
-    return {"route_id": route, "endpoint_id": endpoint, "basis": basis, "note": note, "answered": answered}
+def result(*routes, note="", answered=True, checked=None, unidentified=None):
+    """A model's result as summarize gives it; routes are (route_id, note) pairs. By default a model that answered but showed
+    no route has a deployment that answered without its mark."""
+    routes = dict(routes)
+    return {"routes": routes, "tally": {}, "answered": answered, "checked": answered if checked is None else checked,
+            "unidentified": answered and not routes if unidentified is None else unidentified, "note": note}
 
 
 DAY, OLD = "2026-10-29", "2026-10-28"
-SEEN = "이번 호출의 하위 공급자 Example Host(요청마다 바뀔 수 있음)"
+SEEN = "이번 확인의 하위 공급자 Example Host(요청마다 바뀔 수 있음)"
 HERE = "Bedrock 배포 지역 us-east-1"
 SILENT = "chat 응답 없음(TimeoutError)"
+UNKNOWN = "배포 2개 중 1개 경로 표시 없음: chat 200: id 형식 chatcmpl-<uuid>, 경로 표시 없음"
 CURRENT = {
     "is_demo": False, "purpose": "경로 파일", "basis_note": "note",
     "records": [
         record("a", "openrouter", note="hand written"),                           # seen again, nothing new to say: the note stays
-        record("b", "azure_foundry", checked_at=OLD),                             # now on Bedrock: the Azure record stays, older-dated
+        record("b", "azure_foundry", checked_at=OLD),                             # now on Bedrock only: the Azure record goes
         record("c", "google_direct", basis="settings"), record("c", "openrouter", basis="settings"),
-        record("d", "anthropic_direct", checked_at=OLD),                          # answers, but shows no route now
-        record("e", "vercel_ai_gateway"),                                         # no answer at all
-        record("f", "openai_direct", basis="inferred", note="guess", checked_at=OLD),   # inferred, now observed
-        record("g", "openai_direct", checked_at=OLD),                             # observed, now seen only as inferred
+        record("d", "anthropic_direct", checked_at=OLD),                          # answers, but shows no route now: kept
+        record("e", "vercel_ai_gateway"),                                         # no answer at all: kept
+        record("f", "openai_direct", basis="inferred", note="guess", checked_at=OLD),   # an earlier version's guess, now observed
+        record("g", "openai_direct", checked_at=OLD), record("g", "azure_foundry", checked_at=OLD),  # both seen again
         record("claude-haiku-4-5", "anthropic_direct"),
         record("m", "fal", basis="manual", note="by hand"),
         record("p", "openrouter", endpoint="Host", checked_at=OLD),               # an endpoint a person put there stays
+        record("q", "aws_bedrock", basis="inferred", note="Bedrock 모양", checked_at=OLD),  # answered without a mark: the guess goes
+        record("r", "BytePlus ModelArk", basis="inferred", note="id와 단가"),       # a video model is asked nothing: the guess stays
+        record("s", "fal", basis="manual"), record("s", "vercel_ai_gateway", checked_at=OLD),
     ],
-    "unresolved": {"u": "human note", "w": "old note", "z": "old note"},
+    "unresolved": {"u": "human note", "w": "old note", "z": "old note", "k": "old note"},
 }
 RESULTS = {
-    "a": result("openrouter", None, "observed", ""),
-    "b": result("aws_bedrock", None, "observed", HERE),
-    "c": result("google_direct", None, "observed", "Gemini 응답(AI Studio와 Vertex는 구별하지 못함)"),
+    "a": result(("openrouter", "")),
+    "b": result(("aws_bedrock", HERE)),
+    "c": result(("google_direct", "Gemini API가 Vertex 전용 안전 설정 칸(method)을 거절함")),
     "d": result(note="chat 404 model_not_found"),
     "e": result(note=SILENT, answered=False),
-    "f": result("openai_direct", None, "observed", ""),
-    "g": result("openai_direct", None, "inferred", "guess again"),
-    "h": result("openrouter", None, "observed", SEEN),
-    "claude-haiku-4-5-20251001": result("anthropic_direct", None, "observed", ""),
-    "m": result("fal", None, "observed", ""),
-    "p": result("openrouter", None, "observed", SEEN),
+    "f": result(("openai_direct", "")),
+    "g": result(("azure_foundry", "Azure 배포 지역 uk-south"), ("openai_direct", "")),
+    "h": result(("openrouter", SEEN)),
+    "claude-haiku-4-5-20251001": result(("anthropic_direct", "")),
+    "k": result(("vercel_ai_gateway", SEEN), note=UNKNOWN, unidentified=True),  # a route and a deployment that showed none
+    "m": result(("fal", "")),
+    "p": result(("openrouter", SEEN)),
+    "q": result(note=UNKNOWN),
+    "r": result(note=lr.NOT_PROBED["video"], checked=False, unidentified=False),
+    "s": result(("openrouter", SEEN)),
     "u": result(note="new evidence"),
-    "v": result(note="chat 200: id 형식 chatcmpl-<uuid>, 경로 표시 없음"),
-    "w": result("openai_direct", None, "inferred", "guess"),
+    "v": result(note=UNKNOWN),
+    "w": result(("openrouter", SEEN)),
     "x": result(note=SILENT, answered=False),
     "z": result(note=SILENT, answered=False),
 }
 
 
-def test_merge_adds_new_routes_beside_the_old_ones_and_only_dates_the_routes_seen_again():
+def test_merge_keeps_what_the_run_saw_and_drops_the_observed_routes_it_did_not_see():
     before = copy.deepcopy(CURRENT)
     doc, diff = lr.merge(CURRENT, RESULTS, DAY)
     assert CURRENT == before  # the document it was given is not edited
     assert doc["records"] == [
         record("a", "openrouter", note="hand written", checked_at=DAY),           # re-seen: dated; an empty new note keeps the old one
-        record("b", "azure_foundry", checked_at=OLD),                             # not seen this run: stays with its own date
-        record("b", "aws_bedrock", note=HERE, checked_at=DAY),                    # a new route is a record of its own, next to the old
+        record("b", "aws_bedrock", note=HERE, checked_at=DAY),                    # the route seen now; the Azure one not seen is gone
         record("c", "google_direct", basis="settings"), record("c", "openrouter", basis="settings"),
-        record("d", "anthropic_direct", checked_at=OLD),
+        record("d", "anthropic_direct", checked_at=OLD),                          # no route identified: nothing proved against it
         record("e", "vercel_ai_gateway"),
-        record("f", "openai_direct", checked_at=DAY),                             # replaced by the observed record of the same route
-        record("g", "openai_direct", checked_at=OLD),                             # an inferred sighting does not touch an observed record
+        record("f", "openai_direct", checked_at=DAY),                             # where the guess was
+        record("g", "openai_direct", checked_at=DAY), record("g", "azure_foundry", note="Azure 배포 지역 uk-south", checked_at=DAY),
         record("claude-haiku-4-5", "anthropic_direct", checked_at=DAY),           # LETSUR's dated id maps to ours
         record("m", "fal", basis="manual", note="by hand"),                       # a person's record is never touched
         record("p", "openrouter", endpoint="Host", note=SEEN, checked_at=DAY),
+        record("r", "BytePlus ModelArk", basis="inferred", note="id와 단가"),
+        record("s", "fal", basis="manual"), record("s", "openrouter", note=SEEN, checked_at=DAY),
         record("h", "openrouter", note=SEEN, checked_at=DAY),                     # a model with no record yet goes to the end
-        record("w", "openai_direct", basis="inferred", note="guess", checked_at=DAY)]
+        record("k", "vercel_ai_gateway", note=SEEN, checked_at=DAY),
+        record("w", "openrouter", note=SEEN, checked_at=DAY)]
     assert (doc["is_demo"], doc["purpose"], doc["basis_note"]) == (False, "경로 파일", "note") and list(doc)[:3] == ["is_demo", "purpose", "basis_note"]
-    assert diff["new_route"] == [("b", ("aws_bedrock", None, "observed"), [("azure_foundry", None, "observed", OLD)]),
-                                 ("h", ("openrouter", None, "observed"), []), ("w", ("openai_direct", None, "inferred"), [])]
-    assert diff["upgraded"] == [("f", "openai_direct")] and diff["re_seen"] == ["a", "claude-haiku-4-5", "p"]
-    assert diff["older"] == [("b", ("azure_foundry", None, "observed"), OLD, ""), ("d", ("anthropic_direct", None, "observed"), OLD, "chat 404 model_not_found"),
-                             ("e", ("vercel_ai_gateway", None, "observed"), None, SILENT),
-                             ("g", ("openai_direct", None, "observed"), OLD, "inferred only this run")]
+    assert diff["new_route"] == [("b", ("aws_bedrock", None, "observed"), []), ("f", ("openai_direct", None, "observed"), []),
+                                 ("h", ("openrouter", None, "observed"), []), ("k", ("vercel_ai_gateway", None, "observed"), []),
+                                 ("s", ("openrouter", None, "observed"), [("fal", None, "manual", None)]),
+                                 ("w", ("openrouter", None, "observed"), [])]
+    assert diff["re_seen"] == ["a", "claude-haiku-4-5", "g", "p"]
+    assert diff["dropped"] == [("b", ("azure_foundry", None, "observed"), OLD), ("s", ("vercel_ai_gateway", None, "observed"), OLD)]
+    assert diff["inferred"] == [("f", ("openai_direct", None, "inferred"), OLD), ("q", ("aws_bedrock", None, "inferred"), OLD)]
+    assert diff["kept"] == [("d", ("anthropic_direct", None, "observed"), OLD, "chat 404 model_not_found"),
+                            ("e", ("vercel_ai_gateway", None, "observed"), None, SILENT)]
     assert diff["covered"] == [("c", ("google_direct", None, "observed")), ("m", ("fal", None, "observed"))]
 
 
-def test_unresolved_entries_follow_the_records_and_a_written_note_is_never_replaced():
+def test_unresolved_entries_follow_what_the_answers_showed_and_a_written_note_is_never_replaced():
     doc, diff = lr.merge(CURRENT, RESULTS, DAY)
-    assert doc["unresolved"] == {"u": "human note", "z": "old note", "v": "chat 200: id 형식 chatcmpl-<uuid>, 경로 표시 없음"}
-    assert list(doc["unresolved"]) == ["u", "z", "v"]                              # the order of the file, new entries at the end
-    assert diff["unresolved"] == ["u", "v", "z"] and diff["no_answer"] == [("x", SILENT)]  # no answer, no record, no entry: no finding
+    # d's old record stays, but its answers showed no route; k showed one route and a deployment without a mark
+    assert doc["unresolved"] == {"u": "human note", "z": "old note", "k": "old note", "d": "chat 404 model_not_found", "q": UNKNOWN, "v": UNKNOWN}
+    assert list(doc["unresolved"]) == ["u", "z", "k", "d", "q", "v"]              # the order of the file, new entries at the end
+    assert diff["unresolved"] == ["d", "k", "q", "u", "v", "z"] and diff["no_answer"] == [("x", SILENT)]  # no answer, no record: no finding
 
 
-def test_a_model_with_a_settings_or_manual_route_or_a_record_is_not_listed_as_unresolved():
+def test_an_entry_goes_only_when_every_answer_showed_a_route():
     current = {"records": [record("m", "fal", basis="manual"), record("s", "openrouter", basis="settings"), record("o", "openrouter")],
-               "unresolved": {"m": "old", "s": "old", "o": "old", "other": "kept"}}
-    doc, diff = lr.merge(current, {"m": result(note="new"), "s": result(note="new"), "o": result(note="new"), "n": result(note="new")}, DAY)
-    assert doc["records"] == current["records"] and doc["unresolved"] == {"other": "kept", "n": "new"}
-    assert diff["unresolved"] == ["n"]
+               "unresolved": {"m": "old", "s": "old", "o": "old", "e": "old", "other": "kept"}}
+    results = {"m": result(("fal", "")), "s": result(("openrouter", "")), "o": result(note="new"), "n": result(note="new"),
+               "e": result(("vercel_ai_gateway", ""))}
+    doc, diff = lr.merge(current, results, DAY)
+    assert doc["records"] == [*current["records"], record("e", "vercel_ai_gateway", checked_at=DAY)]
+    assert doc["unresolved"] == {"o": "old", "other": "kept", "n": "new"} and diff["unresolved"] == ["n", "o"]
 
 
 def test_nothing_asked_is_a_finding_that_gets_its_entry():
     plain = {"is_demo": False, "records": []}
-    doc, _ = lr.merge(plain, {"v": result(note="영상은 호출하지 않음")}, DAY)
+    doc, _ = lr.merge(plain, {"v": result(note="영상은 호출하지 않음", checked=False, unidentified=False)}, DAY)
     assert doc == {"is_demo": False, "records": [], "unresolved": {"v": "영상은 호출하지 않음"}}
 
 
 def test_a_second_run_the_same_day_adds_nothing_and_changes_nothing():
     first, _ = lr.merge(CURRENT, RESULTS, DAY)
     second, diff = lr.merge(first, RESULTS, DAY)
-    assert second == first and not (diff["new_route"] or diff["upgraded"])
-    assert diff["re_seen"] == ["a", "b", "claude-haiku-4-5", "f", "h", "p", "w"]
+    assert second == first and not (diff["new_route"] or diff["dropped"] or diff["inferred"])
+    assert diff["re_seen"] == ["a", "b", "claude-haiku-4-5", "f", "g", "h", "k", "p", "s", "w"]
 
 
-def test_a_route_that_comes_back_is_dated_again_instead_of_added_twice():
+def test_the_file_follows_the_routes_letsur_uses_from_run_to_run():
     first, _ = lr.merge(CURRENT, RESULTS, DAY)
-    back, diff = lr.merge(first, {"b": result("azure_foundry", None, "observed", "Azure 배포 지역 uk-south")}, "2026-10-31")
-    assert [r for r in back["records"] if r["model_id"] == "b"] == [
-        record("b", "azure_foundry", note="Azure 배포 지역 uk-south", checked_at="2026-10-31"), record("b", "aws_bedrock", note=HERE, checked_at=DAY)]
-    assert diff["re_seen"] == ["b"] and diff["older"] == [("b", ("aws_bedrock", None, "observed"), DAY, "")]
+    both, diff = lr.merge(first, {"b": result(("aws_bedrock", HERE), ("azure_foundry", "Azure 배포 지역 uk-south"))}, "2026-10-31")
+    assert [r for r in both["records"] if r["model_id"] == "b"] == [
+        record("b", "aws_bedrock", note=HERE, checked_at="2026-10-31"), record("b", "azure_foundry", note="Azure 배포 지역 uk-south", checked_at="2026-10-31")]
+    assert diff["re_seen"] == ["b"] and diff["new_route"] == [("b", ("azure_foundry", None, "observed"), [("aws_bedrock", None, "observed", "2026-10-31")])]
+    back, diff = lr.merge(both, {"b": result(("azure_foundry", ""))}, "2026-11-01")
+    assert [r for r in back["records"] if r["model_id"] == "b"] == [record("b", "azure_foundry", note="Azure 배포 지역 uk-south", checked_at="2026-11-01")]
+    assert diff["dropped"] == [("b", ("aws_bedrock", None, "observed"), "2026-10-31")]
 
 
 def test_a_route_seen_again_keeps_the_note_already_written():
     """A person's (or an earlier run's) note says more than a re-run's generic one, so only the date moves (2026-10-30)."""
     current = {"records": [record("q", "google_direct", note="10/29 이미지 모델 응답이 Gemini 형식", checked_at=OLD)]}
-    doc, diff = lr.merge(current, {"q": result("google_direct", None, "observed", "Gemini 응답(AI Studio와 Vertex는 구별하지 못함)")}, DAY)
+    doc, diff = lr.merge(current, {"q": result(("google_direct", "Gemini API가 Vertex 전용 안전 설정 칸(method)을 거절함"))}, DAY)
     assert doc["records"] == [record("q", "google_direct", note="10/29 이미지 모델 응답이 Gemini 형식", checked_at=DAY)] and diff["re_seen"] == ["q"]
 
 
 def test_a_run_over_some_models_leaves_the_others_alone():
-    doc, diff = lr.merge(CURRENT, {"h": result("openrouter", None, "observed", SEEN)}, DAY)
+    doc, diff = lr.merge(CURRENT, {"h": result(("openrouter", SEEN))}, DAY)
     assert doc["records"][:-1] == CURRENT["records"] and doc["unresolved"] == CURRENT["unresolved"]
     assert [part for part, rows in diff.items() if rows] == ["new_route"]
 
 
-def test_diff_text_names_new_routes_beside_the_old_ones_and_dates_what_stayed():
+def test_diff_text_names_what_was_added_dropped_and_kept():
     _, diff = lr.merge(CURRENT, RESULTS, DAY)
     diff["not_registered"] = ["gpt-4", "jev-latest"]
     lines = lr.format_diff(diff).splitlines()
-    for expected in ("new route (3)", "  b: aws_bedrock [observed] (also azure_foundry [observed] 2026-10-28)", "  h: openrouter [observed]",
-                     "  w: openai_direct [inferred]", "upgraded to observed (1)", "  f: openai_direct",
-                     "older-dated, not seen this run (4)", "  b: azure_foundry [observed] 2026-10-28",
-                     "  d: anthropic_direct [observed] 2026-10-28 (chat 404 model_not_found)",
+    for expected in ("new route (6)", "  b: aws_bedrock [observed]", "  s: openrouter [observed] (also fal [manual])",
+                     "observed before, not seen this run, dropped (2)", "  b: azure_foundry [observed] 2026-10-28",
+                     "  s: vercel_ai_gateway [observed] 2026-10-28",
+                     "inferred (no longer written), dropped (2)", "  f: openai_direct [inferred] 2026-10-28", "  q: aws_bedrock [inferred] 2026-10-28",
+                     "no route identified this run, kept (2)", "  d: anthropic_direct [observed] 2026-10-28 (chat 404 model_not_found)",
                      "  e: vercel_ai_gateway [observed] no date (chat 응답 없음(TimeoutError))",
-                     "  g: openai_direct [observed] 2026-10-28 (inferred only this run)",
                      "covered by a settings or manual record (2)", "  c: google_direct [observed]",
                      "no usable answer, nothing recorded (1)", "  x: chat 응답 없음(TimeoutError)",
-                     "re-seen (3): a, claude-haiku-4-5, p", "unresolved (3): u, v, z", "not registered, skipped (2): gpt-4, jev-latest"):
+                     "re-seen (4): a, claude-haiku-4-5, g, p", "unresolved (6): d, k, q, u, v, z", "not registered, skipped (2): gpt-4, jev-latest"):
         assert expected in lines
 
 
@@ -609,40 +742,122 @@ def setup(tmp_path, monkeypatch):
     return run, routes, output, opener
 
 
-def test_a_run_adds_what_it_saw_asks_only_registered_models_and_names_the_rest(setup, capsys):
+def test_a_run_samples_the_registered_models_names_the_rest_and_keeps_only_the_routes_it_saw(setup, capsys):
     run, routes, output, opener = setup
     before = routes.read_bytes()
     assert run() == 0
-    asked = [(r["path"], (r["body"] or {}).get("model")) for r in opener.requests]
-    assert asked == [("/v1/models", None), ("/v1/messages", "claude-haiku-4-5-20251001"), ("/v1/chat/completions", "deepseek-v4-pro"),
-                     ("/v1/chat/completions", "glm-5"), ("/v1/chat/completions", "glm-5.2"), ("/v1/chat/completions", "gpt-5.4"),
-                     ("/v1/chat/completions", "gpt-6.1-terra"), ("/v1/chat/completions", "kimi-k2.5")]  # no video, no image, no LETSUR-only model
+    asked = Counter((r["path"], (r["body"] or {}).get("model")) for r in opener.requests)
+    assert asked == {("/v1/models", None): 1, **{(path, model): 6 for path, model in (
+        ("/v1/messages", "claude-haiku-4-5-20251001"), ("/v1/chat/completions", "deepseek-v4-pro"), ("/v1/chat/completions", "glm-5"),
+        ("/v1/chat/completions", "glm-5.2"), ("/v1/chat/completions", "gpt-5.4"), ("/v1/chat/completions", "gpt-6.1-terra"),
+        ("/v1/chat/completions", "kimi-k2.5"))}}  # six samples each; no video, no image, no LETSUR-only model
     text = output.read_text(encoding="utf-8")
     assert text == json.dumps(json.loads(text), ensure_ascii=False, indent=2) + "\n" and "경로 파일" in text
     proposal = json.loads(text)
     assert proposal["records"] == [
-        record("gpt-6.1-terra", "openai_direct", checked_at=OLD),                                  # the earlier route stays, older-dated
-        record("gpt-6.1-terra", "aws_bedrock", note="Bedrock 배포 지역 us-east-1", checked_at=DAY),   # beside the one seen now
-        {**record("deepseek-v4-pro", "openrouter"), "note": "이번 호출의 하위 공급자 Example Host(요청마다 바뀔 수 있음)", "checked_at": DAY},
-        record("kimi-k2.5", "openrouter"),
-        record("kimi-k2.5", "vercel_ai_gateway", note="이번 호출의 하위 공급자 beta(계획 alpha, 요청마다 바뀔 수 있음)", checked_at=DAY),
+        record("gpt-6.1-terra", "aws_bedrock", note="Bedrock 배포 지역 us-east-1", checked_at=DAY),   # the 10/28 route not seen now is gone
+        {**record("deepseek-v4-pro", "openrouter"), "note": "이번 확인의 하위 공급자 Example Host(요청마다 바뀔 수 있음)", "checked_at": DAY},
+        record("kimi-k2.5", "vercel_ai_gateway", note="이번 확인의 하위 공급자 beta(계획 alpha, 요청마다 바뀔 수 있음)", checked_at=DAY),
         {**record("claude-haiku-4-5", "anthropic_direct"), "checked_at": DAY},                     # LETSUR's dated id, our id
         record("seedance-2.5", "fal", basis="settings"), record("seedance-2.5", "BytePlus ModelArk", basis="settings"),
-        record("glm-5", "aws_bedrock", basis="inferred", note=BEDROCK_NOTE, checked_at=DAY),
         record("gpt-5.4", "azure_foundry", note="Azure 배포 지역 canada-east", checked_at=DAY)]
-    assert proposal["unresolved"] == {"glm-5.2": "사람이 쓴 설명", "kling-v3-text-to-video": lr.NOT_PROBED["video"], "gpt-image-2": lr.NOT_PROBED["image"]}
+    # glm-5's Bedrock-like answer is no proof any more: the entry already written stays
+    assert proposal["unresolved"] == {"glm-5": "Bedrock 형식이나 확인 못 함", "glm-5.2": "사람이 쓴 설명",
+                                      "kling-v3-text-to-video": lr.NOT_PROBED["video"], "gpt-image-2": lr.NOT_PROBED["image"]}
     assert not set(LETSUR_ONLY) & ({r["model_id"] for r in proposal["records"]} | set(proposal["unresolved"]))
     assert "byteplus-seedance-2.5" not in text and routes.read_bytes() == before  # never overwritten without --write
     captured = capsys.readouterr()
-    for expected in ("new route (4)", "  gpt-6.1-terra: aws_bedrock [observed] (also openai_direct [observed] 2026-10-28)", "  kimi-k2.5: vercel_ai_gateway [observed] (also openrouter [observed] no date)",
-                     "  glm-5: aws_bedrock [inferred]", "  gpt-5.4: azure_foundry [observed]", "re-seen (2): claude-haiku-4-5, deepseek-v4-pro", "older-dated, not seen this run (2)",
-                     "  gpt-6.1-terra: openai_direct [observed] 2026-10-28", "unresolved (3): glm-5.2, gpt-image-2, kling-v3-text-to-video",
-                     "not registered, skipped (3): gpt-4, gpt-audio-1.5, jev-latest"):
+    for expected in ("new route (3)", "  gpt-6.1-terra: aws_bedrock [observed]", "  kimi-k2.5: vercel_ai_gateway [observed]", "  gpt-5.4: azure_foundry [observed]",
+                     "observed before, not seen this run, dropped (2)", "  gpt-6.1-terra: openai_direct [observed] 2026-10-28",
+                     "  kimi-k2.5: openrouter [observed] no date", "re-seen (2): claude-haiku-4-5, deepseek-v4-pro",
+                     "unresolved (4): glm-5, glm-5.2, gpt-image-2, kling-v3-text-to-video", "not registered, skipped (3): gpt-4, gpt-audio-1.5, jev-latest"):
         assert expected in captured.out.splitlines()
-    assert "checked 10 models with 7 requests, gateway-reported cost 0.0080" in captured.out
-    assert "[6/10] gpt-5.4: azure_foundry" in captured.err and "[8/10] gpt-image-2: not requested" in captured.err and "gpt-4" not in captured.err
+    assert "checked 10 models with 42 requests, gateway-reported cost 0.0480" in captured.out
+    for expected in ("[6/10] gpt-5.4: azure_foundry×6", "[8/10] gpt-image-2: not requested", "[4/10] glm-5: unresolved×6"):
+        assert expected in captured.err.splitlines()
+    assert "gpt-4" not in captured.err and "[bedrock" not in captured.err
     for secret in (KEY, BASE):
         assert secret not in captured.out + captured.err + text
+
+
+def rotating(turns):
+    """A gateway whose router hands each model's requests to its deployments in turn: `turns` maps a model to the answers."""
+    lock, asked = threading.Lock(), Counter()
+
+    def respond(path, body):
+        with lock:  # the requests come from several threads
+            asked[body["model"]] += 1
+            number = asked[body["model"]] - 1
+        return turns[body["model"]][number % len(turns[body["model"]])]
+    return respond
+
+
+def test_sampling_records_every_route_a_model_is_spread_over(setup, capsys):
+    run, _, output, _ = setup
+    to = {"x-letsur-ai-gateway-model-id": V}
+    opener = FakeOpener(rotating({
+        "gemini-2.5-flash": [(400, {}, GEMINI_REFUSAL), (200, to, vercel_body(finalProvider="google")),
+                             (200, to, vercel_body(finalProvider="google")), (200, to, vercel_body(resolvedProvider="google", finalProvider="vertex"))],
+        "glm-5": [(200, {"x-letsur-ai-gateway-model-id": B}, chat("chatcmpl-" + UUID)), (200, to, vercel_body(finalProvider="bedrock"))]}))
+    assert run("--models", "gemini-2.5-flash,glm-5", "--samples", "4", "--workers", "3", opener=opener) == 0
+    assert all(("safety_settings" in r["body"]) == (r["body"]["model"] == "gemini-2.5-flash") for r in opener.requests)
+    proposal = json.loads(output.read_text(encoding="utf-8"))
+    assert [r for r in proposal["records"] if r["model_id"] in ("gemini-2.5-flash", "glm-5")] == [
+        record("gemini-2.5-flash", "google_direct", note=REFUSED, checked_at=DAY),
+        record("gemini-2.5-flash", "vercel_ai_gateway", note="이번 확인의 하위 공급자 google·vertex(계획 google, 요청마다 바뀔 수 있음)", checked_at=DAY),
+        record("glm-5", "vercel_ai_gateway", note="이번 확인의 하위 공급자 bedrock(요청마다 바뀔 수 있음)", checked_at=DAY)]
+    assert proposal["unresolved"]["glm-5"] == "Bedrock 형식이나 확인 못 함"  # a deployment showed no route; the written entry stays
+    err = capsys.readouterr().err.splitlines()
+    assert "[1/2] gemini-2.5-flash: google_direct×1, vercel_ai_gateway×3" in err and "[2/2] glm-5: vercel_ai_gateway×2, unresolved×2" in err
+
+
+def test_a_new_unresolved_note_counts_the_deployments_that_showed_no_route(setup):
+    run, routes, output, _ = setup
+    routes.write_text(json.dumps({"records": [], "unresolved": {}}), encoding="utf-8")
+    opener = FakeOpener(rotating({"glm-5": [(200, {"x-letsur-ai-gateway-model-id": B}, chat("chatcmpl-" + UUID)),
+                                            (200, {"x-letsur-ai-gateway-model-id": V}, vercel_body(finalProvider="bedrock"))]}))
+    assert run("--models", "glm-5", "--samples", "4", opener=opener) == 0
+    assert json.loads(output.read_text(encoding="utf-8"))["unresolved"] == {"glm-5": "배포 2개 중 1개 경로 표시 없음: chat 200: id 형식 chatcmpl-<uuid>, 경로 표시 없음"}
+
+
+def test_a_leftover_inferred_record_goes_when_its_model_is_checked_and_stays_when_it_is_not(setup, capsys):
+    run, routes, output, _ = setup
+    routes.write_text(json.dumps({"records": [record("glm-5", "aws_bedrock", basis="inferred", note="Bedrock 모양", checked_at=OLD),
+                                              record("kling-v3-text-to-video", "kling_direct", basis="inferred", note="단가")],
+                                  "unresolved": {}}), encoding="utf-8")
+    assert run("--models", "glm-5,kling-v3-text-to-video") == 0
+    proposal = json.loads(output.read_text(encoding="utf-8"))
+    assert proposal["records"] == [record("kling-v3-text-to-video", "kling_direct", basis="inferred", note="단가")]  # asked nothing
+    assert proposal["unresolved"] == {"glm-5": "배포 1개 중 1개 경로 표시 없음: chat 200: id 형식 chatcmpl-<uuid>, 경로 표시 없음"}
+    out = capsys.readouterr().out.splitlines()
+    assert "inferred (no longer written), dropped (1)" in out and "  glm-5: aws_bedrock [inferred] 2026-10-28" in out
+
+
+def bedrock_gateway(path, body):
+    """glm-5 sits on a Bedrock deployment that refuses a bogus latency; the gateway then hands the request to a Vercel one."""
+    if (body.get("performanceConfig") or {}).get("latency") == "bogus":
+        return 200, {"x-letsur-ai-gateway-model-id": V}, vercel_body(finalProvider="bedrock")
+    return 200, {"x-letsur-ai-gateway-model-id": B}, chat("chatcmpl-" + UUID)
+
+
+def test_the_bedrock_check_runs_only_with_its_flag_and_records_the_deployment_it_shows(setup, capsys):
+    run, _, output, _ = setup
+    plain = FakeOpener(bedrock_gateway)
+    assert run("--models", "glm-5", opener=plain) == 0
+    assert len(plain.requests) == 6 and not any({"performanceConfig", "foo_probe_param"} & set(r["body"]) for r in plain.requests)
+    assert not [r for r in json.loads(output.read_text(encoding="utf-8"))["records"] if r["model_id"] == "glm-5"]
+    capsys.readouterr()
+    checked = FakeOpener(bedrock_gateway)
+    assert run("--models", "glm-5", "--bedrock-check", opener=checked) == 0
+    extra = Counter(json.dumps({key: r["body"][key] for key in ("performanceConfig", "foo_probe_param") if key in r["body"]}) for r in checked.requests)
+    assert extra == {"{}": 6, '{"performanceConfig": {"latency": "standard"}}': 6, '{"performanceConfig": {"latency": "bogus"}}': 6,
+                     '{"foo_probe_param": 1}': 6}
+    proposal = json.loads(output.read_text(encoding="utf-8"))
+    assert [r for r in proposal["records"] if r["model_id"] == "glm-5"] == [record("glm-5", "aws_bedrock", note=lr.BEDROCK_NOTE, checked_at=DAY)]
+    assert "glm-5" not in proposal["unresolved"]  # its only deployment is now known
+    captured = capsys.readouterr()
+    assert "[bedrock 1/1] glm-5: 1 of 1 chatcmpl-<uuid> deployments check Bedrock's own field" in captured.err.splitlines()
+    assert "checked 1 models with 24 requests" in captured.out
 
 
 def test_write_overwrites_the_routes_file_with_the_same_proposal(setup, capsys):
@@ -662,7 +877,7 @@ def test_a_second_run_the_same_day_leaves_the_file_as_the_first_wrote_it(setup):
 def test_models_option_checks_only_those_models_without_listing_and_still_skips_unregistered_ones(setup, capsys):
     run, _, output, opener = setup
     assert run("--models", "gpt-5.4,glm-5,gpt-4", "--models", "claude-haiku-4-5-20251001") == 0
-    assert sorted(r["path"] for r in opener.requests) == ["/v1/chat/completions", "/v1/chat/completions", "/v1/messages"]
+    assert Counter(r["path"] for r in opener.requests) == {"/v1/chat/completions": 12, "/v1/messages": 6}
     assert "kling-v3-text-to-video" not in json.loads(output.read_text(encoding="utf-8"))["unresolved"]
     assert "not registered, skipped (1): gpt-4" in capsys.readouterr().out.splitlines()
 
@@ -673,13 +888,14 @@ def test_a_run_over_only_unregistered_models_asks_nothing_and_writes_nothing(set
     assert "nothing written" in capsys.readouterr().err
 
 
-def test_image_models_are_requested_only_with_the_flag(setup):
+def test_an_image_is_requested_only_with_the_flag_and_then_once_whatever_the_samples(setup):
     run, _, output, opener = setup
-    assert run("--models", "gpt-image-2", "--include-images") == 0
+    assert run("--models", "gpt-image-2", "--include-images", "--samples", "5") == 0
     image = [r for r in opener.requests if r["path"] == "/v1/images/generations"]
-    assert len(image) == 1 and image[0]["body"]["quality"] == "low"
-    added = [r for r in json.loads(output.read_text(encoding="utf-8"))["records"] if r["model_id"] == "gpt-image-2"]
-    assert [(r["route_id"], r["basis"]) for r in added] == [("openai", "inferred")] and "3000" not in json.dumps(added)
+    assert len(opener.requests) == len(image) == 1 and image[0]["body"]["quality"] == "low"
+    proposal = json.loads(output.read_text(encoding="utf-8"))
+    assert not [r for r in proposal["records"] if r["model_id"] == "gpt-image-2"]  # no Azure field is no proof of OpenAI
+    assert proposal["unresolved"]["gpt-image-2"] == "배포 1개 중 1개 경로 표시 없음: images 200: 경로 표시 없음" and "3000" not in json.dumps(proposal)
 
 
 def test_a_refused_key_ends_the_run_with_nothing_written(setup, capsys):
@@ -688,10 +904,33 @@ def test_a_refused_key_ends_the_run_with_nothing_written(setup, capsys):
     assert not output.exists() and KEY not in capsys.readouterr().err
 
 
+def test_a_key_refused_mid_run_stops_every_thread(setup, capsys):
+    run, _, output, _ = setup
+    opener = FakeOpener(lambda path, body: (200, {}, LISTING) if path == "/v1/models" else (401, {}, {"error": {"code": "invalid_api_key"}}))
+    assert run("--workers", "3", opener=opener) == 2
+    asked = [r for r in opener.requests if r["path"] != "/v1/models"]
+    assert 1 <= len(asked) <= 3 and not output.exists() and KEY not in capsys.readouterr().err  # one request per thread at most
+
+
 def test_a_run_where_nothing_answered_writes_nothing(setup, capsys):
     run, _, output, _ = setup
     assert run("--models", "gpt-5.4", opener=FakeOpener(lambda path, body: (404, {}, {"error": {"code": "route_not_found"}}))) == 1
     assert not output.exists() and "nothing written" in capsys.readouterr().err
+
+
+def test_a_run_where_only_the_gemini_api_refused_is_still_written(setup):
+    run, _, output, _ = setup
+    assert run("--models", "gemini-2.5-flash-lite", opener=FakeOpener(lambda path, body: (400, {}, GEMINI_REFUSAL))) == 0
+    records = json.loads(output.read_text(encoding="utf-8"))["records"]
+    assert [r for r in records if r["model_id"] == "gemini-2.5-flash-lite"] == [record("gemini-2.5-flash-lite", "google_direct", note=REFUSED, checked_at=DAY)]
+
+
+@pytest.mark.parametrize("option", ["--samples", "--workers"])
+def test_samples_and_workers_must_be_one_or_more(setup, option):
+    run, _, output, opener = setup
+    with pytest.raises(SystemExit) as refused:
+        run(option, "0")
+    assert refused.value.code == 2 and not opener.requests and not output.exists()
 
 
 @pytest.mark.parametrize("env", [{}, {lr.BASE_ENV: BASE}, {lr.KEY_ENV: KEY}, {lr.BASE_ENV: "http://gateway.test", lr.KEY_ENV: KEY}])

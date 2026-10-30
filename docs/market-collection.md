@@ -223,17 +223,19 @@ AWS Haiku 카드의 버전이 붙은 Global inference ID는 현재 카드에서 
 
 ## 렛서 공급 경로 다시 확인
 
-[경로 파일](../samples/market_collection/demo_internal_routes.json)의 `observed`·`inferred` 기록은 렛서 게이트웨이에 모델마다 한 줄짜리 요청을 보내고 응답에 남은 상류 표시로 경로를 읽은 것이다. [letsur_routes.py](../scripts/market_collection/letsur_routes.py)가 이 확인을 되풀이해 새 파일을 제안한다(2026-10-29, 표준 라이브러리만 쓴다). 게이트웨이 주소와 키는 환경변수로만 받고 저장소·출력 파일·화면 어디에도 쓰지 않는다. 공개 저장소이므로 키는 각자 컴퓨터에만 둔다.
+[경로 파일](../samples/market_collection/demo_internal_routes.json)의 `observed` 기록은 렛서 게이트웨이에 모델마다 한 줄짜리 요청을 보내고 응답에 남은 상류 표시로 경로를 읽은 것이다(`inferred` 기록은 10/29~30에 응답 모양만 보고 추정한 것으로, 이제는 쓰지 않는다). [letsur_routes.py](../scripts/market_collection/letsur_routes.py)가 이 확인을 되풀이해 새 파일을 제안한다(2026-10-29, 표준 라이브러리만 쓴다). 게이트웨이 주소와 키는 환경변수로만 받고 저장소·출력 파일·화면 어디에도 쓰지 않는다. 공개 저장소이므로 키는 각자 컴퓨터에만 둔다.
 
 ```bash
 export LETSUR_API_BASE=<게이트웨이 주소, /v1 앞까지> LETSUR_API_KEY=<키>
 python3 -B -m scripts.market_collection.letsur_routes                         # 우리 registry에 있는 모델 전부. 제안만 data/market_collection/letsur_routes.proposed.json에 씀
 python3 -B -m scripts.market_collection.letsur_routes --models gpt-5.6,glm-5  # 일부만 (모델 목록을 조회하지 않음)
 python3 -B -m scripts.market_collection.letsur_routes --include-images        # gpt-image 모델에 저화질 이미지 1장 요청 (유료)
+python3 -B -m scripts.market_collection.letsur_routes --samples 10 --workers 4  # 모델마다 10번 확인, 동시에 4개씩 요청 (기본 6·6)
+python3 -B -m scripts.market_collection.letsur_routes --bedrock-check         # chatcmpl-<uuid>만 남긴 배포에 Bedrock 검사 (그런 모델마다 요청 3×samples회 더)
 python3 -B -m scripts.market_collection.letsur_routes --write                 # 제안을 경로 파일에도 덮어씀
 ```
 
-비용과 안전: 텍스트·임베딩 요청은 모델당 1~2회(출력 16토큰)이다. 저장해 둔 10/28~29 응답으로 다시 계산하면 요청 118회의 합계가 약 0.027(렛서의 비용 단위, 이미지 1장 약 0.006 포함)이고, 이미지는 `--include-images`가 있을 때만 요청한다. 영상은 어떤 옵션으로도 요청하지 않고 경로 미확인으로 둔다. 재시도는 없고, 요청마다 `--timeout`(기본 90초) 안에 답이 없으면 그 모델은 '답 없음'이다. 키가 거부되면(401) 바로 멈추고, 쓸 만한 답을 준 모델이 하나도 없으면(종료 코드 1) 아무것도 쓰지 않는다.
+비용과 안전: 렛서는 한 모델을 여러 배포에 나눠 두고 요청마다 하나를 고른다(10/30, Gemini 18개에 4번씩 물으니 gemini-2.5-flash는 Gemini API 1번·Vercel 3번). 그래서 모델마다 `--samples`번(기본 6) 확인하고, 한 번에 텍스트·임베딩 요청 1~2회(출력 16토큰)를 `--workers`개(기본 6)씩 동시에 보낸다. 한 번씩 확인한 10/30 실행이 요청 115회·0.021(렛서의 비용 단위)이었으니 기본 6번이면 요청 약 690회·약 0.13으로 추산한다. 이미지는 `--include-images`가 있을 때만 모델마다 한 번 요청한다(저장해 둔 10/28~29 응답으로 1장 약 0.006). 영상은 어떤 옵션으로도 요청하지 않고 경로 미확인으로 둔다. 재시도는 없고, 요청마다 `--timeout`(기본 90초) 안에 답이 없으면 그 요청은 '답 없음'이다. 키가 거부되면(401) 바로 멈추고(다른 스레드의 남은 요청도 보내지 않는다), 쓸 만한 답을 준 모델이 하나도 없으면(종료 코드 1) 아무것도 쓰지 않는다.
 
 경로를 읽는 규칙은 위에서부터 먼저 맞는 것을 쓴다.
 
@@ -245,20 +247,20 @@ python3 -B -m scripts.market_collection.letsur_routes --write                 # 
 | Claude의 `/v1/messages` id가 `msg_01…`, `msg_bdrk_…`, `msg_vrtx_…` | `anthropic_direct`, `aws_bedrock`, `google_vertex` | observed |
 | 본문의 `prompt_filter_results`·`content_filter_results`·`content_filters`·`serving_pipereplica`(헤더에 지역이 없을 때) | `azure_foundry` | observed |
 | 본문의 `billing.payer`(OpenAI Responses 응답) | `openai_direct` | observed |
-| Gemini 형식 id와 `vertex_ai_*` 필드 | `google_direct` | observed (AI Studio와 Vertex는 가를 수 없어 note에 적음) |
-| OpenAI 모델의 chat 응답이나 gpt-image 응답에 Azure 필드가 없음 | `openai_direct`(gpt-image는 `openai`) | inferred |
-| chat 응답의 id가 `chatcmpl-<uuid>`이고 `usage`에 `cache_creation_input_tokens`와 `cache_read_input_tokens`가 둘 다 있으며 위 표시는 없음 | `aws_bedrock` | inferred |
-| 그 밖(`chatcmpl-<uuid>`만 있는 GLM, 임베딩, 영상, 오류 응답) | 경로 미확인 | 파일의 `unresolved`에 id 모양·눈에 띈 필드·오류 코드를 note로 |
+| Gemini 모델: chat 요청에 넣은 Vertex 전용 안전 설정 칸(`safety_settings`의 `method`)에 렛서 400 `invalid_parameter` | `google_direct` | observed |
+| Gemini 모델: 같은 요청에 Gemini 형식 id와 `vertex_ai_*` 필드로 200 | `google_vertex` | observed |
+| (`--bedrock-check`) id가 `chatcmpl-<uuid>`뿐인 배포가 `performanceConfig.latency` `standard`와 모르는 칸에는 답하고 `bogus`에는 한 번도 답하지 않음 | `aws_bedrock` | observed |
+| 그 밖(Azure 필드 없는 OpenAI·gpt-image 응답, `chatcmpl-<uuid>`만 있는 GLM, 임베딩, 영상, 오류 응답) | 경로 미확인 | 파일의 `unresolved`에 표시 없이 답한 배포 수·id 모양·눈에 띈 필드·오류 코드를 note로 |
 
-헤더 규칙은 10/28 응답(`-azure-` 11개, `gpt-6.1-terra-openai-letsur-2`)과 10/30 응답(`gpt-6-sol`·`gpt-5.6-sol`·`gpt-6.1-terra`의 `-bedrock-us-east-1`)에서 본 모양이다. `-vertex-`는 아직 본 적 없고 같은 이름 짓기를 따른 것이다. Bedrock 모양 추정은 같은 모양의 답이 Anthropic 형식 상류(예: Z.ai의 호환 API)에서도 나올 수 있어 약한 근거다(glm-4.7·glm-5가 이렇게 잡힌다). OpenAI 계열 모델은 chat 응답으로 정해지지 않을 때만 `/v1/responses`를 한 번 더 부르고, Claude는 `/v1/messages`만, 임베딩은 `/v1/embeddings`만 부른다. 실패한 요청은 상태 코드와 렛서의 오류 코드만 남기고 메시지는 남기지 않는다.
+헤더 규칙은 10/28 응답(`-azure-` 11개, `gpt-6.1-terra-openai-letsur-2`)과 10/30 응답(`gpt-6-sol`·`gpt-5.6-sol`·`gpt-6.1-terra`의 `-bedrock-us-east-1`)에서 본 모양이다. `-vertex-`는 아직 본 적 없고 같은 이름 짓기를 따른 것이다. 응답 모양이 한 경로와만 맞는다는 추정(10/29~30의 `inferred`: Azure 필드 없는 OpenAI·gpt-image 응답, Bedrock을 거친 GPT 응답과 모양이 같은 GLM 응답)은 2026-10-30부터 근거로 쓰지 않는다. Gemini 규칙의 근거는 Google API discovery 문서(Gemini API v1beta 개정 20261029의 `SafetySetting`은 `threshold`·`category`만, Vertex aiplatform v1 개정 20261028은 `method`도 있다)와 Google이 모르는 칸을 400으로 거절한다는 점, 10/30 렛서 호출 72회다(Gemini API 배포는 늘 400, OpenRouter·Vercel은 받아들임, `method`를 빼면 모두 200, Vertex 응답은 아직 못 봄). Bedrock 검사는 Converse API가 `performanceConfig.latency`를 `standard`·`optimized`로만 받는다는 점을 쓴다. 10/30 glm-4.7·glm-5의 `chatcmpl-<uuid>` 배포는 `standard`와 모르는 칸(`foo_probe_param`)에는 답하고 `bogus`에는 답하지 않았다(그때 게이트웨이는 다른 배포로 넘긴다). 배포는 요청마다 무작위로 골라지므로, 그 배포가 다른 두 요청에서 받은 몫으로 보아 `bogus` 요청을 모두 우연히 비켜 갔을 가능성이 5% 이상이면 확인으로 치지 않는다(몫이 작은 배포는 `--samples`를 늘려야 잡힌다). OpenAI 계열 모델은 chat 응답으로 정해지지 않을 때만 `/v1/responses`를 한 번 더 부르고, Claude는 `/v1/messages`만, 임베딩은 `/v1/embeddings`만 부른다. 실패한 요청은 상태 코드와 렛서의 오류 코드만 남기고 메시지는 남기지 않는다.
 
-`endpoint_id`는 어떤 기록에도 채우지 않는다. OpenRouter·Vercel은 요청마다 하위 공급사가 바뀌므로(10/28 정리) 한 번의 호출이 본 하위 공급자는 고정 기록이 아니라 note에만 적고(Vercel은 계획한 공급자와 달랐을 때 그것도), 배포 지역도 note에 적는다. note는 공급로 현황 탭에 그대로 보이므로 쉬운 한국어로 쓴다(예: `이번 호출의 하위 공급자 Alibaba(요청마다 바뀔 수 있음)`, `Bedrock 배포 지역 us-east-1`, `chat 200: id 형식 chatcmpl-<uuid>, 경로 표시 없음`, 실패는 `chat 404 service_error`).
+`endpoint_id`는 어떤 기록에도 채우지 않는다. OpenRouter·Vercel은 요청마다 하위 공급사가 바뀌므로(10/28 정리) 이번 확인에서 본 하위 공급자는 고정 기록이 아니라 note에만 모두 적고(Vercel은 계획한 공급자와 달랐을 때 그것도), 배포 지역도 note에 적는다. note는 공급로 현황 탭에 그대로 보이므로 쉬운 한국어로 쓴다(예: `이번 확인의 하위 공급자 Alibaba·Baidu(요청마다 바뀔 수 있음)`, `Bedrock 배포 지역 us-east-1`, `배포 2개 중 1개 경로 표시 없음: chat 200: id 형식 chatcmpl-<uuid>, 경로 표시 없음`, 실패는 `chat 404 service_error`). 배포는 헤더 `x-letsur-ai-gateway-model-id`로 가른다(한 배포의 답에는 늘 같은 값이고, 오류 답에는 없다).
 
-반영은 더하기다(2026-10-30). 10/29 실제 실행에서 렛서의 경로가 며칠 사이에 바뀌거나 여러 경로로 나뉜다는 것이 드러났다(10개 모델이 OpenRouter와 Vercel 사이를 오갔고, Gemini 3개는 Google 직접과 Vercel 사이를 오갔으며, GPT-6·5.6 모델은 Azure에서 Bedrock으로 갔다). 그래서 이번 실행에서 처음 본 경로는 다른 기록을 지우지 않고 그날 `checked_at`을 단 새 기록으로 더하고, 이미 있는 경로를 다시 보면 `checked_at`(과 새 note)만 바꾼다. 추정(`inferred`) 기록은 같은 경로를 `observed`로 보면 그것으로 바뀌고, `observed` 기록은 `inferred`로만 보여도 날짜를 건드리지 않는다. 다른 경로의 기록은 자기 날짜 그대로 남는다. `settings`·`manual` 기록과 `purpose`·`basis_note` 같은 설명 글은 건드리지 않고(날짜와 설명은 사람이 고친다), 같은 경로의 `settings`·`manual` 기록이 이미 있으면 새 기록을 만들지 않는다. 다시 본 기록에 사람이 쓴 note가 있으면 새 note로 바뀐다(새 note가 비어 있을 때만 그대로 둔다). `unresolved`는 경로 기록이 하나도 없는 모델의 이유이고, 이미 적힌 항목은 그대로 둔다.
+반영은 바꾸기다(2026-10-30, 전체 모델 6번 확인 뒤 정함). 경로 파일은 렛서가 지금 쓰는 경로를 보인다. 이번 실행에서 경로를 하나라도 확인한 모델은 이번에 본 경로의 기록을 `checked_at`만 바꿔 두고(이미 있는 `note`는 그대로, 없을 때만 채움) 처음 본 경로는 그날 `checked_at`을 단 새 기록으로 더하며, 이번에 보지 못한 경로의 `observed` 기록은 지운다. 경로를 하나도 확인하지 못한 모델(답이 없거나 표시 없는 답만 온 모델)은 기록을 그대로 둔다. `settings`·`manual` 기록과 `purpose`·`basis_note` 같은 설명 글은 건드리지 않고(날짜와 설명은 사람이 고친다), 같은 경로의 `settings`·`manual` 기록이 이미 있으면 새 기록을 만들지 않는다. 지난 판이 쓴 `inferred` 기록은 이번 실행이 답을 받은 모델이면 지운다(영상처럼 묻지 않은 모델은 그대로). `unresolved`는 경로 표시 없이 답한 배포가 있는 모델의 이유다. 다른 배포에서 경로를 확인했어도 남기고, 모든 답에서 경로를 확인한 모델은 지우며, 이미 적힌 항목은 그대로 둔다.
 
 우리 registry에 없는 모델은 부르지도 기록하지도 않는다. 렛서 목록의 id는 `ALIASES`로 우리 id에 맞춘다(`claude-haiku-4-5-20251001`→`claude-haiku-4-5`, `byteplus-seedance-2.5`→`seedance-2.5`). 목록에만 있고 registry에 없는 13개(gpt-3.5-turbo, gpt-4, gpt-4-turbo, gpt-audio-1.5, gpt-audio-mini, jev-1.13.0, jev-latest, o1-pro, qwen3-coder, qwen3-coder-plus, qwen3-max, qwen3-max-thinking, qwen3.5-flash)는 화면에 이름만 나오고 기록과 `unresolved`에는 들어가지 않는다.
 
-실행하면 화면에 `new route`(처음 본 경로, 같은 모델의 다른 기록이 날짜와 함께 따라온다)·`upgraded to observed`·`re-seen`(이름)·`older-dated, not seen this run`(이번에 안 보여 옛 날짜로 남은 기록)·`covered by a settings or manual record`·`no usable answer, nothing recorded`·`unresolved`·`not registered, skipped`가 나온다. 제안 파일을 훑고 `--write`로 반영한 뒤 `git diff`와 `python3 -B -s -m pytest -q -p no:cacheprovider tests`를 확인하고 커밋한다. 호출 한 번은 지나간 경로를 보여 줄 뿐 다른 경로를 쓰지 않는다는 뜻이 아니다.
+실행 중에는 모델마다 본 경로와 횟수가 한 줄씩 나오고(예: `gemini-2.5-flash: google_direct×1, vercel_ai_gateway×3`, 표시 없는 답은 `unresolved×2`), 끝나면 화면에 `new route`(처음 본 경로, 같은 모델의 남은 기록이 날짜와 함께 따라온다)·`observed before, not seen this run, dropped`·`inferred (no longer written), dropped`·`no route identified this run, kept`(경로를 확인하지 못해 그대로 둔 기록)·`covered by a settings or manual record`·`no usable answer, nothing recorded`·`re-seen`(이름)·`unresolved`·`not registered, skipped`가 나온다. 제안 파일을 훑고 `--write`로 반영한 뒤 `git diff`와 `python3 -B -s -m pytest -q -p no:cacheprovider tests`를 확인하고 커밋한다. 6번 확인도 그 사이 답한 배포만 보여 주므로, 드물게 골라지는 배포는 빠질 수 있다.
 
 ### gpt-6.1-terra의 Bedrock 가격 출처 (2026-10-30)
 
