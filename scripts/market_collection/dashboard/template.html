@@ -54,14 +54,13 @@ a{color:var(--ink)}
 @media (max-width:640px){.wrap{padding-inline:16px}}
 .title{display:block;min-width:0}
 .title h1{margin:0;font-size:22px;font-weight:700;color:var(--ink);letter-spacing:-.02em}
-.summary-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px;margin-top:12px}
-.summary-item,.summary-note{display:flex;flex-direction:column;justify-content:center;gap:4px;min-width:0;padding:16px;background:var(--surface);border:0;border-radius:var(--r-l)}
-.summary-label,.summary-note span{font-size:12px;color:var(--muted);overflow-wrap:anywhere}
-.summary-item strong,.summary-note strong{font-size:26px;line-height:1.2;font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
-.summary-sub{font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
-@media (max-width:1000px){.summary-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
-@media (max-width:640px){.summary-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.summary-item,.summary-note{padding:12px}}
-@media (max-width:360px){.summary-grid{grid-template-columns:minmax(0,1fr)}}
+/* 요약 줄(2026-10-30 박건: 큰 칸 6개는 자리를 너무 차지하고, 숫자보다 무슨 항목인지가 중요): 카드 한 장에 한 줄, 항목 이름을 앞세운다 */
+.summary-grid{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 24px;margin-top:12px;padding:12px 20px;background:var(--surface);border-radius:var(--r-l)}
+.summary-item,.summary-note{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 8px;min-width:0}
+.summary-label,.summary-note span{font-size:14px;font-weight:650;color:var(--ink)}
+.summary-item strong,.summary-note strong{font-size:14px;font-weight:500;color:var(--body);font-variant-numeric:tabular-nums}
+.summary-sub{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+@media (max-width:640px){.summary-grid{gap:8px 16px;padding:12px 16px}}
 
 .card{background:var(--surface);border:0;border-radius:var(--r-xl);padding:20px;min-width:0}
 @media (max-width:640px){.card{padding:16px}}
