@@ -560,7 +560,7 @@ def test_template_bundles_the_list_and_moves_the_table_to_the_model_view(tmp_pat
     icons = json.loads(re.search(r"^const MAKER_ICONS = (.*);$", page, re.M).group(1))
     assert set(icons) == set(companies)
     assert all(f'<symbol id="mk-{icon}" viewBox=' in page for icon in icons.values())
-    assert ".mgrp+.mgrp{margin-top:10px;padding-top:10px;border-top:1px solid var(--line-strong)}" in page
+    assert ".mgrp+.mgrp{margin-top:12px;padding-top:12px;border-top:1px solid var(--line-strong)}" in page
     sprite = re.search(r'<svg class="sprite".*?</svg>\n', page, re.S).group(0)
     assert not re.search(r"<script|\son\w+=|href=|<image|<foreignObject", sprite)  # shapes only
 
@@ -879,7 +879,7 @@ def test_model_list_groups_the_gateway_models_under_their_makers_and_stays_a_box
     models = {record["model_id"] for record in json.loads(DEMO_ROUTES.read_text(encoding="utf-8"))["records"]}
     assert [model for model in sorted(models) if _maker_of(makers, model) == "기타"] == []
     # about 55 models: the sticky list scrolls inside itself (a taller one pushes the chart off screen), and so does the phone's list
-    assert ".mlist{padding:10px;position:sticky;top:12px;max-height:calc(100vh - 24px);overflow-y:auto}" in page
+    assert ".mlist{padding:12px;position:sticky;top:12px;max-height:calc(100vh - 24px);overflow-y:auto}" in page
     assert ".mlist{position:static;display:flex;flex-wrap:wrap;gap:4px;max-height:max(240px,40vh)}" in page
 
 
@@ -939,7 +939,7 @@ def test_template_has_the_supply_tab_and_its_editor(tmp_path: Path) -> None:
     assert "<h2>공급로 현황</h2><span>모델 ${count}개</span></div>" in page
     for gone in ("spBasis", "spChip", "sppanel", "spun", "호출 추정", "렛서가 쓰는데 가격 수집 안 함"):
         assert gone not in page[page.index("// ---- 공급로 현황"):page.index("// ---- 상호작용 ----")]
-    assert "@media (max-width:640px){.ptabs{flex-wrap:wrap;row-gap:4px}.ptabs button{padding:0 9px}}" in page
+    assert "@media (max-width:640px){.ptabs{flex-wrap:wrap;row-gap:4px}.ptabs button{padding:0 8px}}" in page
 
 
 @pytest.mark.parametrize(("doc", "reason"), [
@@ -1086,6 +1086,36 @@ def test_endpoints_split_into_tabs_by_precision_and_region(tmp_path: Path) -> No
         "fp4 · Standard": [("OpenRouter · openrouter · novita/fp4", [[0.25]])],
         "fp8 · Standard": [("Vercel · vercel_ai_gateway · DeepInfra · fp8", [[0.3]])]}
     assert "연결할 선이 여럿이라" not in trend["note"]
+
+
+def test_the_letsur_line_is_the_one_the_price_table_marks(tmp_path: Path) -> None:
+    """2026-10-30 C안 가격 추이: the line LETSUR uses is marked by the 현재 가격 표's own rule (compare.is_assumed, decision 17),
+    so the graph and the table never point at different lines. A gateway record without an endpoint marks the maker's own
+    upstream only (DeepInfra serves deepseek here, so none). The model's routes are listed under the graph; how each is known
+    is not said (2026-10-30 박건: 사용이면 사용)."""
+    state = {"series": {"a": _gateway("g1-2", "openrouter", OPENROUTER, "Alibaba", "0.20", **ALIBABA),
+                        "n": _gateway("n-2", "openrouter", OPENROUTER, "Novita", "0.25", **NOVITA),
+                        "d": _gateway("d-2", "vercel_ai_gateway", VERCEL, "DeepInfra", "0.30", **DEEPINFRA)}}
+    _write(tmp_path, [_gateway_change("g1", ALIBABA, "0.30", "0.20")], state=state)
+    records = [{"model_id": "deepseek-v4-pro", "route_id": "openrouter", "endpoint_id": "novita/fp4", "basis": "manual", "checked_at": "2026-10-29"},
+               {"model_id": "deepseek-v4-pro", "route_id": "vercel_ai_gateway", "basis": "observed", "checked_at": "2026-10-30",
+                "note": "이번 호출의 하위 공급자 DeepInfra(요청마다 바뀔 수 있음)"}]
+    trend = _build(tmp_path, args=_routes(tmp_path, {"is_demo": False, "records": records}))[2]["TREND"]["deepseek-v4-pro"]
+    assert {tab: [(line["name"], line.get("letsur")) for line in lines] for tab, lines in trend["tiers"].items()} == {
+        "fp8 · US": [("OpenRouter · openrouter · alibaba/fp8/us-east-1", None)],
+        "fp4 · Standard": [("OpenRouter · openrouter · novita/fp4", True)],
+        "fp8 · Standard": [("Vercel · vercel_ai_gateway · DeepInfra · fp8", None)]}
+    assert trend["letsurRoutes"] == ["OpenRouter · openrouter", "Vercel · vercel_ai_gateway · 이번 호출의 하위 공급자 DeepInfra(요청마다 바뀔 수 있음)"]
+
+
+def test_a_direct_route_line_is_letsurs(tmp_path: Path) -> None:
+    """A direct route's record marks that route's line, as the table marks its Standard row; without a routes file no line is
+    marked (test_trend_leaves_out_suspect_observations_and_claims)."""
+    _write(tmp_path, [_observed("t1", "price_change", "0.75", "0.50")], state={"series": {"in": _stored("t1-2", "input", "0.50")}})
+    record = {"model_id": "gemini-3.8-flash", "route_id": "google_direct", "basis": "settings"}
+    trend = _build(tmp_path, args=_routes(tmp_path, {"is_demo": False, "records": [record]}))[2]["TREND"]["gemini-3.8-flash"]
+    assert [(line["name"], line.get("letsur")) for line in trend["series"]] == [("Google · google_direct", True)]
+    assert trend["letsurRoutes"] == ["Google · google_direct"]
 
 
 def test_a_different_service_tier_still_gets_its_own_tab(tmp_path: Path) -> None:
@@ -1503,3 +1533,15 @@ def test_template_has_the_health_screen(tmp_path: Path) -> None:
     assert '<button type="button" data-ptab="health">수집 상태 보기 →</button>' in page
     # 2026-10-29: the failing table has a 판단 column and the section says how many sources need action
     assert 'table(["출처", "판단", "오류", "실패"]' in page and "수집기 확인 필요 ${todo}곳" in page
+
+
+def test_template_css_keeps_to_the_design_scales() -> None:
+    """docs/design-system.md (2026-10-30): corners are role tokens (or 0 and 50%), font sizes the eight-step scale, and
+    padding, margin and gap the 4px grid (2px for the narrowest gaps)."""
+    css = Path(build.__file__).with_name("template.html").read_text(encoding="utf-8")
+    css = "\n".join(line for line in css[css.index("<style>"):css.index("</style>")].splitlines() if not line.startswith("@font-face"))
+    token = r"(0|50%|var\(--r-(xs|s|m|l|xl|pill)\))"
+    assert [r for r in re.findall(r"border-radius:([^;}]+)", css) if not re.fullmatch(rf"{token}( {token})*", r.strip())] == []
+    assert set(re.findall(r"font-size:(\d+(?:\.\d+)?)px", css)) <= {"11", "12", "13", "14", "15", "18", "22", "26"}
+    spacing = re.findall(r"(?:^|[;{\s])(?:padding|margin|gap|row-gap|column-gap)(?:-[a-z-]+)?:([^;}]+)", css)
+    assert sorted({v for s in spacing for v in re.findall(r"(-?\d+(?:\.\d+)?)px", s) if abs(float(v)) not in (0, 2) and abs(float(v)) % 4}) == []

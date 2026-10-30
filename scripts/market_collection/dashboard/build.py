@@ -1084,7 +1084,8 @@ def build_card(card_id: str, members: list[dict], sources: Sources, routes: dict
     return card
 
 
-def trend(cards: list[dict], groups: dict[str, list[dict]], state: dict | None, gaps: list, models: tuple | list = ()) -> dict:
+def trend(cards: list[dict], groups: dict[str, list[dict]], state: dict | None, gaps: list, models: tuple | list = (),
+          routes: dict | None = None) -> dict:
     """TREND for each model with events and for each of `models` (the newest run's, 2026-10-28), cards or not: tabs are price
     condition sets, lines are routes and their gateway endpoints, measures are billing items. A model with no drawable
     observation has no entry."""
@@ -1092,13 +1093,31 @@ def trend(cards: list[dict], groups: dict[str, list[dict]], state: dict | None, 
     suspect = {gap.get("after_observation_id") for gap in gaps if isinstance(gap, dict) and gap.get("kind") in SUSPECT_GAPS} - {None, ""}
     out = {}
     for model_id in dict.fromkeys([*(card["mid"] for card in cards if card["mid"]), *models]):
-        entry = model_trend(model_id, [card for card in cards if card["mid"] == model_id], groups, series, suspect)
+        entry = model_trend(model_id, [card for card in cards if card["mid"] == model_id], groups, series, suspect, routes)
         if entry:
             out[model_id] = entry
     return out
 
 
-def model_trend(model_id: str, cards: list[dict], groups: dict[str, list[dict]], series: dict | None, suspect: set) -> dict | None:
+def letsur_line(model_id: str, tab: tuple, key: tuple, records: list[dict]) -> bool:
+    """Whether this trend line is the route of one of the model's records, by the 현재 가격 표's own rule (compare.place and
+    compare.is_assumed, decision 17: a direct route's Standard line; on a gateway the endpoint the record names, else the
+    maker's own upstream) (2026-10-30 C안 가격 추이, 렛서 경로 선). How the route is known is not said (2026-10-30 박건: 사용이면 사용)."""
+    row = {"model": model_id, "route": key[0], "conditions": {**json.loads(tab[0]), **dict(key[2])}, "unknown": {}, "origin": "listing"}
+    compare.place(row)
+    return any(r.get("route_id") and compare.is_assumed(row, (r["route_id"], r.get("endpoint_id") or "")) for r in records)
+
+
+def letsur_routes(model_id: str, routes: dict | None) -> list[str]:
+    """One legend entry per route LETSUR uses for the model: 'OpenRouter · openrouter · <note>'. A gateway record's note names
+    the upstreams the calls went through, which can change per request, so it stays; how the route is known does not
+    (2026-10-30 박건: 사용이면 사용)."""
+    return list(dict.fromkeys(" · ".join(filter(None, (route_label(r["route_id"]), r.get("note") if r["route_id"] in compare.GATEWAYS else "")))
+                              for r in model_records(model_id, routes) if r.get("route_id")))
+
+
+def model_trend(model_id: str, cards: list[dict], groups: dict[str, list[dict]], series: dict | None, suspect: set,
+                routes: dict | None = None) -> dict | None:
     """One TREND entry: observed prices per run on each route line, then the announced future prices that continue them."""
     count = dict.fromkeys(("currency", "suspect", "ambiguous", "unplaced", "unobserved"), 0)
     seen, memo, touched, lines = set(), set(), set(), {}
@@ -1185,7 +1204,8 @@ def model_trend(model_id: str, cards: list[dict], groups: dict[str, list[dict]],
             for slot, values in lines[tab][key]["planned"].items():
                 memo.add(slot[0])
                 count["unplaced"] += len(values)
-        tabs[tab] = [(labels[key], lines[tab][key], reference_line(key[0], key[2])) for key in sorted(order[:MAX_LINES], key=lambda key: labels[key])]
+        tabs[tab] = [(labels[key], lines[tab][key], reference_line(key[0], key[2]), tab, key)
+                     for key in sorted(order[:MAX_LINES], key=lambda key: labels[key])]
     # A reference line also joins every tab of its unit whose conditions include all it states; its own tab goes when nothing
     # else was drawn there (2026-10-27 decision 26-2).
     for tab, kept in list(tabs.items()):
@@ -1199,18 +1219,21 @@ def model_trend(model_id: str, cards: list[dict], groups: dict[str, list[dict]],
                 tabs[tab] = rest
             else:
                 del tabs[tab]
-    measures = sorted({row[1] for kept in tabs.values() for _, entry, _ in kept for rows in entry["runs"].values() for row in rows},
+    measures = sorted({row[1] for kept in tabs.values() for _, entry, *_ in kept for rows in entry["runs"].values() for row in rows},
                       key=lambda item: (rank(item), item))
     # 그래프 안 최저 counts only lines the newest collection still has (decision 9); older ones are marked old.
-    latest = max((run for kept in tabs.values() for _, entry, _ in kept for run in entry["runs"]), default="")
+    latest = max((run for kept in tabs.values() for _, entry, *_ in kept for run in entry["runs"]), default="")
+    used = model_records(model_id, routes)
     drawn = {}
     for tab, kept in tabs.items():
         drawn[names[tab]] = []
-        for label, entry, ref in kept:
+        for label, entry, ref, home, key in kept:  # home: the tab the line was keyed in (a reference line also joins others)
             pts, until = points(entry, measures, count, memo)
             old = bool(latest) and max(entry["runs"], default="") < latest
+            letsur = bool(used) and letsur_line(model_id, home, key, used)
             drawn[names[tab]].append({"name": html.escape(label), "pts": pts, **({"until": until} if until else {}),
-                                      **({"ref": True} if ref else {}), **({"old": True} if old else {})})
+                                      **({"ref": True} if ref else {}), **({"old": True} if old else {}),
+                                      **({"letsur": True} if letsur else {})})
     facts = ["수집기 관측 단가(state.json의 최신 관측과 이벤트의 이전·이후 관측)와 공지된 예정 단가(점선)만 그렸습니다. 첫 관측 전 값은 기록이 없어 그리지 않았습니다."
              if series is not None else "state.json을 쓰지 못해 이벤트의 이전·이후 관측만 그렸습니다."]
     for name, text in (("currency", "USD가 아닌 값 {n}건은 그리지 않았습니다."), ("suspect", "검증되지 않은 관측 {n}건(파서 의심)은 뺐습니다."),
@@ -1226,6 +1249,9 @@ def model_trend(model_id: str, cards: list[dict], groups: dict[str, list[dict]],
     entry = {"name": model_id, "unit": " · ".join(dict.fromkeys(f"USD / {unit_ko(tab[1])}" if tab[1] else "USD" for tab in tabs)),
              "real": True, "note": " ".join(facts), "badge": [f"변화 {len(cards)}건" if cards else "변화 없음", ""],
              "measures": [html.escape(MEASURE_KO.get(item, item)) for item in measures], "notes": notes}
+    said = letsur_routes(model_id, routes)
+    if said:
+        entry["letsurRoutes"] = said
     full = tab_conditions(list(tabs))
     entry["conds"] = {names[tab]: full[tab] for tab in tabs}  # tab name -> its conditions in the source's words
     if len(drawn) == 1:
@@ -1692,7 +1718,7 @@ def collect(root: Path, today: str, routes: dict | None) -> tuple[dict, str]:
     # 모델별 가격 화면은 변화 카드가 없어도 최신 수집 run이 관측한 모델을 모두 보인다(2026-10-28): 새 모델은 기준선만 있고 이벤트가 없다
     shown = list(dict.fromkeys([*(card["mid"] for card in cards if card["mid"]), *compare.observed_models(root, report)]))
     data = {"TODAY": today, "SRC": sources.entries(), "ID": {cid: [e.get("event_id") for e in groups[cid]] for cid in order},
-            "EVENTS": cards, "MODELS": models(cards, routes), "TREND": trend(cards, groups, state, doc.get("gaps") or [], shown),
+            "EVENTS": cards, "MODELS": models(cards, routes), "TREND": trend(cards, groups, state, doc.get("gaps") or [], shown, routes),
             "COLLECTED": collected(report), "HEALTH": health(root, report, state, today), "SUPPLY": supply(routes)}
     # 공급사 비교 표 per LLM model of `shown` (compare.py; reads the newest processed run under <root>/runs)
     data["COMPARE"] = compare.tables(root, shown, [e for e in doc["events"] if isinstance(e, dict)],
