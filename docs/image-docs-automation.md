@@ -6,6 +6,7 @@
 
 - `sources.py`는 125개 SourceSpec(LLM 73, 이미지 39, 영상 13)을 구성한다. 추가된 12개는 두 모델×6개 문서의 조건 전용 사양이다.
 - `collectors/image25_supplement.py`는 OpenAI, Azure, OpenRouter, Vercel, fal 문서를 좁은 scope로 읽는다. 가격 행은 만들지 않는다.
+- OpenRouter 이미지 생성 guide는 2026-10-30부터 `collectors/image25_openrouter_guide.py`가 읽는다. OpenRouter가 크기 규칙 문장을 바꿔(명시 픽셀 크기는 공급자에 따라 다르고, 받는 공급자는 그 값을 우선하며 어긋난 resolution·aspect_ratio는 400으로 거절) 기존 parser가 'generic size alias contract changed'로 실패했다. 뜻이 같아 예전 문장과 새 문장 모두 같은 행을 내고, 둘 다 아니면 실패한다. 새 모듈로 나눠 다른 보충 문서 10개의 parser fingerprint는 그대로다.
 - `comparison.py`는 요청, 가격 조건과 exact API 계약을 대조하고 참고 문서의 원문 조건을 `documentary_profiles`에도 보존한다.
 - `image_reviews.py`는 검증된 수집 회차마다 두 모델의 기본 요청 보고서를 작성하고 입력·출력 hash를 manifest에 남긴다.
 - `.github/workflows/market-collection.yml`은 수집 뒤 보고서를 생성하고 Summary에서 검증해 XZ artifact에 포함한다.

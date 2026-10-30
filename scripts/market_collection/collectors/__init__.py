@@ -10,7 +10,7 @@ from . import aws_bedrock_models
 from . import zai
 from . import kling, fal_llms, byteplus_video, vercel_video
 from . import gateway_image_endpoints
-from . import google_models_more, aws_bedrock_pricelist, openai_models_more, openai_pricing_standard
+from . import google_models_more, aws_bedrock_pricelist, openai_models_more, openai_pricing_standard, image25_openrouter_guide
 
 SUPPLIERS = {
     "google_direct": google, "openai_direct": openai, "openai": openai,
@@ -23,6 +23,8 @@ SUPPLIERS = {
 
 def parser_module(spec: SourceSpec):
     """The collector module that parses this spec's raw body."""
+    if spec.parser in image25_openrouter_guide.PARSERS:  # 2026-10-30, ahead of image25_supplement: OpenRouter reworded the guide
+        return image25_openrouter_guide
     if spec.parser in image25_supplement.PARSERS:
         return image25_supplement
     if spec.parser in image25_api.PARSERS:
