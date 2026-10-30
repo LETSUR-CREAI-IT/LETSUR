@@ -84,12 +84,23 @@ CONDITION_GROUPS = {
 }
 ITEM_ORDER = ("input", "output", "cache_read", "cache_write")
 ITEM_KO = {"input": "입력 토큰", "output": "출력 토큰", "cache_read": "캐시 읽기", "cache_write": "캐시 쓰기"}  # the template's own row names
-MEASURE_KO = {"input": "입력", "output": "출력", "cache_read": "캐시 읽기", "cache_write": "캐시 쓰기"}
+MEASURE_KO = {"input": "입력", "output": "출력", "cache_read": "캐시 읽기", "cache_write": "캐시 쓰기", "image_input": "이미지 입력",
+              "image_cache_read": "이미지 캐시 읽기", "image_output": "이미지 출력", "generated_video": "생성 영상"}  # in the trend's order
+# OpenAI's image model pages name their token rates as the page writes them; the gateways' listings and Google name the same
+# rates input, cache_read, image_input and image_output, so the trend reads them as one item (2026-10-30: they were separate
+# items and never compared). Vercel's output for these models is left as output: its listing does not say image or text.
+SAME_ITEM = {"Text tokens / Input": "input", "Text tokens / Cached input": "cache_read", "Image tokens / Input": "image_input",
+             "Image tokens / Cached input": "image_cache_read", "Image tokens / Output": "image_output"}
 UNIT_KO = {"1M tokens": "100만 토큰", "1000 tokens": "1,000 토큰", "1 image": "이미지 1장", "1 second": "1초"}
 CONDITION_KO = {"service_tier": "등급", "cache_read_multiplier": "캐시 읽기 배율", "context_length": "컨텍스트", "endpoint_tag": "엔드포인트",
                 "endpoint_provider": "제공자", "endpoint_model_slug": "모델 slug", "quantization": "정밀도", "endpoint_status": "상태",
                 "endpoint_discount": "엔드포인트 할인", "discount_application": "할인 적용", "price_basis": "가격 기준",
-                "region": "지역", "input_token_band": "입력 구간", "precision": "정밀도", "meter_scope": "배포 방식", "model_version": "버전"}
+                "region": "지역", "input_token_band": "입력 구간", "precision": "정밀도", "meter_scope": "배포 방식", "model_version": "버전",
+                # video (2026-10-30: tabs and cards showed these keys, or bare values such as 'on · pro · off')
+                "audio": "오디오", "input_video": "입력 영상", "mode": "모드", "voice_control": "음성 제어", "operation": "작업",
+                "inference_mode": "추론 방식", "billed_duration": "청구 길이", "generateAudio": "오디오 생성", "resolution": "해상도"}
+# Conditions whose value does not say what it is ('on', 'none', 'pro'): a tab and the comparison line name them (2026-10-30).
+NAMED = {"audio", "input_video", "mode", "voice_control", "operation", "inference_mode", "billed_duration", "generateAudio"}
 # Condition values stay as the source wrote them; only tiers and regions get the dashboard's names (2026-10-27 decision 26-1).
 TIER_NAMES = {"standard": "Standard", "priority": "Priority", "ultrafast": "Ultrafast", "flex": "Flex", "batch": "Batch"}
 REGION_NAMES = {"us": "US", "eu": "EU"}
@@ -102,7 +113,10 @@ IGNORED = {"rate_period", *MUTABLE_CONDITIONS}  # the rate window and stated mul
 # What a gateway listing states about the endpoint serving a price (collectors/llm_endpoints.py), not the condition it is priced
 # under: it tells lines apart, never trend tabs.
 ENDPOINT = {"endpoint_tag", "endpoint_provider", "endpoint_model_slug", "context_length", "quantization", "endpoint_status",
-            "endpoint_discount", "discount_application", "price_basis"}
+            "endpoint_discount", "discount_application", "price_basis",
+            # Vercel's video metadata: who serves it, what it supports and its operation (always the model's own task), not
+            # what it is priced under (2026-10-30)
+            "provider", "supportedAspectRatios", "supportedDurationsSeconds", "supportedFps", "supportedOperations", "operation"}
 SUSPECT_GAPS = ("parser_artifact", "csv_raw_mismatch", "parser_fingerprint_mismatch")
 MAX_LINES = 6  # the template colours six lines (s1~s6)
 # The image review's own reading of OpenRouter's images catalog (per token, its endpoint as a hashed profile id): the catalog's
@@ -225,6 +239,17 @@ def condition_name(key: str) -> str:
 
 def rank(item: str) -> int:
     return ITEM_ORDER.index(item) if item in ITEM_ORDER else len(ITEM_ORDER)
+
+
+def measure_rank(item: str) -> tuple:
+    """A trend measure's place: MEASURE_KO's order, then any other item by name."""
+    order = list(MEASURE_KO)
+    return (order.index(item) if item in order else len(order), item)
+
+
+def item_of(value) -> str:
+    """A billing item as the trend measures it: OpenAI's image page names read as the other routes' (SAME_ITEM)."""
+    return SAME_ITEM.get(value or "", value or "")
 
 
 def route_label(route: str) -> str:
@@ -1215,7 +1240,7 @@ def model_trend(model_id: str, cards: list[dict], groups: dict[str, list[dict]],
             key = (obs.get("route") or "", obs.get("source_key") or "", endpoint(obs.get("conditions")), obs.get("upstream_provider") or "",
                    obs.get("provider_model_id") or "", obs.get("task") or "")
             entry = line(tab_key(obs.get("conditions"), obs.get("unit")), key)
-            entry["runs"].setdefault(obs.get("run_id") or "", []).append((moment, obs.get("billing_item") or "", float(amount), obs.get("effective_until")))
+            entry["runs"].setdefault(obs.get("run_id") or "", []).append((moment, item_of(obs.get("billing_item")), float(amount), obs.get("effective_until")))
             if entry["at"] is None or moment > entry["at"]:  # the newest observation says what the line is priced under now
                 entry.update(conditions=obs.get("conditions") or {}, unknown=obs.get("unknown_conditions") or [], at=moment)
 
@@ -1231,13 +1256,13 @@ def model_trend(model_id: str, cards: list[dict], groups: dict[str, list[dict]],
                 moment, amount = kst(side.get("observed_at_utc")), number(side.get("amount"))
                 if side.get("observation_id") and moment and amount is not None and usable(side["observation_id"], side.get("currency")):
                     loose.append((tab_key(event.get("conditions"), side.get("unit")), where, side.get("run_id") or "",
-                                  (moment, event.get("billing_item") or "", float(amount), side.get("effective_until")), event.get("conditions") or {}))
+                                  (moment, item_of(event.get("billing_item")), float(amount), side.get("effective_until")), event.get("conditions") or {}))
             start = iso(after.get("effective_from")) or iso(part(event, "dates").get("effective_from"))
             amount = number(after.get("amount"))
             if kind == "scheduled_change" and start and amount is not None:
                 if after.get("currency") == "USD":
                     planned.append((tab_key(event.get("conditions"), after.get("unit")), where, (card["id"], start),
-                                    event.get("billing_item") or "", float(amount)))
+                                    item_of(event.get("billing_item")), float(amount)))
                 else:
                     count["currency"] += 1
     for tab, where, run_id, row, conditions in loose:
@@ -1310,7 +1335,7 @@ def model_trend(model_id: str, cards: list[dict], groups: dict[str, list[dict]],
         mine = {key for key in lines[tab] if used and letsur_line(model_id, tab, key, used)}
         newest = {key: dict((row[1], row[2]) for row in sorted(max(lines[tab][key]["runs"].values(), key=lambda found: max(r[0] for r in found)),
                                                                key=lambda row: row[0])) for key in lines[tab]}
-        first = min((item for values in newest.values() for item in values), key=lambda item: (rank(item), item))
+        first = min((item for values in newest.values() for item in values), key=measure_rank)
         order = sorted(lines[tab], key=lambda key: (key not in mine, not lines[tab][key]["event"], bool(lines[tab][key]["why"]),
                                                     newest[key].get(first, float("inf")), labels[key]))
         for key in order[MAX_LINES:]:
@@ -1334,7 +1359,7 @@ def model_trend(model_id: str, cards: list[dict], groups: dict[str, list[dict]],
             del tabs[tab]
     names = tab_names(list(tabs))
     measures = sorted({row[1] for kept in tabs.values() for _, entry, *_ in kept for rows in entry["runs"].values() for row in rows},
-                      key=lambda item: (rank(item), item))
+                      key=measure_rank)
     # 그래프 안 최저 counts only lines the newest collection still has (decision 9); older ones are marked old.
     latest = max((run for kept in tabs.values() for _, entry, *_ in kept for run in entry["runs"]), default="")
     drawn = {}
@@ -1416,6 +1441,11 @@ def tab_text(conditions: dict, name: str) -> str:
     return str(conditions[name]) if name == "precision" else value_text(name, conditions[name])
 
 
+def named(name: str, text: str) -> str:
+    """'오디오 on' for a condition whose value does not say what it is (NAMED), else the value alone."""
+    return f"{CONDITION_KO[name]} {text}" if name in NAMED and text else text
+
+
 def tab_value(name: str, text: str) -> str:
     """Short words for the long values direct routes state (Bedrock, OpenAI, Vertex, Anthropic), so the tab row fits the
     panel (2026-10-27 박건 요청); the comparison line above the graph keeps the source's words (tab_conditions)."""
@@ -1427,6 +1457,10 @@ def tab_value(name: str, text: str) -> str:
         return f"캐시 {found.group(1)}{'분' if found.group(2) == 'm' else '시간'}"
     if found := re.search(r"(?:>\s*|more than )(\d+K) input tokens are priced at ([\d.]+)x input(?: and cache rates)? and ([\d.]+)x output", text):
         return f"{found.group(1)} 초과 요청 입력 {found.group(2)}배·출력 {found.group(3)}배"
+    if found := re.fullmatch(r"input plus output length \(minimum (\d+)× the output\)", text):  # fal Kling 4.0 Omni with an input video
+        return f"입력+출력(최소 출력의 {found.group(1)}배)"
+    if name == "audio" and text.startswith("supported; rate has no audio distinction"):  # Vercel Seedance: one rate with or without audio
+        return "구분 없음"
     if name == "promotion_note":  # OpenAI: 'promotional pricing is available at least through November 21, 2026.'
         found = re.search(r"through ([A-Z][a-z]+ \d{1,2}, \d{4})", text)
         day = datetime.strptime(found.group(1), "%B %d, %Y") if found else None
@@ -1439,7 +1473,7 @@ def tab_conditions(keys) -> dict:
     full = {}
     for key in keys:
         conditions = json.loads(key[0])
-        full[key] = " · ".join(part for part in (tab_text(conditions, name) for name in tab_order(conditions)) if part) or "조건 없음"
+        full[key] = " · ".join(part for part in (named(name, tab_text(conditions, name)) for name in tab_order(conditions)) if part) or "조건 없음"
     return full
 
 
@@ -1451,7 +1485,7 @@ def tab_names(keys) -> dict:
     def short(key):
         conditions = json.loads(key[0])
         regional = tab_text(conditions, "region") in REGION_NAMES.values() if "region" in conditions else False
-        parts = [tab_value(name, tab_text(conditions, name)) for name in tab_order(conditions) if name not in TAB_QUIET
+        parts = [named(name, tab_value(name, tab_text(conditions, name))) for name in tab_order(conditions) if name not in TAB_QUIET
                  and not (name == "service_tier" and regional and tab_text(conditions, name) == "Standard")]
         return " · ".join(part for part in parts if part) or "조건 없음"
 
