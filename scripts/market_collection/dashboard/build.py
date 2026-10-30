@@ -11,11 +11,10 @@ not make (headline, risk, suggestion text) stay empty, and the template's own ru
 compute the rest. LETSUR's route for each card, and for each model in MODELS, comes only
 from --internal-routes, a file of the routes LETSUR uses per model; without it, or when
 the file cannot be used, every card says the route is unconfirmed and no model gets one.
-A record may say its basis: settings (LETSUR's registered routes from its 9/23 QnA answer), observed (the route one
-LETSUR API call went through, 2026-10-28 or its checked_at), manual (set by an admin in the 공급로 현황 tab) or inferred
-(a route the calls only suggest: shown as 사용 경로 추정, never taken as LETSUR's use). A card whose route has a record takes
-that record's mark, any other card and MODELS the mark of all the model's records. A model with a record without basis is
-marked as assumed when the file has is_demo true. MODELS is page data only for now: the template reads it in
+A record may say its basis: settings (LETSUR's registered routes from its 9/23 QnA answer), observed (seen in LETSUR API
+calls, see letsur_routes.py) or manual (set by an admin in the 공급로 현황 tab). The page shows every basis alike as LETSUR's
+use (2026-10-30 박건: 사용이면 사용); a route only guessed is no record at all. A model with a record without basis is
+marked as assumed (가정) when the file has is_demo true. MODELS is page data only for now: the template reads it in
 renderModels(), which nothing calls. SUPPLY carries the registry's routes per model and the whole file for the tab.
 When events.json is missing or unreadable, or the build or the
 continuity step failed, a page is still written and says today's build failed, so
@@ -289,6 +288,30 @@ def region_group(conditions) -> str:
     return ""
 
 
+def input_band(conditions: dict) -> dict:
+    """OpenRouter's prompt_tokens (the price of requests above that many input tokens), Vercel's context tier bounds and
+    Google's context_band ('prompts > 200k tokens') and Anthropic's input_token_band ('>100K') as one condition, input_band '> 200K' or '<= 200K': the tab reads 입력
+    200K 초과/이하 instead of the bare 200000, 200001 · 0 (2026-10-30), and the same band on every route is one tab. A tier
+    from 0 is the base price and adds nothing."""
+    out = dict(conditions)
+    for key, pattern in (("context_band", r"prompts (<=|>) (\d+)k tokens"), ("input_token_band", r"(<=|>)\s*(\d+)K")):
+        stated = re.fullmatch(pattern, str(out.get(key, "")))
+        if stated:
+            del out[key]
+            return {**out, "input_band": f"{stated.group(1)} {stated.group(2)}K"}
+    above, low, high = (out.pop(key, None) for key in ("prompt_tokens", "context_tier_min_tokens", "context_tier_max_tokens"))
+    if number(above):
+        band = f"> {compare.band_of(above)}"
+    elif number(low):
+        band = f"> {compare.band_of(number(low) - 1)}"
+    elif number(high):
+        band = f"<= {compare.band_of(number(high) - 1)}"
+    else:
+        return {**out, **{key: value for key, value in (("prompt_tokens", above), ("context_tier_max_tokens", high))
+                          if value not in (None, "")}}
+    return {**out, "input_band": band}
+
+
 def tab_facts(conditions) -> dict:
     """What splits trend tabs beyond the priced-under conditions: precision group and region (2026-10-27 decisions 21, 26-2)."""
     facts = {"precision": precision_group((conditions or {}).get("quantization")), "region": region_group(conditions)}
@@ -514,44 +537,19 @@ def mark_reverted(cards: list[dict], groups: dict[str, list[dict]], gone: set[st
             card["rv"], card["rn"] = back, len(priced)
 
 
-BASIS_NAME = {"settings": "렛서 설정", "observed": "호출 확인", "manual": "관리자 지정", "inferred": "호출 추정", "demo": "가정"}
-USE_BASES = ("settings", "observed", "manual")  # LETSUR uses the route; inferred is only the route its calls suggest (2026-10-29)
-FLAGS = {"settings": "relSet", "observed": "relObs", "manual": "relMan"}  # a card's flag for exactly one basis (a mix has none)
+USE_BASES = ("settings", "observed", "manual")  # how the routes file knows LETSUR uses a route; the page shows them alike
 
 
-def basis_mark(basis: str, compact: bool = False) -> str:
-    """' (렛서 설정)', ' (렛서 설정·호출 확인)' for a mix (route_basis joins bases with '+'), ' (가정)', '' for none; compact
-    (' 설정', ' 설정·호출 확인') goes inside a sentence."""
-    names = ["설정" if compact and part == "settings" else BASIS_NAME[part] for part in basis.split("+") if part]
-    return "" if not names else f" {'·'.join(names)}" if compact else f" ({'·'.join(names)})"
+def model_records(model_id: str, routes: dict | None) -> list[dict]:
+    """The model's --internal-routes records: the routes LETSUR uses (or that it does not offer the model)."""
+    return [record for record in (routes or {}).get("records", []) if record["model_id"] == model_id]
 
 
-def model_records(model_id: str, routes: dict | None) -> tuple[list[dict], list[dict]]:
-    """The model's --internal-routes records that say which route LETSUR uses (or that it does not offer the model), and its
-    inferred records: routes LETSUR's API calls only suggest, shown as 사용 경로 추정 but never as LETSUR's use (2026-10-29)."""
-    records = [record for record in (routes or {}).get("records", []) if record["model_id"] == model_id]
-    return [r for r in records if r.get("basis") != "inferred"], [r for r in records if r.get("basis") == "inferred"]
-
-
-def guess_text(guessed: list[dict]) -> str:
-    """'사용 경로 추정 : OpenAI · openai (호출 추정)', '' when no inferred record names a route."""
-    found = list(dict.fromkeys(record["route_id"] for record in guessed if record["route_id"]))
-    return f"사용 경로 추정 : {', '.join(map(route_label, found))}{basis_mark('inferred')}" if found else ""
-
-
-def route_basis(model_id: str, routes: dict | None, route: str = "") -> str:
-    """Where the --internal-routes records come from, read for the model's records on `route` or, when it has none there,
-    for all of them: 'settings' (LETSUR's registered routes from its 9/23 QnA answer, question 2; LETSUR says their traffic
-    is not confirmed, 2026-10-28 박건 결정), 'observed' (the route one LETSUR API call went through: the route is in use,
-    maybe not alone), 'manual' (an admin set it, 2026-10-29) or a mix joined with '+' ('settings+observed'). Inferred
-    records are not read here (model_records). 'demo' when a record of the model has no basis and the file is a demo
-    file, else ''; one such record keeps the whole model an assumption."""
-    records = model_records(model_id, routes)[0]
-    bases = {record.get("basis") for record in records}
-    if records and bases <= set(USE_BASES):
-        bases = {record["basis"] for record in records if route and record["route_id"] == route} or bases
-        return "+".join(basis for basis in USE_BASES if basis in bases)
-    return "demo" if (routes or {}).get("is_demo") else ""
+def assumed(model_id: str, routes: dict | None) -> bool:
+    """A demo file's model is an assumption (가정) unless every record of it says its basis; one record without keeps the
+    whole model an assumption."""
+    records = model_records(model_id, routes)
+    return bool((routes or {}).get("is_demo")) and not (records and all(record.get("basis") in USE_BASES for record in records))
 
 
 def relation(rep: dict, routes: dict | None) -> dict:
@@ -560,14 +558,9 @@ def relation(rep: dict, routes: dict | None) -> dict:
     A model with no record stays unconfirmed: no record does not mean LETSUR does not use it.
     A card with no route stays unconfirmed too: its source never said which route changed (2026-10-27 decision).
     endpoint_id only adds detail when the route matches. The mark after relShort is the basis of the record on the
-    card's route, else of all the model's records (route_basis); relSet, relObs and relMan are there for exactly settings,
-    observed and manual (a mix has none: its mark says which). An inferred route stays unconfirmed with relInf: it decides
-    a card on that route, or every card of a model with no other record, and the card says which route is suspected."""
-    records, guessed = model_records(rep.get("model_id"), routes)
+    card's route, else of all the model's records: none, whatever the record's basis, or (가정) in a demo file (assumed)."""
+    records = model_records(rep.get("model_id"), routes)
     route, used = rep.get("route") or "", list(dict.fromkeys(record["route_id"] for record in records if record["route_id"]))
-    guess = guess_text(guessed)
-    if guess and route not in used and (not records or route in {record["route_id"] for record in guessed}):
-        return {"relKey": "unk", "relShort": guess, "relDemo": False, "relInf": True}
     if not records:
         return {"relKey": "unk", "relShort": "사용 경로 확인 필요", "relDemo": False}
     if not route and used:
@@ -579,21 +572,20 @@ def relation(rep: dict, routes: dict | None) -> dict:
         key, short = "other", f"모델 제공 중 : {', '.join(map(route_label, used))} 경로로 사용"
     else:
         key, short = "none", "미도입"
-    basis = route_basis(rep.get("model_id"), routes, route)
-    return {"relKey": key, "relShort": short + basis_mark(basis), "relDemo": basis == "demo", **({FLAGS[basis]: True} if basis in FLAGS else {})}
+    demo = assumed(rep.get("model_id"), routes)
+    return {"relKey": key, "relShort": short + (" (가정)" if demo else ""), "relDemo": demo}
 
 
 def model_use(model_id: str, routes: dict | None) -> dict:
     """MODELS[model].use from the --internal-routes file: every route LETSUR uses for the model, whatever the card's
-    route, in relation()'s words. A model with no record gets no use, left to the template's default; one with only
-    inferred records gets relation()'s 사용 경로 추정 text."""
-    records, guessed = model_records(model_id, routes)
+    route, in relation()'s words. A model with no record gets no use, left to the template's default."""
+    records = model_records(model_id, routes)
     if not records:
-        return {"use": guess} if (guess := guess_text(guessed)) else {}
+        return {}
     used = list(dict.fromkeys(record["route_id"] for record in records if record["route_id"]))
     endpoints = dict.fromkeys(record["endpoint_id"] for record in records if record["route_id"] and record.get("endpoint_id"))
     use = " · ".join([f"{', '.join(map(route_label, used))} 경로로 사용", *(f"endpoint {endpoint}" for endpoint in endpoints)]) if used else "미도입"
-    return {"use": use + basis_mark(route_basis(model_id, routes))}
+    return {"use": use + (" (가정)" if assumed(model_id, routes) else "")}
 
 
 def undecided_release(event: dict) -> bool:
@@ -1125,7 +1117,7 @@ def model_trend(model_id: str, cards: list[dict], groups: dict[str, list[dict]],
         return True
 
     def tab_key(conditions, unit) -> tuple[str, str]:
-        priced_under = {key: value for key, value in compared(conditions).items() if key not in ENDPOINT}
+        priced_under = input_band({key: value for key, value in compared(conditions).items() if key not in ENDPOINT})
         priced_under.update(tab_facts(conditions))
         return json.dumps(priced_under, sort_keys=True, ensure_ascii=False), unit or ""
 
@@ -1287,7 +1279,7 @@ def tab_value(name: str, text: str) -> str:
         return f"입력 {found.group(1) or found.group(2)} 초과"
     if name in ("cache_write_ttl", "cache_duration") and (found := re.fullmatch(r"(\d+)(m|h)", text)):
         return f"캐시 {found.group(1)}{'분' if found.group(2) == 'm' else '시간'}"
-    if found := re.search(r">\s*(\d+K) input tokens are priced at ([\d.]+)x input and ([\d.]+)x output", text):
+    if found := re.search(r"(?:>\s*|more than )(\d+K) input tokens are priced at ([\d.]+)x input(?: and cache rates)? and ([\d.]+)x output", text):
         return f"{found.group(1)} 초과 요청 입력 {found.group(2)}배·출력 {found.group(3)}배"
     return text
 
@@ -1455,8 +1447,8 @@ def internal_routes(path: Path) -> tuple[dict | None, str]:
 
 def record_problem(record) -> str:
     """Why one --internal-routes record cannot be used, or "". route_id must be there (null: the model is not
-    offered); endpoint_id may be left out, and so may basis ('settings', 'observed', 'manual' or 'inferred', see
-    route_basis and model_records), note (the evidence, plain text) and checked_at (YYYY-MM-DD)."""
+    offered); endpoint_id may be left out, and so may basis ('settings', 'observed' or 'manual'; a guessed route is no
+    record, 2026-10-30), note (the evidence, plain text) and checked_at (YYYY-MM-DD)."""
     if not isinstance(record, dict) or not isinstance(record.get("model_id"), str) or not record["model_id"]:
         return "model_id 없음"
     if "route_id" not in record:
@@ -1464,8 +1456,8 @@ def record_problem(record) -> str:
     for key in ("route_id", "endpoint_id", "note"):
         if record.get(key) is not None and not (isinstance(record[key], str) and record[key]):
             return f"{key}가 문자열이나 null이 아님"
-    if record.get("basis") not in (None, *USE_BASES, "inferred"):
-        return "basis가 settings·observed·manual·inferred나 null이 아님"
+    if record.get("basis") not in (None, *USE_BASES):
+        return "basis가 settings·observed·manual이나 null이 아님"
     if record.get("checked_at") is not None and not iso(record["checked_at"]):
         return "checked_at이 YYYY-MM-DD 날짜나 null이 아님"
     return ""
@@ -1635,7 +1627,7 @@ def link_promotions(cards: list[dict], groups: dict[str, list[dict]], tables: di
                 sales.setdefault(route[card["id"]], []).append(card)
         pairs = [(m, changes[m["direct"]]) for m in matches
                  if m["direct"] in changes and changes[m["direct"]]["eff"] == m["start"] and m["route"] in sales]
-        used = {record["route_id"] for record in model_records(model_id, routes)[0]}  # an inferred route is not LETSUR's
+        used = {record["route_id"] for record in model_records(model_id, routes)}
         for gateway in dict.fromkeys(m["route"] for m, _ in pairs):
             change = next(c for m, c in pairs if m["route"] == gateway)
             for sale in sales[gateway]:
@@ -1646,7 +1638,7 @@ def link_promotions(cards: list[dict], groups: dict[str, list[dict]], tables: di
             change["link"] = [sales[gateway][0]["id"], sales[gateway][0]["sum"]]
             if gateway in used:
                 end = sales[gateway][0].get("eff") or (date.fromisoformat(change["eff"]) - timedelta(days=1)).isoformat()
-                mark = basis_mark(route_basis(model_id, routes, gateway), compact=True)
+                mark = " 가정" if assumed(model_id, routes) else ""
                 change["risk"] = (f"렛서{mark} 경로({ROUTE_PUBLISHERS.get(gateway, gateway)})도 {md(end)}에 할인이 끝나 "
                                   f"{md(change['eff'])}부터 같은 가격이 될 수 있음(추정)")
         for gateway in dict.fromkeys(m["route"] for m, _ in pairs if m["route"] in used):

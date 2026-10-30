@@ -35,7 +35,7 @@ def edit(old, new):
 
 def test_one_more_source_on_openais_route_with_a_module_of_its_own():
     assert (SPEC.modality, SPEC.model_id, SPEC.route, SPEC.task, SPEC.parser) == ("llm", "o3-pro", "openai_direct", "text_generation", "openai_o3_pro")
-    assert SPEC.url == "https://developers.openai.com/api/docs/models/o3-pro.md" and route_gap_source_specs()[-1] == SPEC
+    assert SPEC.url == "https://developers.openai.com/api/docs/models/o3-pro.md" and SPEC in route_gap_source_specs()
     assert SPEC not in maker_direct_source_specs() and "o3-pro" not in {row[0] for row in OPENAI_DIRECT_MODELS}
     assert parser_module(SPEC) is openai_models_more and SPEC.parser not in openai_models.PARSERS
     older = next(s for s in maker_direct_source_specs() if s.model_id == "gpt-5.5-pro")

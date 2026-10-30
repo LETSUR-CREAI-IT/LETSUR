@@ -10,7 +10,7 @@ from scripts.market_collection.models import GATEWAY_MORE_MODELS, GATEWAY_EMBEDD
 from scripts.market_collection.models import KLING_VIDEO_MODELS, SEEDANCE_VARIANT_MODELS
 from scripts.market_collection.models import GATEWAY_IMAGE_MODELS, GATEWAY_IMAGE_CATALOG_MODELS
 from scripts.market_collection.models import AWS_OPENAI_MORE_MODELS
-from scripts.market_collection.models import GOOGLE_DIRECT_MORE_MODELS, GOOGLE_ROUTED_MODELS, AWS_PRICELIST_MODELS, OPENAI_DIRECT_MORE_MODELS
+from scripts.market_collection.models import GOOGLE_DIRECT_MORE_MODELS, GOOGLE_ROUTED_MODELS, AWS_PRICELIST_MODELS, OPENAI_DIRECT_MORE_MODELS, OPENAI_PRICING_STANDARD_MODELS
 
 def _targets() -> dict[str, tuple[str, str, str, str, str]]:
     targets = {
@@ -132,6 +132,8 @@ def route_gap_source_specs() -> list[SourceSpec]:
                  for model, _, _ in AWS_PRICELIST_MODELS)
     specs.extend(SourceSpec(f"openai_{_key(model)}", "llm", model, "openai_direct", "text_generation", f"https://developers.openai.com/api/docs/models/{slug}.md", f"openai_{_key(model)}")
                  for model, _, slug in OPENAI_DIRECT_MORE_MODELS)
+    specs.extend(SourceSpec(f"openai_{_key(model)}", "llm", model, "openai_direct", "text_generation", "https://developers.openai.com/api/docs/pricing.md", "openai_pricing_standard")
+                 for model in OPENAI_PRICING_STANDARD_MODELS)
     return specs
 
 

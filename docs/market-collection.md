@@ -10,7 +10,7 @@
 | 이미지 | GPT Image 2.5 Sunburst, GPT Image 2.5 Flare | OpenAI Direct, fal, OpenRouter, Vercel AI Gateway, Azure Foundry retail API | 33 |
 | 영상 | Seedance 2.5 | fal, Vercel AI Gateway, BytePlus ModelArk | 4 |
 
-현재 registry에는 408개 `SourceSpec`(출처 사양, 2026-10-30에 렛서가 쓰는데 가격을 모으지 않던 경로 8개를 채움(아래 '렛서가 쓰는 경로의 빈 가격 8개'), 그 전 400개는 같은 날 렛서가 Bedrock으로 부르기 시작한 gpt-6.1-terra의 AWS 모델 카드 1개 추가(아래 '렛서 공급 경로 다시 확인'), 그 전 399개는 2026-10-29에 렛서의 나머지 모델 70개 출처 191개 추가(아래 '구성과 출처 확장'), 그 전 208개는 2026-10-17에 OpenRouter·Vercel LLM endpoint API 36개 추가, 2026-10-22에 Google 직접 Veo 3.1 3개 퇴역, 2026-10-28에 렛서 모델 목록에 없는 Veo 3.1 fal·Vercel 6개와 Ideogram 4.5 6개 퇴역, 같은 날 Azure Foundry GPT 7개를 카탈로그 페이지에서 Azure Retail Prices API 사양으로 교체(수는 그대로)하고 렛서가 OpenRouter·Vercel로만 쓰는 LLM 34개의 endpoint API 62개 추가(아래 '구성과 출처 확장'); 가격 행 478→2,037, 상세는 [events.md](events.md)), 343개 모델/경로 조합, 125개 정규 모델 ID가 있다: LLM 333개/107개 모델, 이미지 51개/9개 모델, 영상 24개/9개 모델. 사양 수는 URL 수가 아니다. 기존 83·97·103·111·113·146·208개 단계의 수치와 검증 결과는 해당 시점의 기록으로 유지한다. GPT Image 2.5의 첫 API 조건 문서 8개에 12개 보충 문서를 더했다. 보충 문서는 두 모델×6종의 문서 유형이며 가격 관측을 만들지 않는다. 이미지 모델은 `gpt-image-2.5-sunburst`, `gpt-image-2.5-flare`; 영상은 `seedance-2.5`다. 수집기는 등록된 공개 HTTPS URL을 요청하며 로그인이나 유료 모델 호출은 하지 않는다. 문서별 판단 범위는 [수집 범위 검토](collector-coverage-review.md), 상세 정책은 [비교 규칙](image25-comparison-rules.md)을 참고한다.
+현재 registry에는 415개 `SourceSpec`(출처 사양, 2026-10-30 오후 GPT 7개 모델의 OpenAI 직접 가격 7개 추가(아래 '렛서가 쓰는 경로의 빈 가격 8개' 끝), 그 전 408개는 같은 날 렛서가 쓰는데 가격을 모으지 않던 경로 8개를 채움(아래 '렛서가 쓰는 경로의 빈 가격 8개'), 그 전 400개는 같은 날 렛서가 Bedrock으로 부르기 시작한 gpt-6.1-terra의 AWS 모델 카드 1개 추가(아래 '렛서 공급 경로 다시 확인'), 그 전 399개는 2026-10-29에 렛서의 나머지 모델 70개 출처 191개 추가(아래 '구성과 출처 확장'), 그 전 208개는 2026-10-17에 OpenRouter·Vercel LLM endpoint API 36개 추가, 2026-10-22에 Google 직접 Veo 3.1 3개 퇴역, 2026-10-28에 렛서 모델 목록에 없는 Veo 3.1 fal·Vercel 6개와 Ideogram 4.5 6개 퇴역, 같은 날 Azure Foundry GPT 7개를 카탈로그 페이지에서 Azure Retail Prices API 사양으로 교체(수는 그대로)하고 렛서가 OpenRouter·Vercel로만 쓰는 LLM 34개의 endpoint API 62개 추가(아래 '구성과 출처 확장'); 가격 행 478→2,037, 상세는 [events.md](events.md)), 343개 모델/경로 조합, 125개 정규 모델 ID가 있다: LLM 333개/107개 모델, 이미지 51개/9개 모델, 영상 24개/9개 모델. 사양 수는 URL 수가 아니다. 기존 83·97·103·111·113·146·208개 단계의 수치와 검증 결과는 해당 시점의 기록으로 유지한다. GPT Image 2.5의 첫 API 조건 문서 8개에 12개 보충 문서를 더했다. 보충 문서는 두 모델×6종의 문서 유형이며 가격 관측을 만들지 않는다. 이미지 모델은 `gpt-image-2.5-sunburst`, `gpt-image-2.5-flare`; 영상은 `seedance-2.5`다. 수집기는 등록된 공개 HTTPS URL을 요청하며 로그인이나 유료 모델 호출은 하지 않는다. 문서별 판단 범위는 [수집 범위 검토](collector-coverage-review.md), 상세 정책은 [비교 규칙](image25-comparison-rules.md)을 참고한다.
 
 ### LLM 경로 범위
 
@@ -247,10 +247,13 @@ python3 -B -m scripts.market_collection.letsur_routes --write                 # 
 | Claude의 `/v1/messages` id가 `msg_01…`, `msg_bdrk_…`, `msg_vrtx_…` | `anthropic_direct`, `aws_bedrock`, `google_vertex` | observed |
 | 본문의 `prompt_filter_results`·`content_filter_results`·`content_filters`·`serving_pipereplica`(헤더에 지역이 없을 때) | `azure_foundry` | observed |
 | 본문의 `billing.payer`(OpenAI Responses 응답) | `openai_direct` | observed |
+| GLM 모델: chat 요청에 실어 보낸 `request_id`(`letsur-route-check-…`)를 그대로 돌려준 응답(Z.ai 대화 API는 호출자가 보낸 값을 쓴다, 10/30 다른 GLM 배포·OpenRouter·Vercel은 돌려주지 않음) | `zai_direct` | observed |
 | Gemini 모델: chat 요청에 넣은 Vertex 전용 안전 설정 칸(`safety_settings`의 `method`)에 렛서 400 `invalid_parameter` | `google_direct` | observed |
 | Gemini 모델: 같은 요청에 Gemini 형식 id와 `vertex_ai_*` 필드로 200 | `google_vertex` | observed |
 | (`--bedrock-check`) id가 `chatcmpl-<uuid>`뿐인 배포가 `performanceConfig.latency` `standard`와 모르는 칸에는 답하고 `bogus`에는 한 번도 답하지 않음 | `aws_bedrock` | observed |
 | 그 밖(Azure 필드 없는 OpenAI·gpt-image 응답, `chatcmpl-<uuid>`만 있는 GLM, 임베딩, 영상, 오류 응답) | 경로 미확인 | 파일의 `unresolved`에 표시 없이 답한 배포 수·id 모양·눈에 띈 필드·오류 코드를 note로 |
+
+GPT 계열(`gpt-`, `o숫자`)은 표본마다 채팅과 Responses를 모두 묻는다(2026-10-30). 요청마다 배포가 따로 골라지고 OpenAI 직접 배포는 Responses 응답의 `billing`으로만 드러나서, 채팅이 Azure로 판별돼도 Responses를 묻지 않으면 OpenAI 직접 배포를 놓친다(10/30 gpt-5.5는 28번 중 1번, 16번씩 다시 물으니 GPT 7개 모델에서 OpenAI 직접이 나옴).
 
 헤더 규칙은 10/28 응답(`-azure-` 11개, `gpt-6.1-terra-openai-letsur-2`)과 10/30 응답(`gpt-6-sol`·`gpt-5.6-sol`·`gpt-6.1-terra`의 `-bedrock-us-east-1`)에서 본 모양이다. `-vertex-`는 아직 본 적 없고 같은 이름 짓기를 따른 것이다. 응답 모양이 한 경로와만 맞는다는 추정(10/29~30의 `inferred`: Azure 필드 없는 OpenAI·gpt-image 응답, Bedrock을 거친 GPT 응답과 모양이 같은 GLM 응답)은 2026-10-30부터 근거로 쓰지 않는다. Gemini 규칙의 근거는 Google API discovery 문서(Gemini API v1beta 개정 20261029의 `SafetySetting`은 `threshold`·`category`만, Vertex aiplatform v1 개정 20261028은 `method`도 있다)와 Google이 모르는 칸을 400으로 거절한다는 점, 10/30 렛서 호출 72회다(Gemini API 배포는 늘 400, OpenRouter·Vercel은 받아들임, `method`를 빼면 모두 200, Vertex 응답은 아직 못 봄). Bedrock 검사는 Converse API가 `performanceConfig.latency`를 `standard`·`optimized`로만 받는다는 점을 쓴다. 10/30 glm-4.7·glm-5의 `chatcmpl-<uuid>` 배포는 `standard`와 모르는 칸(`foo_probe_param`)에는 답하고 `bogus`에는 답하지 않았다(그때 게이트웨이는 다른 배포로 넘긴다). 배포는 요청마다 무작위로 골라지므로, 그 배포가 다른 두 요청에서 받은 몫으로 보아 `bogus` 요청을 모두 우연히 비켜 갔을 가능성이 5% 이상이면 확인으로 치지 않는다(몫이 작은 배포는 `--samples`를 늘려야 잡힌다). OpenAI 계열 모델은 chat 응답으로 정해지지 않을 때만 `/v1/responses`를 한 번 더 부르고, Claude는 `/v1/messages`만, 임베딩은 `/v1/embeddings`만 부른다. 실패한 요청은 상태 코드와 렛서의 오류 코드만 남기고 메시지는 남기지 않는다.
 
@@ -280,6 +283,8 @@ GLM-4.7·GLM-5도 Bedrock으로 보여(위 추정) 확인했다. AWS에 모델 �
 - gemini-3-flash-preview · Vercel(`vercel_llm_endpoints_gemini_3_flash_preview`): 렛서의 Vercel 호출이 `google/gemini-3-flash`로 간다(`provider_metadata.gateway.routing`의 `originalModelId`·`canonicalSlug`). 그 endpoint 목록은 google·vertex 상류 모두 $0.50·$3.00·캐시 $0.05다.
 
 두 게이트웨이 id가 생겨 signals endpoint 출처도 2개 늘었다(217→219, [events.md](events.md)).
+
+같은 날 오후 경로 재확인 도구가 GPT 계열에 채팅과 Responses를 함께 묻게 하고 16번씩 다시 물으니(요청 1,424번), Azure 배포 옆에 OpenAI 직접 배포를 둔 모델 7개가 더 나왔다(Responses 응답의 OpenAI `billing`): gpt-4.1·gpt-4.1-mini·gpt-4o·gpt-4o-mini·gpt-5·gpt-5-mini는 모델 페이지 Text tokens 표를 `OPENAI_DIRECT_MORE_MODELS`로 읽고(입력·캐시·출력 $2·$0.5·$8, $0.4·$0.1·$1.6, $2.5·$1.25·$10, $0.15·$0.075·$0.6, $1.25·$0.125·$10, $0.25·$0.025·$2), o3는 모델 페이지에 등급 이름 없는 Text tokens 표가 둘($2·$8, $1·$4)이라 가격 페이지 'Standard pricing data' 표의 o3 행($2.00·$8.00·캐시 $0.50)을 새 수집기 `openai_pricing_standard.py`로 읽는다(출처 408→415, LLM 333→340, 모델/경로 조합 343→350). 행이 없거나 둘이거나 금액 형식이 다르면 오류다. 배포된 출처의 fingerprint는 그대로이고, 같은 날 넣은 o3-pro 하나만 바뀌었다(아직 배포 전).
 
 ## 구조 변경 검증 기록
 

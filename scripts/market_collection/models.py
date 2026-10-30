@@ -281,7 +281,18 @@ OPENAI_DIRECT_MODELS = (
 # openai_models.py reads OPENAI_DIRECT_MODELS, so a row added there would change the parser fingerprint of every source it parses.
 OPENAI_DIRECT_MORE_MODELS = (
     ("o3-pro", "o3-pro", "o3-pro"),
+    # 10/30 recheck (16 samples, Responses answers with OpenAI's billing): LETSUR also sends these to OpenAI's own API beside Azure.
+    ("gpt-4.1", "GPT-4.1", "gpt-4.1"),
+    ("gpt-4.1-mini", "GPT-4.1 Mini", "gpt-4.1-mini"),
+    ("gpt-4o", "GPT-4o", "gpt-4o"),
+    ("gpt-4o-mini", "GPT-4o Mini", "gpt-4o-mini"),
+    ("gpt-5", "GPT-5", "gpt-5"),
+    ("gpt-5-mini", "GPT-5 Mini", "gpt-5-mini"),
 )
+
+# o3 is on OpenAI's own route too (10/30 recheck), but its model page lists two Text tokens tables without a tier name ($2/$8
+# and $1/$4), so its Standard price is read from the pricing page's Standard pricing data table instead.
+OPENAI_PRICING_STANDARD_MODELS = ("o3",)
 
 # Embeddings priced on OpenAI's model pages; Azure sells the same three ids.
 OPENAI_EMBEDDING_MODELS = ("text-embedding-3-large", "text-embedding-3-small", "text-embedding-ada-002")

@@ -743,10 +743,6 @@ def dropped(state: dict | None, run_id: str, run_obs: list[dict], statuses: list
 
 # ---- assembly ----------------------------------------------------------------------------------------------------------
 
-# by the record's basis, as on the cards (build.py route_basis); an inferred record marks the row LETSUR's calls suggest (2026-10-29)
-RECORD_CHIP = {"settings": "렛서 설정", "observed": "호출 확인", "manual": "관리자 지정", "inferred": "호출 추정"}
-
-
 def assumed_routes(model_id: str, routes: dict | None) -> list[tuple[str, str, str | None]]:
     """(route, endpoint, basis) of every record that names a route for the model; none when it has no record or is not offered."""
     return [(r["route_id"], r.get("endpoint_id") or "", r.get("basis")) for r in (routes or {}).get("records", [])
@@ -764,11 +760,12 @@ def is_assumed(row: dict, target: tuple[str, str] | None) -> bool:
 
 
 def assumed_chip(row: dict, targets: list[tuple[str, str, str | None]], demo: bool) -> str:
-    """The chip of the first record whose route the row is (is_assumed), "" when none: the record's basis, else 가정 in a demo file,
-    else 사용 경로. Every record marks its own route, so gpt-6-astra's OpenAI direct row and its Azure row each say their own basis."""
+    """렛서 사용 on the row of a route a record names (is_assumed), whatever its basis (2026-10-30 박건: 사용이면 사용), but 가정
+    for a record without basis in a demo file; "" when none. Every record marks its own route, so gpt-6-astra's OpenAI direct
+    row and its Azure row both say it."""
     for route, endpoint, basis in targets:
         if is_assumed(row, (route, endpoint)):
-            return RECORD_CHIP.get(basis) or ("가정" if demo else "사용 경로")
+            return "가정" if demo and basis is None else "렛서 사용"
     return ""
 
 

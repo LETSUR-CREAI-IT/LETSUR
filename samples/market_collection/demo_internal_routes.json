@@ -30,48 +30,35 @@
     },
     {
       "model_id": "gpt-6.1-sol",
-      "route_id": "azure_foundry",
+      "route_id": "aws_bedrock",
       "endpoint_id": null,
       "basis": "observed",
-      "checked_at": "2026-10-28"
+      "checked_at": "2026-10-30",
+      "note": "Bedrock 배포 지역 us-east-1"
     },
     {
       "model_id": "gpt-6.1-sol",
-      "route_id": "aws_bedrock",
-      "endpoint_id": null,
-      "basis": "observed",
-      "note": "Bedrock 배포 지역 us-east-1",
-      "checked_at": "2026-10-30"
-    },
-    {
-      "model_id": "gpt-6-sol",
       "route_id": "azure_foundry",
       "endpoint_id": null,
       "basis": "observed",
-      "checked_at": "2026-10-28"
+      "note": "Azure 배포 지역 japan-east",
+      "checked_at": "2026-10-30"
     },
     {
       "model_id": "gpt-6-sol",
       "route_id": "aws_bedrock",
       "endpoint_id": null,
       "basis": "observed",
-      "note": "Bedrock 배포 지역 us-east-1",
-      "checked_at": "2026-10-30"
-    },
-    {
-      "model_id": "gpt-6-luna",
-      "route_id": "azure_foundry",
-      "endpoint_id": null,
-      "basis": "observed",
-      "checked_at": "2026-10-28"
+      "checked_at": "2026-10-30",
+      "note": "Bedrock 배포 지역 us-east-1"
     },
     {
       "model_id": "gpt-6-luna",
       "route_id": "aws_bedrock",
       "endpoint_id": null,
       "basis": "observed",
-      "note": "Bedrock 배포 지역 us-east-1",
-      "checked_at": "2026-10-30"
+      "checked_at": "2026-10-30",
+      "note": "Bedrock 배포 지역 us-east-1"
     },
     {
       "model_id": "claude-fable-5-1",
@@ -111,30 +98,32 @@
       "route_id": "openrouter",
       "endpoint_id": null,
       "basis": "observed",
-      "checked_at": "2026-10-28"
+      "checked_at": "2026-10-30",
+      "note": "이번 확인의 하위 공급자 DigitalOcean(요청마다 바뀔 수 있음)"
     },
     {
       "model_id": "deepseek-v4-pro",
       "route_id": "vercel_ai_gateway",
       "endpoint_id": null,
       "basis": "observed",
-      "note": "이번 호출의 하위 공급자 deepseek(요청마다 바뀔 수 있음)",
-      "checked_at": "2026-10-30"
+      "checked_at": "2026-10-30",
+      "note": "이번 확인의 하위 공급자 deepseek(요청마다 바뀔 수 있음)"
     },
     {
       "model_id": "deepseek-v4.1-flash",
       "route_id": "vercel_ai_gateway",
       "endpoint_id": null,
       "basis": "observed",
-      "checked_at": "2026-10-28"
+      "checked_at": "2026-10-30",
+      "note": "이번 확인의 하위 공급자 baseten(요청마다 바뀔 수 있음)"
     },
     {
       "model_id": "deepseek-v4.1-flash",
       "route_id": "openrouter",
       "endpoint_id": null,
       "basis": "observed",
-      "note": "이번 호출의 하위 공급자 InferenceNet(요청마다 바뀔 수 있음)",
-      "checked_at": "2026-10-30"
+      "checked_at": "2026-10-30",
+      "note": "이번 확인의 하위 공급자 InferenceNet(요청마다 바뀔 수 있음)"
     },
     {
       "model_id": "glm-5.3-flash",
@@ -145,48 +134,27 @@
     },
     {
       "model_id": "gpt-5.6-luna",
-      "route_id": "azure_foundry",
-      "endpoint_id": null,
-      "basis": "observed",
-      "checked_at": "2026-10-28"
-    },
-    {
-      "model_id": "gpt-5.6-luna",
       "route_id": "aws_bedrock",
       "endpoint_id": null,
       "basis": "observed",
-      "note": "Bedrock 배포 지역 us-east-1",
-      "checked_at": "2026-10-30"
-    },
-    {
-      "model_id": "gpt-5.6-sol",
-      "route_id": "azure_foundry",
-      "endpoint_id": null,
-      "basis": "observed",
-      "checked_at": "2026-10-28"
+      "checked_at": "2026-10-30",
+      "note": "Bedrock 배포 지역 us-east-1"
     },
     {
       "model_id": "gpt-5.6-sol",
       "route_id": "aws_bedrock",
       "endpoint_id": null,
       "basis": "observed",
-      "note": "Bedrock 배포 지역 us-east-1",
-      "checked_at": "2026-10-30"
-    },
-    {
-      "model_id": "gpt-5.6-terra",
-      "route_id": "azure_foundry",
-      "endpoint_id": null,
-      "basis": "observed",
-      "checked_at": "2026-10-28"
+      "checked_at": "2026-10-30",
+      "note": "Bedrock 배포 지역 us-east-1"
     },
     {
       "model_id": "gpt-5.6-terra",
       "route_id": "aws_bedrock",
       "endpoint_id": null,
       "basis": "observed",
-      "note": "Bedrock 배포 지역 us-east-1",
-      "checked_at": "2026-10-30"
+      "checked_at": "2026-10-30",
+      "note": "Bedrock 배포 지역 us-east-1"
     },
     {
       "model_id": "gpt-6-astra",
@@ -196,18 +164,11 @@
     },
     {
       "model_id": "gpt-6-astra",
-      "route_id": "azure_foundry",
-      "endpoint_id": null,
-      "basis": "observed",
-      "checked_at": "2026-10-28"
-    },
-    {
-      "model_id": "gpt-6-astra",
       "route_id": "aws_bedrock",
       "endpoint_id": null,
       "basis": "observed",
-      "note": "Bedrock 배포 지역 us-east-1",
-      "checked_at": "2026-10-30"
+      "checked_at": "2026-10-30",
+      "note": "Bedrock 배포 지역 us-east-1"
     },
     {
       "model_id": "gpt-image-2.5-flare",
@@ -226,7 +187,15 @@
       "route_id": "openrouter",
       "endpoint_id": null,
       "basis": "observed",
-      "note": "이번 호출의 하위 공급자 Decart(요청마다 바뀔 수 있음)",
+      "checked_at": "2026-10-30",
+      "note": "이번 확인의 하위 공급자 Parasail(요청마다 바뀔 수 있음)"
+    },
+    {
+      "model_id": "kimi-k3",
+      "route_id": "vercel_ai_gateway",
+      "endpoint_id": null,
+      "basis": "observed",
+      "note": "이번 확인의 하위 공급자 baseten(요청마다 바뀔 수 있음)",
       "checked_at": "2026-10-30"
     },
     {
@@ -246,7 +215,15 @@
       "route_id": "vercel_ai_gateway",
       "endpoint_id": null,
       "basis": "observed",
-      "note": "이번 호출의 하위 공급자 baseten(요청마다 바뀔 수 있음)",
+      "checked_at": "2026-10-30",
+      "note": "이번 확인의 하위 공급자 alibaba(요청마다 바뀔 수 있음)"
+    },
+    {
+      "model_id": "deepseek-v4-flash",
+      "route_id": "openrouter",
+      "endpoint_id": null,
+      "basis": "observed",
+      "note": "이번 확인의 하위 공급자 Parasail(요청마다 바뀔 수 있음)",
       "checked_at": "2026-10-30"
     },
     {
@@ -254,7 +231,15 @@
       "route_id": "openrouter",
       "endpoint_id": null,
       "basis": "observed",
-      "note": "이번 호출의 하위 공급자 Baidu(요청마다 바뀔 수 있음)",
+      "checked_at": "2026-10-30",
+      "note": "이번 확인의 하위 공급자 CoreWeave(요청마다 바뀔 수 있음)"
+    },
+    {
+      "model_id": "deepseek-v4-flash-0731",
+      "route_id": "vercel_ai_gateway",
+      "endpoint_id": null,
+      "basis": "observed",
+      "note": "이번 확인의 하위 공급자 baseten(요청마다 바뀔 수 있음)",
       "checked_at": "2026-10-30"
     },
     {
@@ -262,37 +247,47 @@
       "route_id": "openrouter",
       "endpoint_id": null,
       "basis": "observed",
-      "note": "이번 호출의 하위 공급자 Phala(요청마다 바뀔 수 있음)",
-      "checked_at": "2026-10-30"
+      "checked_at": "2026-10-30",
+      "note": "이번 확인의 하위 공급자 Wafer(요청마다 바뀔 수 있음)"
     },
     {
       "model_id": "deepseek-v4.1-flash-1017",
       "route_id": "vercel_ai_gateway",
       "endpoint_id": null,
       "basis": "observed",
-      "checked_at": "2026-10-28"
+      "checked_at": "2026-10-30",
+      "note": "이번 확인의 하위 공급자 pareto(요청마다 바뀔 수 있음)"
     },
     {
       "model_id": "deepseek-v4.1-flash-1017",
       "route_id": "openrouter",
       "endpoint_id": null,
       "basis": "observed",
-      "note": "이번 호출의 하위 공급자 InferenceNet(요청마다 바뀔 수 있음)",
-      "checked_at": "2026-10-30"
+      "checked_at": "2026-10-30",
+      "note": "이번 확인의 하위 공급자 Cohere(요청마다 바뀔 수 있음)"
     },
     {
       "model_id": "gemini-2.5-flash-lite",
       "route_id": "vercel_ai_gateway",
       "endpoint_id": null,
       "basis": "observed",
-      "checked_at": "2026-10-28"
+      "checked_at": "2026-10-30",
+      "note": "이번 확인의 하위 공급자 vertex(요청마다 바뀔 수 있음)"
     },
     {
       "model_id": "gemini-2.5-flash-lite",
       "route_id": "google_direct",
       "endpoint_id": null,
       "basis": "observed",
-      "note": "Gemini 응답(AI Studio와 Vertex는 구별하지 못함)",
+      "checked_at": "2026-10-30",
+      "note": "Gemini API가 Vertex 전용 안전 설정 칸(method)을 거절함"
+    },
+    {
+      "model_id": "gemini-2.5-flash-lite",
+      "route_id": "openrouter",
+      "endpoint_id": null,
+      "basis": "observed",
+      "note": "이번 확인의 하위 공급자 Google AI Studio(요청마다 바뀔 수 있음)",
       "checked_at": "2026-10-30"
     },
     {
@@ -300,37 +295,47 @@
       "route_id": "openrouter",
       "endpoint_id": null,
       "basis": "observed",
-      "checked_at": "2026-10-28"
+      "checked_at": "2026-10-30",
+      "note": "이번 확인의 하위 공급자 Z.AI(요청마다 바뀔 수 있음)"
     },
     {
       "model_id": "glm-4.5",
       "route_id": "vercel_ai_gateway",
       "endpoint_id": null,
       "basis": "observed",
-      "note": "이번 호출의 하위 공급자 zai(요청마다 바뀔 수 있음)",
-      "checked_at": "2026-10-30"
+      "checked_at": "2026-10-30",
+      "note": "이번 확인의 하위 공급자 zai(요청마다 바뀔 수 있음)"
     },
     {
       "model_id": "glm-4.5-air",
       "route_id": "openrouter",
       "endpoint_id": null,
       "basis": "observed",
-      "checked_at": "2026-10-28"
+      "checked_at": "2026-10-30",
+      "note": "이번 확인의 하위 공급자 Novita(요청마다 바뀔 수 있음)"
     },
     {
       "model_id": "glm-4.5-air",
       "route_id": "vercel_ai_gateway",
       "endpoint_id": null,
       "basis": "observed",
-      "note": "이번 호출의 하위 공급자 zai(요청마다 바뀔 수 있음)",
-      "checked_at": "2026-10-30"
+      "checked_at": "2026-10-30",
+      "note": "이번 확인의 하위 공급자 zai(요청마다 바뀔 수 있음)"
     },
     {
       "model_id": "glm-4.6",
       "route_id": "openrouter",
       "endpoint_id": null,
       "basis": "observed",
-      "note": "이번 호출의 하위 공급자 DeepInfra(요청마다 바뀔 수 있음)",
+      "checked_at": "2026-10-30",
+      "note": "이번 확인의 하위 공급자 DeepInfra·Novita·Venice(요청마다 바뀔 수 있음)"
+    },
+    {
+      "model_id": "glm-4.6",
+      "route_id": "vercel_ai_gateway",
+      "endpoint_id": null,
+      "basis": "observed",
+      "note": "이번 확인의 하위 공급자 zai(요청마다 바뀔 수 있음)",
       "checked_at": "2026-10-30"
     },
     {
@@ -338,7 +343,15 @@
       "route_id": "openrouter",
       "endpoint_id": null,
       "basis": "observed",
-      "note": "이번 호출의 하위 공급자 Z.AI(요청마다 바뀔 수 있음)",
+      "checked_at": "2026-10-30",
+      "note": "이번 확인의 하위 공급자 Z.AI(요청마다 바뀔 수 있음)"
+    },
+    {
+      "model_id": "glm-5-turbo",
+      "route_id": "vercel_ai_gateway",
+      "endpoint_id": null,
+      "basis": "observed",
+      "note": "이번 확인의 하위 공급자 zai(요청마다 바뀔 수 있음)",
       "checked_at": "2026-10-30"
     },
     {
@@ -346,30 +359,39 @@
       "route_id": "vercel_ai_gateway",
       "endpoint_id": null,
       "basis": "observed",
-      "checked_at": "2026-10-28"
+      "checked_at": "2026-10-30",
+      "note": "이번 확인의 하위 공급자 zai(요청마다 바뀔 수 있음)"
     },
     {
       "model_id": "glm-5.1",
       "route_id": "openrouter",
       "endpoint_id": null,
       "basis": "observed",
-      "note": "이번 호출의 하위 공급자 StreamLake(요청마다 바뀔 수 있음)",
-      "checked_at": "2026-10-30"
+      "checked_at": "2026-10-30",
+      "note": "이번 확인의 하위 공급자 Alibaba·AtlasCloud·GMICloud·Novita·Phala(요청마다 바뀔 수 있음)"
     },
     {
       "model_id": "grok-4.20",
       "route_id": "openrouter",
       "endpoint_id": null,
       "basis": "observed",
-      "note": "이번 호출의 하위 공급자 xAI(요청마다 바뀔 수 있음)",
-      "checked_at": "2026-10-30"
+      "checked_at": "2026-10-30",
+      "note": "이번 확인의 하위 공급자 xAI(요청마다 바뀔 수 있음)"
     },
     {
       "model_id": "grok-4.3",
       "route_id": "vercel_ai_gateway",
       "endpoint_id": null,
       "basis": "observed",
-      "note": "이번 호출의 하위 공급자 xai(요청마다 바뀔 수 있음)",
+      "checked_at": "2026-10-30",
+      "note": "이번 확인의 하위 공급자 xai(요청마다 바뀔 수 있음)"
+    },
+    {
+      "model_id": "grok-4.3",
+      "route_id": "openrouter",
+      "endpoint_id": null,
+      "basis": "observed",
+      "note": "이번 확인의 하위 공급자 xAI(요청마다 바뀔 수 있음)",
       "checked_at": "2026-10-30"
     },
     {
@@ -377,38 +399,47 @@
       "route_id": "openrouter",
       "endpoint_id": null,
       "basis": "observed",
-      "note": "이번 호출의 하위 공급자 xAI(요청마다 바뀔 수 있음)",
-      "checked_at": "2026-10-30"
+      "checked_at": "2026-10-30",
+      "note": "이번 확인의 하위 공급자 xAI(요청마다 바뀔 수 있음)"
     },
     {
       "model_id": "kimi-k2-thinking",
       "route_id": "openrouter",
       "endpoint_id": null,
       "basis": "observed",
-      "note": "이번 호출의 하위 공급자 Novita(요청마다 바뀔 수 있음)",
-      "checked_at": "2026-10-30"
+      "checked_at": "2026-10-30",
+      "note": "이번 확인의 하위 공급자 Novita(요청마다 바뀔 수 있음)"
     },
     {
       "model_id": "kimi-k2.5",
       "route_id": "vercel_ai_gateway",
       "endpoint_id": null,
       "basis": "observed",
-      "checked_at": "2026-10-28"
+      "checked_at": "2026-10-30",
+      "note": "이번 확인의 하위 공급자 bedrock(요청마다 바뀔 수 있음)"
     },
     {
       "model_id": "kimi-k2.5",
       "route_id": "openrouter",
       "endpoint_id": null,
       "basis": "observed",
-      "note": "이번 호출의 하위 공급자 AtlasCloud(요청마다 바뀔 수 있음)",
-      "checked_at": "2026-10-30"
+      "checked_at": "2026-10-30",
+      "note": "이번 확인의 하위 공급자 AtlasCloud(요청마다 바뀔 수 있음)"
     },
     {
       "model_id": "kimi-k2.6",
       "route_id": "openrouter",
       "endpoint_id": null,
       "basis": "observed",
-      "note": "이번 호출의 하위 공급자 Baidu(요청마다 바뀔 수 있음)",
+      "checked_at": "2026-10-30",
+      "note": "이번 확인의 하위 공급자 Baidu(요청마다 바뀔 수 있음)"
+    },
+    {
+      "model_id": "kimi-k2.6",
+      "route_id": "vercel_ai_gateway",
+      "endpoint_id": null,
+      "basis": "observed",
+      "note": "이번 확인의 하위 공급자 moonshotai(요청마다 바뀔 수 있음)",
       "checked_at": "2026-10-30"
     },
     {
@@ -416,37 +447,47 @@
       "route_id": "vercel_ai_gateway",
       "endpoint_id": null,
       "basis": "observed",
-      "checked_at": "2026-10-28"
+      "checked_at": "2026-10-30",
+      "note": "이번 확인의 하위 공급자 moonshotai(요청마다 바뀔 수 있음)"
     },
     {
       "model_id": "kimi-k2.7-code",
       "route_id": "openrouter",
       "endpoint_id": null,
       "basis": "observed",
-      "note": "이번 호출의 하위 공급자 Inceptron(요청마다 바뀔 수 있음)",
-      "checked_at": "2026-10-30"
+      "checked_at": "2026-10-30",
+      "note": "이번 확인의 하위 공급자 Nebius(요청마다 바뀔 수 있음)"
     },
     {
       "model_id": "kimi-k3.1-pro",
       "route_id": "openrouter",
       "endpoint_id": null,
       "basis": "observed",
-      "checked_at": "2026-10-28"
+      "checked_at": "2026-10-30",
+      "note": "이번 확인의 하위 공급자 Moonshot AI(요청마다 바뀔 수 있음)"
     },
     {
       "model_id": "kimi-k3.1-pro",
       "route_id": "vercel_ai_gateway",
       "endpoint_id": null,
       "basis": "observed",
-      "note": "이번 호출의 하위 공급자 moonshotai(요청마다 바뀔 수 있음)",
-      "checked_at": "2026-10-30"
+      "checked_at": "2026-10-30",
+      "note": "이번 확인의 하위 공급자 moonshotai(요청마다 바뀔 수 있음)"
     },
     {
       "model_id": "minimax-m2",
       "route_id": "vercel_ai_gateway",
       "endpoint_id": null,
       "basis": "observed",
-      "note": "이번 호출의 하위 공급자 minimax(요청마다 바뀔 수 있음)",
+      "checked_at": "2026-10-30",
+      "note": "이번 확인의 하위 공급자 minimax(요청마다 바뀔 수 있음)"
+    },
+    {
+      "model_id": "minimax-m2",
+      "route_id": "openrouter",
+      "endpoint_id": null,
+      "basis": "observed",
+      "note": "이번 확인의 하위 공급자 Minimax(요청마다 바뀔 수 있음)",
       "checked_at": "2026-10-30"
     },
     {
@@ -454,7 +495,15 @@
       "route_id": "vercel_ai_gateway",
       "endpoint_id": null,
       "basis": "observed",
-      "note": "이번 호출의 하위 공급자 minimax(요청마다 바뀔 수 있음)",
+      "checked_at": "2026-10-30",
+      "note": "이번 확인의 하위 공급자 minimax(요청마다 바뀔 수 있음)"
+    },
+    {
+      "model_id": "minimax-m2.1",
+      "route_id": "openrouter",
+      "endpoint_id": null,
+      "basis": "observed",
+      "note": "이번 확인의 하위 공급자 Minimax(요청마다 바뀔 수 있음)",
       "checked_at": "2026-10-30"
     },
     {
@@ -462,7 +511,15 @@
       "route_id": "vercel_ai_gateway",
       "endpoint_id": null,
       "basis": "observed",
-      "note": "이번 호출의 하위 공급자 minimax(요청마다 바뀔 수 있음)",
+      "checked_at": "2026-10-30",
+      "note": "이번 확인의 하위 공급자 minimax(요청마다 바뀔 수 있음)"
+    },
+    {
+      "model_id": "minimax-m2.5",
+      "route_id": "openrouter",
+      "endpoint_id": null,
+      "basis": "observed",
+      "note": "이번 확인의 하위 공급자 Minimax(요청마다 바뀔 수 있음)",
       "checked_at": "2026-10-30"
     },
     {
@@ -470,7 +527,15 @@
       "route_id": "openrouter",
       "endpoint_id": null,
       "basis": "observed",
-      "note": "이번 호출의 하위 공급자 Minimax(요청마다 바뀔 수 있음)",
+      "checked_at": "2026-10-30",
+      "note": "이번 확인의 하위 공급자 Minimax(요청마다 바뀔 수 있음)"
+    },
+    {
+      "model_id": "minimax-m2.7",
+      "route_id": "vercel_ai_gateway",
+      "endpoint_id": null,
+      "basis": "observed",
+      "note": "이번 확인의 하위 공급자 minimax(요청마다 바뀔 수 있음)",
       "checked_at": "2026-10-30"
     },
     {
@@ -478,7 +543,15 @@
       "route_id": "vercel_ai_gateway",
       "endpoint_id": null,
       "basis": "observed",
-      "note": "이번 호출의 하위 공급자 fireworks(요청마다 바뀔 수 있음)",
+      "checked_at": "2026-10-30",
+      "note": "이번 확인의 하위 공급자 fireworks(요청마다 바뀔 수 있음)"
+    },
+    {
+      "model_id": "minimax-m3",
+      "route_id": "openrouter",
+      "endpoint_id": null,
+      "basis": "observed",
+      "note": "이번 확인의 하위 공급자 Together(요청마다 바뀔 수 있음)",
       "checked_at": "2026-10-30"
     },
     {
@@ -486,7 +559,15 @@
       "route_id": "openrouter",
       "endpoint_id": null,
       "basis": "observed",
-      "note": "이번 호출의 하위 공급자 Meta(요청마다 바뀔 수 있음)",
+      "checked_at": "2026-10-30",
+      "note": "이번 확인의 하위 공급자 Meta(요청마다 바뀔 수 있음)"
+    },
+    {
+      "model_id": "muse-spark-1.2",
+      "route_id": "vercel_ai_gateway",
+      "endpoint_id": null,
+      "basis": "observed",
+      "note": "이번 확인의 하위 공급자 meta(요청마다 바뀔 수 있음)",
       "checked_at": "2026-10-30"
     },
     {
@@ -494,7 +575,15 @@
       "route_id": "vercel_ai_gateway",
       "endpoint_id": null,
       "basis": "observed",
-      "note": "이번 호출의 하위 공급자 meta(요청마다 바뀔 수 있음)",
+      "checked_at": "2026-10-30",
+      "note": "이번 확인의 하위 공급자 meta(요청마다 바뀔 수 있음)"
+    },
+    {
+      "model_id": "muse-spark-1.3",
+      "route_id": "openrouter",
+      "endpoint_id": null,
+      "basis": "observed",
+      "note": "이번 확인의 하위 공급자 Meta(요청마다 바뀔 수 있음)",
       "checked_at": "2026-10-30"
     },
     {
@@ -502,31 +591,39 @@
       "route_id": "vercel_ai_gateway",
       "endpoint_id": null,
       "basis": "observed",
-      "note": "이번 호출의 하위 공급자 meta(요청마다 바뀔 수 있음)",
-      "checked_at": "2026-10-30"
+      "checked_at": "2026-10-30",
+      "note": "이번 확인의 하위 공급자 meta(요청마다 바뀔 수 있음)"
     },
     {
       "model_id": "qwen3-coder-flash",
       "route_id": "openrouter",
       "endpoint_id": null,
       "basis": "observed",
-      "note": "이번 호출의 하위 공급자 Alibaba(요청마다 바뀔 수 있음)",
-      "checked_at": "2026-10-30"
+      "checked_at": "2026-10-30",
+      "note": "이번 확인의 하위 공급자 Alibaba(요청마다 바뀔 수 있음)"
     },
     {
       "model_id": "qwen3-coder-next",
       "route_id": "vercel_ai_gateway",
       "endpoint_id": null,
       "basis": "observed",
-      "note": "이번 호출의 하위 공급자 bedrock(요청마다 바뀔 수 있음)",
-      "checked_at": "2026-10-30"
+      "checked_at": "2026-10-30",
+      "note": "이번 확인의 하위 공급자 bedrock(요청마다 바뀔 수 있음)"
     },
     {
       "model_id": "qwen3.5-plus",
       "route_id": "openrouter",
       "endpoint_id": null,
       "basis": "observed",
-      "note": "이번 호출의 하위 공급자 Alibaba(요청마다 바뀔 수 있음)",
+      "checked_at": "2026-10-30",
+      "note": "이번 확인의 하위 공급자 Alibaba(요청마다 바뀔 수 있음)"
+    },
+    {
+      "model_id": "qwen3.5-plus",
+      "route_id": "vercel_ai_gateway",
+      "endpoint_id": null,
+      "basis": "observed",
+      "note": "이번 확인의 하위 공급자 alibaba(요청마다 바뀔 수 있음)",
       "checked_at": "2026-10-30"
     },
     {
@@ -534,7 +631,15 @@
       "route_id": "vercel_ai_gateway",
       "endpoint_id": null,
       "basis": "observed",
-      "note": "이번 호출의 하위 공급자 alibaba(요청마다 바뀔 수 있음)",
+      "checked_at": "2026-10-30",
+      "note": "이번 확인의 하위 공급자 alibaba(요청마다 바뀔 수 있음)"
+    },
+    {
+      "model_id": "qwen3.6-plus",
+      "route_id": "openrouter",
+      "endpoint_id": null,
+      "basis": "observed",
+      "note": "이번 확인의 하위 공급자 Alibaba(요청마다 바뀔 수 있음)",
       "checked_at": "2026-10-30"
     },
     {
@@ -542,7 +647,15 @@
       "route_id": "openrouter",
       "endpoint_id": null,
       "basis": "observed",
-      "note": "이번 호출의 하위 공급자 Alibaba(요청마다 바뀔 수 있음)",
+      "checked_at": "2026-10-30",
+      "note": "이번 확인의 하위 공급자 Alibaba(요청마다 바뀔 수 있음)"
+    },
+    {
+      "model_id": "qwen3.7-flash",
+      "route_id": "vercel_ai_gateway",
+      "endpoint_id": null,
+      "basis": "observed",
+      "note": "이번 확인의 하위 공급자 alibaba(요청마다 바뀔 수 있음)",
       "checked_at": "2026-10-30"
     },
     {
@@ -550,7 +663,15 @@
       "route_id": "vercel_ai_gateway",
       "endpoint_id": null,
       "basis": "observed",
-      "note": "이번 호출의 하위 공급자 alibaba(요청마다 바뀔 수 있음)",
+      "checked_at": "2026-10-30",
+      "note": "이번 확인의 하위 공급자 alibaba(요청마다 바뀔 수 있음)"
+    },
+    {
+      "model_id": "qwen3.7-max",
+      "route_id": "openrouter",
+      "endpoint_id": null,
+      "basis": "observed",
+      "note": "이번 확인의 하위 공급자 Alibaba(요청마다 바뀔 수 있음)",
       "checked_at": "2026-10-30"
     },
     {
@@ -558,37 +679,47 @@
       "route_id": "vercel_ai_gateway",
       "endpoint_id": null,
       "basis": "observed",
-      "checked_at": "2026-10-28"
+      "checked_at": "2026-10-30",
+      "note": "이번 확인의 하위 공급자 alibaba(요청마다 바뀔 수 있음)"
     },
     {
       "model_id": "qwen3.7-plus",
       "route_id": "openrouter",
       "endpoint_id": null,
       "basis": "observed",
-      "note": "이번 호출의 하위 공급자 Alibaba(요청마다 바뀔 수 있음)",
-      "checked_at": "2026-10-30"
+      "checked_at": "2026-10-30",
+      "note": "이번 확인의 하위 공급자 Alibaba(요청마다 바뀔 수 있음)"
     },
     {
       "model_id": "qwen3.8-max",
       "route_id": "vercel_ai_gateway",
       "endpoint_id": null,
       "basis": "observed",
-      "note": "이번 호출의 하위 공급자 fireworks(요청마다 바뀔 수 있음)",
-      "checked_at": "2026-10-30"
+      "checked_at": "2026-10-30",
+      "note": "이번 확인의 하위 공급자 fireworks(요청마다 바뀔 수 있음)"
     },
     {
       "model_id": "gemini-2.5-flash",
       "route_id": "google_direct",
       "endpoint_id": null,
       "basis": "observed",
-      "checked_at": "2026-10-28"
+      "checked_at": "2026-10-30",
+      "note": "Gemini API가 Vertex 전용 안전 설정 칸(method)을 거절함"
     },
     {
       "model_id": "gemini-2.5-flash",
       "route_id": "vercel_ai_gateway",
       "endpoint_id": null,
       "basis": "observed",
-      "note": "이번 호출의 하위 공급자 vertex(요청마다 바뀔 수 있음)",
+      "checked_at": "2026-10-30",
+      "note": "이번 확인의 하위 공급자 vertex(요청마다 바뀔 수 있음)"
+    },
+    {
+      "model_id": "gemini-2.5-flash",
+      "route_id": "openrouter",
+      "endpoint_id": null,
+      "basis": "observed",
+      "note": "이번 확인의 하위 공급자 Google AI Studio(요청마다 바뀔 수 있음)",
       "checked_at": "2026-10-30"
     },
     {
@@ -596,7 +727,15 @@
       "route_id": "google_direct",
       "endpoint_id": null,
       "basis": "observed",
-      "note": "Gemini 응답(AI Studio와 Vertex는 구별하지 못함)",
+      "checked_at": "2026-10-30",
+      "note": "Gemini API가 Vertex 전용 안전 설정 칸(method)을 거절함"
+    },
+    {
+      "model_id": "gemini-2.5-pro",
+      "route_id": "vercel_ai_gateway",
+      "endpoint_id": null,
+      "basis": "observed",
+      "note": "이번 확인의 하위 공급자 vertex(요청마다 바뀔 수 있음)",
       "checked_at": "2026-10-30"
     },
     {
@@ -604,7 +743,23 @@
       "route_id": "google_direct",
       "endpoint_id": null,
       "basis": "observed",
-      "note": "Gemini 응답(AI Studio와 Vertex는 구별하지 못함)",
+      "checked_at": "2026-10-30",
+      "note": "Gemini API가 Vertex 전용 안전 설정 칸(method)을 거절함"
+    },
+    {
+      "model_id": "gemini-3-flash-preview",
+      "route_id": "openrouter",
+      "endpoint_id": null,
+      "basis": "observed",
+      "note": "이번 확인의 하위 공급자 Google(요청마다 바뀔 수 있음)",
+      "checked_at": "2026-10-30"
+    },
+    {
+      "model_id": "gemini-3-flash-preview",
+      "route_id": "vercel_ai_gateway",
+      "endpoint_id": null,
+      "basis": "observed",
+      "note": "이번 확인의 하위 공급자 vertex(요청마다 바뀔 수 있음)",
       "checked_at": "2026-10-30"
     },
     {
@@ -612,7 +767,15 @@
       "route_id": "google_direct",
       "endpoint_id": null,
       "basis": "observed",
-      "note": "Gemini 응답(AI Studio와 Vertex는 구별하지 못함)",
+      "checked_at": "2026-10-30",
+      "note": "Gemini API가 Vertex 전용 안전 설정 칸(method)을 거절함"
+    },
+    {
+      "model_id": "gemini-3.1-flash-lite",
+      "route_id": "vercel_ai_gateway",
+      "endpoint_id": null,
+      "basis": "observed",
+      "note": "이번 확인의 하위 공급자 vertex(요청마다 바뀔 수 있음)",
       "checked_at": "2026-10-30"
     },
     {
@@ -620,7 +783,23 @@
       "route_id": "google_direct",
       "endpoint_id": null,
       "basis": "observed",
-      "note": "Gemini 응답(AI Studio와 Vertex는 구별하지 못함)",
+      "checked_at": "2026-10-30",
+      "note": "Gemini API가 Vertex 전용 안전 설정 칸(method)을 거절함"
+    },
+    {
+      "model_id": "gemini-3.1-pro-preview",
+      "route_id": "openrouter",
+      "endpoint_id": null,
+      "basis": "observed",
+      "note": "이번 확인의 하위 공급자 Google(요청마다 바뀔 수 있음)",
+      "checked_at": "2026-10-30"
+    },
+    {
+      "model_id": "gemini-3.1-pro-preview",
+      "route_id": "vercel_ai_gateway",
+      "endpoint_id": null,
+      "basis": "observed",
+      "note": "이번 확인의 하위 공급자 vertex(요청마다 바뀔 수 있음)",
       "checked_at": "2026-10-30"
     },
     {
@@ -628,7 +807,15 @@
       "route_id": "google_direct",
       "endpoint_id": null,
       "basis": "observed",
-      "note": "Gemini 응답(AI Studio와 Vertex는 구별하지 못함)",
+      "checked_at": "2026-10-30",
+      "note": "Gemini API가 Vertex 전용 안전 설정 칸(method)을 거절함"
+    },
+    {
+      "model_id": "gemini-3.5-flash-lite",
+      "route_id": "vercel_ai_gateway",
+      "endpoint_id": null,
+      "basis": "observed",
+      "note": "이번 확인의 하위 공급자 vertex(요청마다 바뀔 수 있음)",
       "checked_at": "2026-10-30"
     },
     {
@@ -636,7 +823,23 @@
       "route_id": "google_direct",
       "endpoint_id": null,
       "basis": "observed",
-      "note": "Gemini 응답(AI Studio와 Vertex는 구별하지 못함)",
+      "checked_at": "2026-10-30",
+      "note": "Gemini API가 Vertex 전용 안전 설정 칸(method)을 거절함"
+    },
+    {
+      "model_id": "gemini-3.5-flash",
+      "route_id": "openrouter",
+      "endpoint_id": null,
+      "basis": "observed",
+      "note": "이번 확인의 하위 공급자 Google(요청마다 바뀔 수 있음)",
+      "checked_at": "2026-10-30"
+    },
+    {
+      "model_id": "gemini-3.5-flash",
+      "route_id": "vercel_ai_gateway",
+      "endpoint_id": null,
+      "basis": "observed",
+      "note": "이번 확인의 하위 공급자 vertex(요청마다 바뀔 수 있음)",
       "checked_at": "2026-10-30"
     },
     {
@@ -644,7 +847,23 @@
       "route_id": "google_direct",
       "endpoint_id": null,
       "basis": "observed",
-      "note": "Gemini 응답(AI Studio와 Vertex는 구별하지 못함)",
+      "checked_at": "2026-10-30",
+      "note": "Gemini API가 Vertex 전용 안전 설정 칸(method)을 거절함"
+    },
+    {
+      "model_id": "gemini-3.6-flash",
+      "route_id": "openrouter",
+      "endpoint_id": null,
+      "basis": "observed",
+      "note": "이번 확인의 하위 공급자 Google(요청마다 바뀔 수 있음)",
+      "checked_at": "2026-10-30"
+    },
+    {
+      "model_id": "gemini-3.6-flash",
+      "route_id": "vercel_ai_gateway",
+      "endpoint_id": null,
+      "basis": "observed",
+      "note": "이번 확인의 하위 공급자 vertex(요청마다 바뀔 수 있음)",
       "checked_at": "2026-10-30"
     },
     {
@@ -652,7 +871,23 @@
       "route_id": "google_direct",
       "endpoint_id": null,
       "basis": "observed",
-      "note": "Gemini 응답(AI Studio와 Vertex는 구별하지 못함)",
+      "checked_at": "2026-10-30",
+      "note": "Gemini API가 Vertex 전용 안전 설정 칸(method)을 거절함"
+    },
+    {
+      "model_id": "gemini-3.7-flash",
+      "route_id": "openrouter",
+      "endpoint_id": null,
+      "basis": "observed",
+      "note": "이번 확인의 하위 공급자 Google(요청마다 바뀔 수 있음)",
+      "checked_at": "2026-10-30"
+    },
+    {
+      "model_id": "gemini-3.7-flash",
+      "route_id": "vercel_ai_gateway",
+      "endpoint_id": null,
+      "basis": "observed",
+      "note": "이번 확인의 하위 공급자 vertex(요청마다 바뀔 수 있음)",
       "checked_at": "2026-10-30"
     },
     {
@@ -660,7 +895,15 @@
       "route_id": "google_direct",
       "endpoint_id": null,
       "basis": "observed",
-      "note": "Gemini 응답(AI Studio와 Vertex는 구별하지 못함)",
+      "checked_at": "2026-10-30",
+      "note": "Gemini API가 Vertex 전용 안전 설정 칸(method)을 거절함"
+    },
+    {
+      "model_id": "gemini-4-argon",
+      "route_id": "vercel_ai_gateway",
+      "endpoint_id": null,
+      "basis": "observed",
+      "note": "이번 확인의 하위 공급자 vertex(요청마다 바뀔 수 있음)",
       "checked_at": "2026-10-30"
     },
     {
@@ -668,7 +911,14 @@
       "route_id": "azure_foundry",
       "endpoint_id": null,
       "basis": "observed",
-      "note": "Azure 콘텐츠 필터 필드(배포 지역 표기 없음)",
+      "checked_at": "2026-10-30",
+      "note": "Azure 콘텐츠 필터 필드(배포 지역 표기 없음)"
+    },
+    {
+      "model_id": "gpt-4.1-mini",
+      "route_id": "openai_direct",
+      "endpoint_id": null,
+      "basis": "observed",
       "checked_at": "2026-10-30"
     },
     {
@@ -676,15 +926,22 @@
       "route_id": "azure_foundry",
       "endpoint_id": null,
       "basis": "observed",
-      "note": "Azure 콘텐츠 필터 필드(배포 지역 표기 없음)",
-      "checked_at": "2026-10-30"
+      "checked_at": "2026-10-30",
+      "note": "Azure 콘텐츠 필터 필드(배포 지역 표기 없음)"
     },
     {
       "model_id": "gpt-4.1",
       "route_id": "azure_foundry",
       "endpoint_id": null,
       "basis": "observed",
-      "note": "Azure 콘텐츠 필터 필드(배포 지역 표기 없음)",
+      "checked_at": "2026-10-30",
+      "note": "Azure 콘텐츠 필터 필드(배포 지역 표기 없음)"
+    },
+    {
+      "model_id": "gpt-4.1",
+      "route_id": "openai_direct",
+      "endpoint_id": null,
+      "basis": "observed",
       "checked_at": "2026-10-30"
     },
     {
@@ -692,7 +949,14 @@
       "route_id": "azure_foundry",
       "endpoint_id": null,
       "basis": "observed",
-      "note": "Azure 콘텐츠 필터 필드(배포 지역 표기 없음)",
+      "checked_at": "2026-10-30",
+      "note": "Azure 콘텐츠 필터 필드(배포 지역 표기 없음)"
+    },
+    {
+      "model_id": "gpt-4o-mini",
+      "route_id": "openai_direct",
+      "endpoint_id": null,
+      "basis": "observed",
       "checked_at": "2026-10-30"
     },
     {
@@ -700,7 +964,14 @@
       "route_id": "azure_foundry",
       "endpoint_id": null,
       "basis": "observed",
-      "note": "Azure 콘텐츠 필터 필드(배포 지역 표기 없음)",
+      "checked_at": "2026-10-30",
+      "note": "Azure 콘텐츠 필터 필드(배포 지역 표기 없음)"
+    },
+    {
+      "model_id": "gpt-4o",
+      "route_id": "openai_direct",
+      "endpoint_id": null,
+      "basis": "observed",
       "checked_at": "2026-10-30"
     },
     {
@@ -708,15 +979,22 @@
       "route_id": "azure_foundry",
       "endpoint_id": null,
       "basis": "observed",
-      "note": "Azure 콘텐츠 필터 필드(배포 지역 표기 없음)",
-      "checked_at": "2026-10-30"
+      "checked_at": "2026-10-30",
+      "note": "Azure 콘텐츠 필터 필드(배포 지역 표기 없음)"
     },
     {
       "model_id": "gpt-5-mini",
       "route_id": "azure_foundry",
       "endpoint_id": null,
       "basis": "observed",
-      "note": "Azure 콘텐츠 필터 필드(배포 지역 표기 없음)",
+      "checked_at": "2026-10-30",
+      "note": "Azure 콘텐츠 필터 필드(배포 지역 표기 없음)"
+    },
+    {
+      "model_id": "gpt-5-mini",
+      "route_id": "openai_direct",
+      "endpoint_id": null,
+      "basis": "observed",
       "checked_at": "2026-10-30"
     },
     {
@@ -724,32 +1002,32 @@
       "route_id": "azure_foundry",
       "endpoint_id": null,
       "basis": "observed",
-      "note": "Azure 콘텐츠 필터 필드(배포 지역 표기 없음)",
-      "checked_at": "2026-10-30"
+      "checked_at": "2026-10-30",
+      "note": "Azure 콘텐츠 필터 필드(배포 지역 표기 없음)"
     },
     {
       "model_id": "gpt-5.1-codex-mini",
       "route_id": "azure_foundry",
       "endpoint_id": null,
       "basis": "observed",
-      "note": "Azure 콘텐츠 필터 필드(배포 지역 표기 없음)",
-      "checked_at": "2026-10-30"
+      "checked_at": "2026-10-30",
+      "note": "Azure 콘텐츠 필터 필드(배포 지역 표기 없음)"
     },
     {
       "model_id": "gpt-5.1-codex",
       "route_id": "azure_foundry",
       "endpoint_id": null,
       "basis": "observed",
-      "note": "Azure 콘텐츠 필터 필드(배포 지역 표기 없음)",
-      "checked_at": "2026-10-30"
+      "checked_at": "2026-10-30",
+      "note": "Azure 콘텐츠 필터 필드(배포 지역 표기 없음)"
     },
     {
       "model_id": "gpt-5.1",
       "route_id": "azure_foundry",
       "endpoint_id": null,
       "basis": "observed",
-      "note": "Azure 콘텐츠 필터 필드(배포 지역 표기 없음)",
-      "checked_at": "2026-10-30"
+      "checked_at": "2026-10-30",
+      "note": "Azure 콘텐츠 필터 필드(배포 지역 표기 없음)"
     },
     {
       "model_id": "gpt-5.2-pro",
@@ -763,40 +1041,40 @@
       "route_id": "azure_foundry",
       "endpoint_id": null,
       "basis": "observed",
-      "note": "Azure 콘텐츠 필터 필드(배포 지역 표기 없음)",
-      "checked_at": "2026-10-30"
+      "checked_at": "2026-10-30",
+      "note": "Azure 콘텐츠 필터 필드(배포 지역 표기 없음)"
     },
     {
       "model_id": "gpt-5.4-2026-03-05",
       "route_id": "azure_foundry",
       "endpoint_id": null,
       "basis": "observed",
-      "note": "Azure 배포 지역 south-central-us",
-      "checked_at": "2026-10-30"
+      "checked_at": "2026-10-30",
+      "note": "Azure 배포 지역 canada-east; Azure 배포 지역 east-us; Azure 배포 지역 east-us-2; Azure 배포 지역 japan-east; Azure 배포 지역 korea-central; Azure 배포 지역 norway-east"
     },
     {
       "model_id": "gpt-5.4-mini",
       "route_id": "azure_foundry",
       "endpoint_id": null,
       "basis": "observed",
-      "note": "Azure 배포 지역 north-central-us",
-      "checked_at": "2026-10-30"
+      "checked_at": "2026-10-30",
+      "note": "Azure 배포 지역 east-us; Azure 배포 지역 east-us-2; Azure 배포 지역 north-central-us; Azure 배포 지역 norway-east; Azure 배포 지역 south-india; Azure 배포 지역 uk-south"
     },
     {
       "model_id": "gpt-5.4-nano",
       "route_id": "azure_foundry",
       "endpoint_id": null,
       "basis": "observed",
-      "note": "Azure 배포 지역 south-india",
-      "checked_at": "2026-10-30"
+      "checked_at": "2026-10-30",
+      "note": "Azure 배포 지역 canada-east; Azure 배포 지역 east-us; Azure 배포 지역 korea-central; Azure 배포 지역 norway-east; Azure 배포 지역 uk-south; Azure 콘텐츠 필터 필드(배포 지역 표기 없음)"
     },
     {
       "model_id": "gpt-5.4",
       "route_id": "azure_foundry",
       "endpoint_id": null,
       "basis": "observed",
-      "note": "Azure 배포 지역 north-central-us",
-      "checked_at": "2026-10-30"
+      "checked_at": "2026-10-30",
+      "note": "Azure 배포 지역 canada-east; Azure 배포 지역 norway-east; Azure 배포 지역 south-india; Azure 배포 지역 uk-south; Azure 배포 지역 west-us-3; Azure 콘텐츠 필터 필드(배포 지역 표기 없음)"
     },
     {
       "model_id": "gpt-5.5-pro-2026-04-23",
@@ -817,54 +1095,61 @@
       "route_id": "azure_foundry",
       "endpoint_id": null,
       "basis": "observed",
-      "note": "Azure 배포 지역 sweden-central",
-      "checked_at": "2026-10-30"
+      "checked_at": "2026-10-30",
+      "note": "Azure 배포 지역 australia-east; Azure 배포 지역 canada-east; Azure 배포 지역 japan-east; Azure 배포 지역 korea-central; Azure 배포 지역 norway-east; Azure 배포 지역 south-india; Azure 배포 지역 sweden-central; Azure 배포 지역 uk-south"
     },
     {
       "model_id": "gpt-5",
       "route_id": "azure_foundry",
       "endpoint_id": null,
       "basis": "observed",
-      "note": "Azure 콘텐츠 필터 필드(배포 지역 표기 없음)",
-      "checked_at": "2026-10-30"
+      "checked_at": "2026-10-30",
+      "note": "Azure 콘텐츠 필터 필드(배포 지역 표기 없음)"
     },
     {
-      "model_id": "gpt-6.1-terra",
+      "model_id": "gpt-5",
       "route_id": "openai_direct",
       "endpoint_id": null,
       "basis": "observed",
-      "checked_at": "2026-10-28"
+      "checked_at": "2026-10-30"
     },
     {
       "model_id": "gpt-6.1-terra",
       "route_id": "aws_bedrock",
       "endpoint_id": null,
       "basis": "observed",
-      "note": "Bedrock 배포 지역 us-east-1",
-      "checked_at": "2026-10-30"
+      "checked_at": "2026-10-30",
+      "note": "Bedrock 배포 지역 us-east-1"
     },
     {
       "model_id": "o1",
       "route_id": "azure_foundry",
       "endpoint_id": null,
       "basis": "observed",
-      "note": "Azure 콘텐츠 필터 필드(배포 지역 표기 없음)",
-      "checked_at": "2026-10-30"
+      "checked_at": "2026-10-30",
+      "note": "Azure 콘텐츠 필터 필드(배포 지역 표기 없음)"
     },
     {
       "model_id": "o3-mini",
       "route_id": "azure_foundry",
       "endpoint_id": null,
       "basis": "observed",
-      "note": "Azure 콘텐츠 필터 필드(배포 지역 표기 없음)",
-      "checked_at": "2026-10-30"
+      "checked_at": "2026-10-30",
+      "note": "Azure 콘텐츠 필터 필드(배포 지역 표기 없음)"
     },
     {
       "model_id": "o3-pro",
       "route_id": "azure_foundry",
       "endpoint_id": null,
       "basis": "observed",
-      "note": "Azure 콘텐츠 필터 필드(배포 지역 표기 없음)",
+      "checked_at": "2026-10-30",
+      "note": "Azure 콘텐츠 필터 필드(배포 지역 표기 없음)"
+    },
+    {
+      "model_id": "o3-pro",
+      "route_id": "openai_direct",
+      "endpoint_id": null,
+      "basis": "observed",
       "checked_at": "2026-10-30"
     },
     {
@@ -872,7 +1157,14 @@
       "route_id": "azure_foundry",
       "endpoint_id": null,
       "basis": "observed",
-      "note": "Azure 콘텐츠 필터 필드(배포 지역 표기 없음)",
+      "checked_at": "2026-10-30",
+      "note": "Azure 콘텐츠 필터 필드(배포 지역 표기 없음)"
+    },
+    {
+      "model_id": "o3",
+      "route_id": "openai_direct",
+      "endpoint_id": null,
+      "basis": "observed",
       "checked_at": "2026-10-30"
     },
     {
@@ -880,8 +1172,8 @@
       "route_id": "azure_foundry",
       "endpoint_id": null,
       "basis": "observed",
-      "note": "Azure 콘텐츠 필터 필드(배포 지역 표기 없음)",
-      "checked_at": "2026-10-30"
+      "checked_at": "2026-10-30",
+      "note": "Azure 콘텐츠 필터 필드(배포 지역 표기 없음)"
     },
     {
       "model_id": "claude-fable-5",
@@ -951,16 +1243,14 @@
       "route_id": "openai_direct",
       "endpoint_id": null,
       "basis": "observed",
-      "checked_at": "2026-10-30",
-      "note": "10/29 Responses API 응답에 OpenAI 자체 과금 필드 billing {payer: developer}가 있음(gpt-5.2-pro·gpt-6.1-terra와 같은 형식)"
+      "checked_at": "2026-10-30"
     },
     {
       "model_id": "gpt-5.5-2026-04-23",
       "route_id": "openai_direct",
       "endpoint_id": null,
       "basis": "observed",
-      "checked_at": "2026-10-30",
-      "note": "10/29 Responses API 응답에 OpenAI 자체 과금 필드 billing {payer: developer}가 있음(gpt-5.2-pro·gpt-6.1-terra와 같은 형식)"
+      "checked_at": "2026-10-30"
     },
     {
       "model_id": "gemini-nano-banana-2.1",
@@ -968,7 +1258,7 @@
       "endpoint_id": null,
       "basis": "observed",
       "checked_at": "2026-10-30",
-      "note": "10/29 응답의 responseId 형식과 필드가 Gemini API 형식(다른 Gemini 모델과 같음)"
+      "note": "Gemini API가 Vertex 전용 안전 설정 칸(method)을 거절함"
     },
     {
       "model_id": "gemini-2.5-flash-image",
@@ -976,7 +1266,15 @@
       "endpoint_id": null,
       "basis": "observed",
       "checked_at": "2026-10-30",
-      "note": "10/29 응답의 responseId 형식과 필드가 Gemini API 형식(다른 Gemini 모델과 같음)"
+      "note": "Gemini API가 Vertex 전용 안전 설정 칸(method)을 거절함"
+    },
+    {
+      "model_id": "gemini-2.5-flash-image",
+      "route_id": "openrouter",
+      "endpoint_id": null,
+      "basis": "observed",
+      "note": "이번 확인의 하위 공급자 Google(요청마다 바뀔 수 있음)",
+      "checked_at": "2026-10-30"
     },
     {
       "model_id": "gemini-3-pro-image",
@@ -984,7 +1282,15 @@
       "endpoint_id": null,
       "basis": "observed",
       "checked_at": "2026-10-30",
-      "note": "10/29 응답의 responseId 형식과 필드가 Gemini API 형식(다른 Gemini 모델과 같음)"
+      "note": "Gemini API가 Vertex 전용 안전 설정 칸(method)을 거절함"
+    },
+    {
+      "model_id": "gemini-3-pro-image",
+      "route_id": "openrouter",
+      "endpoint_id": null,
+      "basis": "observed",
+      "note": "이번 확인의 하위 공급자 Google(요청마다 바뀔 수 있음)",
+      "checked_at": "2026-10-30"
     },
     {
       "model_id": "gemini-3-pro-image-preview",
@@ -992,7 +1298,15 @@
       "endpoint_id": null,
       "basis": "observed",
       "checked_at": "2026-10-30",
-      "note": "10/29 응답의 responseId 형식과 필드가 Gemini API 형식(다른 Gemini 모델과 같음)"
+      "note": "Gemini API가 Vertex 전용 안전 설정 칸(method)을 거절함"
+    },
+    {
+      "model_id": "gemini-3-pro-image-preview",
+      "route_id": "openrouter",
+      "endpoint_id": null,
+      "basis": "observed",
+      "note": "이번 확인의 하위 공급자 Google(요청마다 바뀔 수 있음)",
+      "checked_at": "2026-10-30"
     },
     {
       "model_id": "gemini-3.1-flash-image",
@@ -1000,7 +1314,15 @@
       "endpoint_id": null,
       "basis": "observed",
       "checked_at": "2026-10-30",
-      "note": "10/29 응답의 responseId 형식과 필드가 Gemini API 형식(다른 Gemini 모델과 같음)"
+      "note": "Gemini API가 Vertex 전용 안전 설정 칸(method)을 거절함"
+    },
+    {
+      "model_id": "gemini-3.1-flash-image",
+      "route_id": "openrouter",
+      "endpoint_id": null,
+      "basis": "observed",
+      "note": "이번 확인의 하위 공급자 Google(요청마다 바뀔 수 있음)",
+      "checked_at": "2026-10-30"
     },
     {
       "model_id": "gemini-3.1-flash-image-preview",
@@ -1008,38 +1330,22 @@
       "endpoint_id": null,
       "basis": "observed",
       "checked_at": "2026-10-30",
-      "note": "10/29 응답의 responseId 형식과 필드가 Gemini API 형식(다른 Gemini 모델과 같음)"
+      "note": "Gemini API가 Vertex 전용 안전 설정 칸(method)을 거절함"
     },
     {
-      "model_id": "gpt-image-2",
-      "route_id": "openai",
-      "endpoint_id": null,
-      "basis": "inferred",
-      "checked_at": "2026-10-29",
-      "note": "10/29 이미지 생성 응답에 Azure 콘텐츠 필터 필드가 없음(OpenAI 형식). 렛서 설정상 GPT Image 2.5도 OpenAI 직접"
-    },
-    {
-      "model_id": "byteplus-seedance-2.5-reference-to-video",
-      "route_id": "BytePlus ModelArk",
-      "endpoint_id": null,
-      "basis": "inferred",
-      "checked_at": "2026-10-29",
-      "note": "렛서 모델 id가 byteplus-로 시작하고 렛서 단가가 BytePlus 공개가와 같음. seedance-2.5의 렛서 설정 경로에 BytePlus 포함"
-    },
-    {
-      "model_id": "byteplus-seedance-2.5-video-to-video",
-      "route_id": "BytePlus ModelArk",
-      "endpoint_id": null,
-      "basis": "inferred",
-      "checked_at": "2026-10-29",
-      "note": "렛서 모델 id가 byteplus-로 시작하고 렛서 단가가 BytePlus 공개가와 같음. seedance-2.5의 렛서 설정 경로에 BytePlus 포함"
-    },
-    {
-      "model_id": "glm-4.7",
+      "model_id": "glm-5",
       "route_id": "aws_bedrock",
       "endpoint_id": null,
-      "basis": "inferred",
-      "note": "응답 형식이 Bedrock을 거친 GPT 응답과 같음(chatcmpl-uuid id, cache_creation_input_tokens)",
+      "basis": "observed",
+      "note": "Bedrock 전용 performanceConfig 값 검사를 함",
+      "checked_at": "2026-10-30"
+    },
+    {
+      "model_id": "glm-5",
+      "route_id": "openrouter",
+      "endpoint_id": null,
+      "basis": "observed",
+      "note": "이번 확인의 하위 공급자 Venice(요청마다 바뀔 수 있음)",
       "checked_at": "2026-10-30"
     },
     {
@@ -1047,12 +1353,51 @@
       "route_id": "vercel_ai_gateway",
       "endpoint_id": null,
       "basis": "observed",
-      "note": "이번 호출의 하위 공급자 bedrock(요청마다 바뀔 수 있음)",
+      "note": "이번 확인의 하위 공급자 bedrock(요청마다 바뀔 수 있음)",
+      "checked_at": "2026-10-30"
+    },
+    {
+      "model_id": "glm-4.7",
+      "route_id": "aws_bedrock",
+      "endpoint_id": null,
+      "basis": "observed",
+      "note": "Bedrock 전용 performanceConfig 값 검사를 함",
+      "checked_at": "2026-10-30"
+    },
+    {
+      "model_id": "glm-4.7",
+      "route_id": "openrouter",
+      "endpoint_id": null,
+      "basis": "observed",
+      "note": "이번 확인의 하위 공급자 Z.AI(요청마다 바뀔 수 있음)",
+      "checked_at": "2026-10-30"
+    },
+    {
+      "model_id": "glm-4.7",
+      "route_id": "vercel_ai_gateway",
+      "endpoint_id": null,
+      "basis": "observed",
+      "note": "이번 확인의 하위 공급자 bedrock(요청마다 바뀔 수 있음)",
+      "checked_at": "2026-10-30"
+    },
+    {
+      "model_id": "glm-5.2",
+      "route_id": "openrouter",
+      "endpoint_id": null,
+      "basis": "observed",
+      "note": "이번 확인의 하위 공급자 CoreWeave(요청마다 바뀔 수 있음)",
+      "checked_at": "2026-10-30"
+    },
+    {
+      "model_id": "glm-5.3",
+      "route_id": "zai_direct",
+      "endpoint_id": null,
+      "basis": "observed",
+      "note": "보낸 request_id를 그대로 돌려줌(Z.ai API 동작)",
       "checked_at": "2026-10-30"
     }
   ],
   "unresolved": {
-    "glm-5.2": "응답 id가 게이트웨이가 만든 형식(chatcmpl-uuid). 단가는 Z.ai 정가와 같음. 경로 미확인",
     "glm-5.3": "UUID 형식 응답 id. 렛서 단가 1.26/3.96이 Friendli 가격과 같음(Z.ai 정가 1.4/4.4)",
     "glm-5.3-flashx": "UUID 형식 응답 id. 단가는 Z.ai 정가와 같음",
     "text-embedding-3-large": "임베딩 응답은 OpenAI 직접과 Azure의 형식이 같아 가릴 수 없음",
@@ -1063,6 +1408,18 @@
     "kling-v3-text-to-video": "렛서 영상 API가 자체 입력 형식(OutputConfig·Prompt·SessionContext)이라 실제 생성 없이 경로가 드러나지 않음. Kling 3.0 단가는 Kling 공식가·fal과 같음",
     "kling-v4-image-to-video": "렛서 영상 API가 자체 입력 형식(OutputConfig·Prompt·SessionContext)이라 실제 생성 없이 경로가 드러나지 않음. Kling 3.0 단가는 Kling 공식가·fal과 같음",
     "kling-v4-omni-video": "렛서 영상 API가 자체 입력 형식(OutputConfig·Prompt·SessionContext)이라 실제 생성 없이 경로가 드러나지 않음. Kling 3.0 단가는 Kling 공식가·fal과 같음",
-    "kling-v4-text-to-video": "렛서 영상 API가 자체 입력 형식(OutputConfig·Prompt·SessionContext)이라 실제 생성 없이 경로가 드러나지 않음. Kling 3.0 단가는 Kling 공식가·fal과 같음"
+    "kling-v4-text-to-video": "렛서 영상 API가 자체 입력 형식(OutputConfig·Prompt·SessionContext)이라 실제 생성 없이 경로가 드러나지 않음. Kling 3.0 단가는 Kling 공식가·fal과 같음",
+    "gpt-image-2": "이미지 생성 응답에 OpenAI와 Azure를 가르는 표시가 없음(10/29 호출 1회)",
+    "byteplus-seedance-2.5-reference-to-video": "영상은 생성하지 않으면 경로가 드러나지 않아 호출하지 않음",
+    "byteplus-seedance-2.5-video-to-video": "영상은 생성하지 않으면 경로가 드러나지 않아 호출하지 않음",
+    "glm-5.3-flash": "배포 2개 중 2개 경로 표시 없음: chat 200: id 형식 <uuid>, 경로 표시 없음; chat 200: id 형식 chatcmpl-<uuid>, 경로 표시 없음",
+    "gpt-4.1": "배포 7개 중 1개 경로 표시 없음: chat 200: id 형식 chatcmpl-<29자>, 경로 표시 없음, 그 밖의 필드 service_tier, system_fingerprint",
+    "gpt-5.1": "배포 6개 중 1개 경로 표시 없음: chat 200: id 형식 chatcmpl-<29자>, 경로 표시 없음, 그 밖의 필드 service_tier",
+    "gpt-5.4-2026-03-05": "배포 7개 중 1개 경로 표시 없음: chat 200: id 형식 chatcmpl-<29자>, 경로 표시 없음, 그 밖의 필드 service_tier",
+    "gpt-5.5": "배포 10개 중 2개 경로 표시 없음: chat 200: id 형식 chatcmpl-<29자>, 경로 표시 없음, 그 밖의 필드 service_tier",
+    "kimi-k2-thinking": "chat 404 service_error",
+    "gpt-4.1-mini": "배포 14개 중 2개 경로 표시 없음: chat 200: id 형식 chatcmpl-<29자>, 경로 표시 없음, 그 밖의 필드 service_tier, system_fingerprint",
+    "gpt-5.4-mini": "배포 14개 중 2개 경로 표시 없음: chat 200: id 형식 chatcmpl-<29자>, 경로 표시 없음, 그 밖의 필드 service_tier",
+    "gpt-5.4-nano": "배포 12개 중 1개 경로 표시 없음: chat 200: id 형식 chatcmpl-<29자>, 경로 표시 없음, 그 밖의 필드 service_tier"
   }
 }

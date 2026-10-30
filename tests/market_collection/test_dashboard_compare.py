@@ -214,7 +214,7 @@ def test_closed_model_rows_are_비공개_and_vercel_tiers_split_out(astra):
     assert all(c[1] == "lo" for r in groups["비공개 · Priority"] for c in r["c"])  # the Vercel tier price ties OpenRouter's
     assert groups["비공개 · Flex"][0]["n"] == "등급을 지정한 요청에만 적용" and groups["비공개 · Flex"][0]["c"][0] == ["$5.00", "un"]
     assert all(r.get("f") == 1 for rows in groups.values() for r in rows)  # no precision is written for a closed-weight model
-    assert ["사용 경로", "as"] in groups["비공개 · Standard"][1]["t"]  # is_demo false: LETSUR's recorded route, not an assumption
+    assert ["렛서 사용", "as"] in groups["비공개 · Standard"][1]["t"]  # is_demo false: LETSUR's recorded route, not an assumption
     assert "special" not in table
 
 
@@ -224,28 +224,26 @@ def _chips(table: dict) -> dict:
 
 
 def test_every_record_marks_its_own_route_with_its_own_basis(astra_root):
-    """2026-10-28: the chip follows each record's basis (settings: 렛서 설정, observed: 호출 확인), and every record of the model
-    marks its Standard row, not only the first record."""
+    """2026-10-28: every record of the model marks its Standard row, not only the first record. 2026-10-30 (박건: 사용이면 사용):
+    the chip says 렛서 사용 whatever the record's basis; only a demo file's record without basis says 가정."""
     def chips(records, is_demo=False):
         routes = {"is_demo": is_demo, "records": [{"model_id": ASTRA, **record} for record in records]}
         return _chips(compare.tables(astra_root, [ASTRA], [], [], None, None, routes, "2026-10-27")[ASTRA])
     both = chips([{"route_id": "openrouter", "basis": "settings"}, {"route_id": "vercel_ai_gateway", "basis": "observed"}])
-    assert both == {"OpenRouter · openai": "렛서 설정", "Vercel · openai": "호출 확인"}
+    assert both == {"OpenRouter · openai": "렛서 사용", "Vercel · openai": "렛서 사용"}
     assert chips([{"route_id": "vercel_ai_gateway", "basis": "observed"}, {"route_id": "openrouter", "basis": "settings"}]) == both  # not the first record only
     assert chips([{"route_id": "openrouter"}, {"route_id": "vercel_ai_gateway", "basis": "observed"}], is_demo=True) == {
-        "OpenRouter · openai": "가정", "Vercel · openai": "호출 확인"}  # a record without basis keeps the old wording
+        "OpenRouter · openai": "가정", "Vercel · openai": "렛서 사용"}  # a demo file's record without basis
     assert chips([{"route_id": "openrouter"}, {"route_id": "vercel_ai_gateway", "basis": "settings"}]) == {
-        "OpenRouter · openai": "사용 경로", "Vercel · openai": "렛서 설정"}
+        "OpenRouter · openai": "렛서 사용", "Vercel · openai": "렛서 사용"}
     assert chips([{"route_id": None, "basis": "observed"}]) == {}  # not offered: no row
-    # 2026-10-29: a route an admin set, and the row of a route LETSUR's calls only suggest
-    assert chips([{"route_id": "openrouter", "basis": "manual", "checked_at": "2026-10-29"}, {"route_id": "vercel_ai_gateway", "basis": "inferred",
-                                                                                             "note": "응답 형식으로 추정"}]) == {
-        "OpenRouter · openai": "관리자 지정", "Vercel · openai": "호출 추정"}
+    # 2026-10-29: a route an admin set
+    assert chips([{"route_id": "openrouter", "basis": "manual", "checked_at": "2026-10-29"}]) == {"OpenRouter · openai": "렛서 사용"}
 
 
 def test_astra_openai_direct_row_says_settings_and_its_azure_row_says_observed():
-    """2026-10-28: gpt-6-astra has a registered route (OpenAI direct) and the route one API call went through (Azure); each of the
-    two Standard rows says its own basis. Which row a record marks is still decision 17's rule (Standard, no region or band)."""
+    """2026-10-28: gpt-6-astra has a registered route (OpenAI direct) and the route one API call went through (Azure); both
+    Standard rows are marked, alike since 2026-10-30. Which row a record marks is still decision 17's rule (Standard, no region or band)."""
     records = [{"model_id": ASTRA, "route_id": "openai_direct", "basis": "settings"},
                {"model_id": ASTRA, "route_id": "azure_foundry", "basis": "observed"}]
     targets = compare.assumed_routes(ASTRA, {"is_demo": False, "records": records})
@@ -254,7 +252,7 @@ def test_astra_openai_direct_row_says_settings_and_its_azure_row_says_observed()
     def chip(route, publisher, **fields):
         row = _row(model=ASTRA, route=route, who=[publisher, route], **{"origin": "listing", **fields})
         return compare.assumed_chip(row, targets, False)
-    assert chip("openai_direct", "OpenAI") == "렛서 설정" and chip("azure_foundry", "Microsoft") == "호출 확인"
+    assert chip("openai_direct", "OpenAI") == "렛서 사용" and chip("azure_foundry", "Microsoft") == "렛서 사용"
     assert chip("azure_foundry", "Microsoft", tier="Priority") == "" and chip("openai_direct", "OpenAI", region="US") == ""
     assert chip("openai_direct", "OpenAI", band="272K") == "" and chip("azure_foundry", "Microsoft", origin="vercel_tier") == ""
     gateway = _row(model=ASTRA, route="vercel_ai_gateway", provider="openai", origin="listing", who=["Vercel", "openai"])
@@ -266,10 +264,10 @@ def test_a_record_with_an_endpoint_marks_only_that_endpoint_and_a_record_without
     targets = compare.assumed_routes(GLM, dict(records, is_demo=False))
     nu = _row(route="vercel_ai_gateway", provider="nu", origin="listing", who=["Vercel", "nu"])
     zai = _row(route="vercel_ai_gateway", provider="zai", origin="listing", who=["Vercel", "zai"])
-    assert (compare.assumed_chip(nu, targets, False), compare.assumed_chip(zai, targets, False)) == ("호출 확인", "")
+    assert (compare.assumed_chip(nu, targets, False), compare.assumed_chip(zai, targets, False)) == ("렛서 사용", "")
     plain = compare.assumed_routes(GLM, {"records": [{"model_id": GLM, "route_id": "vercel_ai_gateway"}]})
     assert plain == [("vercel_ai_gateway", "", None)]
-    assert (compare.assumed_chip(zai, plain, True), compare.assumed_chip(zai, plain, False)) == ("가정", "사용 경로")  # maker's own upstream
+    assert (compare.assumed_chip(zai, plain, True), compare.assumed_chip(zai, plain, False)) == ("가정", "렛서 사용")  # maker's own upstream
     assert compare.assumed_routes(GLM, {"records": [{"model_id": "other", "route_id": "openrouter"}]}) == [] and compare.assumed_routes(GLM, None) == []
 
 
@@ -314,7 +312,7 @@ def test_the_route_chip_lands_on_the_makers_own_upstream_row_of_each_gateway(mon
         row = _row(model=model, route=route, conditions=stated, unknown={}, origin="listing")
         compare.place(row)
         return row
-    assert compare.assumed_chip(placed(**conditions), targets, False) == "호출 확인"
+    assert compare.assumed_chip(placed(**conditions), targets, False) == "렛서 사용"
     assert compare.assumed_chip(placed(**{key: "deepinfra" for key in conditions}), targets, False) == ""  # another upstream of the model
 
 
