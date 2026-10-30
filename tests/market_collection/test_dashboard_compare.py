@@ -521,8 +521,9 @@ def test_observed_models_are_the_newest_runs_whatever_a_card_says(tmp_path):
 
 def test_a_model_without_cards_still_gets_a_trend_a_table_and_a_list_entry(tmp_path):
     """2026-10-28: the 모델별 가격 list covers every model the newest run observed, not only models with change cards. A new model
-    has baselines and no events: glm-5.2 has series to draw (TREND, badge 변화 없음), gpt-6-astra's observations all have unknown
-    conditions, so it has only the table; both are in the list. The cards and cards.json do not change."""
+    has baselines and no events: glm-5.2 has series to draw (TREND, badge 변화 없음). gpt-6-astra's gateway rows state no serving
+    precision; until 2026-10-30 that left it with only the table, now a closed model's rows form series and it has a trend too.
+    Both are in the list. The cards and cards.json do not change."""
     root = tmp_path / "root"
     run = _run_models(root, {GLM: (GLM_OR, GLM_VERCEL), ASTRA: (CLOSED_OR, CLOSED_VERCEL)})
     assert events_main(["build", "--run", str(run), "--output", str(root / "events")]) == 0  # the engine's own state, events and report
@@ -534,7 +535,7 @@ def test_a_model_without_cards_still_gets_a_trend_a_table_and_a_list_entry(tmp_p
         return page, slot, json.loads((tmp_path / name / "cards.json").read_text(encoding="utf-8"))["cards"]
     page, slot, judged = built("site")
     assert (slot("EVENTS"), judged) == ([], [])
-    assert set(slot("COMPARE")) == {GLM, ASTRA} and ASTRA not in slot("TREND")  # nothing to draw, the table has its rows
+    assert set(slot("COMPARE")) == {GLM, ASTRA} and ASTRA in slot("TREND")
     assert slot("COMPARE")[ASTRA]["groups"]
     trend = slot("TREND")[GLM]
     assert (trend["name"], trend["badge"]) == (GLM, ["변화 없음", ""]) and (trend.get("tiers") or trend.get("series"))
@@ -547,7 +548,7 @@ def test_a_model_without_cards_still_gets_a_trend_a_table_and_a_list_entry(tmp_p
     (folder / "events.json").write_text(json.dumps(dict(events, events=[base_event("e1", "price_change", GLM, "openrouter", "confirmed")])), encoding="utf-8")
     page, slot, judged = built("with-card")
     assert [card["mid"] for card in slot("EVENTS")] == [GLM] and len(judged) == 1
-    assert (slot("TREND")[GLM]["badge"], set(slot("COMPARE")), ASTRA in slot("TREND")) == (["변화 1건", ""], {GLM, ASTRA}, False)
+    assert (slot("TREND")[GLM]["badge"], set(slot("COMPARE")), slot("TREND")[ASTRA]["badge"]) == (["변화 1건", ""], {GLM, ASTRA}, ["변화 없음", ""])
 
 
 def _listing(model, route, conditions, prices=("1", "2", "0.1"), **fields) -> dict:

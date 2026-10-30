@@ -144,13 +144,31 @@ def core_observations(run: dict, catalog: Catalog) -> tuple[list[dict], list[dic
     return observations, statuses
 
 
+# Model families with public weights (decision 24): a provider may serve them at any precision, so an unstated one leaves the
+# product unknown. A closed model's provider serves the maker's own weights, so a gateway listing that states no precision
+# still prices that model (2026-10-30: without this, models seen only through OpenRouter or Vercel had no series at all).
+OPEN_WEIGHT = ("deepseek", "glm", "kimi")
+CLOSED_MODEL_UNKNOWNS = {"quantization"}
+
+
+def open_weight(model_id: str) -> bool:
+    return model_id.startswith(OPEN_WEIGHT)
+
+
+def blocking_unknowns(obs: dict) -> list[str]:
+    """The unstated conditions that leave this observation's product unknown."""
+    if open_weight(obs["model_id"]):
+        return list(obs["unknown_conditions"])
+    return [key for key in obs["unknown_conditions"] if key not in CLOSED_MODEL_UNKNOWNS]
+
+
 def comparability(obs: dict) -> str:
     """Empty when comparable; otherwise a reason code. Unknown is never a wildcard."""
     if not obs["registered"]:
         return "unverified_source"
     if not obs["amount"]:
         return "price_missing"
-    if obs["unknown_conditions"] or not obs["upstream_provider"]:
+    if blocking_unknowns(obs) or not obs["upstream_provider"]:
         return "condition_unknown"
     if obs["evidence_status"] != "direct":
         return "not_direct_evidence"

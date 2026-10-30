@@ -141,10 +141,13 @@ class Builder:
         count: dict[str, int] = {}
         for obs in current:
             count[obs["series"]] = count.get(obs["series"], 0) + 1
-        # Rows that differ only by a stated policy cannot be paired with the previous run: unknown, not a wildcard.
+        # Rows that differ only by a stated policy cannot be paired with the previous run: unknown, not a wildcard. Nor can
+        # rows told apart only by an unstated precision (a closed model's gateway listings, 2026-10-30).
         ambiguous = {o["series"] for o in current if o["policy"] and count[o["series"]] > 1}
+        blurred = {o["series"] for o in current if o["unknown_conditions"] and count[o["series"]] > 1}
         for obs in current:
-            reason = comparability(obs) or ("policy_pair_not_unique" if obs["series"] in ambiguous else "")
+            reason = (comparability(obs) or ("policy_pair_not_unique" if obs["series"] in ambiguous else "")
+                      or ("precision_pair_not_unique" if obs["series"] in blurred else ""))
             if reason:
                 self._not_comparable(obs, reason)
                 continue

@@ -48,7 +48,7 @@ REGION_OF = {"us": "US", "eu": "EU", "europe": "EU", "au": "AU", "jp": "JP"}  # 
 PRECISION_GROUP = {"mxfp4": "fp4", "nvfp4": "fp4", "mxfp8": "fp8"}  # int4 stays its own group (2)
 PRECISION_ORDER = ("fp4", "fp8", "int4", "int8", "fp6", "fp16", "bf16", "fp32", "비공개")
 CLOSED = "비공개"
-OPEN_WEIGHT = ("deepseek", "glm", "kimi")  # model families with public weights; the data has no such field (decision 24)
+OPEN_WEIGHT = evidence.OPEN_WEIGHT  # model families with public weights; the data has no such field (decision 24)
 # OpenRouter endpoint status (decision 8, analysis or-endpoint-status-20261027.md): -1 and -2 stay compared, the rest are excluded.
 STATUS = {-1: ("우선순위 낮춤", ""), -2: ("성능 저하", ""), -3: ("순위 하향", "일시적으로 순위가 내려가 대체 경로로만 쓰임"),
           -5: ("중단", "지금 요청이 실패하고 있어 대체 경로로만 쓰임"), -10: ("사용 중지", "품질 문제로 사용 중지, 어떤 요청에도 쓰이지 않음")}
