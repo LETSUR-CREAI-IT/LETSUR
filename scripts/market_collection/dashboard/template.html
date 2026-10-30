@@ -191,8 +191,8 @@ a{color:var(--ink)}
 .callg .dkey.effective i{background:var(--mint)} .callg .dkey.end i{background:var(--up)} .callg .dkey.next_check i{background:var(--slate)}
 .cmpbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin:8px 0 8px;padding:8px 12px;border:1px solid var(--line);border-radius:var(--r-m);background:var(--surface-2);font-size:12px;color:var(--muted)}
 .cmpbar b{color:var(--ink);font-weight:700}
-.cmpmode{display:inline-flex;gap:4px;margin-left:auto}
-.cmpmode button{height:28px;padding:0 12px;border:0;border-radius:var(--r-pill);background:var(--surface);color:var(--body);font:inherit;font-size:12px;cursor:pointer}
+.cmpmode{display:inline-flex;gap:2px;margin-left:auto;padding:2px;border:1px solid var(--line);border-radius:var(--r-pill);background:var(--surface)}  /* 묶음 테두리(선택 묶음과 같은 모양) */
+.cmpmode button{height:24px;padding:0 12px;border:0;border-radius:var(--r-pill);background:transparent;color:var(--body);font:inherit;font-size:12px;cursor:pointer}
 .cmpmode button[aria-pressed="true"]{background:var(--mint-soft);color:var(--mint-ink);font-weight:750}
 .cmpwarn{color:var(--amber);font-weight:650}
 @media (max-width:700px){.cmpmode{margin-left:0}}
@@ -378,11 +378,16 @@ td small{display:block;font-size:12px;color:var(--muted)}
 .trend .th h2{margin:0;font-size:15px;font-weight:700;color:var(--ink)}
 .trend .th .mname{font-size:18px;font-weight:750;color:var(--ink);letter-spacing:-.01em}
 .trend .th .unit{font-size:12px;color:var(--muted)}
-.seg{display:inline-flex;flex-wrap:wrap;gap:4px;margin-left:auto}
-.seg button{height:28px;padding:0 12px;border:0;border-radius:var(--r-pill);background:var(--surface-2);font-size:13px;cursor:pointer;color:var(--body)}
-.seg button[aria-pressed="true"],.rng button[aria-pressed="true"]{background:var(--mint-soft);color:var(--mint-ink);font-weight:700}
-.seg.ttabs{max-width:100%;margin-left:0}  /* 가격 조건 탭: 패널 폭에서 줄바꿈(2026-10-27) */
-.seg.ttabs button{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* 선택 묶음(2026-10-30 박건 결정): 기간·가격 조건·항목을 한 줄씩, 이름을 앞에 두고 묶음 테두리로 감싼다. 한 줄에 다 안 들어가면 펼침 목록(.tsel) */
+.tctl{display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px 12px;align-items:center;margin:12px 0 0}
+.tlab{font-size:12px;font-weight:700;color:var(--muted);white-space:nowrap}
+.seg{display:inline-flex;flex-wrap:nowrap;gap:2px;justify-self:start;max-width:100%;overflow:hidden;padding:2px;border:1px solid var(--line);border-radius:var(--r-pill);background:var(--surface-2)}
+.seg button{flex:none;height:28px;padding:0 12px;border:0;border-radius:var(--r-pill);background:transparent;font-size:13px;white-space:nowrap;cursor:pointer;color:var(--body)}
+.seg button:hover{color:var(--ink)}
+.seg button[aria-pressed="true"]{background:var(--mint-soft);color:var(--mint-ink);font-weight:700}
+.tsel{position:relative;justify-self:start;max-width:100%}
+.tsel select{appearance:none;-webkit-appearance:none;max-width:min(100%,480px);height:34px;padding:0 36px 0 16px;border:1px solid var(--line);border-radius:var(--r-pill);background:var(--surface-2);color:var(--mint-ink);font:inherit;font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
+.tsel::after{content:"";position:absolute;right:16px;top:50%;width:6px;height:6px;border-right:1.5px solid var(--muted);border-bottom:1.5px solid var(--muted);transform:translateY(-70%) rotate(45deg);pointer-events:none}
 .lg{display:flex;flex-wrap:wrap;align-items:center;gap:4px 12px;margin:4px 0 0;font-size:12px;color:var(--body)}  /* 범례(3번 그래프): 올리면 그 선이 진해진다 */
 .lg span{display:inline-flex;align-items:center;gap:8px;padding:2px 4px;border-radius:var(--r-s)}
 .lg span.on{background:var(--surface-2)}
@@ -479,16 +484,12 @@ body:not([data-page="health"]) .hpage{display:none}
 .qs{display:inline-block;margin-right:8px;padding:0 4px;border-radius:var(--r-s);font-size:11px;font-weight:700;line-height:17px;vertical-align:1px}
 .qs.review{background:var(--mint-soft);color:var(--mint-ink)} .qs.verify{background:var(--amber-soft);color:var(--amber)} .qs.watch{background:var(--slate-soft);color:var(--slate)} .qs.record{background:var(--grey-soft);color:var(--muted)} .qs.pending{border:1px dashed var(--line-strong);color:var(--muted);line-height:15px}
 .trend .th{margin-bottom:0}
-.tctl{display:flex;gap:8px;margin-left:auto;flex-wrap:wrap}
-.tctl .seg{margin-left:0}
-.rng{display:inline-flex;gap:4px}
-.rng button{height:28px;padding:0 12px;border:0;border-radius:var(--r-pill);background:var(--surface-2);font-size:13px;cursor:pointer;color:var(--body)}
 .tstats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin:16px 0 8px}
 .tstat.let{background:var(--mint-soft)} .tstat.let .k{color:var(--mint-ink)}  /* 렛서 경로 칸 */
 .tstat{min-width:0;padding:12px 16px;border-radius:var(--r-l);background:var(--surface-2)}
 .tstat .k{font-size:12px;font-weight:650;color:var(--muted)}
 .tstat .v{margin-top:4px;font-size:26px;font-weight:750;line-height:1.2;color:var(--ink);letter-spacing:-.01em}
-.tstat .v small{margin-left:4px;font-size:13px;font-weight:750}
+.tstat .v small{margin-left:4px;font-size:13px;font-weight:750;white-space:nowrap}
 .tstat .v small.up{color:var(--up)} .tstat .v small.down{color:var(--down)}
 .tstat .s{margin-top:2px;font-size:12px;line-height:1.4;color:var(--muted);overflow-wrap:anywhere}
 .tplot text{font-size:12px}
@@ -1268,10 +1269,10 @@ function renderPrice(){
   const lg = M.series.map((s, i) => [s, i]).sort(([a], [b]) => !!b.letsur - !!a.letsur || (nowV(a) ?? Infinity) - (nowV(b) ?? Infinity)).map(([s, i]) => { const v = nowV(s);
     return `<span data-k="${i}"${s.letsur ? ' class="lr"' : ""} title="${esc(plain(s.name))}"><i style="border-color:${look.soft(s)}"></i>${s.letsur ? `<b>렛서 · ${esc(look.name(s))}</b>` : esc(look.name(s))}<small class="tn">${v === undefined ? "아직 없음" : v == null ? "미게시" : money2(v)}${span.out.has(s) ? " · 위쪽 범위 밖" : ""}${s.letsur ? " · " + esc(s.letsur) : ""}${s.obsOnly ? " · 관측" : ""}</small></span>`; }).join("");
   const said = M0.letsurRoutes || [];
-  el.innerHTML = `<div class="th"><h2>가격 추이</h2><span class="mname">${esc(M.name)}</span><span class="unit">${esc(M.unit)}${M.real ? " · 실제" : " · 시연 데이터"}</span>
-      <span class="tctl"><span class="rng" role="group" aria-label="기간">${T_RANGES.map(([k, l]) => `<button type="button" data-rng="${k}" aria-pressed="${k === trendRange}">${l}</button>`).join("")}</span>
-      ${tierKeys.length ? `<span class="seg ttabs" role="group" aria-label="가격 조건">${tierKeys.map(k => `<button type="button" data-tier="${esc(k)}" aria-pressed="${k === tier}" title="${esc((M.conds || {})[k] || k)}">${esc(k)}</button>`).join("")}</span>` : ""}
-      ${M.measures.length > 1 ? `<span class="seg" role="group" aria-label="단가 종류">${M.measures.map((m, i) => `<button type="button" data-meas="${i}" aria-pressed="${i === mi}">${m}</button>`).join("")}</span>` : ""}</span></div>
+  el.innerHTML = `<div class="th"><h2>가격 추이</h2><span class="mname">${esc(M.name)}</span><span class="unit">${esc(M.unit)}${M.real ? " · 실제" : " · 시연 데이터"}</span></div>
+    <div class="tctl"><span class="tlab" id="tl-rng">기간</span><span class="seg" role="group" aria-labelledby="tl-rng" data-pick="rng">${T_RANGES.map(([k, l]) => `<button type="button" data-rng="${k}" aria-pressed="${k === trendRange}">${l}</button>`).join("")}</span>
+      ${tierKeys.length ? `<span class="tlab" id="tl-tier">가격 조건</span><span class="seg" role="group" aria-labelledby="tl-tier" data-pick="tier">${tierKeys.map(k => `<button type="button" data-tier="${esc(k)}" aria-pressed="${k === tier}" title="${esc((M.conds || {})[k] || k)}">${esc(k)}</button>`).join("")}</span>` : ""}
+      ${M.measures.length > 1 ? `<span class="tlab" id="tl-meas">항목</span><span class="seg" role="group" aria-labelledby="tl-meas" data-pick="meas">${M.measures.map((m, i) => `<button type="button" data-meas="${i}" aria-pressed="${i === mi}">${m}</button>`).join("")}</span>` : ""}</div>
     ${(down => down.length ? `<p class="hwarn" role="status">이 모델의 출처 ${down.length}곳이 최근 수집에 실패했습니다(${down.map(x => `${esc(x.ch)} ${md(x.since)}부터`).join(", ")}). 실패한 기간의 선은 마지막 값을 이은 것이라 '변화 없음'으로 읽으면 안 됩니다.</p>` : "")(HEALTH.failing.filter(x => x.model === trendModel))}
     <div class="cmpbar"><b>비교 조건</b><span>${esc(comparisonKeyText(M, mi, tier))}</span>${cmp.excluded.length ? `<span class="cmpwarn">엄격 비교에서 참고 선 ${cmp.excluded.length}개 뺌</span>` : onlyRef ? `<span class="cmpwarn">같은 조건으로 확인된 선이 없어 참고 선을 그대로 보임</span>` : ""}
       <span class="cmpmode" role="group" aria-label="비교 모드"><button type="button" data-cmp="strict" aria-pressed="${trendCompare === "strict"}">엄격 비교</button><button type="button" data-cmp="all" aria-pressed="${trendCompare === "all"}">전체 관측</button></span></div>
@@ -1279,6 +1280,14 @@ function renderPrice(){
     <div class="lg">${look.via ? `<span class="via">${esc(look.via)} 하위 공급자</span>` : ""}${lg}</div>${said.length ? `<p class="lrn"><b>렛서 경로</b>${said.map(esc).join(" / ")}</p>` : ""}<div class="tplot" id="tplot"></div>
     <div class="tfoot"><p class="tnote">${overlapNote(M, mi, look)}올리면 그 날 가격을 싼 순서로(같은 조건 최저 대비), 점을 누르면 상세로 이동</p>
       <details class="tv"><summary>출처·설명 · 표로 보기</summary><p>${esc(M.note)}</p>${cmp.excluded.length ? `<p class="cmpwarn">엄격 비교에서 뺀 참고 선(조건이 정해지지 않은 선: 표시 최소가·중단 등 비교에서 빠진 상태의 엔드포인트):${esc(cmp.excluded.map(x => plain(x.name)).join(", "))}. 전체 관측에서 볼 수 있습니다.</p>` : ""}<div id="trend-tv"></div></details></div>`;
+  // 선택 묶음(2026-10-30 박건 결정: 묶음마다 한 줄에 이름과 테두리). 한 줄에 다 들어가지 않는 묶음(gpt-6-astra의 가격 조건 10개 등)은
+  // 누르면 펼쳐지는 목록으로 바꾼다. 화면 폭이 바뀌면 renderPrice가 다시 그려 다시 잰다.
+  el.querySelectorAll(".seg[data-pick]").forEach(g => { if (g.scrollWidth <= g.clientWidth + 1) return;
+    const kind = g.dataset.pick, box = document.createElement("span"), sel = document.createElement("select");
+    box.className = "tsel"; sel.setAttribute("aria-labelledby", g.getAttribute("aria-labelledby"));
+    g.querySelectorAll("button").forEach(b => { const o = new Option(b.textContent, b.dataset[kind], false, b.getAttribute("aria-pressed") === "true"); o.title = b.title; sel.add(o); });
+    sel.addEventListener("change", () => { if (kind === "rng") trendRange = sel.value; else if (kind === "tier") trendTier = sel.value; else trendMeasure = +sel.value; renderPrice(); });
+    box.appendChild(sel); g.replaceWith(box); });
   drawPrice(M, mi, look, span);
   document.getElementById("trend-tv").innerHTML = tableHtml(["경로", "날짜", M.measures[mi], "비고"], M.series.flatMap(s => s.pts.map(p => [s.name, String(p[0]).replace("T", " "), pv(p, mi) == null ? "미게시" : money2(pv(p, mi)), p[3] === "unk" ? "시작 시점 기록 없음" : day(p[0]) > TODAY ? "예정" : ""])));
 }
