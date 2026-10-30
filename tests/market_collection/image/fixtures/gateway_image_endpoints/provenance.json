@@ -48,5 +48,45 @@
     "raw_sha256": "23861fb9c18a36763e4eab32f81c568b3bf6b8b59fc62c873aeb68fb7f843326",
     "raw_bytes": 782,
     "method": "Raw body of a local live core run (public endpoint API, no login), kept byte for byte."
+  },
+  {
+    "fixture": "vercel-gpt-image-2.5-flare.json",
+    "source_key": "vercel_image_endpoints_gpt_image_2_5_flare",
+    "source_url": "https://ai-gateway.vercel.sh/v1/models/openai/gpt-image-2.5-flare/endpoints",
+    "run_id": null,
+    "fetched_at_utc": "2026-10-30T04:28:27Z",
+    "raw_sha256": "734b60ec92dc7bab763730e7a1bfd08223824e9360b466e219c2268a428f9843",
+    "raw_bytes": 1104,
+    "method": "Raw body fetched once with curl from the public endpoint API (no login), kept byte for byte."
+  },
+  {
+    "fixture": "openrouter-images-catalog-gpt-image-2.5-flare.json",
+    "source_key": "openrouter_image_catalog_endpoints_gpt_image_2_5_flare",
+    "source_url": "https://openrouter.ai/api/v1/images/models/openai/gpt-image-2.5-flare/endpoints",
+    "run_id": null,
+    "fetched_at_utc": "2026-10-30T04:28:27Z",
+    "raw_sha256": "df320c557e638013d24a7fe0221505e1d7645398a50add0fbee2eb5899d62423",
+    "raw_bytes": 818,
+    "method": "Raw body fetched once with curl from the public endpoint API (no login), kept byte for byte."
+  },
+  {
+    "fixture": "vercel-gpt-image-2.5-sunburst.json",
+    "source_key": "vercel_image_endpoints_gpt_image_2_5_sunburst",
+    "source_url": "https://ai-gateway.vercel.sh/v1/models/openai/gpt-image-2.5-sunburst/endpoints",
+    "run_id": null,
+    "fetched_at_utc": "2026-10-30T04:28:27Z",
+    "raw_sha256": "b9e00b68df066774e42fd32d19e5df46e5f384c9716cccc39d10867098e33861",
+    "raw_bytes": 1101,
+    "method": "Raw body fetched once with curl from the public endpoint API (no login), kept byte for byte."
+  },
+  {
+    "fixture": "openrouter-images-catalog-gpt-image-2.5-sunburst.json",
+    "source_key": "openrouter_image_catalog_endpoints_gpt_image_2_5_sunburst",
+    "source_url": "https://openrouter.ai/api/v1/images/models/openai/gpt-image-2.5-sunburst/endpoints",
+    "run_id": null,
+    "fetched_at_utc": "2026-10-30T04:28:27Z",
+    "raw_sha256": "e9478c8079b4b45640257ebf018411816fb455e7874d8e4a11b377374768b3ee",
+    "raw_bytes": 821,
+    "method": "Raw body fetched once with curl from the public endpoint API (no login), kept byte for byte."
   }
 ]

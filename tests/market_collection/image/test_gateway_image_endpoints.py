@@ -25,10 +25,13 @@ CATALOG_GPT = "openrouter_image_catalog_endpoints_gpt_image_2"
 FIXTURES = {OR_FLASH: "openrouter-gemini-3.1-flash-image.json", OR_PRO_PREVIEW: "openrouter-gemini-3-pro-image-preview.json",
             VC_FLASH_PREVIEW: "vercel-gemini-3.1-flash-image-preview.json", VC_GPT: "vercel-gpt-image-2.json",
             CATALOG_GPT: "openrouter-images-catalog-gpt-image-2.json"}
+# GPT Image 2.5 (2026-10-30), fetched once by curl rather than kept from a run, so the run test below leaves them out.
+IMAGE25 = {f"{prefix}_gpt_image_2_5_{variant}": f"{name}-gpt-image-2.5-{variant}.json" for variant in ("flare", "sunburst")
+           for prefix, name in (("vercel_image_endpoints", "vercel"), ("openrouter_image_catalog_endpoints", "openrouter-images-catalog"))}
 
 
 def body(key):
-    return (F / FIXTURES[key]).read_bytes()
+    return (F / (FIXTURES | IMAGE25)[key]).read_bytes()
 
 
 def parse(key, content=None):
@@ -52,20 +55,22 @@ def endpoint_rows(key, content=None):
     return rows
 
 
-def test_seven_models_register_thirteen_sources_after_the_existing_ones():
-    assert len(SPECS) == 13 and {s.model_id for s in SPECS.values()} == {row[0] for row in GATEWAY_IMAGE_MODELS}
+def test_nine_models_register_seventeen_sources_after_the_existing_ones():
+    assert len(SPECS) == 17 and {s.model_id for s in SPECS.values()} == {row[0] for row in GATEWAY_IMAGE_MODELS}
     assert all(s.modality == "image" and s.task == "text-to-image" and MODEL_MODALITIES[s.model_id] == "image" for s in SPECS.values())
     assert {(s.route, s.parser) for s in SPECS.values()} == {("openrouter", "openrouter_image_endpoints"), ("vercel_ai_gateway", "vercel_image_endpoints"),
                                                              ("openrouter", "openrouter_image_catalog_endpoints")}
     registered = sources.source_specs()
     first = registered.index(next(iter(SPECS.values())))
-    assert registered[first:first + 13] == list(SPECS.values())  # one block, in this order
+    assert registered[first:first + 17] == list(SPECS.values())  # one block, in this order
     routes = {}
     for s in SPECS.values():
         routes.setdefault(s.model_id, set()).add((s.route, s.parser))
     # gemini-3-pro-image-preview: Vercel's model list does not carry it. gpt-image-2: OpenRouter's /api/v1/models does not, its images catalog does.
     assert routes["gemini-3-pro-image-preview"] == {("openrouter", "openrouter_image_endpoints")}
     assert routes["gpt-image-2"] == {("vercel_ai_gateway", "vercel_image_endpoints"), ("openrouter", "openrouter_image_catalog_endpoints")}
+    # GPT Image 2.5 (2026-10-30): the endpoint listings beside the model pages, which give one headline price per gateway.
+    assert routes["gpt-image-2.5-flare"] == routes["gpt-image-2.5-sunburst"] == routes["gpt-image-2"]
     assert all(routes[m] == {("openrouter", "openrouter_image_endpoints"), ("vercel_ai_gateway", "vercel_image_endpoints")}
                for m in routes if m.startswith("gemini") and m != "gemini-3-pro-image-preview")
     urls = {s.source_key: s.url for s in SPECS.values()}
@@ -77,7 +82,8 @@ def test_seven_models_register_thirteen_sources_after_the_existing_ones():
         (CATALOG_GPT, "https://openrouter.ai/api/v1/images/models/openai/gpt-image-2/endpoints"),
     ):
         assert urls[key] == url
-    assert [row[:2] for row in GATEWAY_IMAGE_CATALOG_MODELS] == [("gpt-image-2", "openai/gpt-image-2")]
+    assert [row[:2] for row in GATEWAY_IMAGE_CATALOG_MODELS] == [("gpt-image-2", "openai/gpt-image-2"), ("gpt-image-2.5-flare", "openai/gpt-image-2.5-flare"),
+                                                                  ("gpt-image-2.5-sunburst", "openai/gpt-image-2.5-sunburst")]
     for p in json.loads((F / "provenance.json").read_text()):
         assert hashlib.sha256((F / p["fixture"]).read_bytes()).hexdigest() == p["raw_sha256"] and SPECS[p["source_key"]].url == p["source_url"]
 
@@ -220,6 +226,22 @@ def test_images_catalog_token_rates_of_gpt_image_2():
 def test_image_catalog_listings_that_cannot_be_read_exactly_fail_closed(mutate):
     with pytest.raises(ValueError):
         parse(CATALOG_GPT, changed(CATALOG_GPT, mutate))
+
+
+def test_gpt_image_2_5_listings_name_the_endpoint_beside_the_model_pages():
+    """The model pages give one headline price per gateway (a 모델 페이지 대표가 on the dashboard); these listings name the
+    endpoint, its status and its rates: OpenAI serves both models at 5 text input, 8 image input and 30 image output per 1M
+    tokens (Vercel calls the last one output, as for gpt-image-2)."""
+    for variant in ("flare", "sunburst"):
+        model = f"gpt-image-2.5-{variant}"
+        vercel, catalog = f"vercel_image_endpoints_gpt_image_2_5_{variant}", f"openrouter_image_catalog_endpoints_gpt_image_2_5_{variant}"
+        assert endpoint_rows(vercel) == {("openai", ""): {"input": "5", "output": "30", "cache_read": "1.25"}}
+        assert {c["condition_key"]: c["value"] for c in parse(vercel)[1] if c["status"] == "stated"} == {
+            "context_length": "0", "endpoint_provider": "openai", "endpoint_status": "0", "price_basis": "endpoint_listed_rate"}
+        prices, conditions = parse(catalog)
+        assert {p["billing_item"]: p["amount"] for p in prices} == {"input": "5", "image_input": "8", "image_output": "30"}
+        assert {p["provider_model_id"] for p in prices} == {"openai/" + model} and {SPECS[key].model_id for key in (vercel, catalog)} == {model}
+        assert {(c["condition_key"], c["value"]) for c in conditions} == {("price_basis", "endpoint_listed_rate"), ("endpoint_tag", "openai")}
 
 
 def test_a_listing_with_no_endpoints_is_read_as_no_rows():

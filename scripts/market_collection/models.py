@@ -202,11 +202,17 @@ GATEWAY_IMAGE_MODELS = (
     ("gemini-3-pro-image", "Gemini 3 Pro Image", "google/gemini-3-pro-image", "google/gemini-3-pro-image"),
     ("gemini-3.1-flash-image", "Gemini 3.1 Flash Image", "google/gemini-3.1-flash-image", "google/gemini-3.1-flash-image"),
     ("gpt-image-2", "GPT Image 2", None, "openai/gpt-image-2"),
+    # GPT Image 2.5: the model pages (flare_source_specs, image_source_specs) give one headline price per gateway; these
+    # listings name the endpoint and its status (2026-10-30).
+    ("gpt-image-2.5-flare", "GPT Image 2.5 Flare", None, "openai/gpt-image-2.5-flare"),
+    ("gpt-image-2.5-sunburst", "GPT Image 2.5 Sunburst", None, "openai/gpt-image-2.5-sunburst"),
 )
 
 # (model, id in OpenRouter's images catalog, /api/v1/images/models/<id>/endpoints): typed per-token rates instead of pricing fields.
 GATEWAY_IMAGE_CATALOG_MODELS = (
     ("gpt-image-2", "openai/gpt-image-2"),
+    ("gpt-image-2.5-flare", "openai/gpt-image-2.5-flare"),
+    ("gpt-image-2.5-sunburst", "openai/gpt-image-2.5-sunburst"),
 )
 
 _AWS_OPENAI = (
