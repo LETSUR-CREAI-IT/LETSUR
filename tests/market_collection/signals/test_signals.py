@@ -184,8 +184,9 @@ def test_gateway_api_sources_cover_every_listed_model_of_both_gateways():
     # + Vercel 49 -> 98 (49 of the 51 more: gemini-3-flash-preview and gpt-5.1 are OpenRouter only)
     # 2026-10-29: the 7 image models add 6 OpenRouter (gpt-image-2 is not in /api/v1/models) -> 105 and 6 Vercel (gemini-3-pro-image-preview is not
     # in its model list) -> 104; the four retirement schedule pages come last -> 217
-    assert len(specs) == 217 and {parser: len(found) for parser, found in by_parser.items()} == {
-        "atom": 3, "rss": 1, "openrouter_endpoints": 105, "vercel_endpoints": 104, "azure_retirements": 1, "openai_deprecations": 1,
+    # 2026-10-30: qwen3.5-plus gets an OpenRouter id and gemini-3-flash-preview a Vercel id -> OpenRouter 106, Vercel 105, 219
+    assert len(specs) == 219 and {parser: len(found) for parser, found in by_parser.items()} == {
+        "atom": 3, "rss": 1, "openrouter_endpoints": 106, "vercel_endpoints": 105, "azure_retirements": 1, "openai_deprecations": 1,
         "anthropic_deprecations": 1, "google_deprecations": 1}
     assert [spec.source_key for spec in specs[-4:]] == ["azure_retirement_schedule", "openai_deprecations", "anthropic_deprecations",
                                                         "google_deprecations"]
@@ -198,20 +199,22 @@ def test_gateway_api_sources_cover_every_listed_model_of_both_gateways():
     assert keys["vercel_endpoints_glm_5_2"].url == "https://ai-gateway.vercel.sh/v1/models/zai/glm-5.2/endpoints"
     assert keys["openrouter_endpoints_minimax_m2_7"].url == "https://openrouter.ai/api/v1/models/minimax/minimax-m2.7/endpoints"
     assert (keys["vercel_endpoints_minimax_m2_1"].model_id, keys["vercel_endpoints_minimax_m2_1"].model_label) == ("minimax-m2.1", "MiniMax M2.1")
+    assert (keys["openrouter_endpoints_qwen3_5_plus"].url, keys["vercel_endpoints_gemini_3_flash_preview"].url) == (
+        "https://openrouter.ai/api/v1/models/qwen/qwen3.5-plus-02-15/endpoints", "https://ai-gateway.vercel.sh/v1/models/google/gemini-3-flash/endpoints")
     # a model a gateway does not list gets no source there
     for model, _, openrouter_id, vercel_id in BROKER_API_MODELS:
         key = model.replace("-", "_").replace(".", "_")
         assert (f"openrouter_endpoints_{key}" in keys) == bool(openrouter_id) and (f"vercel_endpoints_{key}" in keys) == bool(vercel_id)
-    # the 18 OpenRouter sources of before come first, the 31 of the gateway-only models after them, then the 50 of the 51 more
+    # the 18 OpenRouter sources of before come first, the 32 of the gateway-only models after them, then the 50 of the 51 more
     added = {model for model, *_ in BROKER_API_MODELS}
     more = {model for model, *_ in GATEWAY_MORE_MODELS + GATEWAY_EMBEDDING_MODELS}
     assert len(more) == 51 and not added & more
     assert not {spec.model_id for spec in by_parser["openrouter_endpoints"][:18]} & (added | more)
-    assert {spec.model_id for spec in by_parser["openrouter_endpoints"][18:49]} <= added
+    assert {spec.model_id for spec in by_parser["openrouter_endpoints"][18:50]} <= added
     images = {model for model, *_ in GATEWAY_IMAGE_MODELS}
     assert len(images) == 7 and not images & (added | more)
-    assert {spec.model_id for spec in by_parser["openrouter_endpoints"][49:99]} <= more
-    assert [spec.model_id for spec in by_parser["openrouter_endpoints"][99:]] == [m for m, _, openrouter_id, _ in GATEWAY_IMAGE_MODELS if openrouter_id]
+    assert {spec.model_id for spec in by_parser["openrouter_endpoints"][50:100]} <= more
+    assert [spec.model_id for spec in by_parser["openrouter_endpoints"][100:]] == [m for m, _, openrouter_id, _ in GATEWAY_IMAGE_MODELS if openrouter_id]
     for model, _, openrouter_id, vercel_id in GATEWAY_MORE_MODELS + GATEWAY_EMBEDDING_MODELS:
         key = re.sub(r"[^a-z0-9]+", "_", model)
         assert (f"openrouter_endpoints_{key}" in keys) == bool(openrouter_id) and (f"vercel_endpoints_{key}" in keys) == bool(vercel_id)

@@ -951,8 +951,8 @@ def test_supply_block_carries_the_registry_routes_and_the_whole_routes_file(tmp_
                                                     "Google Cloud", "Microsoft", "OpenRouter", "Vercel", "fal"]
     assert (dict(supply["cols"])["OpenAI"], dict(supply["cols"])["Vercel"]) == (["openai_direct", "openai"], ["vercel_ai_gateway", "vercel"])
     assert len(supply["models"]) == 125 and sorted(supply["models"]["gpt-image-2"]) == ["openai", "openrouter", "vercel_ai_gateway"]
-    # LETSUR uses a route we do not collect a price on: qwen3.5-plus went through OpenRouter, which has no listing under that id
-    assert supply["models"]["qwen3.5-plus"] == ["vercel_ai_gateway"]
+    # qwen3.5-plus went through OpenRouter, which lists it only under dated ids: since 2026-10-30 the one LETSUR's call cost is read
+    assert supply["models"]["qwen3.5-plus"] == ["openrouter", "vercel_ai_gateway"]
 
 
 def test_supply_block_without_a_routes_file_and_for_models_we_do_not_collect(tmp_path: Path) -> None:

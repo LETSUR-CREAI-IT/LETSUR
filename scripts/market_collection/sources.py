@@ -10,6 +10,7 @@ from scripts.market_collection.models import GATEWAY_MORE_MODELS, GATEWAY_EMBEDD
 from scripts.market_collection.models import KLING_VIDEO_MODELS, SEEDANCE_VARIANT_MODELS
 from scripts.market_collection.models import GATEWAY_IMAGE_MODELS, GATEWAY_IMAGE_CATALOG_MODELS
 from scripts.market_collection.models import AWS_OPENAI_MORE_MODELS
+from scripts.market_collection.models import GOOGLE_DIRECT_MORE_MODELS, GOOGLE_ROUTED_MODELS, AWS_PRICELIST_MODELS, OPENAI_DIRECT_MORE_MODELS
 
 def _targets() -> dict[str, tuple[str, str, str, str, str]]:
     targets = {
@@ -112,6 +113,26 @@ def bedrock_more_source_specs() -> list[SourceSpec]:
     """AWS Bedrock model cards of the OpenAI models LETSUR calls there that _AWS_OPENAI does not list (2026-10-30)."""
     return [SourceSpec(f"bedrock_{_key(model)}", "llm", model, "aws_bedrock", "text_generation", f"{_AWS_BASE}openai-{slug}.html", f"cloud_bedrock_{_key(model)}")
             for model, slug, _ in AWS_OPENAI_MORE_MODELS]
+
+
+# The AWS Price List API offer file of Amazon Bedrock in us-east-1 (public, no login; about 1.5 MB on 2026-10-30).
+_BEDROCK_PRICE_LIST = "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonBedrock/current/us-east-1/index.json"
+
+
+def route_gap_source_specs() -> list[SourceSpec]:
+    """Routes LETSUR uses whose price no other source collected (2026-10-30): a Gemini section google_model_source_specs() cannot
+    read, two Gemini models Google serves with another model, GLM 4.7 and GLM 5 on Bedrock, and o3-pro on OpenAI's own route.
+    The other two such routes are gateway ids in models.py (qwen3.5-plus on OpenRouter, gemini-3-flash-preview on Vercel)."""
+    google = "https://ai.google.dev/gemini-api/docs/pricing"
+    specs = [SourceSpec(f"google_{_key(model)}", "llm", model, "google_direct", "text_generation", google, "google_model_pricing_more")
+             for model, _ in GOOGLE_DIRECT_MORE_MODELS]
+    specs.extend(SourceSpec(f"google_{_key(model)}", "llm", model, "google_direct", "text_generation", google, "google_routed_pricing")
+                 for model, _ in GOOGLE_ROUTED_MODELS)
+    specs.extend(SourceSpec(f"bedrock_pricelist_{_key(model)}", "llm", model, "aws_bedrock", "text_generation", _BEDROCK_PRICE_LIST, "aws_bedrock_pricelist_api")
+                 for model, _, _ in AWS_PRICELIST_MODELS)
+    specs.extend(SourceSpec(f"openai_{_key(model)}", "llm", model, "openai_direct", "text_generation", f"https://developers.openai.com/api/docs/models/{slug}.md", f"openai_{_key(model)}")
+                 for model, _, slug in OPENAI_DIRECT_MORE_MODELS)
+    return specs
 
 
 _AZURE_IMAGE_PRICING = "https://prices.azure.com/api/retail/prices?$filter=contains(productName,'OpenAI')%20and%20contains(meterName,'2.5')%20and%20armRegionName%20eq%20'koreacentral'"
@@ -217,7 +238,7 @@ def video_source_specs() -> list[SourceSpec]:
 
 
 def source_specs() -> list[SourceSpec]:
-    specs = llm_source_specs() + image_source_specs() + video_source_specs() + image25_api_source_specs() + image25_openrouter_endpoint_source_specs() + image25_supplement_source_specs() + llm_endpoint_source_specs() + azure_retail_llm_source_specs() + azure_retail_models_source_specs() + maker_direct_source_specs() + google_model_source_specs() + zai_source_specs() + kling_seedance_source_specs() + gateway_image_source_specs() + bedrock_more_source_specs()
+    specs = llm_source_specs() + image_source_specs() + video_source_specs() + image25_api_source_specs() + image25_openrouter_endpoint_source_specs() + image25_supplement_source_specs() + llm_endpoint_source_specs() + azure_retail_llm_source_specs() + azure_retail_models_source_specs() + maker_direct_source_specs() + google_model_source_specs() + zai_source_specs() + kling_seedance_source_specs() + gateway_image_source_specs() + bedrock_more_source_specs() + route_gap_source_specs()
     for spec in specs:
         if MODEL_MODALITIES.get(spec.model_id) != spec.modality:
             raise CollectionError(f"source model/modality mismatch: {spec.source_key}")

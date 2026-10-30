@@ -28,10 +28,12 @@ BROKER_CATALOG_MODELS = (
     ("kimi-k3", "Kimi K3", "MoonshotAI: Kimi K3", "moonshotai/kimi-k3", "moonshotai/kimi-k3"),
 )
 
-# Models LETSUR serves through OpenRouter or Vercel AI Gateway, collected only from the two endpoint APIs (2026-10-28):
-# (model, title, OpenRouter id, Vercel id); None where that gateway does not list the model.
-# qwen3.5-plus has no OpenRouter id: OpenRouter lists only qwen/qwen3.5-plus-02-15 and qwen/qwen3.5-plus-20260420,
-# and which one LETSUR's OpenRouter route calls is not known.
+# Models LETSUR serves through OpenRouter or Vercel AI Gateway, collected from the two endpoint APIs (2026-10-28):
+# (model, title, OpenRouter id, Vercel id); None where that gateway does not list the model. gemini-2.5-flash-lite is also
+# read from Google's pricing page since LETSUR's call of 10/30 went to Google (GOOGLE_DIRECT_MORE_MODELS).
+# qwen3.5-plus's OpenRouter id is the dated qwen/qwen3.5-plus-02-15 (OpenRouter lists no undated one): LETSUR's OpenRouter call
+# of 10/30 cost exactly its rate (usage.cost 3.172e-05 for 14 prompt and 18 completion tokens is 0.26/1.56 per 1M; the other
+# listed id, qwen/qwen3.5-plus-20260420 at 0.30/1.80, would have cost 3.66e-05).
 BROKER_API_MODELS = (
     ("deepseek-v4-flash", "DeepSeek V4 Flash", "deepseek/deepseek-v4-flash", "deepseek/deepseek-v4-flash"),
     ("deepseek-v4-flash-0731", "DeepSeek V4 Flash 0731", "deepseek/deepseek-v4-flash-0731", "deepseek/deepseek-v4-flash-0731"),
@@ -61,7 +63,7 @@ BROKER_API_MODELS = (
     ("muse-wonder-1.0", "Muse Wonder", None, "meta/muse-wonder-1.0"),
     ("qwen3-coder-flash", "Qwen3 Coder Flash", "qwen/qwen3-coder-flash", None),
     ("qwen3-coder-next", "Qwen3 Coder Next", "qwen/qwen3-coder-next", "alibaba/qwen3-coder-next"),
-    ("qwen3.5-plus", "Qwen 3.5 Plus", None, "alibaba/qwen3.5-plus"),
+    ("qwen3.5-plus", "Qwen 3.5 Plus", "qwen/qwen3.5-plus-02-15", "alibaba/qwen3.5-plus"),
     ("qwen3.6-plus", "Qwen 3.6 Plus", "qwen/qwen3.6-plus", "alibaba/qwen3.6-plus"),
     ("qwen3.7-flash", "Qwen 3.7 Flash", "qwen/qwen3.7-flash", "alibaba/qwen3.7-flash"),
     ("qwen3.7-max", "Qwen 3.7 Max", "qwen/qwen3.7-max", "alibaba/qwen3.7-max"),
@@ -71,8 +73,8 @@ BROKER_API_MODELS = (
 
 # Gemini models LETSUR serves straight from Google, each read from its own section of the Gemini API pricing page
 # (2026-10-28): (model, title). The model id is also the id of the section's h2 on that page.
-# Not collected, because the page has no section for them: gemini-3.5-flash and gemini-3.7-flash (their model pages say
-# deprecated, routed to gemini-3.6-flash and gemini-3.8-flash), gemini-3-pro-image-preview and gemini-3.1-flash-image-preview.
+# The page has no section for gemini-3.5-flash and gemini-3.7-flash (priced by GOOGLE_ROUTED_MODELS since 2026-10-30), nor for
+# gemini-3-pro-image-preview and gemini-3.1-flash-image-preview, which are not collected from Google.
 GOOGLE_DIRECT_MODELS = (
     ("gemini-4-argon", "Gemini 4 Argon"),
     ("gemini-3.1-pro-preview", "Gemini 3.1 Pro Preview"),
@@ -82,6 +84,22 @@ GOOGLE_DIRECT_MODELS = (
     ("gemini-3-flash-preview", "Gemini 3 Flash Preview"),
     ("gemini-2.5-flash", "Gemini 2.5 Flash"),
     ("gemini-2.5-pro", "Gemini 2.5 Pro"),
+)
+
+# Gemini models LETSUR calls on Google's own route that google_models.py cannot read, read from the same page by
+# google_models_more.py (2026-10-30). (model, title): gemini-2.5-flash-lite has a section of its own, but its input row is
+# labelled "Input price (text, image, video)", which google_models.py does not read.
+GOOGLE_DIRECT_MORE_MODELS = (
+    ("gemini-2.5-flash-lite", "Gemini 2.5 Flash-Lite"),
+)
+
+# (model, the model Google serves its requests with). Google's deprecations page (deprecations.md.txt, 2026-10-30) says of both
+# that they are "not available to select in Google AI Studio; the endpoint is not shutting down and automatically routes API
+# requests to `gemini-3.6-flash`" (gemini-3.5-flash) and "... to `gemini-3.8-flash`" (gemini-3.7-flash). The pricing page has no
+# section of either, so the price read is the section of the model serving the request, under that model's id.
+GOOGLE_ROUTED_MODELS = (
+    ("gemini-3.5-flash", "gemini-3.6-flash"),
+    ("gemini-3.7-flash", "gemini-3.8-flash"),
 )
 
 GOOGLE_IMAGE_MODELS = (
@@ -95,8 +113,10 @@ GOOGLE_IMAGE_MODELS = (
 # shape of BROKER_API_MODELS; the makers' own prices come from other sources. Every id below answered with priced endpoints.
 # - claude-opus-4-5-20251101 and claude-sonnet-4-5-20250929 are LETSUR's dated ids; both gateways list only the undated model
 #   (anthropic/claude-opus-4.5, anthropic/claude-sonnet-4.5), so that is the id read here.
-# - gpt-5-codex has no OpenRouter id: its endpoint list there is empty. gpt-5.1 and gemini-3-flash-preview have no Vercel id: its
-#   endpoint API still answers for both (as "GPT 5.1 Thinking" and "Gemini 3 Flash"), but its model list does not carry them.
+# - gpt-5-codex has no OpenRouter id: its endpoint list there is empty. gpt-5.1 has no Vercel id: its endpoint API still answers
+#   (as "GPT 5.1 Thinking"), but its model list does not carry it.
+# - gemini-3-flash-preview's Vercel id is google/gemini-3-flash: LETSUR's Vercel calls of it route there
+#   (provider_metadata.gateway.routing.originalModelId and canonicalSlug, 2026-10-30).
 # - gpt-5.6 is not read: openai/gpt-5.6 is an OpenRouter alias whose listing names gpt-5.6-sol, and Vercel has no such id.
 GATEWAY_MORE_MODELS = (
     ("gpt-5.4-mini", "GPT-5.4 Mini", "openai/gpt-5.4-mini", "openai/gpt-5.4-mini"),
@@ -140,7 +160,7 @@ GATEWAY_MORE_MODELS = (
     ("gemini-3.7-flash", "Gemini 3.7 Flash", "google/gemini-3.7-flash", "google/gemini-3.7-flash"),
     ("gemini-3.5-flash-lite", "Gemini 3.5 Flash Lite", "google/gemini-3.5-flash-lite", "google/gemini-3.5-flash-lite"),
     ("gemini-3.6-flash", "Gemini 3.6 Flash", "google/gemini-3.6-flash", "google/gemini-3.6-flash"),
-    ("gemini-3-flash-preview", "Gemini 3 Flash Preview", "google/gemini-3-flash-preview", None),
+    ("gemini-3-flash-preview", "Gemini 3 Flash Preview", "google/gemini-3-flash-preview", "google/gemini-3-flash"),
     ("gemini-2.5-flash", "Gemini 2.5 Flash", "google/gemini-2.5-flash", "google/gemini-2.5-flash"),
     ("gemini-2.5-pro", "Gemini 2.5 Pro", "google/gemini-2.5-pro", "google/gemini-2.5-pro"),
     ("glm-4.7", "GLM 4.7", "z-ai/glm-4.7", "zai/glm-4.7"),
@@ -212,6 +232,14 @@ AWS_OPENAI_MORE_MODELS = (
     ("gpt-6.1-terra", "gpt-6-1-terra", "GPT-6.1 Terra"),
 )
 
+# Bedrock models LETSUR calls whose model card gives no price, only a link to the Bedrock pricing page (2026-10-30), priced from the
+# AWS Price List API offer file of us-east-1, where LETSUR's named Bedrock deployments are: (model, the file's model name, the
+# stem of its usagetype USE1-<stem>-input-tokens). GLM 5's meters are "zai.glm5", while its Bedrock model ID is zai.glm-5.
+AWS_PRICELIST_MODELS = (
+    ("glm-4.7", "GLM 4.7", "zai.glm-4.7"),
+    ("glm-5", "GLM 5", "zai.glm5"),
+)
+
 # Azure Foundry catalog pages (no numeric rate); the GPT models are priced from Azure retail meters since 2026-10-28.
 _AZURE_MODELS = ("claude-fable-5-1",) + tuple(model for model, _, _ in _AWS_ANTHROPIC)
 _AZURE_RETAIL_MODELS = tuple(model for model, _, _ in _AWS_OPENAI)
@@ -247,6 +275,12 @@ OPENAI_DIRECT_MODELS = (
     ("gpt-5.5-pro-2026-04-23", "GPT-5.5 Pro", "gpt-5.5-pro"),
     ("gpt-5.5-2026-04-23", "GPT-5.5", "gpt-5.5"),
     ("gpt-5.6", "GPT-5.6 Sol", "gpt-5.6"),
+)
+
+# OpenAI models LETSUR calls on OpenAI's own route added after OPENAI_DIRECT_MODELS (2026-10-30), same shape. A tuple of its own:
+# openai_models.py reads OPENAI_DIRECT_MODELS, so a row added there would change the parser fingerprint of every source it parses.
+OPENAI_DIRECT_MORE_MODELS = (
+    ("o3-pro", "o3-pro", "o3-pro"),
 )
 
 # Embeddings priced on OpenAI's model pages; Azure sells the same three ids.

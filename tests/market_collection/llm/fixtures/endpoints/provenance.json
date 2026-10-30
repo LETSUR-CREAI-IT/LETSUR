@@ -48,5 +48,25 @@
     "raw_sha256": "b1ccd518175d1144fc5e00e3094b812afc6363346a41a3fc8fef00d776de0770",
     "raw_bytes": 2069,
     "method": "Raw body of a local live core run (public endpoint API, no login), kept byte for byte."
+  },
+  {
+    "fixture": "openrouter-qwen3.5-plus-02-15.json",
+    "source_key": "openrouter_llm_endpoints_qwen3_5_plus",
+    "source_url": "https://openrouter.ai/api/v1/models/qwen/qwen3.5-plus-02-15/endpoints",
+    "run_id": "20261030T032537Z-5ab6d2f6abe94638968d0957010b1626",
+    "fetched_at_utc": "2026-10-30T03:25:37.360840Z",
+    "raw_sha256": "a6072de478b927c9cca4f862f62db98fa428effb63402b5fb5df0bfdc7675e99",
+    "raw_bytes": 1641,
+    "method": "Raw body of a local live core run (public endpoint API, no login), kept byte for byte."
+  },
+  {
+    "fixture": "vercel-gemini-3-flash.json",
+    "source_key": "vercel_llm_endpoints_gemini_3_flash_preview",
+    "source_url": "https://ai-gateway.vercel.sh/v1/models/google/gemini-3-flash/endpoints",
+    "run_id": "20261030T032537Z-5ab6d2f6abe94638968d0957010b1626",
+    "fetched_at_utc": "2026-10-30T03:25:37.469514Z",
+    "raw_sha256": "4178f531f4d000a8b3818bd9631c34cd57b93b49354f7aaac3fb4f41361ac5c4",
+    "raw_bytes": 3210,
+    "method": "Raw body of a local live core run (public endpoint API, no login), kept byte for byte."
   }
 ]

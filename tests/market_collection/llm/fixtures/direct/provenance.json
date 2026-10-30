@@ -79,5 +79,14 @@
     "raw_bytes": 3013,
     "fixture_sha256": "dbf3595dc62728b216403a13cb4414706203a79f3fa2b10499321f52a9a6fea0",
     "method": "The whole page as served, byte for byte."
+  },
+  {
+    "fixture": "openai-o3-pro.md",
+    "source_url": "https://developers.openai.com/api/docs/models/o3-pro.md",
+    "fetched_at_utc": "2026-10-30T03:25:42.270155Z",
+    "raw_sha256": "3b41ae9e053c803346698ebdaf1a3cb5a02067d5f149a94681a462f361d07fed",
+    "raw_bytes": 3684,
+    "fixture_sha256": "3b41ae9e053c803346698ebdaf1a3cb5a02067d5f149a94681a462f361d07fed",
+    "method": "The whole page as served, byte for byte."
   }
 ]
