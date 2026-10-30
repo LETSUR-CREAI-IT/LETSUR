@@ -10,6 +10,7 @@ from . import aws_bedrock_models
 from . import zai
 from . import kling, fal_llms, byteplus_video, vercel_video
 from . import gateway_image_endpoints
+from . import google_models_more, aws_bedrock_pricelist, openai_models_more
 
 SUPPLIERS = {
     "google_direct": google, "openai_direct": openai, "openai": openai,
@@ -43,6 +44,9 @@ def parser_module(spec: SourceSpec):
             return module
     if spec.parser in gateway_image_endpoints.PARSERS:  # image listings of the two gateways, ahead of the route lookup
         return gateway_image_endpoints
+    for module in (google_models_more, aws_bedrock_pricelist, openai_models_more):  # 2026-10-30, own modules for the same reason
+        if spec.parser in module.PARSERS:
+            return module
     module = SUPPLIERS.get(spec.route)
     if module is None:
         raise ValueError("unhandled source route")
