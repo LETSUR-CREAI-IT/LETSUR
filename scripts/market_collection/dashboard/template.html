@@ -1297,7 +1297,7 @@ function drawPrice(M, mi, look, span){
   const {d0, d1, vals} = span;
   if (!vals.length) { const p = document.createElement("p"); p.className = "unknown"; p.textContent = `이 조건에는 ${plain(M.measures[mi])} 값이 없습니다.`; box.replaceChildren(p); return; }
   const top = (Math.max(...vals) || 1) * 1.15, step = niceStep(top / 4), yMax = Math.ceil(top / step) * step;
-  const L = 50, R = wide ? 96 : 14, T = 26, B = 24, pw = W - L - R, ph = H - T - B;
+  const L = 50, R = wide ? 112 : 14, T = 26, B = 24, pw = W - L - R, ph = H - T - B;  // 오른쪽 끝 글자('$1.00 렛서 · 최저') 자리
   const x = d => L + (dt(d) - dt(d0)) / (dt(d1) - dt(d0)) * pw, y = v => T + ph - v / yMax * ph;
   const xc = d => Math.max(L, Math.min(L + pw, x(d)));
   let s = `<defs><clipPath id="tclip"><rect x="${L - 8}" y="${T - 8}" width="${pw + 16}" height="${ph + 16}"/></clipPath></defs>`;
