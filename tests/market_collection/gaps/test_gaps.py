@@ -9,14 +9,16 @@ from unittest.mock import patch
 import pytest
 
 from scripts.market_collection import core
-from scripts.market_collection.collectors import parse_source
-from scripts.market_collection.sources import source_specs
+from scripts.market_collection.collectors import anthropic_models, gateway_image_endpoints, openai_models, parse_source
+from scripts.market_collection.sources import bedrock_more_source_specs, kling_seedance_source_specs, route_gap_source_specs, source_specs
 from tests.market_collection.retired_sources import without_retired
 
 FIXTURES = Path(__file__).parent / "fixtures"
 SPECS = {s.source_key: s for s in source_specs()}
 NEW_PARSERS = {"vertex_gemini", "databricks_gemini", "azure_image_retail", "vercel_video"}
 NEW = [s for s in source_specs() if s.parser in NEW_PARSERS]
+MAKER_DIRECT = anthropic_models.PARSERS | openai_models.PARSERS
+LATER = set(kling_seedance_source_specs()) | set(bedrock_more_source_specs()) | set(route_gap_source_specs())  # appended 2026-10-28 (video/test_kling_seedance.py) and 2026-10-30 (llm/test_bedrock_more.py; llm/test_google_models_more.py, test_bedrock_pricelist.py, test_openai_models_more.py)
 FILES = {s.source_key: (
     'azure.json' if s.parser == 'azure_image_retail' else
     'vertex.html' if s.parser == 'vertex_gemini' else
@@ -46,10 +48,10 @@ def test_existing_specs_preserved_in_each_modality_order():
     current = {s.source_key: asdict(s) for s in source_specs()}
     assert [current[s['source_key']] for s in old] == old
     for modality in ('llm', 'image', 'video'):
-        assert [asdict(s) for s in source_specs() if s.modality == modality and s.parser not in NEW_PARSERS and not s.parser.endswith("endpoints_llm") and not s.source_key.startswith("image25_") and s.parser != "azure_llm_retail"] == [s for s in old if s['modality'] == modality]
+        assert [asdict(s) for s in source_specs() if s.modality == modality and s.parser not in NEW_PARSERS and not s.parser.endswith("endpoints_llm") and not s.source_key.startswith("image25_") and s.parser not in ("azure_llm_retail", "azure_models_retail", "google_model_pricing", "zai_pricing") and s.parser not in MAKER_DIRECT and s not in LATER and s.parser not in gateway_image_endpoints.PARSERS] == [s for s in old if s['modality'] == modality]
     assert len(NEW) == 5
-    assert len(source_specs()) == 208
-    assert len({(s.model_id, s.route) for s in source_specs()}) == 148
+    assert len(source_specs()) == 419
+    assert len({(s.model_id, s.route) for s in source_specs()}) == 352
     assert not any(s.route == 'openrouter' and s.modality == 'video' for s in source_specs())
 
 

@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 
 from scripts.market_collection.adapters.image import parse_source, source_specs
+from scripts.market_collection.collectors.gateway_image_endpoints import PARSERS as GATEWAY_IMAGE_PARSERS
 from scripts.market_collection.core import _validate_parse, validate_registry
 
 
@@ -19,7 +20,7 @@ FILES = {
     "openrouter_sunburst": "openrouter.html",
     "vercel_sunburst": "vercel.html",
 }
-SPECS = {spec.source_key: spec for spec in source_specs()}
+SPECS = {spec.source_key: spec for spec in source_specs() if spec.parser != "google_model_pricing" and spec.parser not in GATEWAY_IMAGE_PARSERS}
 
 
 def _body(key: str) -> bytes:
@@ -33,9 +34,9 @@ def _parse(key: str, body: bytes | None = None):
 
 def test_fixed_five_pages_four_routes():
     validate_registry(source_specs())
-    assert {key for key in SPECS if not key.startswith('image25_')} == set(FILES) | {"openai_flare", "fal_flare_t2i", "openrouter_flare", "vercel_flare", "azure_sunburst", "azure_flare"}
+    assert {key for key in SPECS if not key.startswith('image25_')} == set(FILES) | {"openai_flare", "fal_flare_t2i", "openrouter_flare", "vercel_flare", "azure_sunburst", "azure_flare", "openai_gpt_image_2"}
     assert {spec.route for spec in SPECS.values()} == {"openai", "fal", "openrouter", "vercel", "azure_foundry"}
-    assert {spec.model_id for spec in SPECS.values()} == {"gpt-image-2.5-sunburst", "gpt-image-2.5-flare"}
+    assert {spec.model_id for spec in SPECS.values()} == {"gpt-image-2.5-sunburst", "gpt-image-2.5-flare", "gpt-image-2"}
     assert {spec.task for spec in SPECS.values()} == {"text-to-image", "model-conditions"}
 
 

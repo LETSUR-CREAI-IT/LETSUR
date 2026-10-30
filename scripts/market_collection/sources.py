@@ -3,7 +3,14 @@
 from __future__ import annotations
 
 from scripts.market_collection.core import SourceSpec, CollectionError
-from scripts.market_collection.models import (GOOGLE_LLM_MODEL, ASTRA_MODEL, FABLE_MODEL, STANDARD_LLM_MODELS, BROKER_CATALOG_MODELS, BROKER_API_MODELS, _AWS_OPENAI, _AWS_ANTHROPIC, _AZURE_MODELS, _AZURE_RETAIL_MODELS, SUNBURST_MODEL, FLARE_MODEL, SEEDANCE_MODEL, MODEL_MODALITIES)
+from scripts.market_collection.models import (GOOGLE_LLM_MODEL, ASTRA_MODEL, FABLE_MODEL, STANDARD_LLM_MODELS, BROKER_CATALOG_MODELS, BROKER_API_MODELS, _AWS_OPENAI, _AWS_ANTHROPIC, _AZURE_MODELS, _AZURE_RETAIL_MODELS, AZURE_RETAIL_GPT5_MODELS, AZURE_RETAIL_OPENAI_MODELS, SUNBURST_MODEL, FLARE_MODEL, SEEDANCE_MODEL, MODEL_MODALITIES)
+from scripts.market_collection.models import ANTHROPIC_DIRECT_MODELS, OPENAI_DIRECT_MODELS, OPENAI_EMBEDDING_MODELS, GPT_IMAGE_2_MODEL
+from scripts.market_collection.models import GOOGLE_DIRECT_MODELS, GOOGLE_IMAGE_MODELS
+from scripts.market_collection.models import GATEWAY_MORE_MODELS, GATEWAY_EMBEDDING_MODELS, ZAI_DIRECT_MODELS
+from scripts.market_collection.models import KLING_VIDEO_MODELS, SEEDANCE_VARIANT_MODELS
+from scripts.market_collection.models import GATEWAY_IMAGE_MODELS, GATEWAY_IMAGE_CATALOG_MODELS
+from scripts.market_collection.models import AWS_OPENAI_MORE_MODELS
+from scripts.market_collection.models import GOOGLE_DIRECT_MORE_MODELS, GOOGLE_ROUTED_MODELS, AWS_PRICELIST_MODELS, OPENAI_DIRECT_MORE_MODELS, OPENAI_PRICING_STANDARD_MODELS
 
 def _targets() -> dict[str, tuple[str, str, str, str, str]]:
     targets = {
@@ -61,14 +68,16 @@ def llm_endpoint_source_specs() -> list[SourceSpec]:
     gateway_ids = [(GOOGLE_LLM_MODEL, "google/gemini-3.8-flash", "google/gemini-3.8-flash")]
     gateway_ids.extend((model, target[4], target[4]) for model, target in _targets().items())
     gateway_ids.extend((model, openrouter_id, vercel_id) for model, _, _, openrouter_id, vercel_id in BROKER_CATALOG_MODELS)
-    gateway_ids.extend((model, openrouter_id, vercel_id) for model, _, openrouter_id, vercel_id in BROKER_API_MODELS)
+    gateway_ids.extend((model, openrouter_id, vercel_id) for model, _, openrouter_id, vercel_id in BROKER_API_MODELS + GATEWAY_MORE_MODELS + GATEWAY_EMBEDDING_MODELS)
+    embeddings = {model for model, *_ in GATEWAY_EMBEDDING_MODELS}
     specs: list[SourceSpec] = []
     for model, openrouter_id, vercel_id in gateway_ids:
         key = _key(model)
+        task = "embedding" if model in embeddings else "text_generation"
         if openrouter_id:  # None: the gateway does not list the model
-            specs.append(SourceSpec(f"openrouter_llm_endpoints_{key}", "llm", model, "openrouter", "text_generation", f"https://openrouter.ai/api/v1/models/{openrouter_id}/endpoints", "openrouter_endpoints_llm"))
+            specs.append(SourceSpec(f"openrouter_llm_endpoints_{key}", "llm", model, "openrouter", task, f"https://openrouter.ai/api/v1/models/{openrouter_id}/endpoints", "openrouter_endpoints_llm"))
         if vercel_id:
-            specs.append(SourceSpec(f"vercel_llm_endpoints_{key}", "llm", model, "vercel_ai_gateway", "text_generation", f"https://ai-gateway.vercel.sh/v1/models/{vercel_id}/endpoints", "vercel_endpoints_llm"))
+            specs.append(SourceSpec(f"vercel_llm_endpoints_{key}", "llm", model, "vercel_ai_gateway", task, f"https://ai-gateway.vercel.sh/v1/models/{vercel_id}/endpoints", "vercel_endpoints_llm"))
     return specs
 
 
@@ -100,10 +109,39 @@ def cloud_source_specs() -> list[SourceSpec]:
     return specs
 
 
+def bedrock_more_source_specs() -> list[SourceSpec]:
+    """AWS Bedrock model cards of the OpenAI models LETSUR calls there that _AWS_OPENAI does not list (2026-10-30)."""
+    return [SourceSpec(f"bedrock_{_key(model)}", "llm", model, "aws_bedrock", "text_generation", f"{_AWS_BASE}openai-{slug}.html", f"cloud_bedrock_{_key(model)}")
+            for model, slug, _ in AWS_OPENAI_MORE_MODELS]
+
+
+# The AWS Price List API offer file of Amazon Bedrock in us-east-1 (public, no login; about 1.5 MB on 2026-10-30).
+_BEDROCK_PRICE_LIST = "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonBedrock/current/us-east-1/index.json"
+
+
+def route_gap_source_specs() -> list[SourceSpec]:
+    """Routes LETSUR uses whose price no other source collected (2026-10-30): a Gemini section google_model_source_specs() cannot
+    read, two Gemini models Google serves with another model, GLM 4.7 and GLM 5 on Bedrock, and o3-pro on OpenAI's own route.
+    The other two such routes are gateway ids in models.py (qwen3.5-plus on OpenRouter, gemini-3-flash-preview on Vercel)."""
+    google = "https://ai.google.dev/gemini-api/docs/pricing"
+    specs = [SourceSpec(f"google_{_key(model)}", "llm", model, "google_direct", "text_generation", google, "google_model_pricing_more")
+             for model, _ in GOOGLE_DIRECT_MORE_MODELS]
+    specs.extend(SourceSpec(f"google_{_key(model)}", "llm", model, "google_direct", "text_generation", google, "google_routed_pricing")
+                 for model, _ in GOOGLE_ROUTED_MODELS)
+    specs.extend(SourceSpec(f"bedrock_pricelist_{_key(model)}", "llm", model, "aws_bedrock", "text_generation", _BEDROCK_PRICE_LIST, "aws_bedrock_pricelist_api")
+                 for model, _, _ in AWS_PRICELIST_MODELS)
+    specs.extend(SourceSpec(f"openai_{_key(model)}", "llm", model, "openai_direct", "text_generation", f"https://developers.openai.com/api/docs/models/{slug}.md", f"openai_{_key(model)}")
+                 for model, _, slug in OPENAI_DIRECT_MORE_MODELS)
+    specs.extend(SourceSpec(f"openai_{_key(model)}", "llm", model, "openai_direct", "text_generation", "https://developers.openai.com/api/docs/pricing.md", "openai_pricing_standard")
+                 for model in OPENAI_PRICING_STANDARD_MODELS)
+    return specs
+
+
 _AZURE_IMAGE_PRICING = "https://prices.azure.com/api/retail/prices?$filter=contains(productName,'OpenAI')%20and%20contains(meterName,'2.5')%20and%20armRegionName%20eq%20'koreacentral'"
 
 
-# One fixed page of the Foundry Models GPT-6 and GPT-5 products in koreacentral, shared by the seven GPT specs.
+# One fixed page of the Foundry Models GPT-6 and GPT-5 products in koreacentral, shared by the seven GPT specs and the
+# GPT-5.x specs of azure_retail_models_source_specs().
 _AZURE_GPT_PRICING = "https://prices.azure.com/api/retail/prices?$filter=serviceName%20eq%20'Foundry%20Models'%20and%20armRegionName%20eq%20'koreacentral'%20and%20(productName%20eq%20'Azure%20OpenAI%20GPT6'%20or%20productName%20eq%20'Azure%20OpenAI%20GPT5')"
 
 
@@ -111,6 +149,57 @@ def azure_retail_llm_source_specs() -> list[SourceSpec]:
     # Since 2026-10-28 these replace the catalog-page specs azure_<model> of the same models (appended: the registry is additive).
     return [SourceSpec(f"azure_retail_{_key(model)}", "llm", model, "azure_foundry", "text_generation", _AZURE_GPT_PRICING, "azure_llm_retail")
             for model in _AZURE_RETAIL_MODELS]
+
+
+# One fixed page of the Foundry Models Azure OpenAI and Azure OpenAI Reasoning products in koreacentral (GPT-4o, GPT-4.1, o-series).
+_AZURE_OPENAI_PRICING = "https://prices.azure.com/api/retail/prices?$filter=serviceName%20eq%20'Foundry%20Models'%20and%20armRegionName%20eq%20'koreacentral'%20and%20(productName%20eq%20'Azure%20OpenAI'%20or%20productName%20eq%20'Azure%20OpenAI%20Reasoning')"
+
+
+def azure_retail_models_source_specs() -> list[SourceSpec]:
+    # The other Azure OpenAI models LETSUR serves (2026-10-28); the embedding models have no Global Standard meter in koreacentral.
+    pages = [(model, _AZURE_GPT_PRICING) for model in AZURE_RETAIL_GPT5_MODELS] + [(model, _AZURE_OPENAI_PRICING) for model in AZURE_RETAIL_OPENAI_MODELS]
+    return [SourceSpec(f"azure_retail_{_key(model)}", "llm", model, "azure_foundry", "text_generation", url, "azure_models_retail")
+            for model, url in pages]
+
+
+def maker_direct_source_specs() -> list[SourceSpec]:
+    """Anthropic and OpenAI models LETSUR calls on the makers' own routes, priced from the makers' pages (2026-10-28)."""
+    specs = [SourceSpec(f"anthropic_{_key(model)}", "llm", model, "anthropic_direct", "text_generation", "https://platform.claude.com/docs/en/about-claude/pricing.md", f"anthropic_{_key(model)}")
+             for model, _ in ANTHROPIC_DIRECT_MODELS]
+    specs.extend(SourceSpec(f"openai_{_key(model)}", "llm", model, "openai_direct", "text_generation", f"https://developers.openai.com/api/docs/models/{slug}.md", f"openai_{_key(model)}")
+                 for model, _, slug in OPENAI_DIRECT_MODELS)
+    specs.extend(SourceSpec(f"openai_{_key(model)}", "llm", model, "openai_direct", "embedding", f"https://developers.openai.com/api/docs/models/{model}.md", f"openai_{_key(model)}")
+                 for model in OPENAI_EMBEDDING_MODELS)
+    # The gpt-image-2 model page lists no price, so its token rates are read from OpenAI's pricing page.
+    specs.append(SourceSpec(f"openai_{_key(GPT_IMAGE_2_MODEL)}", "image", GPT_IMAGE_2_MODEL, "openai", "text-to-image", "https://developers.openai.com/api/docs/pricing.md", f"openai_{_key(GPT_IMAGE_2_MODEL)}"))
+    return specs
+
+
+def google_model_source_specs() -> list[SourceSpec]:
+    # One section of the Gemini API pricing page (the page google_gemini_38_flash reads) per model, picked by h2 id = model id.
+    return [SourceSpec(f"google_{_key(model)}", modality, model, "google_direct", task, "https://ai.google.dev/gemini-api/docs/pricing", "google_model_pricing")
+            for modality, task, models in (("llm", "text_generation", GOOGLE_DIRECT_MODELS), ("image", "text-to-image", GOOGLE_IMAGE_MODELS))
+            for model, _ in models]
+
+
+def zai_source_specs() -> list[SourceSpec]:
+    # One Markdown page lists every model's token prices; each model gets its own spec of it, like the Azure GPT meters above.
+    return [SourceSpec(f"zai_{_key(model)}", "llm", model, "zai_direct", "text_generation", "https://docs.z.ai/guides/overview/pricing.md", "zai_pricing")
+            for model, _ in ZAI_DIRECT_MODELS]
+
+
+def gateway_image_source_specs() -> list[SourceSpec]:
+    """OpenRouter and Vercel AI Gateway endpoint listings of the image models LETSUR serves (2026-10-29)."""
+    specs: list[SourceSpec] = []
+    for model, _, openrouter_id, vercel_id in GATEWAY_IMAGE_MODELS:
+        key = _key(model)
+        if openrouter_id:  # None: the gateway does not list the model
+            specs.append(SourceSpec(f"openrouter_image_endpoints_{key}", "image", model, "openrouter", "text-to-image", f"https://openrouter.ai/api/v1/models/{openrouter_id}/endpoints", "openrouter_image_endpoints"))
+        if vercel_id:
+            specs.append(SourceSpec(f"vercel_image_endpoints_{key}", "image", model, "vercel_ai_gateway", "text-to-image", f"https://ai-gateway.vercel.sh/v1/models/{vercel_id}/endpoints", "vercel_image_endpoints"))
+    specs.extend(SourceSpec(f"openrouter_image_catalog_endpoints_{_key(model)}", "image", model, "openrouter", "text-to-image", f"https://openrouter.ai/api/v1/images/models/{catalog_id}/endpoints", "openrouter_image_catalog_endpoints")
+                 for model, catalog_id in GATEWAY_IMAGE_CATALOG_MODELS)
+    return specs
 
 
 def image_source_specs() -> list[SourceSpec]:
@@ -151,7 +240,7 @@ def video_source_specs() -> list[SourceSpec]:
 
 
 def source_specs() -> list[SourceSpec]:
-    specs = llm_source_specs() + image_source_specs() + video_source_specs() + image25_api_source_specs() + image25_openrouter_endpoint_source_specs() + image25_supplement_source_specs() + llm_endpoint_source_specs() + azure_retail_llm_source_specs()
+    specs = llm_source_specs() + image_source_specs() + video_source_specs() + image25_api_source_specs() + image25_openrouter_endpoint_source_specs() + image25_supplement_source_specs() + llm_endpoint_source_specs() + azure_retail_llm_source_specs() + azure_retail_models_source_specs() + maker_direct_source_specs() + google_model_source_specs() + zai_source_specs() + kling_seedance_source_specs() + gateway_image_source_specs() + bedrock_more_source_specs() + route_gap_source_specs()
     for spec in specs:
         if MODEL_MODALITIES.get(spec.model_id) != spec.modality:
             raise CollectionError(f"source model/modality mismatch: {spec.source_key}")
@@ -194,3 +283,41 @@ def image25_supplement_source_specs() -> list[SourceSpec]:
             specs.append(SourceSpec(f'image25_{kind}_{variant}_doc', 'image', model, route,
                                     'model-conditions', url, 'image25_'+kind))
     return specs
+
+
+_KLING_PRICING = "https://kling.ai/dev/pricing"
+_FAL_LLMS = "https://fal.ai/models/{}/llms.txt"
+_VERCEL_VIDEO_ENDPOINTS = "https://ai-gateway.vercel.sh/v1/models/{}/endpoints"
+_BYTEPLUS_PRICING = "https://docs.byteplus.com/id/docs/modelark/model-pricing?redirect=1"
+
+
+def kling_seedance_source_specs() -> list[SourceSpec]:
+    # LETSUR has not said which route serves these models (2026-10-28), so each public source that prices one is collected.
+    # fal splits a model by mode (standard/pro) and, for Kling 3.0 Omni, by video input, so one model has several fal pages.
+    # fal lists no priced Seedance 2.5 video-to-video endpoint and Vercel lists no Kling 4.0, Kling 3.0 Omni or Seedance video-to-video.
+    kling = ("kling_direct", _KLING_PRICING, "kling_pricing")
+    byteplus = ("BytePlus ModelArk", _BYTEPLUS_PRICING, "byteplus_video_input")
+    sources = (
+        ("kling_v3_t2v", "kling-v3-text-to-video", *kling),
+        ("kling_v3_i2v", "kling-v3-image-to-video", *kling),
+        ("kling_v3_omni", "kling-v3-omni-video", *kling),
+        ("fal_kling_v3_t2v_standard", "kling-v3-text-to-video", "fal", _FAL_LLMS.format("fal-ai/kling-video/v3/standard/text-to-video"), "fal_llms"),
+        ("fal_kling_v3_t2v_pro", "kling-v3-text-to-video", "fal", _FAL_LLMS.format("fal-ai/kling-video/v3/pro/text-to-video"), "fal_llms"),
+        ("fal_kling_v3_i2v_standard", "kling-v3-image-to-video", "fal", _FAL_LLMS.format("fal-ai/kling-video/v3/standard/image-to-video"), "fal_llms"),
+        ("fal_kling_v3_i2v_pro", "kling-v3-image-to-video", "fal", _FAL_LLMS.format("fal-ai/kling-video/v3/pro/image-to-video"), "fal_llms"),
+        ("fal_kling_v3_omni_standard", "kling-v3-omni-video", "fal", _FAL_LLMS.format("fal-ai/kling-video/o3/standard/reference-to-video"), "fal_llms"),
+        ("fal_kling_v3_omni_pro", "kling-v3-omni-video", "fal", _FAL_LLMS.format("fal-ai/kling-video/o3/pro/reference-to-video"), "fal_llms"),
+        ("fal_kling_v3_omni_video_standard", "kling-v3-omni-video", "fal", _FAL_LLMS.format("fal-ai/kling-video/o3/standard/video-to-video/reference"), "fal_llms"),
+        ("fal_kling_v3_omni_video_pro", "kling-v3-omni-video", "fal", _FAL_LLMS.format("fal-ai/kling-video/o3/pro/video-to-video/reference"), "fal_llms"),
+        ("fal_kling_v4_t2v", "kling-v4-text-to-video", "fal", _FAL_LLMS.format("kling/v4/text-to-video"), "fal_llms"),
+        ("fal_kling_v4_i2v", "kling-v4-image-to-video", "fal", _FAL_LLMS.format("kling/v4/image-to-video"), "fal_llms"),
+        ("fal_kling_v4_omni", "kling-v4-omni-video", "fal", _FAL_LLMS.format("kling/v4/reference-to-video"), "fal_llms"),
+        ("fal_seedance_25_r2v", "byteplus-seedance-2.5-reference-to-video", "fal", _FAL_LLMS.format("bytedance/seedance-2.5/reference-to-video"), "fal_llms"),
+        ("byteplus_seedance_25_r2v", "byteplus-seedance-2.5-reference-to-video", *byteplus),
+        ("byteplus_seedance_25_v2v", "byteplus-seedance-2.5-video-to-video", *byteplus),
+        ("vercel_kling_v3_t2v", "kling-v3-text-to-video", "vercel_ai_gateway", _VERCEL_VIDEO_ENDPOINTS.format("klingai/kling-v3.0-t2v"), "vercel_video_endpoints"),
+        ("vercel_kling_v3_i2v", "kling-v3-image-to-video", "vercel_ai_gateway", _VERCEL_VIDEO_ENDPOINTS.format("klingai/kling-v3.0-i2v"), "vercel_video_endpoints"),
+        ("vercel_seedance_25_r2v", "byteplus-seedance-2.5-reference-to-video", "vercel_ai_gateway", _VERCEL_VIDEO_ENDPOINTS.format("bytedance/seedance-2.5"), "vercel_video_endpoints"),
+    )
+    tasks = dict(KLING_VIDEO_MODELS + SEEDANCE_VARIANT_MODELS)
+    return [SourceSpec(key, "video", model, route, tasks[model], url, parser) for key, model, route, url, parser in sources]

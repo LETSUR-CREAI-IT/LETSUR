@@ -77,7 +77,8 @@ def deadline(event):
         basis, label = "stated", "적용"
     elif kind == "model_end":
         raw = dates.get("effective_from") or dates.get("end_date") or dates.get("retirement_date")
-        basis, label = "stated", "모델 종료"
+        # 2026-10-29: a retirement schedule's earliest date (the Gemini table, a "Not sooner than" date) is said to be one
+        basis, label = ("not_before" if dates.get("date_basis") == "not_before" else "stated"), "모델 종료"
     elif kind == "route_change" and "remove" in (event.get("subtags") or []):
         raw = dates.get("effective_from") or dates.get("end_date") or dates.get("removal_date")
         basis, label = "stated", "경로 종료"
@@ -202,11 +203,27 @@ def new_change(event, today):
 def health_events(failing):
     """수집 점검 (2026-10-28 박건 제안): the dashboard's health.failing, the sources failing in the newest run, as events the
     pipeline stores, sends once and lets people acknowledge (delivery.attempt drops members missing from the events
-    table). One failure streak is one event, health:<source>:<first failed run>; a new streak is a new alert."""
+    table). One failure streak is one event, health:<source>:<first failed run>; a new streak is a new alert.
+    2026-10-29 (박건: 수집기를 고쳐야 하는 실패만 가려 알린다): the dashboard's judgement rides along as `failure`, and a source
+    it does not ask anyone to act on yet (fix false: a temporary error on its first failed run) is no event, so it is sent
+    only if the next run fails too. Without the judgement (an older cards.json) every failing source is sent, as before."""
     return [{"event_id": f"health:{item['key']}:{item['sinceRun']}", "event_type": "collection_failure",
              "model_id": item.get("model") or None, "route": item.get("route") or None, "status": "confirmed",
              "source_key": item["key"], "error": item.get("error") or "", "since": item.get("since") or "",
-             "sources": [{"url": item["url"]}] if item.get("url") else []} for item in failing or []]
+             "sources": [{"url": item["url"]}] if item.get("url") else [],
+             **({"failure": {key: item.get(key) for key in ("kind", "label", "action", "runs")}} if item.get("kind") else {})}
+            for item in failing or [] if item.get("fix", True)]
+
+
+def failure_head(card):
+    """(headline, what to do) of a 수집 점검 card from the dashboard's judgement: '수집기 수정 필요', or '일시 오류가 2회 이어짐'
+    for a temporary error. (None, None) when cards.json gave none, so the card keeps its old text."""
+    found = [item["failure"] for item in card["items"] if (item.get("failure") or {}).get("label")]
+    if not found:
+        return None, None
+    runs = max(failure.get("runs") or 0 for failure in found)
+    head = f"{found[0]['label']}가 {runs}회 이어짐" if found[0].get("kind") == "temporary" and runs else found[0]["label"]
+    return head, found[0].get("action") or None
 
 
 def delivered(db, channel, event_id, signature):
@@ -363,11 +380,12 @@ def sync(db, document, today, urgent_days):
 
 def grouping(event):
     day, _, basis = deadline(event)
+    kind = (event.get("failure") or {}).get("kind")  # 수집 점검 (2026-10-29): one card never mixes two judgements
     # Do not trust upstream group_key: it may merge different routes/conditions.
     return {"model": event.get("model_id"), "route": event.get("route"),
             "type": event.get("event_type"), "subtags": sorted(event.get("subtags") or []),
             "conditions": event.get("conditions") or {},
-            "deadline": day.isoformat() if day else None, "basis": basis}
+            "deadline": day.isoformat() if day else None, "basis": basis, **({"failure": kind} if kind else {})}
 
 
 def prepare(db, today, channel, urgent_days=5, judged=None):
@@ -441,7 +459,7 @@ def prepare(db, today, channel, urgent_days=5, judged=None):
             "missing_in_current_input": row["seen_day"] != today.isoformat(), "dashboard_card": match.get("card"),
             "delivery_kind": "changed" if changed else "reminder" if previous else "initial",
             "event_type": event.get("event_type"), "error": event.get("error"), "since": event.get("since"),
-            "alert": alert, "already_simulated_today": bool(sent)})
+            "failure": event.get("failure"), "alert": alert, "already_simulated_today": bool(sent)})
     cards = list(groups.values())
     for card in cards:
         card["items"] = [item for item in card["items"] if not item["already_simulated_today"]]
@@ -468,15 +486,20 @@ def render(report):
             f"오늘 {card['schedule_label']}" if days == 0 else f"{card['schedule_label']}까지 {days}일"))
         if new and days is not None:
             schedule += " · " + new
-        lines.extend([f"{number}. {card['model']} / {card['route']}", schedule])
+        head, to_do = failure_head(card) if card.get("alert") == "health" else (None, None)
+        lines.extend([f"{number}. " + (f"{head} · {card['model']} · {card['route']}" if head else f"{card['model']} / {card['route']}"), schedule])
         if card["date_basis"] == "derived_from_publication":
             lines.append("※ 종료 연도는 게시일에서 파생한 날짜입니다.")
+        elif card["date_basis"] == "not_before":
+            lines.append("※ 가장 이른 종료일입니다. 이 날짜 전에는 끝나지 않으며 정확한 종료일은 아닙니다.")
         if card["conditions"]:
             lines.append("조건: " + encode(card["conditions"]))
         if card.get("usage"):
             lines.append(f"렛서 사용 : {card['usage']}")
         if card.get("check"):
             lines.append(f"확인할 것 : {card['check']}")
+        if to_do:
+            lines.append(f"조치 : {to_do}")
         for link in card.get("links") or []:
             lines.append(f"근거 : {link}")
         for item in card["items"]:

@@ -3,7 +3,14 @@ from __future__ import annotations
 
 from scripts.market_collection.core import SourceSpec
 from scripts.market_collection.sources import source_specs
-from . import google, openai, anthropic, openrouter, vercel, aws_bedrock, azure_foundry, fal, byteplus, google_vertex, azure_databricks, image25_api, image25_supplement, azure_retail_llm
+from . import google, openai, anthropic, openrouter, vercel, aws_bedrock, azure_foundry, fal, byteplus, google_vertex, azure_databricks, image25_api, image25_supplement, azure_retail_llm, azure_retail_models
+from . import anthropic_models, openai_models
+from . import google_models
+from . import aws_bedrock_models
+from . import zai
+from . import kling, fal_llms, byteplus_video, vercel_video
+from . import gateway_image_endpoints
+from . import google_models_more, aws_bedrock_pricelist, openai_models_more, openai_pricing_standard
 
 SUPPLIERS = {
     "google_direct": google, "openai_direct": openai, "openai": openai,
@@ -11,7 +18,7 @@ SUPPLIERS = {
     "vercel_ai_gateway": vercel, "vercel": vercel,
     "aws_bedrock": aws_bedrock, "azure_foundry": azure_foundry,
     "google_vertex": google_vertex, "azure_databricks": azure_databricks,
-    "fal": fal, "BytePlus ModelArk": byteplus,
+    "fal": fal, "BytePlus ModelArk": byteplus, "zai_direct": zai, "kling_direct": kling,
 }
 
 def parser_module(spec: SourceSpec):
@@ -22,6 +29,24 @@ def parser_module(spec: SourceSpec):
         return image25_api
     if spec.parser in azure_retail_llm.PARSERS:  # its own module, so the other Azure parsers keep their fingerprints
         return azure_retail_llm
+    if spec.parser in azure_retail_models.PARSERS:  # likewise its own module
+        return azure_retail_models
+    if spec.parser in anthropic_models.PARSERS:  # likewise for the Anthropic and OpenAI pages of the models LETSUR calls directly
+        return anthropic_models
+    if spec.parser in openai_models.PARSERS:
+        return openai_models
+    if spec.parser in google_models.PARSERS:  # its own module, so google.py keeps its fingerprint
+        return google_models
+    if spec.parser in aws_bedrock_models.PARSERS:  # likewise for the Bedrock cards of the models aws_bedrock.py does not list
+        return aws_bedrock_models
+    for module in (fal_llms, byteplus_video, vercel_video):  # own modules too, so the fal, BytePlus and Vercel parsers keep theirs
+        if spec.parser in module.PARSERS:
+            return module
+    if spec.parser in gateway_image_endpoints.PARSERS:  # image listings of the two gateways, ahead of the route lookup
+        return gateway_image_endpoints
+    for module in (google_models_more, aws_bedrock_pricelist, openai_models_more, openai_pricing_standard):  # 2026-10-30, own modules for the same reason
+        if spec.parser in module.PARSERS:
+            return module
     module = SUPPLIERS.get(spec.route)
     if module is None:
         raise ValueError("unhandled source route")

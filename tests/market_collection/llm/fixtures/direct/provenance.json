@@ -1,0 +1,155 @@
+[
+  {
+    "fixture": "anthropic-pricing.md",
+    "source_url": "https://platform.claude.com/docs/en/about-claude/pricing.md",
+    "fetched_at_utc": "2026-10-28T14:29:53+00:00",
+    "raw_sha256": "31ba8ce4d0f3b4b6a4e96e53e6edb58ccd3cb1ccea5916576e0e230549b72670",
+    "raw_bytes": 53425,
+    "fixture_sha256": "6ebb963fd88e7a9912b0cb92a26c738df87c4a7224595f3a99d0adfd14f859b2",
+    "method": "Lines 1-55 as served (front matter and the whole '## Model pricing' section); the later sections are not read by the parser and were cut."
+  },
+  {
+    "fixture": "openai-gpt-5.5-pro.md",
+    "source_url": "https://developers.openai.com/api/docs/models/gpt-5.5-pro.md",
+    "fetched_at_utc": "2026-10-28T14:31:22+00:00",
+    "raw_sha256": "12fe3cbacb51cbdd712becc7264a37385c11709f7fba96094c20988814f71ac5",
+    "raw_bytes": 3866,
+    "fixture_sha256": "12fe3cbacb51cbdd712becc7264a37385c11709f7fba96094c20988814f71ac5",
+    "method": "The whole page as served, byte for byte."
+  },
+  {
+    "fixture": "openai-gpt-5.2-pro.md",
+    "source_url": "https://developers.openai.com/api/docs/models/gpt-5.2-pro.md",
+    "fetched_at_utc": "2026-10-28T14:31:22+00:00",
+    "raw_sha256": "3ec60ee70452ff5e2349e2a8e8cbc87eb6d3aaeb5353034bb097bea7008a14ab",
+    "raw_bytes": 3915,
+    "fixture_sha256": "3ec60ee70452ff5e2349e2a8e8cbc87eb6d3aaeb5353034bb097bea7008a14ab",
+    "method": "The whole page as served, byte for byte."
+  },
+  {
+    "fixture": "openai-gpt-6.1-terra.md",
+    "source_url": "https://developers.openai.com/api/docs/models/gpt-6.1-terra.md",
+    "fetched_at_utc": "2026-10-28T14:31:22+00:00",
+    "raw_sha256": "cd34faa8904d85961ab5fe270f079b8be45a9c876af6c809b38b2c069f687a7a",
+    "raw_bytes": 4178,
+    "fixture_sha256": "cd34faa8904d85961ab5fe270f079b8be45a9c876af6c809b38b2c069f687a7a",
+    "method": "The whole page as served, byte for byte."
+  },
+  {
+    "fixture": "openai-gpt-5.5.md",
+    "source_url": "https://developers.openai.com/api/docs/models/gpt-5.5.md",
+    "fetched_at_utc": "2026-10-28T14:31:24+00:00",
+    "raw_sha256": "ef66bb7639b9d768fabcf9a030404d3890c035fb020d6140d9a87c978b86ea42",
+    "raw_bytes": 3959,
+    "fixture_sha256": "ef66bb7639b9d768fabcf9a030404d3890c035fb020d6140d9a87c978b86ea42",
+    "method": "The whole page as served, byte for byte."
+  },
+  {
+    "fixture": "openai-gpt-5.6-sol.md",
+    "source_url": "https://developers.openai.com/api/docs/models/gpt-5.6.md",
+    "fetched_at_utc": "2026-10-28T14:32:21+00:00",
+    "raw_sha256": "5afb8d587e02be517ecf973aeb941cddc8c90cf834037ddc23fb9f74f95296e8",
+    "raw_bytes": 3912,
+    "fixture_sha256": "5afb8d587e02be517ecf973aeb941cddc8c90cf834037ddc23fb9f74f95296e8",
+    "method": "The whole page as served, byte for byte. https://developers.openai.com/api/docs/models/gpt-5.6.md answers 301 with Location /api/docs/models/gpt-5.6-sol.md; this is the body it ends at."
+  },
+  {
+    "fixture": "openai-text-embedding-3-large.md",
+    "source_url": "https://developers.openai.com/api/docs/models/text-embedding-3-large.md",
+    "fetched_at_utc": "2026-10-28T14:31:23+00:00",
+    "raw_sha256": "a31c3224540c7b950f33c89456915c5c720c5c278e667fd1cc0b7b254bbd0721",
+    "raw_bytes": 3029,
+    "fixture_sha256": "a31c3224540c7b950f33c89456915c5c720c5c278e667fd1cc0b7b254bbd0721",
+    "method": "The whole page as served, byte for byte."
+  },
+  {
+    "fixture": "openai-text-embedding-3-small.md",
+    "source_url": "https://developers.openai.com/api/docs/models/text-embedding-3-small.md",
+    "fetched_at_utc": "2026-10-28T14:31:24+00:00",
+    "raw_sha256": "b51b7b46a781e2114ba4ba543a687b424f765e3f3ceefe2db34ea2d184f374e9",
+    "raw_bytes": 3015,
+    "fixture_sha256": "b51b7b46a781e2114ba4ba543a687b424f765e3f3ceefe2db34ea2d184f374e9",
+    "method": "The whole page as served, byte for byte."
+  },
+  {
+    "fixture": "openai-text-embedding-ada-002.md",
+    "source_url": "https://developers.openai.com/api/docs/models/text-embedding-ada-002.md",
+    "fetched_at_utc": "2026-10-28T14:31:24+00:00",
+    "raw_sha256": "dbf3595dc62728b216403a13cb4414706203a79f3fa2b10499321f52a9a6fea0",
+    "raw_bytes": 3013,
+    "fixture_sha256": "dbf3595dc62728b216403a13cb4414706203a79f3fa2b10499321f52a9a6fea0",
+    "method": "The whole page as served, byte for byte."
+  },
+  {
+    "fixture": "openai-o3-pro.md",
+    "source_url": "https://developers.openai.com/api/docs/models/o3-pro.md",
+    "fetched_at_utc": "2026-10-30T03:25:42.270155Z",
+    "raw_sha256": "3b41ae9e053c803346698ebdaf1a3cb5a02067d5f149a94681a462f361d07fed",
+    "raw_bytes": 3684,
+    "fixture_sha256": "3b41ae9e053c803346698ebdaf1a3cb5a02067d5f149a94681a462f361d07fed",
+    "method": "The whole page as served, byte for byte."
+  },
+  {
+    "fixture": "openai-gpt-4.1.md",
+    "source_url": "https://developers.openai.com/api/docs/models/gpt-4.1.md",
+    "fetched_at_utc": "2026-10-30T03:55:39+00:00",
+    "raw_sha256": "baa0f3aa720c9ab9faf3d060d56549ecc6273dd366336d7269c92bebe95b3389",
+    "raw_bytes": 3687,
+    "fixture_sha256": "baa0f3aa720c9ab9faf3d060d56549ecc6273dd366336d7269c92bebe95b3389",
+    "method": "The whole page as served, byte for byte."
+  },
+  {
+    "fixture": "openai-gpt-4.1-mini.md",
+    "source_url": "https://developers.openai.com/api/docs/models/gpt-4.1-mini.md",
+    "fetched_at_utc": "2026-10-30T03:55:39+00:00",
+    "raw_sha256": "06d8ad50f5d80f51a437dda8aa391e52e83ccf18672347a1d572e33b565754a4",
+    "raw_bytes": 3719,
+    "fixture_sha256": "06d8ad50f5d80f51a437dda8aa391e52e83ccf18672347a1d572e33b565754a4",
+    "method": "The whole page as served, byte for byte."
+  },
+  {
+    "fixture": "openai-gpt-4o.md",
+    "source_url": "https://developers.openai.com/api/docs/models/gpt-4o.md",
+    "fetched_at_utc": "2026-10-30T03:55:40+00:00",
+    "raw_sha256": "22950725c1d75a0098d1c5f046f10c946ffdd41e76d37d14b44e80a6dab8abee",
+    "raw_bytes": 3534,
+    "fixture_sha256": "22950725c1d75a0098d1c5f046f10c946ffdd41e76d37d14b44e80a6dab8abee",
+    "method": "The whole page as served, byte for byte."
+  },
+  {
+    "fixture": "openai-gpt-4o-mini.md",
+    "source_url": "https://developers.openai.com/api/docs/models/gpt-4o-mini.md",
+    "fetched_at_utc": "2026-10-30T03:55:40+00:00",
+    "raw_sha256": "93e14f848cf90f35dd77a270998a9b2b440ef08d724da11947b0dee26179f09b",
+    "raw_bytes": 3579,
+    "fixture_sha256": "93e14f848cf90f35dd77a270998a9b2b440ef08d724da11947b0dee26179f09b",
+    "method": "The whole page as served, byte for byte."
+  },
+  {
+    "fixture": "openai-gpt-5.md",
+    "source_url": "https://developers.openai.com/api/docs/models/gpt-5.md",
+    "fetched_at_utc": "2026-10-30T03:55:40+00:00",
+    "raw_sha256": "9a43b63c9b63dfc74104eba1739f72dabb8ac7a5b8d697e88aa1466f96092059",
+    "raw_bytes": 3588,
+    "fixture_sha256": "9a43b63c9b63dfc74104eba1739f72dabb8ac7a5b8d697e88aa1466f96092059",
+    "method": "The whole page as served, byte for byte."
+  },
+  {
+    "fixture": "openai-gpt-5-mini.md",
+    "source_url": "https://developers.openai.com/api/docs/models/gpt-5-mini.md",
+    "fetched_at_utc": "2026-10-30T03:55:40+00:00",
+    "raw_sha256": "a483623704a4cfcc090feaed29cc3b5a9af61ad64e8925a6ed0593e07ca2695c",
+    "raw_bytes": 3515,
+    "fixture_sha256": "a483623704a4cfcc090feaed29cc3b5a9af61ad64e8925a6ed0593e07ca2695c",
+    "method": "The whole page as served, byte for byte."
+  },
+  {
+    "fixture": "openai-pricing.md",
+    "source_url": "https://developers.openai.com/api/docs/pricing.md",
+    "fetched_at_utc": "2026-10-30T03:56:18+00:00",
+    "raw_sha256": "93d302a9b7a384877533bc3ab5bb48eebf4b56bd6add0f194095054b2a13f952",
+    "raw_bytes": 22824,
+    "fixture_sha256": "93d302a9b7a384877533bc3ab5bb48eebf4b56bd6add0f194095054b2a13f952",
+    "method": "The whole page as served, byte for byte."
+  }
+]

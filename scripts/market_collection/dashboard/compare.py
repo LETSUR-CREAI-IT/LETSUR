@@ -34,7 +34,12 @@ from scripts.market_collection.models import MODEL_MODALITIES
 
 KST = timezone(timedelta(hours=9))
 ITEMS = ("input", "output", "cache_read")  # price columns; cache writes stay out (their TTL is mostly unstated)
-ITEM_KO = {"input": "입력", "output": "출력", "cache_read": "캐시 읽기"}
+# Gemini image models are sold per token on every route read (Google, OpenRouter, Vercel), so they get a table with an image
+# output column (2026-10-29). OpenAI's image models are read under OpenAI's own item names ("Image tokens / Output"), which a
+# table of the gateways' rows alone would misrepresent, so they keep no table.
+IMAGE_ITEMS = ITEMS + ("image_output",)
+TABLE_IMAGE_FAMILY = "gemini"
+ITEM_KO = {"input": "입력", "output": "출력", "cache_read": "캐시 읽기", "image_output": "이미지 출력"}
 GATEWAYS = ("openrouter", "vercel_ai_gateway")
 TIERS = ("Standard", "Priority", "Ultrafast", "Flex", "Batch")
 TIER_OF = {"standard": "Standard", "default": "Standard", "priority": "Priority", "ultrafast": "Ultrafast", "flex": "Flex", "batch": "Batch"}
@@ -43,17 +48,21 @@ REGION_OF = {"us": "US", "eu": "EU", "europe": "EU", "au": "AU", "jp": "JP"}  # 
 PRECISION_GROUP = {"mxfp4": "fp4", "nvfp4": "fp4", "mxfp8": "fp8"}  # int4 stays its own group (2)
 PRECISION_ORDER = ("fp4", "fp8", "int4", "int8", "fp6", "fp16", "bf16", "fp32", "비공개")
 CLOSED = "비공개"
-OPEN_WEIGHT = ("deepseek", "glm", "kimi")  # model families with public weights; the data has no such field (decision 24)
+OPEN_WEIGHT = evidence.OPEN_WEIGHT  # model families with public weights; the data has no such field (decision 24)
 # OpenRouter endpoint status (decision 8, analysis or-endpoint-status-20261027.md): -1 and -2 stay compared, the rest are excluded.
 STATUS = {-1: ("우선순위 낮춤", ""), -2: ("성능 저하", ""), -3: ("순위 하향", "일시적으로 순위가 내려가 대체 경로로만 쓰임"),
           -5: ("중단", "지금 요청이 실패하고 있어 대체 경로로만 쓰임"), -10: ("사용 중지", "품질 문제로 사용 중지, 어떤 요청에도 쓰이지 않음")}
-REPRESENTATIVE = ("model_page_rate", "listed_model_rate", "prices_from_minimum")  # a gateway's headline price, no upstream named
+# A gateway's headline price, no upstream named; the last two are the image model pages' (Vercel's GPT Image 2.5 pages).
+REPRESENTATIVE = ("model_page_rate", "listed_model_rate", "prices_from_minimum", "displayed model quote", "starting listing quote")
+# The routes a gateway model page is filed under: a price there that names no endpoint or upstream is the page's headline
+# (OpenRouter's and Vercel's GPT Image 2.5 pages state no price basis, 2026-10-30).
+PAGE_ROUTES = (*GATEWAYS, "vercel")
 # Conditions that tell rows apart or describe them without deciding the group; any other stated key keeps a row out.
 QUIET = {"endpoint_tag", "endpoint_provider", "endpoint_model_slug", "context_length", "price_basis", "endpoint_discount", "endpoint_status",
          "quantization", "service_tier", "prompt_tokens", "utc_start", "utc_end", "utc_days", "context_tier_min_tokens",
          "context_tier_max_tokens", "rate_period", "input_token_band", "context_band", "inference_option", "region", "region_group",
          "input_modalities", "currency_basis", "long_context_multiplier", "promotion_note", "promotion_label", "publisher", "hosting",
-         "endpoint_scope", "cross_geography_routing", "billing_channel", "meter_scope"}
+         "endpoint_scope", "cross_geography_routing", "billing_channel", "meter_scope", "model_version"}
 ITEM_LEVEL = {"cache_write_ttl", "cache_duration", *evidence.MUTABLE_CONDITIONS}  # differ between the items of one offer
 # Unknown conditions a decision settles: OpenRouter discounts are compared at the shown price (6); Vercel's untiered price
 # is Standard and its tier and region prices become rows of their own (10, 18).
@@ -231,9 +240,16 @@ def unknown_values(run: dict) -> dict:
     return {row["observation_id"]: by_set.get((row["source_id"], row["condition_set_id"]), {}) for row in run["prices"]}
 
 
+def table_model(model_id: str) -> bool:
+    modality = MODEL_MODALITIES.get(model_id)
+    return modality == "llm" or (modality == "image" and model_id.startswith(TABLE_IMAGE_FAMILY))
+
+
 def usable(obs: dict) -> bool:
-    return (MODEL_MODALITIES.get(obs.get("model_id")) == "llm" and obs.get("currency") in ("USD", "") and obs.get("unit") in ("1M tokens", "")
-            and obs.get("billing_item") in ITEMS and obs.get("price_kind") in ("published_rate", "announced_future_rate"))
+    modality = MODEL_MODALITIES.get(obs.get("model_id"))
+    return (table_model(obs.get("model_id") or "") and obs.get("currency") in ("USD", "") and obs.get("unit") in ("1M tokens", "")
+            and obs.get("billing_item") in (IMAGE_ITEMS if modality == "image" else ITEMS)
+            and obs.get("price_kind") in ("published_rate", "announced_future_rate"))
 
 
 def offers(observations: list[dict], unknown: dict) -> list[dict]:
@@ -363,7 +379,7 @@ def place(row: dict) -> None:
                precision=c.get("quantization") or None)
     raw_status = c.get("endpoint_status", row["unknown"].get("endpoint_status"))
     row["status"] = int(raw_status) if re.fullmatch(r"-?\d+", str(raw_status or "")) else None
-    if c.get("price_basis") in REPRESENTATIVE:
+    if c.get("price_basis") in REPRESENTATIVE or (route in PAGE_ROUTES and not {"endpoint_tag", "endpoint_provider", "provider"} & set(c)):
         row["who"] = [ROUTE_PUBLISHERS.get(route, route), "모델 페이지 대표가"]
         row["why"].append("모델 페이지 대표가 (하위 공급처·조건 미지정)")
         return
@@ -418,6 +434,8 @@ def place(row: dict) -> None:
             row["labels"].append(f"표기 {c['billing_channel']}")
         if c.get("meter_scope"):
             row["labels"].append(SCOPE_NOTE.get(c["meter_scope"], f"표기 {c['meter_scope']}"))
+        if c.get("model_version"):  # Azure bills some models per version (2026-10-28); the row is still that model's price
+            row["labels"].append(f"버전 {c['model_version']}")
     for key in sorted(set(c) - QUIET):
         row["why"].append(f"조건 맞추기 전 ({key} {c[key]})")
 
@@ -729,11 +747,8 @@ def dropped(state: dict | None, run_id: str, run_obs: list[dict], statuses: list
 
 # ---- assembly ----------------------------------------------------------------------------------------------------------
 
-RECORD_CHIP = {"settings": "렛서 설정", "observed": "호출 확인"}  # by the record's basis, as on the cards (build.py route_basis)
-
-
 def assumed_routes(model_id: str, routes: dict | None) -> list[tuple[str, str, str | None]]:
-    """(route, endpoint, basis) of every record that says LETSUR uses a route for the model; none when it has no record or is not offered."""
+    """(route, endpoint, basis) of every record that names a route for the model; none when it has no record or is not offered."""
     return [(r["route_id"], r.get("endpoint_id") or "", r.get("basis")) for r in (routes or {}).get("records", [])
             if r.get("model_id") == model_id and r.get("route_id")]
 
@@ -749,11 +764,12 @@ def is_assumed(row: dict, target: tuple[str, str] | None) -> bool:
 
 
 def assumed_chip(row: dict, targets: list[tuple[str, str, str | None]], demo: bool) -> str:
-    """The chip of the first record whose route the row is (is_assumed), "" when none: the record's basis, else 가정 in a demo file,
-    else 사용 경로. Every record marks its own route, so gpt-6-astra's OpenAI direct row and its Azure row each say their own basis."""
+    """렛서 사용 on the row of a route a record names (is_assumed), whatever its basis (2026-10-30 박건: 사용이면 사용), but 가정
+    for a record without basis in a demo file; "" when none. Every record marks its own route, so gpt-6-astra's OpenAI direct
+    row and its Azure row both say it."""
     for route, endpoint, basis in targets:
         if is_assumed(row, (route, endpoint)):
-            return RECORD_CHIP.get(basis) or ("가정" if demo else "사용 경로")
+            return "가정" if demo and basis is None else "렛서 사용"
     return ""
 
 
@@ -923,7 +939,7 @@ def hhmm(value) -> int:
 
 def tables(root: Path, model_ids: list[str], events: list[dict], gaps: list, state: dict | None, report: dict | None,
            routes: dict | None, today_iso: str) -> dict:
-    """COMPARE: one table per LLM model in model_ids, keyed by model id; empty when no processed core run can be read.
+    """COMPARE: one table per LLM or Gemini image model in model_ids, keyed by model id; empty when no processed core run can be read.
     An error here leaves the tables out (traceback on stderr) instead of turning the whole daily page into a failure page."""
     try:
         return build_tables(root, model_ids, events, gaps, state, report, routes, today_iso)
@@ -934,7 +950,7 @@ def tables(root: Path, model_ids: list[str], events: list[dict], gaps: list, sta
 
 def build_tables(root: Path, model_ids: list[str], events: list[dict], gaps: list, state: dict | None, report: dict | None,
                  routes: dict | None, today_iso: str) -> dict:
-    models = {m for m in model_ids if MODEL_MODALITIES.get(m) == "llm"}
+    models = {m for m in model_ids if table_model(m)}
     run_dir = latest_run(root, report) if models else None
     if run_dir is None:
         return {}
@@ -961,12 +977,13 @@ def build_tables(root: Path, model_ids: list[str], events: list[dict], gaps: lis
         if not rows:
             continue
         targets = assumed_routes(model_id, routes)
+        columns = IMAGE_ITEMS if MODEL_MODALITIES[model_id] == "image" else ITEMS
         for row in rows:
             row["assumed"] = assumed_chip(row, targets, demo)
-            discount_cells(row, rows, ITEMS, notices, today)
+            discount_cells(row, rows, columns, notices, today)
         for row in rows:
             describe(row, rows, history, now)
-        items = tuple(i for i in ITEMS if any(r["prices"].get(i) is not None for r in rows)) or ITEMS
+        items = tuple(i for i in columns if any(r["prices"].get(i) is not None for r in rows)) or columns
         compared = [r for r in rows if not r["why"] and not r.get("gone")]
         excluded = sorted((r for r in rows if r["why"] or r.get("gone")), key=row_order)
         disc = any(r.get("disc") for r in rows)

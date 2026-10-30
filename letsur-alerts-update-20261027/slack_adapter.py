@@ -7,7 +7,7 @@ from copy import deepcopy
 from datetime import datetime, timedelta, timezone
 from urllib.parse import parse_qs, urlsplit
 
-from alerts import acknowledge, digest, encode
+from alerts import acknowledge, digest, encode, failure_head
 from dashboard_cards import condition_value, name
 
 ACTION_ID = "ack_card"
@@ -63,8 +63,10 @@ def _dashboard_cards(card):
 
 
 def _card_text(card, names):
-    lines = [f"{_clip(card.get('model', '모델 미확인'), 180)} / {_clip(card.get('route', '경로 미확인'), 180)}",
-             _schedule(card)]
+    # 수집 점검 (2026-10-29): the headline says the dashboard's 판단, then the card says what to do
+    head, to_do = failure_head(card) if card.get("alert") == "health" else (None, None)
+    model, route = _clip(card.get("model", "모델 미확인"), 180), _clip(card.get("route", "경로 미확인"), 180)
+    lines = [f"{_clip(head, 60)} · {model} · {route}" if head else f"{model} / {route}", _schedule(card)]
     conditions = card.get("conditions") or {}
     shown = []
     for key in ("endpoint_tag", "service_tier", "region", "input_token_band", "endpoint_status"):
@@ -78,8 +80,12 @@ def _card_text(card, names):
         lines.append("렛서 사용 : " + _clip(card["usage"], 120))
     if card.get("check"):
         lines.append("확인할 것 : " + _clip(card["check"], 200))
+    if to_do:
+        lines.append("조치 : " + _clip(to_do, 200))
     if card.get("date_basis") == "derived_from_publication":
         lines.append("종료 연도는 게시일에서 파생")
+    elif card.get("date_basis") == "not_before":  # a retirement schedule's earliest date (2026-10-29)
+        lines.append("가장 이른 종료일 · 이 날짜 전에는 끝나지 않음")
     for item in card["items"]:
         before, after = item.get("before") or {}, item.get("after") or {}
         label = name(names, "items", item.get("billing_item"))

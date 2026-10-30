@@ -2,8 +2,8 @@
 
 Every run is checked with the collectors' own validators (core._validated_run,
 signals.validated_run); a failure rejects the whole build. Adapters here are by
-source format (core price rows, OpenRouter and Vercel endpoints JSON, atom/rss feed rows),
-never by model.
+source format (core price rows, OpenRouter and Vercel endpoints JSON, atom/rss feed rows,
+retirement schedule tables), never by model.
 """
 
 from __future__ import annotations
@@ -19,6 +19,7 @@ from pathlib import Path
 from scripts.market_collection import core
 from scripts.market_collection import signals as signal_runs
 from scripts.market_collection.collectors import parser_module
+from scripts.market_collection.signals.registry import RETIREMENT_PARSERS
 
 from . import notices
 from .catalog import Catalog, maker
@@ -143,13 +144,36 @@ def core_observations(run: dict, catalog: Catalog) -> tuple[list[dict], list[dic
     return observations, statuses
 
 
+# Model families with public weights (decision 24): a provider may serve them at any precision, so an unstated one leaves the
+# product unknown. A closed model's provider serves the maker's own weights, so a gateway listing that states no precision
+# still prices that model (2026-10-30: without this, models seen only through OpenRouter or Vercel had no series at all).
+OPEN_WEIGHT = ("deepseek", "glm", "kimi")
+CLOSED_MODEL_UNKNOWNS = {"quantization"}
+# Vercel's untiered endpoint price is its Standard price, and its tier and regional prices are rows of their own (decisions
+# 10 and 18, already the comparison table's dashboard/compare.py SETTLED). OpenRouter's discounts stay unknown here: a
+# discount starting or ending is not a price change card (10/27).
+VERCEL_SETTLED = {"service_tier", "service_tier_applicability", "region_applicability"}
+
+
+def open_weight(model_id: str) -> bool:
+    return model_id.startswith(OPEN_WEIGHT)
+
+
+def blocking_unknowns(obs: dict) -> list[str]:
+    """The unstated conditions that leave this observation's product unknown."""
+    settled = VERCEL_SETTLED if obs.get("route") == "vercel_ai_gateway" else set()
+    if not open_weight(obs["model_id"]):
+        settled = settled | CLOSED_MODEL_UNKNOWNS
+    return [key for key in obs["unknown_conditions"] if key not in settled]
+
+
 def comparability(obs: dict) -> str:
     """Empty when comparable; otherwise a reason code. Unknown is never a wildcard."""
     if not obs["registered"]:
         return "unverified_source"
     if not obs["amount"]:
         return "price_missing"
-    if obs["unknown_conditions"] or not obs["upstream_provider"]:
+    if blocking_unknowns(obs) or not obs["upstream_provider"]:
         return "condition_unknown"
     if obs["evidence_status"] != "direct":
         return "not_direct_evidence"
@@ -371,6 +395,17 @@ AMBIGUOUS = {"field": "model_attribution", "class": "check_first",
              "next_check": "read the notice and confirm which model the value applies to"}
 
 
+def retirement_facts(entries: list, row: dict, model_id: str) -> dict:
+    """The dated fields of the retirement schedule row (signals/retirements.py) a signal row was made from; versions counts
+    the rows the page has for the model, each with its own date."""
+    entry = next((entry for entry in entries if entry.entry_id == row["entry_id"] and entry.model_id == model_id), None)
+    if entry is None:
+        return {}
+    return {"effective_from": entry.date, "date_basis": "not_before" if entry.earliest else "stated", "date_text": entry.date_text,
+            "replacement": entry.replacement, "version": entry.version, "published_at_utc": entry.announced,
+            "versions": sum(1 for other in entries if other.model_id == model_id)}
+
+
 def signal_claims(run: dict, catalog: Catalog) -> tuple[list[dict], list[dict], list[dict]]:
     """Claims from one signal run: typed notice claims, then verified signal rows. Also gaps for rows the raw does not support."""
     manifest = run["manifest"]
@@ -389,13 +424,17 @@ def signal_claims(run: dict, catalog: Catalog) -> tuple[list[dict], list[dict], 
         if not ok or spec.get("source_key") in catalog.disabled:
             continue
         reread = notices.reread(spec, (run["dir"] / source["raw_path"]).read_bytes(), window) if source["raw_path"] else None
+        retirements = None
         if reread is None:
             gaps.append({"kind": "signal_raw_unparsable", "run_id": run_id, "source_id": source["source_id"],
                          "source_key": spec.get("source_key", ""), "note": "registered parser cannot re-read the raw; rows stay leads"})
             parsed_keys = None
         else:
             parsed_keys = {notices.row_key(row) for row in reread[0]}
-            typed += _typed_claims(reread[1], spec, source, run_id, catalog)
+            if spec.get("parser") in RETIREMENT_PARSERS:
+                retirements = reread[1]
+            else:
+                typed += _typed_claims(reread[1], spec, source, run_id, catalog)
         for row in rows_by_source.get(source["source_id"], []):
             if parsed_keys is not None and notices.row_key(row) not in parsed_keys:
                 gaps.append({"kind": "signal_row_mismatch", "run_id": run_id, "source_id": source["source_id"],
@@ -411,6 +450,8 @@ def signal_claims(run: dict, catalog: Catalog) -> tuple[list[dict], list[dict], 
                     parts = row["entry_id"].rsplit("#", 2)
                     if spec.get("parser") == "vercel_endpoints" and len(parts) == 3:
                         claim["endpoint_id"] = parts[1]  # <data.id>#<provider>#deprecated_at: the upstream that ends
+                    if retirements is not None:
+                        claim.update(retirement_facts(retirements, row, model_id))
                     if kind in ("price_increase", "price_decrease") and info["authority"] == "channel_official" \
                             and maker_list_price(row["quote"], model_id):
                         # The same sentence's discount kind keeps the channel route; only the maker's price move loses it.

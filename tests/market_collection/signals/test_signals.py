@@ -1,5 +1,6 @@
 import csv
 import json
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -9,7 +10,7 @@ from scripts.market_collection.core import CollectionError
 from scripts.market_collection import signals
 from scripts.market_collection.signals import __main__ as cli
 from scripts.market_collection.signals.matching import claims_in, date_phrases, entry_signals, models_in, normalize
-from scripts.market_collection.models import BROKER_API_MODELS
+from scripts.market_collection.models import BROKER_API_MODELS, GATEWAY_EMBEDDING_MODELS, GATEWAY_IMAGE_MODELS, GATEWAY_MORE_MODELS
 from scripts.market_collection.signals.parsers import (SignalParseError, atom_entries, openrouter_endpoint_signals, rss_entries,
                                                        vercel_endpoint_signals)
 from scripts.market_collection.signals.registry import SignalSourceSpec, signal_sources, validate
@@ -52,6 +53,41 @@ def test_gateway_only_models_match_by_title_and_gateway_ids():
     assert labels("Qwen3.7 Max and alibaba/qwen3.7-plus are on AI Gateway") == [("Qwen 3.7 Max", "exact"), ("Qwen 3.7 Plus", "exact")]
     assert labels("MiniMax M2.5 and x-ai/grok-4.20 pricing") == [("Grok 4.20", "exact"), ("MiniMax M2.5", "exact")]
     assert labels("Muse Wonder is 50% off") == [("Muse Wonder", "exact")]
+
+
+def test_models_added_on_1028_match_and_a_name_inside_a_longer_model_name_is_that_model():
+    """The 70 models added on 2026-10-28 match by their sources' names; a registered name found only inside a longer
+    registered name (GPT-4o in GPT-4o mini, o3 in o3-pro, DeepSeek V4 Flash in DeepSeek V4 Flash 0731) is not a mention."""
+    assert labels("GPT-4o mini is cheaper") == [("GPT-4o-mini", "exact")]
+    assert labels("GPT-4o and GPT-4o mini") == [("GPT-4o", "exact"), ("GPT-4o-mini", "exact")]
+    assert labels("o3-pro and o4-mini retire on Azure") == [("o4-mini", "exact"), ("o3-pro", "exact")]
+    assert labels("DeepSeek V4 Flash 0731 is 50% off") == [("DeepSeek V4 Flash 0731", "exact")]
+    assert labels("Gemini 2.5 Flash Image will be deprecated") == [("Gemini 2.5 Flash Image", "exact")]
+    assert labels("GPT Image 2 pricing") == [("GPT Image 2", "exact")] and labels("GPT Image 2.5 pricing") == [("GPT Image 2.5", "family")]
+    assert [alias.model_ids for alias in models_in("GPT-5.4 retirement")] == [("gpt-5.4",), ("gpt-5.4-2026-03-05",)]
+    # gpt-5.6, OpenAI's alias of GPT-5.6 Sol, has no name of its own: it takes the family's notices, not Sol's or the family's name
+    assert [alias.model_ids for alias in models_in("GPT-5.6 has a price increase")] == [("gpt-5.6-sol", "gpt-5.6-terra", "gpt-5.6-luna", "gpt-5.6")]
+    assert labels("GPT-5.6 Sol is 50% off") == [("GPT-5.6 Sol", "exact")]
+
+
+def test_video_models_added_on_1028_match_by_the_names_their_sellers_use():
+    ids = lambda text: [alias.model_ids for alias in models_in(normalize(text))]
+    assert ids("Kling 3.0 is 50% off") == [("kling-v3-text-to-video",), ("kling-v3-image-to-video",)]
+    assert ids("Kling 3.0 Omni price cut") == ids("Kling O3 reference-to-video") == [("kling-v3-omni-video",)]
+    assert ids("Kling V4 launch pricing") == [("kling-v4-text-to-video",), ("kling-v4-image-to-video",)]
+    assert ids("Seedance 2.5 price increase") == [("seedance-2.5",), ("byteplus-seedance-2.5-reference-to-video",),
+                                                  ("byteplus-seedance-2.5-video-to-video",)]
+
+
+def test_a_model_name_before_a_variant_word_is_another_model():
+    """Price tracker lines of 2026-10-28: o1-pro, GPT-5.2 Codex and GPT-5.2 Chat retired are not o1 or GPT-5.2 notices, and
+    the DeepSeek V4 Flash Vision Exp notice is not DeepSeek V4 Flash's (decision 36), registered or not."""
+    assert labels("o1-pro (OpenAI) retired") == [] and labels("o1 (OpenAI) retired") == [("o1", "exact")]
+    assert labels("GPT-5.2 Codex (OpenAI) retired") == [] and labels("GPT-5.2 Chat (OpenAI) retired") == []
+    assert labels("DeepSeek V4 Flash Vision Exp is 50% off") == []
+    assert labels("GPT-4.1 nano (OpenAI) retired") == [("GPT-4.1 Nano", "exact")]
+    assert labels("Qwen 3.8 Max 0902 price cut") == [("Qwen 3.8 Max", "exact")]  # a dated snapshot is the same model
+    assert labels("Gemini 3 Pro Image Preview will be deprecated") == [("Gemini 3 Pro Image Preview", "exact")]
 
 
 def test_claim_terms_skip_comparisons_and_keep_kinds():
@@ -144,9 +180,17 @@ def test_gateway_api_sources_cover_every_listed_model_of_both_gateways():
     by_parser: dict[str, list] = {}
     for spec in specs:
         by_parser.setdefault(spec.parser, []).append(spec)
-    # 2026-10-28: 4 feeds + OpenRouter 18 -> 49 (34 gateway-only models, 31 with an OpenRouter id) + Vercel 49
-    assert len(specs) == 102 and {parser: len(found) for parser, found in by_parser.items()} == {
-        "atom": 3, "rss": 1, "openrouter_endpoints": 49, "vercel_endpoints": 49}
+    # 2026-10-28: 4 feeds + OpenRouter 18 -> 49 (34 gateway-only models, 31 with an OpenRouter id) -> 99 (51 more, 50 with one)
+    # + Vercel 49 -> 98 (49 of the 51 more: gemini-3-flash-preview and gpt-5.1 are OpenRouter only)
+    # 2026-10-29: the 7 image models add 6 OpenRouter (gpt-image-2 is not in /api/v1/models) -> 105 and 6 Vercel (gemini-3-pro-image-preview is not
+    # in its model list) -> 104; the four retirement schedule pages come last -> 217
+    # 2026-10-30: qwen3.5-plus gets an OpenRouter id and gemini-3-flash-preview a Vercel id -> OpenRouter 106, Vercel 105, 219;
+    # GPT Image 2.5 Flare and Sunburst join the image models with a Vercel id only -> Vercel 107, 221
+    assert len(specs) == 221 and {parser: len(found) for parser, found in by_parser.items()} == {
+        "atom": 3, "rss": 1, "openrouter_endpoints": 106, "vercel_endpoints": 107, "azure_retirements": 1, "openai_deprecations": 1,
+        "anthropic_deprecations": 1, "google_deprecations": 1}
+    assert [spec.source_key for spec in specs[-4:]] == ["azure_retirement_schedule", "openai_deprecations", "anthropic_deprecations",
+                                                        "google_deprecations"]
     assert all(spec.source_kind == "channel_api" and spec.model_id for parser in ("openrouter_endpoints", "vercel_endpoints")
                for spec in by_parser[parser])
     keys = {spec.source_key: spec for spec in specs}
@@ -156,14 +200,34 @@ def test_gateway_api_sources_cover_every_listed_model_of_both_gateways():
     assert keys["vercel_endpoints_glm_5_2"].url == "https://ai-gateway.vercel.sh/v1/models/zai/glm-5.2/endpoints"
     assert keys["openrouter_endpoints_minimax_m2_7"].url == "https://openrouter.ai/api/v1/models/minimax/minimax-m2.7/endpoints"
     assert (keys["vercel_endpoints_minimax_m2_1"].model_id, keys["vercel_endpoints_minimax_m2_1"].model_label) == ("minimax-m2.1", "MiniMax M2.1")
+    assert (keys["openrouter_endpoints_qwen3_5_plus"].url, keys["vercel_endpoints_gemini_3_flash_preview"].url) == (
+        "https://openrouter.ai/api/v1/models/qwen/qwen3.5-plus-02-15/endpoints", "https://ai-gateway.vercel.sh/v1/models/google/gemini-3-flash/endpoints")
     # a model a gateway does not list gets no source there
     for model, _, openrouter_id, vercel_id in BROKER_API_MODELS:
         key = model.replace("-", "_").replace(".", "_")
         assert (f"openrouter_endpoints_{key}" in keys) == bool(openrouter_id) and (f"vercel_endpoints_{key}" in keys) == bool(vercel_id)
-    # the 18 OpenRouter sources of before come first, the 31 of the gateway-only models after them
+    # the 18 OpenRouter sources of before come first, the 32 of the gateway-only models after them, then the 50 of the 51 more
     added = {model for model, *_ in BROKER_API_MODELS}
-    assert not {spec.model_id for spec in by_parser["openrouter_endpoints"][:18]} & added
-    assert {spec.model_id for spec in by_parser["openrouter_endpoints"][18:]} <= added
+    more = {model for model, *_ in GATEWAY_MORE_MODELS + GATEWAY_EMBEDDING_MODELS}
+    assert len(more) == 51 and not added & more
+    assert not {spec.model_id for spec in by_parser["openrouter_endpoints"][:18]} & (added | more)
+    assert {spec.model_id for spec in by_parser["openrouter_endpoints"][18:50]} <= added
+    images = {model for model, *_ in GATEWAY_IMAGE_MODELS}
+    assert len(images) == 9 and not images & (added | more)
+    assert {spec.model_id for spec in by_parser["openrouter_endpoints"][50:100]} <= more
+    assert [spec.model_id for spec in by_parser["openrouter_endpoints"][100:]] == [m for m, _, openrouter_id, _ in GATEWAY_IMAGE_MODELS if openrouter_id]
+    for model, _, openrouter_id, vercel_id in GATEWAY_MORE_MODELS + GATEWAY_EMBEDDING_MODELS:
+        key = re.sub(r"[^a-z0-9]+", "_", model)
+        assert (f"openrouter_endpoints_{key}" in keys) == bool(openrouter_id) and (f"vercel_endpoints_{key}" in keys) == bool(vercel_id)
+    assert keys["vercel_endpoints_claude_opus_4_5_20251101"].url == "https://ai-gateway.vercel.sh/v1/models/anthropic/claude-opus-4.5/endpoints"
+    assert keys["openrouter_endpoints_glm_5_3"].url == "https://openrouter.ai/api/v1/models/z-ai/glm-5.3/endpoints"
+    assert (keys["vercel_endpoints_text_embedding_3_large"].model_id, keys["vercel_endpoints_text_embedding_3_large"].model_label) == ("text-embedding-3-large", "text-embedding-3-large")
+    for model, _, openrouter_id, vercel_id in GATEWAY_IMAGE_MODELS:
+        key = re.sub(r"[^a-z0-9]+", "_", model)
+        assert (f"openrouter_endpoints_{key}" in keys) == bool(openrouter_id) and (f"vercel_endpoints_{key}" in keys) == bool(vercel_id)
+    assert keys["openrouter_endpoints_gemini_3_pro_image_preview"].url == "https://openrouter.ai/api/v1/models/google/gemini-3-pro-image-preview/endpoints"
+    assert keys["vercel_endpoints_gpt_image_2"].url == "https://ai-gateway.vercel.sh/v1/models/openai/gpt-image-2/endpoints"
+    assert "vercel_endpoints_gemini_3_pro_image_preview" not in keys and "openrouter_endpoints_gpt_image_2" not in keys
 
 
 def test_both_api_parsers_need_a_model_and_feeds_none():
@@ -214,7 +278,7 @@ def test_live_preserves_raw_records_failures_and_separates_origin_status(tmp_pat
     assert {row["origin_status"] for row in by_source["openrouter_endpoints_gpt_5_6_sol"]} == {"channel_stated"}
     blog = by_source["blog_feed"][0]
     assert (blog["model_label"], blog["model_match"], blog["claim_kinds"], blog["date_phrases"]) == ("GPT-5.6", "family", "price_increase", "for November")
-    assert blog["model_ids"] == "gpt-5.6-sol;gpt-5.6-terra;gpt-5.6-luna"
+    assert blog["model_ids"] == "gpt-5.6-sol;gpt-5.6-terra;gpt-5.6-luna;gpt-5.6"  # the gpt-5.6 alias joined the family (2026-10-28)
     assert all(row["linked_event"] == "" and row["next_check"] == "" for row in found)
     # Price CSVs are untouched: signals live under their own directory.
     assert not (tmp_path / "runs").exists()

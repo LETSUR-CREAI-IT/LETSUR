@@ -214,7 +214,7 @@ def test_closed_model_rows_are_비공개_and_vercel_tiers_split_out(astra):
     assert all(c[1] == "lo" for r in groups["비공개 · Priority"] for c in r["c"])  # the Vercel tier price ties OpenRouter's
     assert groups["비공개 · Flex"][0]["n"] == "등급을 지정한 요청에만 적용" and groups["비공개 · Flex"][0]["c"][0] == ["$5.00", "un"]
     assert all(r.get("f") == 1 for rows in groups.values() for r in rows)  # no precision is written for a closed-weight model
-    assert ["사용 경로", "as"] in groups["비공개 · Standard"][1]["t"]  # is_demo false: LETSUR's recorded route, not an assumption
+    assert ["렛서 사용", "as"] in groups["비공개 · Standard"][1]["t"]  # is_demo false: LETSUR's recorded route, not an assumption
     assert "special" not in table
 
 
@@ -224,24 +224,26 @@ def _chips(table: dict) -> dict:
 
 
 def test_every_record_marks_its_own_route_with_its_own_basis(astra_root):
-    """2026-10-28: the chip follows each record's basis (settings: 렛서 설정, observed: 호출 확인), and every record of the model
-    marks its Standard row, not only the first record."""
+    """2026-10-28: every record of the model marks its Standard row, not only the first record. 2026-10-30 (박건: 사용이면 사용):
+    the chip says 렛서 사용 whatever the record's basis; only a demo file's record without basis says 가정."""
     def chips(records, is_demo=False):
         routes = {"is_demo": is_demo, "records": [{"model_id": ASTRA, **record} for record in records]}
         return _chips(compare.tables(astra_root, [ASTRA], [], [], None, None, routes, "2026-10-27")[ASTRA])
     both = chips([{"route_id": "openrouter", "basis": "settings"}, {"route_id": "vercel_ai_gateway", "basis": "observed"}])
-    assert both == {"OpenRouter · openai": "렛서 설정", "Vercel · openai": "호출 확인"}
+    assert both == {"OpenRouter · openai": "렛서 사용", "Vercel · openai": "렛서 사용"}
     assert chips([{"route_id": "vercel_ai_gateway", "basis": "observed"}, {"route_id": "openrouter", "basis": "settings"}]) == both  # not the first record only
     assert chips([{"route_id": "openrouter"}, {"route_id": "vercel_ai_gateway", "basis": "observed"}], is_demo=True) == {
-        "OpenRouter · openai": "가정", "Vercel · openai": "호출 확인"}  # a record without basis keeps the old wording
+        "OpenRouter · openai": "가정", "Vercel · openai": "렛서 사용"}  # a demo file's record without basis
     assert chips([{"route_id": "openrouter"}, {"route_id": "vercel_ai_gateway", "basis": "settings"}]) == {
-        "OpenRouter · openai": "사용 경로", "Vercel · openai": "렛서 설정"}
+        "OpenRouter · openai": "렛서 사용", "Vercel · openai": "렛서 사용"}
     assert chips([{"route_id": None, "basis": "observed"}]) == {}  # not offered: no row
+    # 2026-10-29: a route an admin set
+    assert chips([{"route_id": "openrouter", "basis": "manual", "checked_at": "2026-10-29"}]) == {"OpenRouter · openai": "렛서 사용"}
 
 
 def test_astra_openai_direct_row_says_settings_and_its_azure_row_says_observed():
-    """2026-10-28: gpt-6-astra has a registered route (OpenAI direct) and the route one API call went through (Azure); each of the
-    two Standard rows says its own basis. Which row a record marks is still decision 17's rule (Standard, no region or band)."""
+    """2026-10-28: gpt-6-astra has a registered route (OpenAI direct) and the route one API call went through (Azure); both
+    Standard rows are marked, alike since 2026-10-30. Which row a record marks is still decision 17's rule (Standard, no region or band)."""
     records = [{"model_id": ASTRA, "route_id": "openai_direct", "basis": "settings"},
                {"model_id": ASTRA, "route_id": "azure_foundry", "basis": "observed"}]
     targets = compare.assumed_routes(ASTRA, {"is_demo": False, "records": records})
@@ -250,7 +252,7 @@ def test_astra_openai_direct_row_says_settings_and_its_azure_row_says_observed()
     def chip(route, publisher, **fields):
         row = _row(model=ASTRA, route=route, who=[publisher, route], **{"origin": "listing", **fields})
         return compare.assumed_chip(row, targets, False)
-    assert chip("openai_direct", "OpenAI") == "렛서 설정" and chip("azure_foundry", "Microsoft") == "호출 확인"
+    assert chip("openai_direct", "OpenAI") == "렛서 사용" and chip("azure_foundry", "Microsoft") == "렛서 사용"
     assert chip("azure_foundry", "Microsoft", tier="Priority") == "" and chip("openai_direct", "OpenAI", region="US") == ""
     assert chip("openai_direct", "OpenAI", band="272K") == "" and chip("azure_foundry", "Microsoft", origin="vercel_tier") == ""
     gateway = _row(model=ASTRA, route="vercel_ai_gateway", provider="openai", origin="listing", who=["Vercel", "openai"])
@@ -262,10 +264,10 @@ def test_a_record_with_an_endpoint_marks_only_that_endpoint_and_a_record_without
     targets = compare.assumed_routes(GLM, dict(records, is_demo=False))
     nu = _row(route="vercel_ai_gateway", provider="nu", origin="listing", who=["Vercel", "nu"])
     zai = _row(route="vercel_ai_gateway", provider="zai", origin="listing", who=["Vercel", "zai"])
-    assert (compare.assumed_chip(nu, targets, False), compare.assumed_chip(zai, targets, False)) == ("호출 확인", "")
+    assert (compare.assumed_chip(nu, targets, False), compare.assumed_chip(zai, targets, False)) == ("렛서 사용", "")
     plain = compare.assumed_routes(GLM, {"records": [{"model_id": GLM, "route_id": "vercel_ai_gateway"}]})
     assert plain == [("vercel_ai_gateway", "", None)]
-    assert (compare.assumed_chip(zai, plain, True), compare.assumed_chip(zai, plain, False)) == ("가정", "사용 경로")  # maker's own upstream
+    assert (compare.assumed_chip(zai, plain, True), compare.assumed_chip(zai, plain, False)) == ("가정", "렛서 사용")  # maker's own upstream
     assert compare.assumed_routes(GLM, {"records": [{"model_id": "other", "route_id": "openrouter"}]}) == [] and compare.assumed_routes(GLM, None) == []
 
 
@@ -310,7 +312,7 @@ def test_the_route_chip_lands_on_the_makers_own_upstream_row_of_each_gateway(mon
         row = _row(model=model, route=route, conditions=stated, unknown={}, origin="listing")
         compare.place(row)
         return row
-    assert compare.assumed_chip(placed(**conditions), targets, False) == "호출 확인"
+    assert compare.assumed_chip(placed(**conditions), targets, False) == "렛서 사용"
     assert compare.assumed_chip(placed(**{key: "deepinfra" for key in conditions}), targets, False) == ""  # another upstream of the model
 
 
@@ -517,8 +519,9 @@ def test_observed_models_are_the_newest_runs_whatever_a_card_says(tmp_path):
 
 def test_a_model_without_cards_still_gets_a_trend_a_table_and_a_list_entry(tmp_path):
     """2026-10-28: the 모델별 가격 list covers every model the newest run observed, not only models with change cards. A new model
-    has baselines and no events: glm-5.2 has series to draw (TREND, badge 변화 없음), gpt-6-astra's observations all have unknown
-    conditions, so it has only the table; both are in the list. The cards and cards.json do not change."""
+    has baselines and no events: glm-5.2 has series to draw (TREND, badge 변화 없음). gpt-6-astra's gateway rows state no serving
+    precision; until 2026-10-30 that left it with only the table, now a closed model's rows form series and it has a trend too.
+    Both are in the list. The cards and cards.json do not change."""
     root = tmp_path / "root"
     run = _run_models(root, {GLM: (GLM_OR, GLM_VERCEL), ASTRA: (CLOSED_OR, CLOSED_VERCEL)})
     assert events_main(["build", "--run", str(run), "--output", str(root / "events")]) == 0  # the engine's own state, events and report
@@ -530,7 +533,7 @@ def test_a_model_without_cards_still_gets_a_trend_a_table_and_a_list_entry(tmp_p
         return page, slot, json.loads((tmp_path / name / "cards.json").read_text(encoding="utf-8"))["cards"]
     page, slot, judged = built("site")
     assert (slot("EVENTS"), judged) == ([], [])
-    assert set(slot("COMPARE")) == {GLM, ASTRA} and ASTRA not in slot("TREND")  # nothing to draw, the table has its rows
+    assert set(slot("COMPARE")) == {GLM, ASTRA} and ASTRA in slot("TREND")
     assert slot("COMPARE")[ASTRA]["groups"]
     trend = slot("TREND")[GLM]
     assert (trend["name"], trend["badge"]) == (GLM, ["변화 없음", ""]) and (trend.get("tiers") or trend.get("series"))
@@ -543,7 +546,7 @@ def test_a_model_without_cards_still_gets_a_trend_a_table_and_a_list_entry(tmp_p
     (folder / "events.json").write_text(json.dumps(dict(events, events=[base_event("e1", "price_change", GLM, "openrouter", "confirmed")])), encoding="utf-8")
     page, slot, judged = built("with-card")
     assert [card["mid"] for card in slot("EVENTS")] == [GLM] and len(judged) == 1
-    assert (slot("TREND")[GLM]["badge"], set(slot("COMPARE")), ASTRA in slot("TREND")) == (["변화 1건", ""], {GLM, ASTRA}, False)
+    assert (slot("TREND")[GLM]["badge"], set(slot("COMPARE")), slot("TREND")[ASTRA]["badge"]) == (["변화 1건", ""], {GLM, ASTRA}, ["변화 없음", ""])
 
 
 def _listing(model, route, conditions, prices=("1", "2", "0.1"), **fields) -> dict:
@@ -571,6 +574,17 @@ def test_provider_material_decides_precision_where_the_listing_is_silent():
     assert unclear["why"] == ["직접 확인 필요 (체크포인트 설명만)"]
 
 
+def test_gemini_image_models_get_a_table_with_an_image_output_column():
+    """2026-10-29: Gemini image models are priced per 1M tokens on every route read, so they get a table and image output
+    tokens a column; OpenAI's image models (read under OpenAI's own item names) keep no table, and an LLM row never has the
+    image column."""
+    row = lambda model, item: {"model_id": model, "currency": "USD", "unit": "1M tokens", "billing_item": item, "price_kind": "published_rate"}
+    assert compare.usable(row("gemini-3-pro-image-preview", "image_output")) and compare.usable(row("gemini-3-pro-image", "input"))
+    assert not compare.usable(row("gpt-image-2", "input")) and not compare.usable(row("gpt-image-2.5-sunburst", "Image tokens / Output"))
+    assert not compare.usable(row("gpt-6-sol", "image_output"))
+    assert compare.ITEM_KO["image_output"] == "이미지 출력" and compare.ITEMS == ("input", "output", "cache_read")
+
+
 def test_direct_route_conditions_map_to_tier_region_and_band():
     bedrock = lambda option, band="272K input tokens or fewer": _listing(
         "gpt-6-astra", "aws_bedrock", {"service_tier": "Standard", "region_group": "Commercial Regions", "inference_option": option, "context_band": band})
@@ -585,6 +599,8 @@ def test_direct_route_conditions_map_to_tier_region_and_band():
                                                                   "context_band": "short context (ShortCo)"})
     assert (azure("Global (Gl)")["region"], azure("Global (Gl)")["band"], azure("Global (Gl)")["why"]) == ("", "", [])
     assert azure("Global (Gl)")["labels"] == ["글로벌 배포 기준(렛서 배포 방식 미확인)"] and azure("Data Zone (DZ)")["labels"] == ["표기 Data Zone (DZ)"]
+    versioned = _listing("gpt-4o", "azure_foundry", {"service_tier": "standard", "meter_scope": "Global (Gl)", "model_version": "2024-11-20"})
+    assert versioned["why"] == [] and versioned["labels"] == ["글로벌 배포 기준(렛서 배포 방식 미확인)", "버전 2024-11-20"]
     page = _listing(GLM, "openrouter", {"price_basis": "model_page_rate"})
     assert page["who"] == ["OpenRouter", "모델 페이지 대표가"] and page["why"] == ["모델 페이지 대표가 (하위 공급처·조건 미지정)"]
     odd = _listing(GLM, "fal", {"resolution": "1080p"})
@@ -639,3 +655,18 @@ def test_a_compared_row_still_shows_its_stated_end():
                prec_kind="closed", ends="11/18 종료 예정(Vercel API, 문서 미기재 필드)")
     compare.exclusions(row, {})
     assert row["why"] == [] and row["notes"] == ["11/18 종료 예정(Vercel API, 문서 미기재 필드)"]
+
+
+def test_a_gateway_price_naming_no_endpoint_is_a_model_page_headline() -> None:
+    """2026-10-30: the image model pages of OpenRouter and Vercel give one price per gateway; with no endpoint or upstream named,
+    or a display basis, it is the page's headline (모델 페이지 대표가) like the LLM pages'. Vercel's video metadata names its
+    upstream and stays a row."""
+    for route, conditions in (("openrouter", {}), ("vercel", {}), ("vercel", {"price_basis": "displayed model quote"}),
+                              ("vercel_ai_gateway", {"price_basis": "listed_model_rate"})):
+        row = {"model": "gpt-image-2.5-flare", "route": route, "conditions": conditions, "unknown": {}}
+        compare.place(row)
+        assert row["who"][1] == "모델 페이지 대표가" and row["why"] == ["모델 페이지 대표가 (하위 공급처·조건 미지정)"]
+    row = {"model": "seedance-2.5", "route": "vercel_ai_gateway", "conditions": {"provider": "bytedance", "price_basis": "Vercel backing metadata"},
+           "unknown": {}}
+    compare.place(row)
+    assert row["who"][1] != "모델 페이지 대표가"

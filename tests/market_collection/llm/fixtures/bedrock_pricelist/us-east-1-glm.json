@@ -1,0 +1,1838 @@
+{
+ "formatVersion": "v1.0",
+ "disclaimer": "This pricing list is for informational purposes only. All prices are subject to the additional terms included in the pricing pages on http://aws.amazon.com. All Free Tier prices are also subject to the terms included at https://aws.amazon.com/free/",
+ "offerCode": "AmazonBedrock",
+ "version": "20261029185748",
+ "publicationDate": "2026-10-29T18:57:48Z",
+ "products": {
+  "6RZWXQR8WQNBWV8R": {
+   "sku": "6RZWXQR8WQNBWV8R",
+   "productFamily": "Amazon Bedrock",
+   "attributes": {
+    "servicecode": "AmazonBedrock",
+    "location": "US East (N. Virginia)",
+    "locationType": "AWS Region",
+    "usagetype": "USE1-zai.glm-4.7-output-tokens",
+    "operation": "",
+    "feature": "On-demand Inference",
+    "inferenceType": "Output tokens",
+    "model": "GLM 4.7",
+    "provider": "Z AI",
+    "regionCode": "us-east-1",
+    "servicename": "Amazon Bedrock"
+   }
+  },
+  "QE7XRUT5HY3WZTJR": {
+   "sku": "QE7XRUT5HY3WZTJR",
+   "productFamily": "Amazon Bedrock",
+   "attributes": {
+    "servicecode": "AmazonBedrock",
+    "location": "US East (N. Virginia)",
+    "locationType": "AWS Region",
+    "usagetype": "USE1-zai.glm-4.7-flash-output-tokens-priority",
+    "operation": "",
+    "feature": "On-demand Inference",
+    "inferenceType": "Output tokens priority",
+    "model": "GLM 4.7 Flash",
+    "provider": "Z AI",
+    "regionCode": "us-east-1",
+    "servicename": "Amazon Bedrock"
+   }
+  },
+  "YTB2BH9W4UZVKTEG": {
+   "sku": "YTB2BH9W4UZVKTEG",
+   "productFamily": "Amazon Bedrock",
+   "attributes": {
+    "servicecode": "AmazonBedrock",
+    "location": "US East (N. Virginia)",
+    "locationType": "AWS Region",
+    "usagetype": "USE1-zai.glm5-input-tokens",
+    "operation": "",
+    "feature": "On-demand Inference",
+    "inferenceType": "Input tokens",
+    "model": "GLM 5",
+    "provider": "Z AI",
+    "regionCode": "us-east-1",
+    "servicename": "Amazon Bedrock"
+   }
+  },
+  "Q9VHAH66GDN2NRA2": {
+   "sku": "Q9VHAH66GDN2NRA2",
+   "productFamily": "Amazon Bedrock",
+   "attributes": {
+    "servicecode": "AmazonBedrock",
+    "location": "US East (N. Virginia)",
+    "locationType": "AWS Region",
+    "usagetype": "USE1-zai.glm5-input-tokens-priority",
+    "operation": "",
+    "feature": "On-demand Inference",
+    "inferenceType": "Input tokens priority",
+    "model": "GLM 5",
+    "provider": "Z AI",
+    "regionCode": "us-east-1",
+    "servicename": "Amazon Bedrock"
+   }
+  },
+  "ZD9PHWBBXAMX7D3Q": {
+   "sku": "ZD9PHWBBXAMX7D3Q",
+   "productFamily": "Amazon Bedrock",
+   "attributes": {
+    "servicecode": "AmazonBedrock",
+    "location": "US East (N. Virginia)",
+    "locationType": "AWS Region",
+    "usagetype": "USE1-zai.glm-4.7-flash-mantle-output-tokens-priority",
+    "operation": "",
+    "inferenceType": "Output tokens priority",
+    "model": "GLM 4.7 Flash",
+    "provider": "Z AI",
+    "regionCode": "us-east-1",
+    "service_tier": "priority",
+    "servicename": "Amazon Bedrock"
+   }
+  },
+  "R93N64VWMPQF4QZ8": {
+   "sku": "R93N64VWMPQF4QZ8",
+   "productFamily": "Amazon Bedrock",
+   "attributes": {
+    "servicecode": "AmazonBedrock",
+    "location": "US East (N. Virginia)",
+    "locationType": "AWS Region",
+    "usagetype": "USE1-zai.glm-4.7-flash-input-tokens",
+    "operation": "",
+    "feature": "On-demand Inference",
+    "inferenceType": "Input tokens",
+    "model": "GLM 4.7 Flash",
+    "provider": "Z AI",
+    "regionCode": "us-east-1",
+    "servicename": "Amazon Bedrock"
+   }
+  },
+  "TQ445RU3PPQ3BQAG": {
+   "sku": "TQ445RU3PPQ3BQAG",
+   "productFamily": "Amazon Bedrock",
+   "attributes": {
+    "servicecode": "AmazonBedrock",
+    "location": "US East (N. Virginia)",
+    "locationType": "AWS Region",
+    "usagetype": "USE1-zai.glm5-mantle-input-tokens-priority",
+    "operation": "",
+    "inferenceType": "Input tokens priority",
+    "model": "GLM 5",
+    "provider": "Z AI",
+    "regionCode": "us-east-1",
+    "service_tier": "priority",
+    "servicename": "Amazon Bedrock"
+   }
+  },
+  "GBYN4B9ZECY72ZCC": {
+   "sku": "GBYN4B9ZECY72ZCC",
+   "productFamily": "Amazon Bedrock",
+   "attributes": {
+    "servicecode": "AmazonBedrock",
+    "location": "US East (N. Virginia)",
+    "locationType": "AWS Region",
+    "usagetype": "USE1-zai.glm5-mantle-output-tokens-flex",
+    "operation": "",
+    "inferenceType": "Output tokens flex",
+    "model": "GLM 5",
+    "provider": "Z AI",
+    "regionCode": "us-east-1",
+    "service_tier": "flex",
+    "servicename": "Amazon Bedrock"
+   }
+  },
+  "Q9Q83DUEH3HNVCW5": {
+   "sku": "Q9Q83DUEH3HNVCW5",
+   "productFamily": "Amazon Bedrock",
+   "attributes": {
+    "servicecode": "AmazonBedrock",
+    "location": "US East (N. Virginia)",
+    "locationType": "AWS Region",
+    "usagetype": "USE1-zai.glm5-mantle-input-tokens-flex",
+    "operation": "",
+    "inferenceType": "Input tokens flex",
+    "model": "GLM 5",
+    "provider": "Z AI",
+    "regionCode": "us-east-1",
+    "service_tier": "flex",
+    "servicename": "Amazon Bedrock"
+   }
+  },
+  "K5WA8GZ7R8TKZF3F": {
+   "sku": "K5WA8GZ7R8TKZF3F",
+   "productFamily": "Amazon Bedrock",
+   "attributes": {
+    "servicecode": "AmazonBedrock",
+    "location": "US East (N. Virginia)",
+    "locationType": "AWS Region",
+    "usagetype": "USE1-zai.glm-4.7-mantle-output-tokens-priority",
+    "operation": "",
+    "inferenceType": "Output tokens priority",
+    "model": "GLM 4.7",
+    "provider": "Z AI",
+    "regionCode": "us-east-1",
+    "service_tier": "priority",
+    "servicename": "Amazon Bedrock"
+   }
+  },
+  "E48UCQG2J63P93UP": {
+   "sku": "E48UCQG2J63P93UP",
+   "productFamily": "Amazon Bedrock",
+   "attributes": {
+    "servicecode": "AmazonBedrock",
+    "location": "US East (N. Virginia)",
+    "locationType": "AWS Region",
+    "usagetype": "USE1-zai.glm-4.7-input-tokens-flex",
+    "operation": "",
+    "feature": "On-demand Inference",
+    "inferenceType": "Input tokens flex",
+    "model": "GLM 4.7",
+    "provider": "Z AI",
+    "regionCode": "us-east-1",
+    "servicename": "Amazon Bedrock"
+   }
+  },
+  "DU5E4KA49NHCSD3D": {
+   "sku": "DU5E4KA49NHCSD3D",
+   "productFamily": "Amazon Bedrock",
+   "attributes": {
+    "servicecode": "AmazonBedrock",
+    "location": "US East (N. Virginia)",
+    "locationType": "AWS Region",
+    "usagetype": "USE1-zai.glm-4.7-input-tokens",
+    "operation": "",
+    "feature": "On-demand Inference",
+    "inferenceType": "Input tokens",
+    "model": "GLM 4.7",
+    "provider": "Z AI",
+    "regionCode": "us-east-1",
+    "servicename": "Amazon Bedrock"
+   }
+  },
+  "F7C72EJQ2ZG4S8EJ": {
+   "sku": "F7C72EJQ2ZG4S8EJ",
+   "productFamily": "Amazon Bedrock",
+   "attributes": {
+    "servicecode": "AmazonBedrock",
+    "location": "US East (N. Virginia)",
+    "locationType": "AWS Region",
+    "usagetype": "USE1-zai.glm-4.7-mantle-output-tokens-flex",
+    "operation": "",
+    "inferenceType": "Output tokens flex",
+    "model": "GLM 4.7",
+    "provider": "Z AI",
+    "regionCode": "us-east-1",
+    "service_tier": "flex",
+    "servicename": "Amazon Bedrock"
+   }
+  },
+  "QHJWHGFPJP2EKJ6D": {
+   "sku": "QHJWHGFPJP2EKJ6D",
+   "productFamily": "Amazon Bedrock",
+   "attributes": {
+    "servicecode": "AmazonBedrock",
+    "location": "US East (N. Virginia)",
+    "locationType": "AWS Region",
+    "usagetype": "USE1-zai.glm5-mantle-output-tokens-standard",
+    "operation": "",
+    "inferenceType": "Output tokens",
+    "model": "GLM 5",
+    "provider": "Z AI",
+    "regionCode": "us-east-1",
+    "service_tier": "standard",
+    "servicename": "Amazon Bedrock"
+   }
+  },
+  "AXHVCH9EVJJWKABB": {
+   "sku": "AXHVCH9EVJJWKABB",
+   "productFamily": "Amazon Bedrock",
+   "attributes": {
+    "servicecode": "AmazonBedrock",
+    "location": "US East (N. Virginia)",
+    "locationType": "AWS Region",
+    "usagetype": "USE1-zai.glm5-mantle-output-tokens-batch",
+    "operation": "",
+    "inferenceType": "output tokens batch",
+    "model": "GLM 5",
+    "provider": "Z AI",
+    "regionCode": "us-east-1",
+    "service_tier": "batch",
+    "servicename": "Amazon Bedrock"
+   }
+  },
+  "S7V25EDUSE568VEG": {
+   "sku": "S7V25EDUSE568VEG",
+   "productFamily": "Amazon Bedrock",
+   "attributes": {
+    "servicecode": "AmazonBedrock",
+    "location": "US East (N. Virginia)",
+    "locationType": "AWS Region",
+    "usagetype": "USE1-zai.glm-4.7-flash-input-tokens-batch",
+    "operation": "",
+    "feature": "On-demand Inference",
+    "inferenceType": "input tokens batch",
+    "model": "GLM 4.7 Flash",
+    "provider": "Z AI",
+    "regionCode": "us-east-1",
+    "servicename": "Amazon Bedrock"
+   }
+  },
+  "5BTCUTPH9468BNA3": {
+   "sku": "5BTCUTPH9468BNA3",
+   "productFamily": "Amazon Bedrock",
+   "attributes": {
+    "servicecode": "AmazonBedrock",
+    "location": "US East (N. Virginia)",
+    "locationType": "AWS Region",
+    "usagetype": "USE1-zai.glm-4.7-mantle-output-tokens-batch",
+    "operation": "",
+    "inferenceType": "output tokens batch",
+    "model": "GLM 4.7",
+    "provider": "Z AI",
+    "regionCode": "us-east-1",
+    "service_tier": "batch",
+    "servicename": "Amazon Bedrock"
+   }
+  },
+  "PVAW2B92B3FCENQR": {
+   "sku": "PVAW2B92B3FCENQR",
+   "productFamily": "Amazon Bedrock",
+   "attributes": {
+    "servicecode": "AmazonBedrock",
+    "location": "US East (N. Virginia)",
+    "locationType": "AWS Region",
+    "usagetype": "USE1-zai.glm-4.7-mantle-input-tokens-batch",
+    "operation": "",
+    "inferenceType": "input tokens batch",
+    "model": "GLM 4.7",
+    "provider": "Z AI",
+    "regionCode": "us-east-1",
+    "service_tier": "batch",
+    "servicename": "Amazon Bedrock"
+   }
+  },
+  "QXDE2AB77CRVAJ6H": {
+   "sku": "QXDE2AB77CRVAJ6H",
+   "productFamily": "Amazon Bedrock",
+   "attributes": {
+    "servicecode": "AmazonBedrock",
+    "location": "US East (N. Virginia)",
+    "locationType": "AWS Region",
+    "usagetype": "USE1-zai.glm5-mantle-input-tokens-batch",
+    "operation": "",
+    "inferenceType": "input tokens batch",
+    "model": "GLM 5",
+    "provider": "Z AI",
+    "regionCode": "us-east-1",
+    "service_tier": "batch",
+    "servicename": "Amazon Bedrock"
+   }
+  },
+  "APFYJ8BHGK4A6GS3": {
+   "sku": "APFYJ8BHGK4A6GS3",
+   "productFamily": "Amazon Bedrock",
+   "attributes": {
+    "servicecode": "AmazonBedrock",
+    "location": "US East (N. Virginia)",
+    "locationType": "AWS Region",
+    "usagetype": "USE1-zai.glm-4.7-input-tokens-batch",
+    "operation": "",
+    "feature": "On-demand Inference",
+    "inferenceType": "input tokens batch",
+    "model": "GLM 4.7",
+    "provider": "Z AI",
+    "regionCode": "us-east-1",
+    "servicename": "Amazon Bedrock"
+   }
+  },
+  "FRWK8A3NDCMB6QXA": {
+   "sku": "FRWK8A3NDCMB6QXA",
+   "productFamily": "Amazon Bedrock",
+   "attributes": {
+    "servicecode": "AmazonBedrock",
+    "location": "US East (N. Virginia)",
+    "locationType": "AWS Region",
+    "usagetype": "USE1-zai.glm-4.7-flash-input-tokens-flex",
+    "operation": "",
+    "feature": "On-demand Inference",
+    "inferenceType": "Input tokens flex",
+    "model": "GLM 4.7 Flash",
+    "provider": "Z AI",
+    "regionCode": "us-east-1",
+    "servicename": "Amazon Bedrock"
+   }
+  },
+  "4PQEVFKHZYB65XSD": {
+   "sku": "4PQEVFKHZYB65XSD",
+   "productFamily": "Amazon Bedrock",
+   "attributes": {
+    "servicecode": "AmazonBedrock",
+    "location": "US East (N. Virginia)",
+    "locationType": "AWS Region",
+    "usagetype": "USE1-zai.glm-4.7-mantle-input-tokens-priority",
+    "operation": "",
+    "inferenceType": "Input tokens priority",
+    "model": "GLM 4.7",
+    "provider": "Z AI",
+    "regionCode": "us-east-1",
+    "service_tier": "priority",
+    "servicename": "Amazon Bedrock"
+   }
+  },
+  "NA22NCHSRXXKNYR8": {
+   "sku": "NA22NCHSRXXKNYR8",
+   "productFamily": "Amazon Bedrock",
+   "attributes": {
+    "servicecode": "AmazonBedrock",
+    "location": "US East (N. Virginia)",
+    "locationType": "AWS Region",
+    "usagetype": "USE1-zai.glm5-mantle-input-tokens-standard",
+    "operation": "",
+    "inferenceType": "Input tokens",
+    "model": "GLM 5",
+    "provider": "Z AI",
+    "regionCode": "us-east-1",
+    "service_tier": "standard",
+    "servicename": "Amazon Bedrock"
+   }
+  },
+  "23AVXUXVTBTRAACY": {
+   "sku": "23AVXUXVTBTRAACY",
+   "productFamily": "Amazon Bedrock",
+   "attributes": {
+    "servicecode": "AmazonBedrock",
+    "location": "US East (N. Virginia)",
+    "locationType": "AWS Region",
+    "usagetype": "USE1-zai.glm-4.7-output-tokens-batch",
+    "operation": "",
+    "feature": "On-demand Inference",
+    "inferenceType": "output tokens batch",
+    "model": "GLM 4.7",
+    "provider": "Z AI",
+    "regionCode": "us-east-1",
+    "servicename": "Amazon Bedrock"
+   }
+  },
+  "CJX6F5BKJUECSZQG": {
+   "sku": "CJX6F5BKJUECSZQG",
+   "productFamily": "Amazon Bedrock",
+   "attributes": {
+    "servicecode": "AmazonBedrock",
+    "location": "US East (N. Virginia)",
+    "locationType": "AWS Region",
+    "usagetype": "USE1-zai.glm-4.7-flash-mantle-input-tokens-flex",
+    "operation": "",
+    "inferenceType": "Input tokens flex",
+    "model": "GLM 4.7 Flash",
+    "provider": "Z AI",
+    "regionCode": "us-east-1",
+    "service_tier": "flex",
+    "servicename": "Amazon Bedrock"
+   }
+  },
+  "X73ZV4CMRGN7VDDN": {
+   "sku": "X73ZV4CMRGN7VDDN",
+   "productFamily": "Amazon Bedrock",
+   "attributes": {
+    "servicecode": "AmazonBedrock",
+    "location": "US East (N. Virginia)",
+    "locationType": "AWS Region",
+    "usagetype": "USE1-zai.glm5-output-tokens-flex",
+    "operation": "",
+    "feature": "On-demand Inference",
+    "inferenceType": "Output tokens flex",
+    "model": "GLM 5",
+    "provider": "Z AI",
+    "regionCode": "us-east-1",
+    "servicename": "Amazon Bedrock"
+   }
+  },
+  "WYSMNBHH64MSGJ3Q": {
+   "sku": "WYSMNBHH64MSGJ3Q",
+   "productFamily": "Amazon Bedrock",
+   "attributes": {
+    "servicecode": "AmazonBedrock",
+    "location": "US East (N. Virginia)",
+    "locationType": "AWS Region",
+    "usagetype": "USE1-zai.glm-4.7-output-tokens-priority",
+    "operation": "",
+    "feature": "On-demand Inference",
+    "inferenceType": "Output tokens priority",
+    "model": "GLM 4.7",
+    "provider": "Z AI",
+    "regionCode": "us-east-1",
+    "servicename": "Amazon Bedrock"
+   }
+  },
+  "BMZCY99Q9BZQVS8T": {
+   "sku": "BMZCY99Q9BZQVS8T",
+   "productFamily": "Amazon Bedrock",
+   "attributes": {
+    "servicecode": "AmazonBedrock",
+    "location": "US East (N. Virginia)",
+    "locationType": "AWS Region",
+    "usagetype": "USE1-zai.glm-4.7-flash-mantle-output-tokens-flex",
+    "operation": "",
+    "inferenceType": "Output tokens flex",
+    "model": "GLM 4.7 Flash",
+    "provider": "Z AI",
+    "regionCode": "us-east-1",
+    "service_tier": "flex",
+    "servicename": "Amazon Bedrock"
+   }
+  },
+  "VBFWYKVQW57F8XWN": {
+   "sku": "VBFWYKVQW57F8XWN",
+   "productFamily": "Amazon Bedrock",
+   "attributes": {
+    "servicecode": "AmazonBedrock",
+    "location": "US East (N. Virginia)",
+    "locationType": "AWS Region",
+    "usagetype": "USE1-zai.glm5-output-tokens-batch",
+    "operation": "",
+    "feature": "On-demand Inference",
+    "inferenceType": "output tokens batch",
+    "model": "GLM 5",
+    "provider": "Z AI",
+    "regionCode": "us-east-1",
+    "servicename": "Amazon Bedrock"
+   }
+  },
+  "H4JPB4PHWFMXJ6XK": {
+   "sku": "H4JPB4PHWFMXJ6XK",
+   "productFamily": "Amazon Bedrock",
+   "attributes": {
+    "servicecode": "AmazonBedrock",
+    "location": "US East (N. Virginia)",
+    "locationType": "AWS Region",
+    "usagetype": "USE1-zai.glm-4.7-flash-mantle-input-tokens-priority",
+    "operation": "",
+    "inferenceType": "Input tokens priority",
+    "model": "GLM 4.7 Flash",
+    "provider": "Z AI",
+    "regionCode": "us-east-1",
+    "service_tier": "priority",
+    "servicename": "Amazon Bedrock"
+   }
+  },
+  "3MVDADTM8BRUZMH8": {
+   "sku": "3MVDADTM8BRUZMH8",
+   "productFamily": "Amazon Bedrock",
+   "attributes": {
+    "servicecode": "AmazonBedrock",
+    "location": "US East (N. Virginia)",
+    "locationType": "AWS Region",
+    "usagetype": "USE1-zai.glm-4.7-mantle-input-tokens-standard",
+    "operation": "",
+    "inferenceType": "Input tokens",
+    "model": "GLM 4.7",
+    "provider": "Z AI",
+    "regionCode": "us-east-1",
+    "service_tier": "standard",
+    "servicename": "Amazon Bedrock"
+   }
+  },
+  "HJWQQ9VUMBBU68GT": {
+   "sku": "HJWQQ9VUMBBU68GT",
+   "productFamily": "Amazon Bedrock",
+   "attributes": {
+    "servicecode": "AmazonBedrock",
+    "location": "US East (N. Virginia)",
+    "locationType": "AWS Region",
+    "usagetype": "USE1-zai.glm-4.7-flash-output-tokens-batch",
+    "operation": "",
+    "feature": "On-demand Inference",
+    "inferenceType": "output tokens batch",
+    "model": "GLM 4.7 Flash",
+    "provider": "Z AI",
+    "regionCode": "us-east-1",
+    "servicename": "Amazon Bedrock"
+   }
+  },
+  "25V32XPJADAPRV5R": {
+   "sku": "25V32XPJADAPRV5R",
+   "productFamily": "Amazon Bedrock",
+   "attributes": {
+    "servicecode": "AmazonBedrock",
+    "location": "US East (N. Virginia)",
+    "locationType": "AWS Region",
+    "usagetype": "USE1-zai.glm-4.7-flash-output-tokens-flex",
+    "operation": "",
+    "feature": "On-demand Inference",
+    "inferenceType": "Output tokens flex",
+    "model": "GLM 4.7 Flash",
+    "provider": "Z AI",
+    "regionCode": "us-east-1",
+    "servicename": "Amazon Bedrock"
+   }
+  },
+  "CBNK94HTRMXB6RCV": {
+   "sku": "CBNK94HTRMXB6RCV",
+   "productFamily": "Amazon Bedrock",
+   "attributes": {
+    "servicecode": "AmazonBedrock",
+    "location": "US East (N. Virginia)",
+    "locationType": "AWS Region",
+    "usagetype": "USE1-zai.glm-4.7-flash-mantle-input-tokens-batch",
+    "operation": "",
+    "inferenceType": "input tokens batch",
+    "model": "GLM 4.7 Flash",
+    "provider": "Z AI",
+    "regionCode": "us-east-1",
+    "service_tier": "batch",
+    "servicename": "Amazon Bedrock"
+   }
+  },
+  "VEDK5P7PGR585K9X": {
+   "sku": "VEDK5P7PGR585K9X",
+   "productFamily": "Amazon Bedrock",
+   "attributes": {
+    "servicecode": "AmazonBedrock",
+    "location": "US East (N. Virginia)",
+    "locationType": "AWS Region",
+    "usagetype": "USE1-zai.glm-4.7-mantle-output-tokens-standard",
+    "operation": "",
+    "inferenceType": "Output tokens",
+    "model": "GLM 4.7",
+    "provider": "Z AI",
+    "regionCode": "us-east-1",
+    "service_tier": "standard",
+    "servicename": "Amazon Bedrock"
+   }
+  },
+  "W2U6ACY8S2VJDTNX": {
+   "sku": "W2U6ACY8S2VJDTNX",
+   "productFamily": "Amazon Bedrock",
+   "attributes": {
+    "servicecode": "AmazonBedrock",
+    "location": "US East (N. Virginia)",
+    "locationType": "AWS Region",
+    "usagetype": "USE1-zai.glm-4.7-flash-mantle-input-tokens-standard",
+    "operation": "",
+    "inferenceType": "Input tokens",
+    "model": "GLM 4.7 Flash",
+    "provider": "Z AI",
+    "regionCode": "us-east-1",
+    "service_tier": "standard",
+    "servicename": "Amazon Bedrock"
+   }
+  },
+  "HY6XXJTMZ577KCKA": {
+   "sku": "HY6XXJTMZ577KCKA",
+   "productFamily": "Amazon Bedrock",
+   "attributes": {
+    "servicecode": "AmazonBedrock",
+    "location": "US East (N. Virginia)",
+    "locationType": "AWS Region",
+    "usagetype": "USE1-zai.glm5-output-tokens-priority",
+    "operation": "",
+    "feature": "On-demand Inference",
+    "inferenceType": "Output tokens priority",
+    "model": "GLM 5",
+    "provider": "Z AI",
+    "regionCode": "us-east-1",
+    "servicename": "Amazon Bedrock"
+   }
+  },
+  "3MEFBGRT5W3U9WQB": {
+   "sku": "3MEFBGRT5W3U9WQB",
+   "productFamily": "Amazon Bedrock",
+   "attributes": {
+    "servicecode": "AmazonBedrock",
+    "location": "US East (N. Virginia)",
+    "locationType": "AWS Region",
+    "usagetype": "USE1-zai.glm-4.7-flash-mantle-output-tokens-batch",
+    "operation": "",
+    "inferenceType": "output tokens batch",
+    "model": "GLM 4.7 Flash",
+    "provider": "Z AI",
+    "regionCode": "us-east-1",
+    "service_tier": "batch",
+    "servicename": "Amazon Bedrock"
+   }
+  },
+  "R6JDUNZRD4GVQUCX": {
+   "sku": "R6JDUNZRD4GVQUCX",
+   "productFamily": "Amazon Bedrock",
+   "attributes": {
+    "servicecode": "AmazonBedrock",
+    "location": "US East (N. Virginia)",
+    "locationType": "AWS Region",
+    "usagetype": "USE1-zai.glm5-input-tokens-batch",
+    "operation": "",
+    "feature": "On-demand Inference",
+    "inferenceType": "input tokens batch",
+    "model": "GLM 5",
+    "provider": "Z AI",
+    "regionCode": "us-east-1",
+    "servicename": "Amazon Bedrock"
+   }
+  },
+  "RF8DSGBNTMEMK6VP": {
+   "sku": "RF8DSGBNTMEMK6VP",
+   "productFamily": "Amazon Bedrock",
+   "attributes": {
+    "servicecode": "AmazonBedrock",
+    "location": "US East (N. Virginia)",
+    "locationType": "AWS Region",
+    "usagetype": "USE1-zai.glm5-mantle-output-tokens-priority",
+    "operation": "",
+    "inferenceType": "Output tokens priority",
+    "model": "GLM 5",
+    "provider": "Z AI",
+    "regionCode": "us-east-1",
+    "service_tier": "priority",
+    "servicename": "Amazon Bedrock"
+   }
+  },
+  "GK7SRFHPZ79QTHBY": {
+   "sku": "GK7SRFHPZ79QTHBY",
+   "productFamily": "Amazon Bedrock",
+   "attributes": {
+    "servicecode": "AmazonBedrock",
+    "location": "US East (N. Virginia)",
+    "locationType": "AWS Region",
+    "usagetype": "USE1-zai.glm-4.7-input-tokens-priority",
+    "operation": "",
+    "feature": "On-demand Inference",
+    "inferenceType": "Input tokens priority",
+    "model": "GLM 4.7",
+    "provider": "Z AI",
+    "regionCode": "us-east-1",
+    "servicename": "Amazon Bedrock"
+   }
+  },
+  "8RQBEKEP5KG2MZY7": {
+   "sku": "8RQBEKEP5KG2MZY7",
+   "productFamily": "Amazon Bedrock",
+   "attributes": {
+    "servicecode": "AmazonBedrock",
+    "location": "US East (N. Virginia)",
+    "locationType": "AWS Region",
+    "usagetype": "USE1-zai.glm5-output-tokens",
+    "operation": "",
+    "feature": "On-demand Inference",
+    "inferenceType": "Output tokens",
+    "model": "GLM 5",
+    "provider": "Z AI",
+    "regionCode": "us-east-1",
+    "servicename": "Amazon Bedrock"
+   }
+  },
+  "JUC6PE635U4DZM2C": {
+   "sku": "JUC6PE635U4DZM2C",
+   "productFamily": "Amazon Bedrock",
+   "attributes": {
+    "servicecode": "AmazonBedrock",
+    "location": "US East (N. Virginia)",
+    "locationType": "AWS Region",
+    "usagetype": "USE1-zai.glm-4.7-flash-input-tokens-priority",
+    "operation": "",
+    "feature": "On-demand Inference",
+    "inferenceType": "Input tokens priority",
+    "model": "GLM 4.7 Flash",
+    "provider": "Z AI",
+    "regionCode": "us-east-1",
+    "servicename": "Amazon Bedrock"
+   }
+  },
+  "G3ZQZBGERU52ANZ4": {
+   "sku": "G3ZQZBGERU52ANZ4",
+   "productFamily": "Amazon Bedrock",
+   "attributes": {
+    "servicecode": "AmazonBedrock",
+    "location": "US East (N. Virginia)",
+    "locationType": "AWS Region",
+    "usagetype": "USE1-zai.glm-4.7-flash-mantle-output-tokens-standard",
+    "operation": "",
+    "inferenceType": "Output tokens",
+    "model": "GLM 4.7 Flash",
+    "provider": "Z AI",
+    "regionCode": "us-east-1",
+    "service_tier": "standard",
+    "servicename": "Amazon Bedrock"
+   }
+  },
+  "G9EWY3K8SFJDJ6N7": {
+   "sku": "G9EWY3K8SFJDJ6N7",
+   "productFamily": "Amazon Bedrock",
+   "attributes": {
+    "servicecode": "AmazonBedrock",
+    "location": "US East (N. Virginia)",
+    "locationType": "AWS Region",
+    "usagetype": "USE1-zai.glm5-input-tokens-flex",
+    "operation": "",
+    "feature": "On-demand Inference",
+    "inferenceType": "Input tokens flex",
+    "model": "GLM 5",
+    "provider": "Z AI",
+    "regionCode": "us-east-1",
+    "servicename": "Amazon Bedrock"
+   }
+  },
+  "PB6PVH97NBCHWFH5": {
+   "sku": "PB6PVH97NBCHWFH5",
+   "productFamily": "Amazon Bedrock",
+   "attributes": {
+    "servicecode": "AmazonBedrock",
+    "location": "US East (N. Virginia)",
+    "locationType": "AWS Region",
+    "usagetype": "USE1-zai.glm-4.7-mantle-input-tokens-flex",
+    "operation": "",
+    "inferenceType": "Input tokens flex",
+    "model": "GLM 4.7",
+    "provider": "Z AI",
+    "regionCode": "us-east-1",
+    "service_tier": "flex",
+    "servicename": "Amazon Bedrock"
+   }
+  },
+  "2P9GC66NVRGK2833": {
+   "sku": "2P9GC66NVRGK2833",
+   "productFamily": "Amazon Bedrock",
+   "attributes": {
+    "servicecode": "AmazonBedrock",
+    "location": "US East (N. Virginia)",
+    "locationType": "AWS Region",
+    "usagetype": "USE1-zai.glm-4.7-flash-output-tokens",
+    "operation": "",
+    "feature": "On-demand Inference",
+    "inferenceType": "Output tokens",
+    "model": "GLM 4.7 Flash",
+    "provider": "Z AI",
+    "regionCode": "us-east-1",
+    "servicename": "Amazon Bedrock"
+   }
+  },
+  "EFE4FZAZHW6CYJSE": {
+   "sku": "EFE4FZAZHW6CYJSE",
+   "productFamily": "Amazon Bedrock",
+   "attributes": {
+    "servicecode": "AmazonBedrock",
+    "location": "US East (N. Virginia)",
+    "locationType": "AWS Region",
+    "usagetype": "USE1-zai.glm-4.7-output-tokens-flex",
+    "operation": "",
+    "feature": "On-demand Inference",
+    "inferenceType": "Output tokens flex",
+    "model": "GLM 4.7",
+    "provider": "Z AI",
+    "regionCode": "us-east-1",
+    "servicename": "Amazon Bedrock"
+   }
+  }
+ },
+ "terms": {
+  "OnDemand": {
+   "6RZWXQR8WQNBWV8R": {
+    "6RZWXQR8WQNBWV8R.JRTCKXETXF": {
+     "offerTermCode": "JRTCKXETXF",
+     "sku": "6RZWXQR8WQNBWV8R",
+     "effectiveDate": "2026-10-01T00:00:00Z",
+     "priceDimensions": {
+      "6RZWXQR8WQNBWV8R.JRTCKXETXF.6YS6EN2CT7": {
+       "rateCode": "6RZWXQR8WQNBWV8R.JRTCKXETXF.6YS6EN2CT7",
+       "description": "$0.0022 per 1K output tokens for GLM 4.7 in US East (N. Virginia)",
+       "beginRange": "0",
+       "endRange": "Inf",
+       "unit": "1K tokens",
+       "pricePerUnit": {
+        "USD": "0.0022000000"
+       },
+       "appliesTo": []
+      }
+     },
+     "termAttributes": {}
+    }
+   },
+   "QE7XRUT5HY3WZTJR": {
+    "QE7XRUT5HY3WZTJR.JRTCKXETXF": {
+     "offerTermCode": "JRTCKXETXF",
+     "sku": "QE7XRUT5HY3WZTJR",
+     "effectiveDate": "2026-10-01T00:00:00Z",
+     "priceDimensions": {
+      "QE7XRUT5HY3WZTJR.JRTCKXETXF.6YS6EN2CT7": {
+       "rateCode": "QE7XRUT5HY3WZTJR.JRTCKXETXF.6YS6EN2CT7",
+       "description": "$0.0007 per 1K output tokens priority for GLM 4.7 Flash in US East (N. Virginia)",
+       "beginRange": "0",
+       "endRange": "Inf",
+       "unit": "1K tokens",
+       "pricePerUnit": {
+        "USD": "0.0007000000"
+       },
+       "appliesTo": []
+      }
+     },
+     "termAttributes": {}
+    }
+   },
+   "YTB2BH9W4UZVKTEG": {
+    "YTB2BH9W4UZVKTEG.JRTCKXETXF": {
+     "offerTermCode": "JRTCKXETXF",
+     "sku": "YTB2BH9W4UZVKTEG",
+     "effectiveDate": "2026-10-01T00:00:00Z",
+     "priceDimensions": {
+      "YTB2BH9W4UZVKTEG.JRTCKXETXF.6YS6EN2CT7": {
+       "rateCode": "YTB2BH9W4UZVKTEG.JRTCKXETXF.6YS6EN2CT7",
+       "description": "USD 0.001 per 1K tokens for USE1-zai.glm5-input-tokens in US East (N. Virginia)",
+       "beginRange": "0",
+       "endRange": "Inf",
+       "unit": "1K tokens",
+       "pricePerUnit": {
+        "USD": "0.0010000000"
+       },
+       "appliesTo": []
+      }
+     },
+     "termAttributes": {}
+    }
+   },
+   "Q9VHAH66GDN2NRA2": {
+    "Q9VHAH66GDN2NRA2.JRTCKXETXF": {
+     "offerTermCode": "JRTCKXETXF",
+     "sku": "Q9VHAH66GDN2NRA2",
+     "effectiveDate": "2026-10-01T00:00:00Z",
+     "priceDimensions": {
+      "Q9VHAH66GDN2NRA2.JRTCKXETXF.6YS6EN2CT7": {
+       "rateCode": "Q9VHAH66GDN2NRA2.JRTCKXETXF.6YS6EN2CT7",
+       "description": "USD 0.00175 per 1K tokens for USE1-zai.glm5-input-tokens-priority in US East (N. Virginia)",
+       "beginRange": "0",
+       "endRange": "Inf",
+       "unit": "1K tokens",
+       "pricePerUnit": {
+        "USD": "0.0017500000"
+       },
+       "appliesTo": []
+      }
+     },
+     "termAttributes": {}
+    }
+   },
+   "ZD9PHWBBXAMX7D3Q": {
+    "ZD9PHWBBXAMX7D3Q.JRTCKXETXF": {
+     "offerTermCode": "JRTCKXETXF",
+     "sku": "ZD9PHWBBXAMX7D3Q",
+     "effectiveDate": "2026-10-01T00:00:00Z",
+     "priceDimensions": {
+      "ZD9PHWBBXAMX7D3Q.JRTCKXETXF.6YS6EN2CT7": {
+       "rateCode": "ZD9PHWBBXAMX7D3Q.JRTCKXETXF.6YS6EN2CT7",
+       "description": "$0.0007 per 1K token for zai.glm-4.7-flash-mantle-output-tokens-priority in US East (N. Virginia)",
+       "beginRange": "0",
+       "endRange": "Inf",
+       "unit": "1K tokens",
+       "pricePerUnit": {
+        "USD": "0.0007000000"
+       },
+       "appliesTo": []
+      }
+     },
+     "termAttributes": {}
+    }
+   },
+   "R93N64VWMPQF4QZ8": {
+    "R93N64VWMPQF4QZ8.JRTCKXETXF": {
+     "offerTermCode": "JRTCKXETXF",
+     "sku": "R93N64VWMPQF4QZ8",
+     "effectiveDate": "2026-10-01T00:00:00Z",
+     "priceDimensions": {
+      "R93N64VWMPQF4QZ8.JRTCKXETXF.6YS6EN2CT7": {
+       "rateCode": "R93N64VWMPQF4QZ8.JRTCKXETXF.6YS6EN2CT7",
+       "description": "$0.00007 per 1K input tokens for GLM 4.7 Flash in US East (N. Virginia)",
+       "beginRange": "0",
+       "endRange": "Inf",
+       "unit": "1K tokens",
+       "pricePerUnit": {
+        "USD": "0.0000700000"
+       },
+       "appliesTo": []
+      }
+     },
+     "termAttributes": {}
+    }
+   },
+   "TQ445RU3PPQ3BQAG": {
+    "TQ445RU3PPQ3BQAG.JRTCKXETXF": {
+     "offerTermCode": "JRTCKXETXF",
+     "sku": "TQ445RU3PPQ3BQAG",
+     "effectiveDate": "2026-10-01T00:00:00Z",
+     "priceDimensions": {
+      "TQ445RU3PPQ3BQAG.JRTCKXETXF.6YS6EN2CT7": {
+       "rateCode": "TQ445RU3PPQ3BQAG.JRTCKXETXF.6YS6EN2CT7",
+       "description": "$0.00175 per 1K token for zai.glm5-mantle-input-tokens-priority in US East (N. Virginia)",
+       "beginRange": "0",
+       "endRange": "Inf",
+       "unit": "1K tokens",
+       "pricePerUnit": {
+        "USD": "0.0017500000"
+       },
+       "appliesTo": []
+      }
+     },
+     "termAttributes": {}
+    }
+   },
+   "GBYN4B9ZECY72ZCC": {
+    "GBYN4B9ZECY72ZCC.JRTCKXETXF": {
+     "offerTermCode": "JRTCKXETXF",
+     "sku": "GBYN4B9ZECY72ZCC",
+     "effectiveDate": "2026-10-01T00:00:00Z",
+     "priceDimensions": {
+      "GBYN4B9ZECY72ZCC.JRTCKXETXF.6YS6EN2CT7": {
+       "rateCode": "GBYN4B9ZECY72ZCC.JRTCKXETXF.6YS6EN2CT7",
+       "description": "$0.0016 per 1K token for zai.glm5-mantle-output-tokens-flex in US East (N. Virginia)",
+       "beginRange": "0",
+       "endRange": "Inf",
+       "unit": "1K tokens",
+       "pricePerUnit": {
+        "USD": "0.0016000000"
+       },
+       "appliesTo": []
+      }
+     },
+     "termAttributes": {}
+    }
+   },
+   "Q9Q83DUEH3HNVCW5": {
+    "Q9Q83DUEH3HNVCW5.JRTCKXETXF": {
+     "offerTermCode": "JRTCKXETXF",
+     "sku": "Q9Q83DUEH3HNVCW5",
+     "effectiveDate": "2026-10-01T00:00:00Z",
+     "priceDimensions": {
+      "Q9Q83DUEH3HNVCW5.JRTCKXETXF.6YS6EN2CT7": {
+       "rateCode": "Q9Q83DUEH3HNVCW5.JRTCKXETXF.6YS6EN2CT7",
+       "description": "$0.0005 per 1K token for zai.glm5-mantle-input-tokens-flex in US East (N. Virginia)",
+       "beginRange": "0",
+       "endRange": "Inf",
+       "unit": "1K tokens",
+       "pricePerUnit": {
+        "USD": "0.0005000000"
+       },
+       "appliesTo": []
+      }
+     },
+     "termAttributes": {}
+    }
+   },
+   "K5WA8GZ7R8TKZF3F": {
+    "K5WA8GZ7R8TKZF3F.JRTCKXETXF": {
+     "offerTermCode": "JRTCKXETXF",
+     "sku": "K5WA8GZ7R8TKZF3F",
+     "effectiveDate": "2026-10-01T00:00:00Z",
+     "priceDimensions": {
+      "K5WA8GZ7R8TKZF3F.JRTCKXETXF.6YS6EN2CT7": {
+       "rateCode": "K5WA8GZ7R8TKZF3F.JRTCKXETXF.6YS6EN2CT7",
+       "description": "$0.00385 per 1K token for zai.glm-4.7-mantle-output-tokens-priority in US East (N. Virginia)",
+       "beginRange": "0",
+       "endRange": "Inf",
+       "unit": "1K tokens",
+       "pricePerUnit": {
+        "USD": "0.0038500000"
+       },
+       "appliesTo": []
+      }
+     },
+     "termAttributes": {}
+    }
+   },
+   "E48UCQG2J63P93UP": {
+    "E48UCQG2J63P93UP.JRTCKXETXF": {
+     "offerTermCode": "JRTCKXETXF",
+     "sku": "E48UCQG2J63P93UP",
+     "effectiveDate": "2026-10-01T00:00:00Z",
+     "priceDimensions": {
+      "E48UCQG2J63P93UP.JRTCKXETXF.6YS6EN2CT7": {
+       "rateCode": "E48UCQG2J63P93UP.JRTCKXETXF.6YS6EN2CT7",
+       "description": "$0.0003 per 1K input tokens flex for GLM 4.7 in US East (N. Virginia)",
+       "beginRange": "0",
+       "endRange": "Inf",
+       "unit": "1K tokens",
+       "pricePerUnit": {
+        "USD": "0.0003000000"
+       },
+       "appliesTo": []
+      }
+     },
+     "termAttributes": {}
+    }
+   },
+   "DU5E4KA49NHCSD3D": {
+    "DU5E4KA49NHCSD3D.JRTCKXETXF": {
+     "offerTermCode": "JRTCKXETXF",
+     "sku": "DU5E4KA49NHCSD3D",
+     "effectiveDate": "2026-10-01T00:00:00Z",
+     "priceDimensions": {
+      "DU5E4KA49NHCSD3D.JRTCKXETXF.6YS6EN2CT7": {
+       "rateCode": "DU5E4KA49NHCSD3D.JRTCKXETXF.6YS6EN2CT7",
+       "description": "$0.0006 per 1K input tokens for GLM 4.7 in US East (N. Virginia)",
+       "beginRange": "0",
+       "endRange": "Inf",
+       "unit": "1K tokens",
+       "pricePerUnit": {
+        "USD": "0.0006000000"
+       },
+       "appliesTo": []
+      }
+     },
+     "termAttributes": {}
+    }
+   },
+   "F7C72EJQ2ZG4S8EJ": {
+    "F7C72EJQ2ZG4S8EJ.JRTCKXETXF": {
+     "offerTermCode": "JRTCKXETXF",
+     "sku": "F7C72EJQ2ZG4S8EJ",
+     "effectiveDate": "2026-10-01T00:00:00Z",
+     "priceDimensions": {
+      "F7C72EJQ2ZG4S8EJ.JRTCKXETXF.6YS6EN2CT7": {
+       "rateCode": "F7C72EJQ2ZG4S8EJ.JRTCKXETXF.6YS6EN2CT7",
+       "description": "$0.0011 per 1K token for zai.glm-4.7-mantle-output-tokens-flex in US East (N. Virginia)",
+       "beginRange": "0",
+       "endRange": "Inf",
+       "unit": "1K tokens",
+       "pricePerUnit": {
+        "USD": "0.0011000000"
+       },
+       "appliesTo": []
+      }
+     },
+     "termAttributes": {}
+    }
+   },
+   "QHJWHGFPJP2EKJ6D": {
+    "QHJWHGFPJP2EKJ6D.JRTCKXETXF": {
+     "offerTermCode": "JRTCKXETXF",
+     "sku": "QHJWHGFPJP2EKJ6D",
+     "effectiveDate": "2026-10-01T00:00:00Z",
+     "priceDimensions": {
+      "QHJWHGFPJP2EKJ6D.JRTCKXETXF.6YS6EN2CT7": {
+       "rateCode": "QHJWHGFPJP2EKJ6D.JRTCKXETXF.6YS6EN2CT7",
+       "description": "$0.0032 per 1K token for zai.glm5-mantle-output-tokens-standard in US East (N. Virginia)",
+       "beginRange": "0",
+       "endRange": "Inf",
+       "unit": "1K tokens",
+       "pricePerUnit": {
+        "USD": "0.0032000000"
+       },
+       "appliesTo": []
+      }
+     },
+     "termAttributes": {}
+    }
+   },
+   "AXHVCH9EVJJWKABB": {
+    "AXHVCH9EVJJWKABB.JRTCKXETXF": {
+     "offerTermCode": "JRTCKXETXF",
+     "sku": "AXHVCH9EVJJWKABB",
+     "effectiveDate": "2026-10-01T00:00:00Z",
+     "priceDimensions": {
+      "AXHVCH9EVJJWKABB.JRTCKXETXF.6YS6EN2CT7": {
+       "rateCode": "AXHVCH9EVJJWKABB.JRTCKXETXF.6YS6EN2CT7",
+       "description": "$0.0016 per 1K token for zai.glm5-mantle-output-tokens-batch in US East (N. Virginia)",
+       "beginRange": "0",
+       "endRange": "Inf",
+       "unit": "1K tokens",
+       "pricePerUnit": {
+        "USD": "0.0016000000"
+       },
+       "appliesTo": []
+      }
+     },
+     "termAttributes": {}
+    }
+   },
+   "S7V25EDUSE568VEG": {
+    "S7V25EDUSE568VEG.JRTCKXETXF": {
+     "offerTermCode": "JRTCKXETXF",
+     "sku": "S7V25EDUSE568VEG",
+     "effectiveDate": "2026-10-01T00:00:00Z",
+     "priceDimensions": {
+      "S7V25EDUSE568VEG.JRTCKXETXF.6YS6EN2CT7": {
+       "rateCode": "S7V25EDUSE568VEG.JRTCKXETXF.6YS6EN2CT7",
+       "description": "$0.000035 per 1K input tokens batch for GLM 4.7 Flash in US East (N. Virginia)",
+       "beginRange": "0",
+       "endRange": "Inf",
+       "unit": "1K tokens",
+       "pricePerUnit": {
+        "USD": "0.0000350000"
+       },
+       "appliesTo": []
+      }
+     },
+     "termAttributes": {}
+    }
+   },
+   "5BTCUTPH9468BNA3": {
+    "5BTCUTPH9468BNA3.JRTCKXETXF": {
+     "offerTermCode": "JRTCKXETXF",
+     "sku": "5BTCUTPH9468BNA3",
+     "effectiveDate": "2026-10-01T00:00:00Z",
+     "priceDimensions": {
+      "5BTCUTPH9468BNA3.JRTCKXETXF.6YS6EN2CT7": {
+       "rateCode": "5BTCUTPH9468BNA3.JRTCKXETXF.6YS6EN2CT7",
+       "description": "$0.0011 per 1K token for zai.glm-4.7-mantle-output-tokens-batch in US East (N. Virginia)",
+       "beginRange": "0",
+       "endRange": "Inf",
+       "unit": "1K tokens",
+       "pricePerUnit": {
+        "USD": "0.0011000000"
+       },
+       "appliesTo": []
+      }
+     },
+     "termAttributes": {}
+    }
+   },
+   "PVAW2B92B3FCENQR": {
+    "PVAW2B92B3FCENQR.JRTCKXETXF": {
+     "offerTermCode": "JRTCKXETXF",
+     "sku": "PVAW2B92B3FCENQR",
+     "effectiveDate": "2026-10-01T00:00:00Z",
+     "priceDimensions": {
+      "PVAW2B92B3FCENQR.JRTCKXETXF.6YS6EN2CT7": {
+       "rateCode": "PVAW2B92B3FCENQR.JRTCKXETXF.6YS6EN2CT7",
+       "description": "$0.0003 per 1K token for zai.glm-4.7-mantle-input-tokens-batch in US East (N. Virginia)",
+       "beginRange": "0",
+       "endRange": "Inf",
+       "unit": "1K tokens",
+       "pricePerUnit": {
+        "USD": "0.0003000000"
+       },
+       "appliesTo": []
+      }
+     },
+     "termAttributes": {}
+    }
+   },
+   "QXDE2AB77CRVAJ6H": {
+    "QXDE2AB77CRVAJ6H.JRTCKXETXF": {
+     "offerTermCode": "JRTCKXETXF",
+     "sku": "QXDE2AB77CRVAJ6H",
+     "effectiveDate": "2026-10-01T00:00:00Z",
+     "priceDimensions": {
+      "QXDE2AB77CRVAJ6H.JRTCKXETXF.6YS6EN2CT7": {
+       "rateCode": "QXDE2AB77CRVAJ6H.JRTCKXETXF.6YS6EN2CT7",
+       "description": "$0.0005 per 1K token for zai.glm5-mantle-input-tokens-batch in US East (N. Virginia)",
+       "beginRange": "0",
+       "endRange": "Inf",
+       "unit": "1K tokens",
+       "pricePerUnit": {
+        "USD": "0.0005000000"
+       },
+       "appliesTo": []
+      }
+     },
+     "termAttributes": {}
+    }
+   },
+   "APFYJ8BHGK4A6GS3": {
+    "APFYJ8BHGK4A6GS3.JRTCKXETXF": {
+     "offerTermCode": "JRTCKXETXF",
+     "sku": "APFYJ8BHGK4A6GS3",
+     "effectiveDate": "2026-10-01T00:00:00Z",
+     "priceDimensions": {
+      "APFYJ8BHGK4A6GS3.JRTCKXETXF.6YS6EN2CT7": {
+       "rateCode": "APFYJ8BHGK4A6GS3.JRTCKXETXF.6YS6EN2CT7",
+       "description": "$0.0003 per 1K input tokens batch for GLM 4.7 in US East (N. Virginia)",
+       "beginRange": "0",
+       "endRange": "Inf",
+       "unit": "1K tokens",
+       "pricePerUnit": {
+        "USD": "0.0003000000"
+       },
+       "appliesTo": []
+      }
+     },
+     "termAttributes": {}
+    }
+   },
+   "FRWK8A3NDCMB6QXA": {
+    "FRWK8A3NDCMB6QXA.JRTCKXETXF": {
+     "offerTermCode": "JRTCKXETXF",
+     "sku": "FRWK8A3NDCMB6QXA",
+     "effectiveDate": "2026-10-01T00:00:00Z",
+     "priceDimensions": {
+      "FRWK8A3NDCMB6QXA.JRTCKXETXF.6YS6EN2CT7": {
+       "rateCode": "FRWK8A3NDCMB6QXA.JRTCKXETXF.6YS6EN2CT7",
+       "description": "$0.000035 per 1K input tokens flex for GLM 4.7 Flash in US East (N. Virginia)",
+       "beginRange": "0",
+       "endRange": "Inf",
+       "unit": "1K tokens",
+       "pricePerUnit": {
+        "USD": "0.0000350000"
+       },
+       "appliesTo": []
+      }
+     },
+     "termAttributes": {}
+    }
+   },
+   "4PQEVFKHZYB65XSD": {
+    "4PQEVFKHZYB65XSD.JRTCKXETXF": {
+     "offerTermCode": "JRTCKXETXF",
+     "sku": "4PQEVFKHZYB65XSD",
+     "effectiveDate": "2026-10-01T00:00:00Z",
+     "priceDimensions": {
+      "4PQEVFKHZYB65XSD.JRTCKXETXF.6YS6EN2CT7": {
+       "rateCode": "4PQEVFKHZYB65XSD.JRTCKXETXF.6YS6EN2CT7",
+       "description": "$0.00105 per 1K token for zai.glm-4.7-mantle-input-tokens-priority in US East (N. Virginia)",
+       "beginRange": "0",
+       "endRange": "Inf",
+       "unit": "1K tokens",
+       "pricePerUnit": {
+        "USD": "0.0010500000"
+       },
+       "appliesTo": []
+      }
+     },
+     "termAttributes": {}
+    }
+   },
+   "NA22NCHSRXXKNYR8": {
+    "NA22NCHSRXXKNYR8.JRTCKXETXF": {
+     "offerTermCode": "JRTCKXETXF",
+     "sku": "NA22NCHSRXXKNYR8",
+     "effectiveDate": "2026-10-01T00:00:00Z",
+     "priceDimensions": {
+      "NA22NCHSRXXKNYR8.JRTCKXETXF.6YS6EN2CT7": {
+       "rateCode": "NA22NCHSRXXKNYR8.JRTCKXETXF.6YS6EN2CT7",
+       "description": "$0.001 per 1K token for zai.glm5-mantle-input-tokens-standard in US East (N. Virginia)",
+       "beginRange": "0",
+       "endRange": "Inf",
+       "unit": "1K tokens",
+       "pricePerUnit": {
+        "USD": "0.0010000000"
+       },
+       "appliesTo": []
+      }
+     },
+     "termAttributes": {}
+    }
+   },
+   "23AVXUXVTBTRAACY": {
+    "23AVXUXVTBTRAACY.JRTCKXETXF": {
+     "offerTermCode": "JRTCKXETXF",
+     "sku": "23AVXUXVTBTRAACY",
+     "effectiveDate": "2026-10-01T00:00:00Z",
+     "priceDimensions": {
+      "23AVXUXVTBTRAACY.JRTCKXETXF.6YS6EN2CT7": {
+       "rateCode": "23AVXUXVTBTRAACY.JRTCKXETXF.6YS6EN2CT7",
+       "description": "$0.0011 per 1K output tokens batch for GLM 4.7 in US East (N. Virginia)",
+       "beginRange": "0",
+       "endRange": "Inf",
+       "unit": "1K tokens",
+       "pricePerUnit": {
+        "USD": "0.0011000000"
+       },
+       "appliesTo": []
+      }
+     },
+     "termAttributes": {}
+    }
+   },
+   "CJX6F5BKJUECSZQG": {
+    "CJX6F5BKJUECSZQG.JRTCKXETXF": {
+     "offerTermCode": "JRTCKXETXF",
+     "sku": "CJX6F5BKJUECSZQG",
+     "effectiveDate": "2026-10-01T00:00:00Z",
+     "priceDimensions": {
+      "CJX6F5BKJUECSZQG.JRTCKXETXF.6YS6EN2CT7": {
+       "rateCode": "CJX6F5BKJUECSZQG.JRTCKXETXF.6YS6EN2CT7",
+       "description": "$0.000035 per 1K token for zai.glm-4.7-flash-mantle-input-tokens-flex in US East (N. Virginia)",
+       "beginRange": "0",
+       "endRange": "Inf",
+       "unit": "1K tokens",
+       "pricePerUnit": {
+        "USD": "0.0000350000"
+       },
+       "appliesTo": []
+      }
+     },
+     "termAttributes": {}
+    }
+   },
+   "X73ZV4CMRGN7VDDN": {
+    "X73ZV4CMRGN7VDDN.JRTCKXETXF": {
+     "offerTermCode": "JRTCKXETXF",
+     "sku": "X73ZV4CMRGN7VDDN",
+     "effectiveDate": "2026-10-01T00:00:00Z",
+     "priceDimensions": {
+      "X73ZV4CMRGN7VDDN.JRTCKXETXF.6YS6EN2CT7": {
+       "rateCode": "X73ZV4CMRGN7VDDN.JRTCKXETXF.6YS6EN2CT7",
+       "description": "USD 0.0016 per 1K tokens for USE1-zai.glm5-output-tokens-flex in US East (N. Virginia)",
+       "beginRange": "0",
+       "endRange": "Inf",
+       "unit": "1K tokens",
+       "pricePerUnit": {
+        "USD": "0.0016000000"
+       },
+       "appliesTo": []
+      }
+     },
+     "termAttributes": {}
+    }
+   },
+   "WYSMNBHH64MSGJ3Q": {
+    "WYSMNBHH64MSGJ3Q.JRTCKXETXF": {
+     "offerTermCode": "JRTCKXETXF",
+     "sku": "WYSMNBHH64MSGJ3Q",
+     "effectiveDate": "2026-10-01T00:00:00Z",
+     "priceDimensions": {
+      "WYSMNBHH64MSGJ3Q.JRTCKXETXF.6YS6EN2CT7": {
+       "rateCode": "WYSMNBHH64MSGJ3Q.JRTCKXETXF.6YS6EN2CT7",
+       "description": "$0.00385 per 1K output tokens priority for GLM 4.7 in US East (N. Virginia)",
+       "beginRange": "0",
+       "endRange": "Inf",
+       "unit": "1K tokens",
+       "pricePerUnit": {
+        "USD": "0.0038500000"
+       },
+       "appliesTo": []
+      }
+     },
+     "termAttributes": {}
+    }
+   },
+   "BMZCY99Q9BZQVS8T": {
+    "BMZCY99Q9BZQVS8T.JRTCKXETXF": {
+     "offerTermCode": "JRTCKXETXF",
+     "sku": "BMZCY99Q9BZQVS8T",
+     "effectiveDate": "2026-10-01T00:00:00Z",
+     "priceDimensions": {
+      "BMZCY99Q9BZQVS8T.JRTCKXETXF.6YS6EN2CT7": {
+       "rateCode": "BMZCY99Q9BZQVS8T.JRTCKXETXF.6YS6EN2CT7",
+       "description": "$0.0002 per 1K token for zai.glm-4.7-flash-mantle-output-tokens-flex in US East (N. Virginia)",
+       "beginRange": "0",
+       "endRange": "Inf",
+       "unit": "1K tokens",
+       "pricePerUnit": {
+        "USD": "0.0002000000"
+       },
+       "appliesTo": []
+      }
+     },
+     "termAttributes": {}
+    }
+   },
+   "VBFWYKVQW57F8XWN": {
+    "VBFWYKVQW57F8XWN.JRTCKXETXF": {
+     "offerTermCode": "JRTCKXETXF",
+     "sku": "VBFWYKVQW57F8XWN",
+     "effectiveDate": "2026-10-01T00:00:00Z",
+     "priceDimensions": {
+      "VBFWYKVQW57F8XWN.JRTCKXETXF.6YS6EN2CT7": {
+       "rateCode": "VBFWYKVQW57F8XWN.JRTCKXETXF.6YS6EN2CT7",
+       "description": "USD 0.0016 per 1K tokens for USE1-zai.glm5-output-tokens-batch in US East (N. Virginia)",
+       "beginRange": "0",
+       "endRange": "Inf",
+       "unit": "1K tokens",
+       "pricePerUnit": {
+        "USD": "0.0016000000"
+       },
+       "appliesTo": []
+      }
+     },
+     "termAttributes": {}
+    }
+   },
+   "H4JPB4PHWFMXJ6XK": {
+    "H4JPB4PHWFMXJ6XK.JRTCKXETXF": {
+     "offerTermCode": "JRTCKXETXF",
+     "sku": "H4JPB4PHWFMXJ6XK",
+     "effectiveDate": "2026-10-01T00:00:00Z",
+     "priceDimensions": {
+      "H4JPB4PHWFMXJ6XK.JRTCKXETXF.6YS6EN2CT7": {
+       "rateCode": "H4JPB4PHWFMXJ6XK.JRTCKXETXF.6YS6EN2CT7",
+       "description": "$0.0001225 per 1K token for zai.glm-4.7-flash-mantle-input-tokens-priority in US East (N. Virginia)",
+       "beginRange": "0",
+       "endRange": "Inf",
+       "unit": "1K tokens",
+       "pricePerUnit": {
+        "USD": "0.0001225000"
+       },
+       "appliesTo": []
+      }
+     },
+     "termAttributes": {}
+    }
+   },
+   "3MVDADTM8BRUZMH8": {
+    "3MVDADTM8BRUZMH8.JRTCKXETXF": {
+     "offerTermCode": "JRTCKXETXF",
+     "sku": "3MVDADTM8BRUZMH8",
+     "effectiveDate": "2026-10-01T00:00:00Z",
+     "priceDimensions": {
+      "3MVDADTM8BRUZMH8.JRTCKXETXF.6YS6EN2CT7": {
+       "rateCode": "3MVDADTM8BRUZMH8.JRTCKXETXF.6YS6EN2CT7",
+       "description": "$0.0006 per 1K token for zai.glm-4.7-mantle-input-tokens-standard in US East (N. Virginia)",
+       "beginRange": "0",
+       "endRange": "Inf",
+       "unit": "1K tokens",
+       "pricePerUnit": {
+        "USD": "0.0006000000"
+       },
+       "appliesTo": []
+      }
+     },
+     "termAttributes": {}
+    }
+   },
+   "HJWQQ9VUMBBU68GT": {
+    "HJWQQ9VUMBBU68GT.JRTCKXETXF": {
+     "offerTermCode": "JRTCKXETXF",
+     "sku": "HJWQQ9VUMBBU68GT",
+     "effectiveDate": "2026-10-01T00:00:00Z",
+     "priceDimensions": {
+      "HJWQQ9VUMBBU68GT.JRTCKXETXF.6YS6EN2CT7": {
+       "rateCode": "HJWQQ9VUMBBU68GT.JRTCKXETXF.6YS6EN2CT7",
+       "description": "$0.0002 per 1K output tokens batch for GLM 4.7 Flash in US East (N. Virginia)",
+       "beginRange": "0",
+       "endRange": "Inf",
+       "unit": "1K tokens",
+       "pricePerUnit": {
+        "USD": "0.0002000000"
+       },
+       "appliesTo": []
+      }
+     },
+     "termAttributes": {}
+    }
+   },
+   "25V32XPJADAPRV5R": {
+    "25V32XPJADAPRV5R.JRTCKXETXF": {
+     "offerTermCode": "JRTCKXETXF",
+     "sku": "25V32XPJADAPRV5R",
+     "effectiveDate": "2026-10-01T00:00:00Z",
+     "priceDimensions": {
+      "25V32XPJADAPRV5R.JRTCKXETXF.6YS6EN2CT7": {
+       "rateCode": "25V32XPJADAPRV5R.JRTCKXETXF.6YS6EN2CT7",
+       "description": "$0.0002 per 1K output tokens flex for GLM 4.7 Flash in US East (N. Virginia)",
+       "beginRange": "0",
+       "endRange": "Inf",
+       "unit": "1K tokens",
+       "pricePerUnit": {
+        "USD": "0.0002000000"
+       },
+       "appliesTo": []
+      }
+     },
+     "termAttributes": {}
+    }
+   },
+   "CBNK94HTRMXB6RCV": {
+    "CBNK94HTRMXB6RCV.JRTCKXETXF": {
+     "offerTermCode": "JRTCKXETXF",
+     "sku": "CBNK94HTRMXB6RCV",
+     "effectiveDate": "2026-10-01T00:00:00Z",
+     "priceDimensions": {
+      "CBNK94HTRMXB6RCV.JRTCKXETXF.6YS6EN2CT7": {
+       "rateCode": "CBNK94HTRMXB6RCV.JRTCKXETXF.6YS6EN2CT7",
+       "description": "$0.000035 per 1K token for zai.glm-4.7-flash-mantle-input-tokens-batch in US East (N. Virginia)",
+       "beginRange": "0",
+       "endRange": "Inf",
+       "unit": "1K tokens",
+       "pricePerUnit": {
+        "USD": "0.0000350000"
+       },
+       "appliesTo": []
+      }
+     },
+     "termAttributes": {}
+    }
+   },
+   "VEDK5P7PGR585K9X": {
+    "VEDK5P7PGR585K9X.JRTCKXETXF": {
+     "offerTermCode": "JRTCKXETXF",
+     "sku": "VEDK5P7PGR585K9X",
+     "effectiveDate": "2026-10-01T00:00:00Z",
+     "priceDimensions": {
+      "VEDK5P7PGR585K9X.JRTCKXETXF.6YS6EN2CT7": {
+       "rateCode": "VEDK5P7PGR585K9X.JRTCKXETXF.6YS6EN2CT7",
+       "description": "$0.0022 per 1K token for zai.glm-4.7-mantle-output-tokens-standard in US East (N. Virginia)",
+       "beginRange": "0",
+       "endRange": "Inf",
+       "unit": "1K tokens",
+       "pricePerUnit": {
+        "USD": "0.0022000000"
+       },
+       "appliesTo": []
+      }
+     },
+     "termAttributes": {}
+    }
+   },
+   "W2U6ACY8S2VJDTNX": {
+    "W2U6ACY8S2VJDTNX.JRTCKXETXF": {
+     "offerTermCode": "JRTCKXETXF",
+     "sku": "W2U6ACY8S2VJDTNX",
+     "effectiveDate": "2026-10-01T00:00:00Z",
+     "priceDimensions": {
+      "W2U6ACY8S2VJDTNX.JRTCKXETXF.6YS6EN2CT7": {
+       "rateCode": "W2U6ACY8S2VJDTNX.JRTCKXETXF.6YS6EN2CT7",
+       "description": "$0.00007 per 1K token for zai.glm-4.7-flash-mantle-input-tokens-standard in US East (N. Virginia)",
+       "beginRange": "0",
+       "endRange": "Inf",
+       "unit": "1K tokens",
+       "pricePerUnit": {
+        "USD": "0.0000700000"
+       },
+       "appliesTo": []
+      }
+     },
+     "termAttributes": {}
+    }
+   },
+   "HY6XXJTMZ577KCKA": {
+    "HY6XXJTMZ577KCKA.JRTCKXETXF": {
+     "offerTermCode": "JRTCKXETXF",
+     "sku": "HY6XXJTMZ577KCKA",
+     "effectiveDate": "2026-10-01T00:00:00Z",
+     "priceDimensions": {
+      "HY6XXJTMZ577KCKA.JRTCKXETXF.6YS6EN2CT7": {
+       "rateCode": "HY6XXJTMZ577KCKA.JRTCKXETXF.6YS6EN2CT7",
+       "description": "USD 0.0056 per 1K tokens for USE1-zai.glm5-output-tokens-priority in US East (N. Virginia)",
+       "beginRange": "0",
+       "endRange": "Inf",
+       "unit": "1K tokens",
+       "pricePerUnit": {
+        "USD": "0.0056000000"
+       },
+       "appliesTo": []
+      }
+     },
+     "termAttributes": {}
+    }
+   },
+   "3MEFBGRT5W3U9WQB": {
+    "3MEFBGRT5W3U9WQB.JRTCKXETXF": {
+     "offerTermCode": "JRTCKXETXF",
+     "sku": "3MEFBGRT5W3U9WQB",
+     "effectiveDate": "2026-10-01T00:00:00Z",
+     "priceDimensions": {
+      "3MEFBGRT5W3U9WQB.JRTCKXETXF.6YS6EN2CT7": {
+       "rateCode": "3MEFBGRT5W3U9WQB.JRTCKXETXF.6YS6EN2CT7",
+       "description": "$0.0002 per 1K token for zai.glm-4.7-flash-mantle-output-tokens-batch in US East (N. Virginia)",
+       "beginRange": "0",
+       "endRange": "Inf",
+       "unit": "1K tokens",
+       "pricePerUnit": {
+        "USD": "0.0002000000"
+       },
+       "appliesTo": []
+      }
+     },
+     "termAttributes": {}
+    }
+   },
+   "R6JDUNZRD4GVQUCX": {
+    "R6JDUNZRD4GVQUCX.JRTCKXETXF": {
+     "offerTermCode": "JRTCKXETXF",
+     "sku": "R6JDUNZRD4GVQUCX",
+     "effectiveDate": "2026-10-01T00:00:00Z",
+     "priceDimensions": {
+      "R6JDUNZRD4GVQUCX.JRTCKXETXF.6YS6EN2CT7": {
+       "rateCode": "R6JDUNZRD4GVQUCX.JRTCKXETXF.6YS6EN2CT7",
+       "description": "USD 0.0005 per 1K tokens for USE1-zai.glm5-input-tokens-batch in US East (N. Virginia)",
+       "beginRange": "0",
+       "endRange": "Inf",
+       "unit": "1K tokens",
+       "pricePerUnit": {
+        "USD": "0.0005000000"
+       },
+       "appliesTo": []
+      }
+     },
+     "termAttributes": {}
+    }
+   },
+   "RF8DSGBNTMEMK6VP": {
+    "RF8DSGBNTMEMK6VP.JRTCKXETXF": {
+     "offerTermCode": "JRTCKXETXF",
+     "sku": "RF8DSGBNTMEMK6VP",
+     "effectiveDate": "2026-10-01T00:00:00Z",
+     "priceDimensions": {
+      "RF8DSGBNTMEMK6VP.JRTCKXETXF.6YS6EN2CT7": {
+       "rateCode": "RF8DSGBNTMEMK6VP.JRTCKXETXF.6YS6EN2CT7",
+       "description": "$0.0056 per 1K token for zai.glm5-mantle-output-tokens-priority in US East (N. Virginia)",
+       "beginRange": "0",
+       "endRange": "Inf",
+       "unit": "1K tokens",
+       "pricePerUnit": {
+        "USD": "0.0056000000"
+       },
+       "appliesTo": []
+      }
+     },
+     "termAttributes": {}
+    }
+   },
+   "GK7SRFHPZ79QTHBY": {
+    "GK7SRFHPZ79QTHBY.JRTCKXETXF": {
+     "offerTermCode": "JRTCKXETXF",
+     "sku": "GK7SRFHPZ79QTHBY",
+     "effectiveDate": "2026-10-01T00:00:00Z",
+     "priceDimensions": {
+      "GK7SRFHPZ79QTHBY.JRTCKXETXF.6YS6EN2CT7": {
+       "rateCode": "GK7SRFHPZ79QTHBY.JRTCKXETXF.6YS6EN2CT7",
+       "description": "$0.00105 per 1K input tokens priority for GLM 4.7 in US East (N. Virginia)",
+       "beginRange": "0",
+       "endRange": "Inf",
+       "unit": "1K tokens",
+       "pricePerUnit": {
+        "USD": "0.0010500000"
+       },
+       "appliesTo": []
+      }
+     },
+     "termAttributes": {}
+    }
+   },
+   "8RQBEKEP5KG2MZY7": {
+    "8RQBEKEP5KG2MZY7.JRTCKXETXF": {
+     "offerTermCode": "JRTCKXETXF",
+     "sku": "8RQBEKEP5KG2MZY7",
+     "effectiveDate": "2026-10-01T00:00:00Z",
+     "priceDimensions": {
+      "8RQBEKEP5KG2MZY7.JRTCKXETXF.6YS6EN2CT7": {
+       "rateCode": "8RQBEKEP5KG2MZY7.JRTCKXETXF.6YS6EN2CT7",
+       "description": "USD 0.0032 per 1K tokens for USE1-zai.glm5-output-tokens in US East (N. Virginia)",
+       "beginRange": "0",
+       "endRange": "Inf",
+       "unit": "1K tokens",
+       "pricePerUnit": {
+        "USD": "0.0032000000"
+       },
+       "appliesTo": []
+      }
+     },
+     "termAttributes": {}
+    }
+   },
+   "JUC6PE635U4DZM2C": {
+    "JUC6PE635U4DZM2C.JRTCKXETXF": {
+     "offerTermCode": "JRTCKXETXF",
+     "sku": "JUC6PE635U4DZM2C",
+     "effectiveDate": "2026-10-01T00:00:00Z",
+     "priceDimensions": {
+      "JUC6PE635U4DZM2C.JRTCKXETXF.6YS6EN2CT7": {
+       "rateCode": "JUC6PE635U4DZM2C.JRTCKXETXF.6YS6EN2CT7",
+       "description": "$0.0001225 per 1K input tokens priority for GLM 4.7 Flash in US East (N. Virginia)",
+       "beginRange": "0",
+       "endRange": "Inf",
+       "unit": "1K tokens",
+       "pricePerUnit": {
+        "USD": "0.0001225000"
+       },
+       "appliesTo": []
+      }
+     },
+     "termAttributes": {}
+    }
+   },
+   "G3ZQZBGERU52ANZ4": {
+    "G3ZQZBGERU52ANZ4.JRTCKXETXF": {
+     "offerTermCode": "JRTCKXETXF",
+     "sku": "G3ZQZBGERU52ANZ4",
+     "effectiveDate": "2026-10-01T00:00:00Z",
+     "priceDimensions": {
+      "G3ZQZBGERU52ANZ4.JRTCKXETXF.6YS6EN2CT7": {
+       "rateCode": "G3ZQZBGERU52ANZ4.JRTCKXETXF.6YS6EN2CT7",
+       "description": "$0.0004 per 1K token for zai.glm-4.7-flash-mantle-output-tokens-standard in US East (N. Virginia)",
+       "beginRange": "0",
+       "endRange": "Inf",
+       "unit": "1K tokens",
+       "pricePerUnit": {
+        "USD": "0.0004000000"
+       },
+       "appliesTo": []
+      }
+     },
+     "termAttributes": {}
+    }
+   },
+   "G9EWY3K8SFJDJ6N7": {
+    "G9EWY3K8SFJDJ6N7.JRTCKXETXF": {
+     "offerTermCode": "JRTCKXETXF",
+     "sku": "G9EWY3K8SFJDJ6N7",
+     "effectiveDate": "2026-10-01T00:00:00Z",
+     "priceDimensions": {
+      "G9EWY3K8SFJDJ6N7.JRTCKXETXF.6YS6EN2CT7": {
+       "rateCode": "G9EWY3K8SFJDJ6N7.JRTCKXETXF.6YS6EN2CT7",
+       "description": "USD 0.0005 per 1K tokens for USE1-zai.glm5-input-tokens-flex in US East (N. Virginia)",
+       "beginRange": "0",
+       "endRange": "Inf",
+       "unit": "1K tokens",
+       "pricePerUnit": {
+        "USD": "0.0005000000"
+       },
+       "appliesTo": []
+      }
+     },
+     "termAttributes": {}
+    }
+   },
+   "PB6PVH97NBCHWFH5": {
+    "PB6PVH97NBCHWFH5.JRTCKXETXF": {
+     "offerTermCode": "JRTCKXETXF",
+     "sku": "PB6PVH97NBCHWFH5",
+     "effectiveDate": "2026-10-01T00:00:00Z",
+     "priceDimensions": {
+      "PB6PVH97NBCHWFH5.JRTCKXETXF.6YS6EN2CT7": {
+       "rateCode": "PB6PVH97NBCHWFH5.JRTCKXETXF.6YS6EN2CT7",
+       "description": "$0.0003 per 1K token for zai.glm-4.7-mantle-input-tokens-flex in US East (N. Virginia)",
+       "beginRange": "0",
+       "endRange": "Inf",
+       "unit": "1K tokens",
+       "pricePerUnit": {
+        "USD": "0.0003000000"
+       },
+       "appliesTo": []
+      }
+     },
+     "termAttributes": {}
+    }
+   },
+   "2P9GC66NVRGK2833": {
+    "2P9GC66NVRGK2833.JRTCKXETXF": {
+     "offerTermCode": "JRTCKXETXF",
+     "sku": "2P9GC66NVRGK2833",
+     "effectiveDate": "2026-10-01T00:00:00Z",
+     "priceDimensions": {
+      "2P9GC66NVRGK2833.JRTCKXETXF.6YS6EN2CT7": {
+       "rateCode": "2P9GC66NVRGK2833.JRTCKXETXF.6YS6EN2CT7",
+       "description": "$0.0004 per 1K output tokens for GLM 4.7 Flash in US East (N. Virginia)",
+       "beginRange": "0",
+       "endRange": "Inf",
+       "unit": "1K tokens",
+       "pricePerUnit": {
+        "USD": "0.0004000000"
+       },
+       "appliesTo": []
+      }
+     },
+     "termAttributes": {}
+    }
+   },
+   "EFE4FZAZHW6CYJSE": {
+    "EFE4FZAZHW6CYJSE.JRTCKXETXF": {
+     "offerTermCode": "JRTCKXETXF",
+     "sku": "EFE4FZAZHW6CYJSE",
+     "effectiveDate": "2026-10-01T00:00:00Z",
+     "priceDimensions": {
+      "EFE4FZAZHW6CYJSE.JRTCKXETXF.6YS6EN2CT7": {
+       "rateCode": "EFE4FZAZHW6CYJSE.JRTCKXETXF.6YS6EN2CT7",
+       "description": "$0.0011 per 1K output tokens flex for GLM 4.7 in US East (N. Virginia)",
+       "beginRange": "0",
+       "endRange": "Inf",
+       "unit": "1K tokens",
+       "pricePerUnit": {
+        "USD": "0.0011000000"
+       },
+       "appliesTo": []
+      }
+     },
+     "termAttributes": {}
+    }
+   }
+  }
+ },
+ "attributesList": {}
+}

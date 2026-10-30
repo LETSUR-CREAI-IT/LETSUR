@@ -1,0 +1,11 @@
+[
+  {
+    "fixture": "pricing-image-section.md",
+    "source_url": "https://developers.openai.com/api/docs/pricing.md",
+    "fetched_at_utc": "2026-10-28T14:33:10+00:00",
+    "raw_sha256": "93d302a9b7a384877533bc3ab5bb48eebf4b56bd6add0f194095054b2a13f952",
+    "raw_bytes": 22824,
+    "fixture_sha256": "8c3b083a4db36c4ed15de9e6a811aa8802f7d3c9916972b85e5e10717bb57a5d",
+    "method": "The '# Pricing' title line and lines 355-440 as served: the end of the audio table, the whole 'Image generation models' section (Standard and Batch tables) and the first lines of 'Transcription models'. gpt-image-2's own model page lists no price."
+  }
+]

@@ -15,7 +15,8 @@ from datetime import datetime, timezone
 from scripts.market_collection import signals as signal_runs
 from scripts.market_collection.signals.matching import models_in, normalize, sentences
 from scripts.market_collection.signals.parsers import atom_entries, rss_entries
-from scripts.market_collection.signals.registry import API_PARSERS, SignalSourceSpec
+from scripts.market_collection.signals.registry import API_PARSERS, RETIREMENT_PARSERS, SignalSourceSpec
+from scripts.market_collection.signals.retirements import read as retirement_entries
 
 from .catalog import Catalog, authority
 
@@ -53,10 +54,13 @@ def iso_date(text: str) -> str | None:
 
 
 def reread(spec: dict, body: bytes, window_start: datetime) -> tuple[list[dict], list] | None:
-    """(parser rows, in-window feed entries) from the registered parser, or None if the raw does not parse."""
+    """(parser rows, in-window feed entries or a retirement page's entries) from the registered parser, or None if the
+    raw does not parse."""
     try:
         parsed = SignalSourceSpec(**spec)
         _, _, rows = signal_runs.parse_body(parsed, body, window_start)
+        if parsed.parser in RETIREMENT_PARSERS:
+            return rows, retirement_entries(parsed.parser, body)[1]
         entries = [] if parsed.parser in API_PARSERS else (atom_entries(body) if parsed.parser == "atom" else rss_entries(body))
     except Exception:
         return None

@@ -1,8 +1,9 @@
 """Fixed list of external signal sources.
 
 Feeds are checked as a whole and filtered by model names; the OpenRouter and Vercel
-endpoints APIs are called once per registered LLM model the gateway lists. Add a source
-here only after checking that it is reachable without login (docs/external-signals.md).
+endpoints APIs are called once per registered LLM model the gateway lists; the retirement
+schedule pages are read whole and matched by exact model id. Add a source here only after
+checking that it is reachable without login (docs/external-signals.md).
 """
 
 from __future__ import annotations
@@ -11,15 +12,18 @@ import re
 from dataclasses import dataclass
 
 from scripts.market_collection.core import CollectionError, _validate_url
-from scripts.market_collection.models import BROKER_API_MODELS, BROKER_CATALOG_MODELS, GOOGLE_BROKER_MODEL, GOOGLE_LLM_MODEL
+from scripts.market_collection.models import BROKER_API_MODELS, BROKER_CATALOG_MODELS, GATEWAY_EMBEDDING_MODELS, GATEWAY_IMAGE_MODELS, GATEWAY_MORE_MODELS, GOOGLE_BROKER_MODEL, GOOGLE_LLM_MODEL
 from scripts.market_collection.sources import _targets
+
+from .retirements import READERS
 
 # channel_notice/supplier_notice: the company's own announcements.
 # developer_blog/price_tracker: secondary sources, always unverified until checked.
 # channel_api: a channel's own machine-readable pricing field.
 SOURCE_KINDS = {"channel_notice", "supplier_notice", "developer_blog", "price_tracker", "channel_api"}
 API_PARSERS = {"openrouter_endpoints", "vercel_endpoints"}  # one call per model: model_id is required
-PARSERS = {"atom", "rss", *API_PARSERS}
+RETIREMENT_PARSERS = set(READERS)
+PARSERS = {"atom", "rss", *API_PARSERS, *RETIREMENT_PARSERS}
 
 
 @dataclass(frozen=True)
@@ -39,13 +43,25 @@ FEEDS = [
     SignalSourceSpec("modelpricewatch_news", "price_tracker", "https://modelpricewatch.com/news/feed.xml", "atom"),
 ]
 
+# The route owners' own retirement schedules, in their Markdown form (2026-10-29): Azure is a channel for every model it
+# lists, the other three are the makers' own pages. Listed after the gateway APIs so the earlier sources keep their order.
+RETIREMENT_PAGES = [
+    SignalSourceSpec("azure_retirement_schedule", "channel_notice",
+                     "https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/model-retirement-schedule?accept=text/markdown",
+                     "azure_retirements"),
+    SignalSourceSpec("openai_deprecations", "supplier_notice", "https://developers.openai.com/api/docs/deprecations.md", "openai_deprecations"),
+    SignalSourceSpec("anthropic_deprecations", "supplier_notice", "https://platform.claude.com/docs/en/about-claude/model-deprecations.md",
+                     "anthropic_deprecations"),
+    SignalSourceSpec("google_deprecations", "supplier_notice", "https://ai.google.dev/gemini-api/docs/deprecations.md.txt", "google_deprecations"),
+]
+
 
 def _gateway_models() -> list[tuple[str, str, str | None, str | None]]:
     """(model, title, OpenRouter id, Vercel id) by the id rule of sources.llm_endpoint_source_specs; None: not listed there."""
     models = [(model, title, gateway_id, gateway_id) for model, (title, _, _, _, gateway_id) in _targets().items()]
     models.append((GOOGLE_LLM_MODEL, "Gemini 3.8 Flash", GOOGLE_BROKER_MODEL, GOOGLE_BROKER_MODEL))
     models.extend((model, title, openrouter_id, vercel_id) for model, title, _, openrouter_id, vercel_id in BROKER_CATALOG_MODELS)
-    models.extend(BROKER_API_MODELS)
+    models.extend(BROKER_API_MODELS + GATEWAY_MORE_MODELS + GATEWAY_EMBEDDING_MODELS + GATEWAY_IMAGE_MODELS)
     return models
 
 
@@ -79,4 +95,4 @@ def validate(specs: list[SignalSourceSpec]) -> list[SignalSourceSpec]:
 
 
 def signal_sources() -> list[SignalSourceSpec]:
-    return validate(FEEDS + openrouter_specs() + vercel_specs())
+    return validate(FEEDS + openrouter_specs() + vercel_specs() + RETIREMENT_PAGES)

@@ -1,0 +1,12 @@
+[
+  {
+    "fixture": "pricing.md",
+    "source_key": "zai_glm_5_3",
+    "source_url": "https://docs.z.ai/guides/overview/pricing.md",
+    "run_id": "20261028T144330Z-3269f76d017641d3b6f7dccdba7df4a4",
+    "fetched_at_utc": "2026-10-28T14:43:40.934630Z",
+    "raw_sha256": "33a372c40dc41ea671512a575590cdd218e648897e4b4dce9caa49fc7dc0e205",
+    "raw_bytes": 3010,
+    "method": "Raw body of a local live core run (public Markdown page, no login), kept byte for byte; the five zai_* sources fetched the same bytes."
+  }
+]
