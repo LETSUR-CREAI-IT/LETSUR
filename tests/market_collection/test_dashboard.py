@@ -1259,21 +1259,24 @@ def test_openais_image_page_items_are_the_gateways_items() -> None:
 
 
 def test_video_tabs_name_their_conditions_and_vercel_metadata_splits_no_tab() -> None:
-    """2026-10-30: a video tab read 'on · pro · off'; a condition whose value does not say what it is now carries its Korean name,
-    as in the cards. Vercel's video metadata (provider, supported lists, an operation that is the model's own task) tells
-    lines apart, not tabs, so its line shares fal's tab."""
+    """2026-10-30: a video tab read 'on · pro · off'; a condition whose value does not say what it is now carries its Korean name
+    and, by 박건's '한국어로 바꿔줘', a Korean value, as the cards do. Vercel's video metadata (provider, supported lists, an
+    operation that is the model's own task) tells lines apart, not tabs, so its line shares fal's tab."""
     fal = _series("f-1", "kling-v3-text-to-video", "fal", "fal_kling_v3_t2v", "generated_video", "0.168", unit="1 second", task="text-to-video",
                   audio="off", mode="pro")
     vercel = _series("v-1", "kling-v3-text-to-video", "vercel_ai_gateway", "vercel_kling_v3_t2v", "generated_video", "0.168", unit="1 second",
                      task="text-to-video", audio="off", mode="pro", operation="text-to-video", provider="klingai",
                      supportedFps="[24]", supportedOperations='["text-to-video"]')
     entry = build.model_trend("kling-v3-text-to-video", [], {}, {"f": fal, "v": vercel}, set())
-    assert list(entry["conds"]) == ["오디오 off · 모드 pro"] and entry["measures"] == ["생성 영상"] and len(entry["series"]) == 2
+    assert list(entry["conds"]) == ["오디오 끔 · 모드 프로"] and entry["measures"] == ["생성 영상"] and len(entry["series"]) == 2
     named = (json.dumps({"billed_duration": "input plus output length (minimum 2× the output)", "input_video": "yes", "resolution": "1080p"}), "1 second")
     vague = (json.dumps({"audio": "supported; rate has no audio distinction", "generateAudio": "true", "input_video": "none", "resolution": "720p"}), "1M tokens")
-    assert build.tab_names([named, vague]) == {named: "청구 길이 입력+출력(최소 출력의 2배) · 입력 영상 yes · 1080p",
-                                               vague: "오디오 구분 없음 · 오디오 생성 true · 입력 영상 none · 720p"}
-    assert build.tab_conditions([named])[named] == "청구 길이 input plus output length (minimum 2× the output) · 입력 영상 yes · 1080p"
+    assert build.tab_names([named, vague]) == {named: "청구 길이 입력+출력(최소 출력의 2배) · 입력 영상 있음 · 1080p",
+                                               vague: "오디오 구분 없음 · 오디오 생성 켬 · 입력 영상 없음 · 720p"}
+    assert build.tab_conditions([vague])[vague] == build.tab_names([vague])[vague]  # the comparison line says the same
+    # a card's row label names them too; a value the table of Korean values does not know stays as written
+    assert [build.condition_value(key, value) for key, value in (("audio", "on (default)"), ("operation", "generate"), ("mode", "turbo"),
+                                                                 ("resolution", "1080p"))] == ["오디오 켬(기본)", "작업 생성", "모드 turbo", "1080p"]
 
 
 def test_letsurs_line_is_never_the_one_past_the_limit(tmp_path: Path) -> None:
