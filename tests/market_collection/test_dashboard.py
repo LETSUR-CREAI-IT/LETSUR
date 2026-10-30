@@ -1031,7 +1031,9 @@ def test_template_marks_a_called_route_like_a_registered_one(tmp_path: Path) -> 
 
 def test_template_has_the_supply_tab_and_its_editor(tmp_path: Path) -> None:
     """2026-10-29 박건 요청 '공급로 현황': a fourth screen tab with its own #supply address, a matrix built from SUPPLY, and an
-    editor that writes the whole routes file back (download, copy, GitHub edit link) with a draft kept only in this browser."""
+    editor that writes the whole routes file back (download, copy, GitHub edit link) with a draft kept only in this browser.
+    2026-10-30 박건 요청: every cell is one checkbox (checked = LETSUR uses the route, disabled = no price collected there, so no
+    candidate), and the tab writes no basis, date or count beyond 모델 n개."""
     _write(tmp_path, [])
     page = _build(tmp_path)[1]
     assert '<button type="button" role="tab" data-ptab="supply" aria-selected="false">공급로 현황</button></nav>' in page
@@ -1042,8 +1044,13 @@ def test_template_has_the_supply_tab_and_its_editor(tmp_path: Path) -> None:
     # the draft: every storage call is inside try, so a browser that blocks storage still gets the page
     assert "function spSave(){ try { " in page and "try { const d = JSON.parse(localStorage.getItem(SP_DRAFT)" in page
     assert page.count("localStorage") == 4
-    # settings, observed and manual records go only through the panel's explicit button
-    assert 'else if (!was.some(spUse)) spEdits[k] = {on: true, at: spToday()}; } }' in page and '이 기록 지우기 (' in page
+    # one checkbox per cell: checked from the file (plus the draft), disabled where no price is collected; a second click undoes
+    assert '<input type="checkbox" class="spx${use && !got ? " warn" : ""}" data-sp="cell"' in page
+    assert '${use ? " checked" : ""}${got && SUPPLY.routes ? "" : " disabled"}></td>' in page
+    assert "if (spEdits[k]) delete spEdits[k]; else spEdits[k] = {on: !spCell(SUPPLY.routes, m, c).length, at: spToday()}; }" in page
+    assert "<h2>공급로 현황</h2><span>모델 ${count}개</span></div>" in page
+    for gone in ("spBasis", "spChip", "sppanel", "spun", "호출 추정", "렛서가 쓰는데 가격 수집 안 함"):
+        assert gone not in page[page.index("// ---- 공급로 현황"):page.index("// ---- 상호작용 ----")]
     assert "@media (max-width:640px){.ptabs{flex-wrap:wrap;row-gap:4px}.ptabs button{padding:0 9px}}" in page
 
 
