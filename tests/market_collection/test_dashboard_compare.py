@@ -655,3 +655,18 @@ def test_a_compared_row_still_shows_its_stated_end():
                prec_kind="closed", ends="11/18 종료 예정(Vercel API, 문서 미기재 필드)")
     compare.exclusions(row, {})
     assert row["why"] == [] and row["notes"] == ["11/18 종료 예정(Vercel API, 문서 미기재 필드)"]
+
+
+def test_a_gateway_price_naming_no_endpoint_is_a_model_page_headline() -> None:
+    """2026-10-30: the image model pages of OpenRouter and Vercel give one price per gateway; with no endpoint or upstream named,
+    or a display basis, it is the page's headline (모델 페이지 대표가) like the LLM pages'. Vercel's video metadata names its
+    upstream and stays a row."""
+    for route, conditions in (("openrouter", {}), ("vercel", {}), ("vercel", {"price_basis": "displayed model quote"}),
+                              ("vercel_ai_gateway", {"price_basis": "listed_model_rate"})):
+        row = {"model": "gpt-image-2.5-flare", "route": route, "conditions": conditions, "unknown": {}}
+        compare.place(row)
+        assert row["who"][1] == "모델 페이지 대표가" and row["why"] == ["모델 페이지 대표가 (하위 공급처·조건 미지정)"]
+    row = {"model": "seedance-2.5", "route": "vercel_ai_gateway", "conditions": {"provider": "bytedance", "price_basis": "Vercel backing metadata"},
+           "unknown": {}}
+    compare.place(row)
+    assert row["who"][1] != "모델 페이지 대표가"
