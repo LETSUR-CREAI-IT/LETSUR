@@ -103,5 +103,20 @@
     "fixture": "vercel_sunburst_model.html",
     "fixture_sha256": "1ecc14bd1b0d09188463beb7c128a2ad50517a3890b19d924ba272aa53258a6f",
     "extraction": "byte-for-byte original HTML; no transformation"
+  },
+  {
+    "source_key": "openrouter_image_guide_20261030",
+    "requested_url": "https://openrouter.ai/docs/guides/overview/multimodal/image-generation",
+    "fetched_at_utc": "2026-10-30T05:15:47.797071+00:00",
+    "effective_url": "https://openrouter.ai/docs/guides/overview/multimodal/image-generation",
+    "http_status": 200,
+    "content_type": "text/html",
+    "raw_path": "raw/openrouter_image_guide_20261030.body",
+    "raw_sha256": "4817f2e79acf42c9e685b82d055325be9f1eb1a5f1ee3fc60fa6943d86ddac2f",
+    "body_bytes": 733582,
+    "fetch_status": "ok",
+    "fixture": "openrouter_image_guide_20261030.html",
+    "fixture_sha256": "4817f2e79acf42c9e685b82d055325be9f1eb1a5f1ee3fc60fa6943d86ddac2f",
+    "extraction": "byte-for-byte original HTML; no transformation"
   }
 ]

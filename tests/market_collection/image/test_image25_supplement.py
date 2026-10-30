@@ -104,6 +104,27 @@ def test_generic_guide_remains_documentary():
     assert f['exact_pixel_support']['status'] == 'unknown'
 
 
+@pytest.mark.parametrize('variant', ['sunburst', 'flare'])
+def test_the_reworded_guide_of_2026_10_30_reads_the_same(variant):
+    """OpenRouter reworded the size rules on 2026-10-30 (explicit pixel sizes are provider-dependent; providers that take
+    them treat them as authoritative and answer a mismatched resolution or aspect_ratio with a 400). Both pages give the same
+    rows except the section text quoted in the locator; the guide is read by its own module, so the other five parsers keep
+    their fingerprints."""
+    from scripts.market_collection.collectors import image25_openrouter_guide, image25_supplement, parser_module
+    spec = next(s for s in source_specs() if s.source_key == f'image25_openrouter_guide_{variant}_doc')
+    assert parser_module(spec) is image25_openrouter_guide
+    assert all(parser_module(s) is image25_supplement for s in source_specs() if s.parser in image25_supplement.PARSERS - {'image25_openrouter_guide'})
+    old, new = parse('openrouter_guide', variant), parse('openrouter_guide', variant, (F/'openrouter_image_guide_20261030.html').read_bytes())
+    assert {k: (r['value'], r['status']) for k, r in old.items()} == {k: (r['value'], r['status']) for k, r in new.items()}
+    assert 'Explicit pixel sizes are provider-dependent' in new['size_alias_semantics']['locator']
+
+
+def test_a_guide_with_neither_wording_is_refused():
+    body = (F/'openrouter_image_guide_20261030.html').read_bytes().replace(b'Explicit pixel sizes are provider-dependent', b'Explicit pixel sizes are ignored')
+    with pytest.raises(ValueError, match='OpenRouter generic size alias contract changed'):
+        parse('openrouter_guide', body=body)
+
+
 @pytest.mark.parametrize('variant', ['sunburst','flare'])
 def test_visible_ui_select_choices_only(variant):
     f = parse('vercel_ui',variant)
