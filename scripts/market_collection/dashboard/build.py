@@ -99,8 +99,17 @@ CONDITION_KO = {"service_tier": "등급", "cache_read_multiplier": "캐시 읽�
                 # video (2026-10-30: tabs and cards showed these keys, or bare values such as 'on · pro · off')
                 "audio": "오디오", "input_video": "입력 영상", "mode": "모드", "voice_control": "음성 제어", "operation": "작업",
                 "inference_mode": "추론 방식", "billed_duration": "청구 길이", "generateAudio": "오디오 생성", "resolution": "해상도"}
-# Conditions whose value does not say what it is ('on', 'none', 'pro'): a tab and the comparison line name them (2026-10-30).
+# Conditions whose value does not say what it is ('on', 'none', 'pro'): a tab, the comparison line and a card's row label name them (2026-10-30).
 NAMED = {"audio", "input_video", "mode", "voice_control", "operation", "inference_mode", "billed_duration", "generateAudio"}
+# Their values in Korean wherever the dashboard shows them (2026-10-30 박건 '한국어로 바꿔줘', in place of decision 26-1's source
+# words for these); a value not listed stays as the source wrote it, and resolutions such as 1080p are not translated.
+VALUE_KO = {"audio": {"on": "켬", "off": "끔", "on (default)": "켬(기본)", "supported; rate has no audio distinction": "구분 없음"},
+            "voice_control": {"on": "켬", "off": "끔"}, "generateAudio": {"true": "켬", "false": "끔"},
+            "input_video": {"none": "없음", "yes": "있음"}, "mode": {"standard": "표준", "pro": "프로"},
+            "operation": {"text-to-video": "텍스트→영상", "image-to-video": "이미지→영상", "reference-to-video": "참조→영상",
+                          "video-to-video": "영상→영상", "generate": "생성"},
+            "inference_mode": {"online": "온라인"},
+            "billed_duration": {"input plus output length (minimum 2× the output)": "입력+출력(최소 출력의 2배)"}}
 # Condition values stay as the source wrote them; only tiers and regions get the dashboard's names (2026-10-27 decision 26-1).
 TIER_NAMES = {"standard": "Standard", "priority": "Priority", "ultrafast": "Ultrafast", "flex": "Flex", "batch": "Batch"}
 REGION_NAMES = {"us": "US", "eu": "EU"}
@@ -269,7 +278,8 @@ def size_ko(value) -> str:
 
 
 def value_text(key: str, value) -> str:
-    """A condition value as the source wrote it, except tier and region names; an OpenRouter status in Korean, 0 as nothing."""
+    """A condition value as the source wrote it, except tier and region names and the VALUE_KO values; an OpenRouter status in
+    Korean, 0 as nothing."""
     text = str(value)
     if key == "service_tier":
         return TIER_NAMES.get(text.lower(), cap(text))
@@ -277,14 +287,16 @@ def value_text(key: str, value) -> str:
         return REGION_NAMES.get(text.lower(), text)
     if key == "endpoint_status":
         return "" if text == "0" else STATUS_KO.get(text, text)
+    if key in VALUE_KO:
+        return VALUE_KO[key].get(text, text)
     return "" if key in HIDDEN_CONDITIONS else text
 
 
 def condition_value(key: str, value) -> str:
-    """One condition value as a row label part; a bare number gets the name of what it counts."""
+    """One condition value as a row label part; a bare number gets the name of what it counts, a NAMED condition its name."""
     if key == "context_length":
         return f"컨텍스트 {size_ko(value)}"
-    return value_text(key, value)
+    return named(key, value_text(key, value))
 
 
 def compared(conditions) -> dict:
@@ -1457,10 +1469,6 @@ def tab_value(name: str, text: str) -> str:
         return f"캐시 {found.group(1)}{'분' if found.group(2) == 'm' else '시간'}"
     if found := re.search(r"(?:>\s*|more than )(\d+K) input tokens are priced at ([\d.]+)x input(?: and cache rates)? and ([\d.]+)x output", text):
         return f"{found.group(1)} 초과 요청 입력 {found.group(2)}배·출력 {found.group(3)}배"
-    if found := re.fullmatch(r"input plus output length \(minimum (\d+)× the output\)", text):  # fal Kling 4.0 Omni with an input video
-        return f"입력+출력(최소 출력의 {found.group(1)}배)"
-    if name == "audio" and text.startswith("supported; rate has no audio distinction"):  # Vercel Seedance: one rate with or without audio
-        return "구분 없음"
     if name == "promotion_note":  # OpenAI: 'promotional pricing is available at least through November 21, 2026.'
         found = re.search(r"through ([A-Z][a-z]+ \d{1,2}, \d{4})", text)
         day = datetime.strptime(found.group(1), "%B %d, %Y") if found else None
