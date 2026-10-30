@@ -924,7 +924,10 @@ def test_template_has_the_supply_tab_and_its_editor(tmp_path: Path) -> None:
     candidate), and the tab writes no basis, date or count beyond 모델 n개."""
     _write(tmp_path, [])
     page = _build(tmp_path)[1]
-    assert '<button type="button" role="tab" data-ptab="supply" aria-selected="false">공급로 현황</button></nav>' in page
+    # 2026-10-30 박건 요청: 공급로 현황이 수집 상태 앞(세 번째 탭)이고, 상자를 바꾸기 전에 묻는다
+    assert ('<button type="button" role="tab" data-ptab="supply" aria-selected="false">공급로 현황</button>'
+            '<button type="button" role="tab" data-ptab="health" aria-selected="false">수집 상태</button></nav>') in page
+    assert 'if (confirm(`${m}의 ${c[0]} 공급로${on ? "에서 해제" : "를 추가"}하시겠습니까?`)) {' in page
     assert '<section class="spage" aria-label="공급로 현황">' in page and 'if (h === "supply") startSupply = true;' in page
     assert 'if (p === "supply") { renderSupply(); try { history.replaceState(null, "", "#supply"); } catch (err) {} return; }' in page
     assert 'const SP_FILE = "https://github.com/LETSUR-CREAI-IT/LETSUR/edit/develop/samples/market_collection/demo_internal_routes.json";' in page
