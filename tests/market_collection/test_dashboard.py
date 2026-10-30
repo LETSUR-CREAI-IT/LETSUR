@@ -556,6 +556,13 @@ def test_template_bundles_the_list_and_moves_the_table_to_the_model_view(tmp_pat
     companies = [company for _, company in _makers(page)]
     assert companies == sorted(companies, key=str.lower)
     assert "modelName(a).localeCompare(modelName(b), undefined, {numeric: true})" in page
+    # every company group starts with its icon and is set off by a line (2026-10-30 박건 요청); the icons are the page's own symbols
+    icons = json.loads(re.search(r"^const MAKER_ICONS = (.*);$", page, re.M).group(1))
+    assert set(icons) == set(companies)
+    assert all(f'<symbol id="mk-{icon}" viewBox=' in page for icon in icons.values())
+    assert ".mgrp+.mgrp{margin-top:10px;padding-top:10px;border-top:1px solid var(--line-strong)}" in page
+    sprite = re.search(r'<svg class="sprite".*?</svg>\n', page, re.S).group(0)
+    assert not re.search(r"<script|\son\w+=|href=|<image|<foreignObject", sprite)  # shapes only
 
 
 def test_observed_condition_change(tmp_path: Path) -> None:
