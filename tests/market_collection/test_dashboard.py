@@ -1235,6 +1235,47 @@ def test_tabs_named_alike_add_the_unit_then_korean_condition_names() -> None:
     assert build.tab_value("promotion_note", "promotional pricing is available at least through November 21, 2026.") == "프로모션 가격 11/21까지"
 
 
+def _series(oid: str, model: str, route: str, source: str, item: str, amount: str, unit: str = "1M tokens", task: str = "text-to-image",
+            **conditions: str) -> dict:
+    return {"obs": {"observation_id": oid, "run_id": RUN2, "observed_at_utc": AT2, "model_id": model, "route": route, "source_key": source,
+                    "upstream_provider": "", "provider_model_id": "", "task": task, "billing_item": item, "amount": amount,
+                    "currency": "USD", "unit": unit, "conditions": conditions}}
+
+
+def test_openais_image_page_items_are_the_gateways_items() -> None:
+    """2026-10-30: OpenAI's image pages name their rates 'Image tokens / Output' and so on, the gateways and Google image_output,
+    input and cache_read, so the same rate of two routes was two items never compared. Vercel's output stays output: its
+    listing does not say whether it is the image or the text rate."""
+    series = {"o": _series("o-1", "gpt-image-2", "openai", "openai_gpt_image_2", "Image tokens / Output", "30", service_tier="standard"),
+              "t": _series("t-1", "gpt-image-2", "openai", "openai_gpt_image_2", "Text tokens / Input", "5", service_tier="standard"),
+              "c": _series("c-1", "gpt-image-2", "openrouter", "openrouter_image_catalog_endpoints_gpt_image_2", "image_output", "30",
+                           endpoint_tag="openai", price_basis="endpoint_listed_rate"),
+              "v": _series("v-1", "gpt-image-2", "vercel_ai_gateway", "vercel_image_endpoints_gpt_image_2", "output", "30",
+                           endpoint_provider="openai", endpoint_status="0", price_basis="endpoint_listed_rate")}
+    entry = build.model_trend("gpt-image-2", [], {}, series, set())
+    assert entry["measures"] == ["입력", "출력", "이미지 출력"] and list(entry["conds"]) == ["Standard"]
+    outputs = {line["name"]: line["pts"][-1][1][2] for line in entry["series"]}
+    assert outputs == {"OpenAI · openai": 30.0, "OpenRouter · openrouter · openai": 30.0, "Vercel · vercel_ai_gateway · openai": None}
+
+
+def test_video_tabs_name_their_conditions_and_vercel_metadata_splits_no_tab() -> None:
+    """2026-10-30: a video tab read 'on · pro · off'; a condition whose value does not say what it is now carries its Korean name,
+    as in the cards. Vercel's video metadata (provider, supported lists, an operation that is the model's own task) tells
+    lines apart, not tabs, so its line shares fal's tab."""
+    fal = _series("f-1", "kling-v3-text-to-video", "fal", "fal_kling_v3_t2v", "generated_video", "0.168", unit="1 second", task="text-to-video",
+                  audio="off", mode="pro")
+    vercel = _series("v-1", "kling-v3-text-to-video", "vercel_ai_gateway", "vercel_kling_v3_t2v", "generated_video", "0.168", unit="1 second",
+                     task="text-to-video", audio="off", mode="pro", operation="text-to-video", provider="klingai",
+                     supportedFps="[24]", supportedOperations='["text-to-video"]')
+    entry = build.model_trend("kling-v3-text-to-video", [], {}, {"f": fal, "v": vercel}, set())
+    assert list(entry["conds"]) == ["오디오 off · 모드 pro"] and entry["measures"] == ["생성 영상"] and len(entry["series"]) == 2
+    named = (json.dumps({"billed_duration": "input plus output length (minimum 2× the output)", "input_video": "yes", "resolution": "1080p"}), "1 second")
+    vague = (json.dumps({"audio": "supported; rate has no audio distinction", "generateAudio": "true", "input_video": "none", "resolution": "720p"}), "1M tokens")
+    assert build.tab_names([named, vague]) == {named: "청구 길이 입력+출력(최소 출력의 2배) · 입력 영상 yes · 1080p",
+                                               vague: "오디오 구분 없음 · 오디오 생성 true · 입력 영상 none · 720p"}
+    assert build.tab_conditions([named])[named] == "청구 길이 input plus output length (minimum 2× the output) · 입력 영상 yes · 1080p"
+
+
 def test_letsurs_line_is_never_the_one_past_the_limit(tmp_path: Path) -> None:
     """A tab draws six lines; LETSUR's line comes first, then a line with a change, then the rest by name (2026-10-30: more lines
     share a tab now that untiered lines join their tier)."""
