@@ -356,9 +356,9 @@ class FakeGateway:
         return self.answers[name]
 
 
-def test_probe_stops_as_soon_as_the_route_is_observed():
-    gateway = FakeGateway({"chat": answer(chat(), model_id="gpt-x-azure-uk-south")})
-    assert list(lr.probe(gateway, "gpt-x", "chat", False)) == ["chat"] and gateway.calls == ["chat"]
+def test_probe_asks_every_endpoint_of_the_plan_even_when_the_first_answer_names_the_route():
+    gateway = FakeGateway({"chat": answer(chat(), model_id="gpt-x-azure-uk-south"), "responses": answer(BILLING)})
+    assert list(lr.probe(gateway, "gpt-x", "chat", False)) == ["chat", "responses"] and gateway.calls == ["chat", "responses"]
 
 
 def test_probe_asks_the_responses_endpoint_only_while_the_chat_answer_leaves_doubt():
@@ -369,6 +369,24 @@ def test_probe_asks_the_responses_endpoint_only_while_the_chat_answer_leaves_dou
     other = FakeGateway({"chat": answer(chat())})
     lr.probe(other, "glm-x", "chat", False)
     assert other.calls == ["chat"]
+
+
+def test_the_openai_family_asks_responses_even_after_a_settled_chat_answer():
+    """2026-10-30: gpt-5.5 answered through Azure on its chat requests and once through OpenAI's own API on Responses; a chat
+    answer never shows OpenAI's deployment, so a settled one does not stop the Responses request."""
+    azure = answer(chat(prompt_filter_results=[{"prompt_index": 0, "content_filter_results": FILTERS}]))
+    gateway = FakeGateway({"chat": azure, "responses": answer(BILLING)})
+    responses = lr.probe(gateway, "gpt-5.5", "chat", False)
+    assert gateway.calls == ["chat", "responses"]
+    assert lr.summarize("gpt-5.5", [responses])["routes"] == {"azure_foundry": NO_REGION, "openai_direct": ""}
+
+
+def test_a_glm_answer_that_carries_back_the_request_id_came_from_zai():
+    """Z.ai's API answers with the request_id it was sent; the other GLM deployments did not (10/30)."""
+    sent = lr.ECHO + "0123456789abcdef"
+    assert classify("glm-5.3", chat=answer(chat("202610301058398f926911e5e54d11", request_id=sent)))[:3] == ("zai_direct", None, "observed")
+    assert classify("glm-5.3", chat=answer(chat("202610301058398f926911e5e54d11", request_id="2026103010583900")))[0] is None
+    assert classify("glm-5.3", chat=answer(chat(UUID)))[0] is None
 
 
 def test_probe_makes_no_request_for_video_nor_for_images_without_the_flag():
@@ -445,6 +463,10 @@ def test_only_a_gemini_models_chat_request_carries_the_vertex_only_safety_settin
     assert sent[0] == {"model": "gemini-2.5-flash", "messages": [{"role": "user", "content": "Reply with: ok"}], "max_tokens": 16,
                        "safety_settings": [{"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_ONLY_HIGH", "method": "SEVERITY"}]}
     assert not any("safety_settings" in body for body in sent[1:])
+    # only a GLM chat request carries a request_id, a new one each time
+    assert sent[1]["request_id"].startswith(lr.ECHO) and not any("request_id" in body for body in sent[:1] + sent[2:])
+    gateway.probe("chat", "glm-5")
+    assert opener.requests[-1]["body"]["request_id"] != sent[1]["request_id"]
 
 
 def test_key_and_base_url_are_masked_and_long_text_is_cut_on_receipt():
@@ -750,7 +772,8 @@ def test_a_run_samples_the_registered_models_names_the_rest_and_keeps_only_the_r
     assert asked == {("/v1/models", None): 1, **{(path, model): 6 for path, model in (
         ("/v1/messages", "claude-haiku-4-5-20251001"), ("/v1/chat/completions", "deepseek-v4-pro"), ("/v1/chat/completions", "glm-5"),
         ("/v1/chat/completions", "glm-5.2"), ("/v1/chat/completions", "gpt-5.4"), ("/v1/chat/completions", "gpt-6.1-terra"),
-        ("/v1/chat/completions", "kimi-k2.5"))}}  # six samples each; no video, no image, no LETSUR-only model
+        ("/v1/chat/completions", "kimi-k2.5"), ("/v1/responses", "gpt-5.4"), ("/v1/responses", "gpt-6.1-terra"))}}
+    # six samples each, the OpenAI family on both endpoints; no video, no image, no LETSUR-only model
     text = output.read_text(encoding="utf-8")
     assert text == json.dumps(json.loads(text), ensure_ascii=False, indent=2) + "\n" and "경로 파일" in text
     proposal = json.loads(text)
@@ -772,7 +795,7 @@ def test_a_run_samples_the_registered_models_names_the_rest_and_keeps_only_the_r
                      "  kimi-k2.5: openrouter [observed] no date", "re-seen (2): claude-haiku-4-5, deepseek-v4-pro",
                      "unresolved (4): glm-5, glm-5.2, gpt-image-2, kling-v3-text-to-video", "not registered, skipped (3): gpt-4, gpt-audio-1.5, jev-latest"):
         assert expected in captured.out.splitlines()
-    assert "checked 10 models with 42 requests, gateway-reported cost 0.0480" in captured.out
+    assert "checked 10 models with 54 requests, gateway-reported cost 0.0480" in captured.out
     for expected in ("[6/10] gpt-5.4: azure_foundry×6", "[8/10] gpt-image-2: not requested", "[4/10] glm-5: unresolved×6"):
         assert expected in captured.err.splitlines()
     assert "gpt-4" not in captured.err and "[bedrock" not in captured.err
@@ -877,7 +900,7 @@ def test_a_second_run_the_same_day_leaves_the_file_as_the_first_wrote_it(setup):
 def test_models_option_checks_only_those_models_without_listing_and_still_skips_unregistered_ones(setup, capsys):
     run, _, output, opener = setup
     assert run("--models", "gpt-5.4,glm-5,gpt-4", "--models", "claude-haiku-4-5-20251001") == 0
-    assert Counter(r["path"] for r in opener.requests) == {"/v1/chat/completions": 12, "/v1/messages": 6}
+    assert Counter(r["path"] for r in opener.requests) == {"/v1/chat/completions": 12, "/v1/responses": 6, "/v1/messages": 6}
     assert "kling-v3-text-to-video" not in json.loads(output.read_text(encoding="utf-8"))["unresolved"]
     assert "not registered, skipped (1): gpt-4" in capsys.readouterr().out.splitlines()
 

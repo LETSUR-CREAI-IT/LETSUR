@@ -37,6 +37,7 @@ import re
 import sys
 import urllib.error
 import urllib.request
+import uuid
 from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
@@ -80,6 +81,10 @@ PLAIN_FIELDS = {"id", "object", "created", "created_at", "model", "choices", "us
 # setting got 400 invalid_parameter whenever a Gemini API deployment answered, OpenRouter and Vercel took it (on other models
 # too), and without `method` every deployment answered 200. No Vertex answer was among those 72 calls.
 VERTEX_ONLY = [{"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_ONLY_HIGH", "method": "SEVERITY"}]
+# Z.ai's chat API takes a request_id from the caller and answers with it (docs.z.ai chat completion: "passed by the user side
+# ... if not provided, the platform will generate one"); OpenRouter, Vercel and the other GLM deployments answered the same
+# field without it (10/30). So a GLM answer that carries back this prefix came from Z.ai's own API.
+ECHO = "letsur-route-check-"
 # Bedrock's Converse API takes performanceConfig.latency only as standard or optimized. A deployment that answers "standard"
 # and an unknown field but never "bogus" (the gateway then hands the request to another deployment) checks that field, so it is
 # Bedrock: the chatcmpl-<uuid> deployments of glm-4.7 and glm-5 did so on 10/30. Sent only with --bedrock-check.
@@ -116,7 +121,7 @@ def kind(model: str, modality=()) -> str:
 
 
 def plan(model: str, model_kind: str, include_images: bool) -> list[str]:
-    """The endpoints to ask, in order; the next one is asked only while the ones before did not settle the route."""
+    """The endpoints one sample asks, every one of them (probe)."""
     if model_kind == "chat":
         return ["chat", "responses"] if OPENAI_FAMILY.match(model) else ["chat"]
     return {"claude": ["messages"], "embedding": ["embeddings"], "image": ["images"] if include_images else [], "video": []}[model_kind]
@@ -130,7 +135,8 @@ def gemini(model: str) -> bool:
 def payload(name: str, model: str) -> dict:
     ask = ASK_NO_DRAW if "image" in model or "nano-banana" in model else ASK
     vertex = {"safety_settings": VERTEX_ONLY} if gemini(model) else {}
-    return {"chat": {"model": model, "messages": [{"role": "user", "content": ask}], "max_tokens": 16, **vertex},
+    echo = {"request_id": ECHO + uuid.uuid4().hex[:16]} if model.startswith("glm") else {}
+    return {"chat": {"model": model, "messages": [{"role": "user", "content": ask}], "max_tokens": 16, **vertex, **echo},
             "messages": {"model": model, "max_tokens": 16, "messages": [{"role": "user", "content": ASK}]},
             "responses": {"model": model, "input": ASK, "max_output_tokens": 16},
             "images": {"model": model, "prompt": "a small red dot on white", "size": "1024x1024", "quality": "low", "n": 1},
@@ -304,6 +310,12 @@ def anthropic(model, ok):
             return route, None, "observed", ""
 
 
+def zai(model, ok):
+    for answer in ok.values():
+        if str(answer["body"].get("request_id", "")).startswith(ECHO):
+            return "zai_direct", None, "observed", "보낸 request_id를 그대로 돌려줌(Z.ai API 동작)"
+
+
 def azure_body(model, ok):
     if any(node.keys() & AZURE_KEYS for answer in ok.values() for node in walk(answer["body"])):
         return "azure_foundry", None, "observed", "Azure 콘텐츠 필터 필드(배포 지역 표기 없음)"
@@ -332,7 +344,7 @@ def gemini_api(model, responses):
 # Most specific first: a deployment named in the header and a gateway's own marks cannot come from anywhere else, and
 # content-filter fields can also be passed through. An answer that only fits one route (what earlier versions inferred from:
 # no Azure field on an OpenAI answer, a Bedrock-like GLM answer) names none.
-RULES = (named_deployment, openrouter, vercel, anthropic, azure_body, openai_billing, vertex)
+RULES = (named_deployment, openrouter, vercel, zai, anthropic, azure_body, openai_billing, vertex)
 
 
 def classify(model: str, responses: dict) -> tuple[str | None, str | None, str | None, str]:
@@ -455,12 +467,10 @@ def bedrock(candidates: set[str], answers: dict[str, list[dict]]) -> set[str]:
 # ---- running -----------------------------------------------------------------------------------------------------------
 
 def probe(gateway, model: str, model_kind: str, include_images: bool) -> dict:
-    responses = {}
-    for name in plan(model, model_kind, include_images):
-        responses[name] = gateway.probe(name, model)
-        if classify(model, responses)[2] == "observed":
-            break  # settled: another request would only cost money
-    return responses
+    """One sample. The OpenAI family asks Responses even when its chat answer already shows a route: each request lands on any
+    of the model's deployments, and only a Responses answer shows OpenAI's own one (billing). gpt-5.5 had one among its Azure
+    deployments on 10/30."""
+    return {name: gateway.probe(name, model) for name in plan(model, model_kind, include_images)}
 
 
 def today() -> str:
