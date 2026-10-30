@@ -240,14 +240,11 @@ def test_runs_over_the_fixtures_are_read_into_baselines_and_image_output_events(
     assert {(s["source_key"], s["fetch_status"], s["parse_status"], s["error"]) for s in sources} == {(key, "ok", "ok", "") for key in FIXTURES}
     builder = Builder(Catalog())
     builder.build([evidence.load_run(run) for run in runs])
-    # Since 2026-10-30 an unstated serving precision does not keep a closed model's gateway row out (evidence.blocking_unknowns):
-    # the OpenRouter rows of the Gemini image models form series too. Rows with another unstated condition (OpenRouter's
-    # cache-write TTL, Vercel's service tier) still do not.
-    assert {n["reason"] for n in builder.state["not_comparable"]} == {"condition_unknown"}
-    assert {(n["route"], n["billing_item"]) for n in builder.state["not_comparable"]} == {
-        ("openrouter", "cache_write"), ("vercel_ai_gateway", "input"), ("vercel_ai_gateway", "output"), ("vercel_ai_gateway", "cache_read")}
-    assert all(set(n["unknown_conditions"]) - {"quantization"} for n in builder.state["not_comparable"])
-    assert len(builder.state["baselines"]) == 20  # the catalog's input, image_input and image_output (the last then moved) and 17 endpoint rows
+    # Since 2026-10-30 an unstated serving precision does not keep a closed model's gateway row out, nor do Vercel's untiered
+    # tier and region (decisions 10, 18; evidence.blocking_unknowns): the endpoint rows of these closed models form series too.
+    # Only OpenRouter's cache writes, whose TTL is not stated, stay out.
+    assert {(n["reason"], n["route"], n["billing_item"]) for n in builder.state["not_comparable"]} == {("condition_unknown", "openrouter", "cache_write")}
+    assert len(builder.state["baselines"]) == 26  # the catalog's input, image_input and image_output (the last then moved) and 23 endpoint rows
     assert [(e["model_id"], e["route"], e["billing_item"], e["before"]["amount"], e["after"]["amount"], e["change"]["pct"])
             for e in builder.state["events"].values()] == [("gpt-image-2", "openrouter", "image_output", "30", "24", "-20.00")]
 

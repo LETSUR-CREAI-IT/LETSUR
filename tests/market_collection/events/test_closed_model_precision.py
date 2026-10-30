@@ -32,11 +32,21 @@ def entry(model: str, provider_id: str, prompts: list[str]) -> dict:
 
 
 def test_only_an_open_weight_model_needs_its_precision_stated():
-    row = lambda model, unknown: {"model_id": model, "unknown_conditions": unknown}
+    row = lambda model, unknown, route="openrouter": {"model_id": model, "route": route, "unknown_conditions": unknown}
     assert evidence.blocking_unknowns(row("grok-4.3", ["quantization"])) == []
     assert evidence.blocking_unknowns(row("grok-4.3", ["quantization", "service_tier"])) == ["service_tier"]
     assert evidence.blocking_unknowns(row("glm-5.2", ["quantization"])) == ["quantization"]
     assert evidence.open_weight("deepseek-v4-pro") and not evidence.open_weight("qwen3.7-max")
+
+
+def test_vercels_untiered_price_is_its_standard_price_as_in_the_comparison_table():
+    """Decisions 10 and 18 settle Vercel's tier and region for the table; the series follow them (2026-10-30)."""
+    row = lambda model, unknown, route="vercel_ai_gateway": {"model_id": model, "route": route, "unknown_conditions": unknown}
+    tier = ["quantization", "region_applicability", "service_tier", "service_tier_applicability"]
+    assert evidence.blocking_unknowns(row("grok-4.3", tier)) == []
+    assert evidence.blocking_unknowns(row("deepseek-v4-pro", tier)) == ["quantization"]  # an open-weight precision still counts
+    assert evidence.blocking_unknowns(row("grok-4.3", tier, "openrouter")) == ["region_applicability", "service_tier", "service_tier_applicability"]
+    assert evidence.blocking_unknowns(row("grok-4.3", ["discount_application", "endpoint_status"])) == ["discount_application", "endpoint_status"]
 
 
 def test_a_closed_models_gateway_price_without_a_precision_gets_a_baseline_and_then_its_change(tmp_path):

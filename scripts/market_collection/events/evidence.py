@@ -149,6 +149,10 @@ def core_observations(run: dict, catalog: Catalog) -> tuple[list[dict], list[dic
 # still prices that model (2026-10-30: without this, models seen only through OpenRouter or Vercel had no series at all).
 OPEN_WEIGHT = ("deepseek", "glm", "kimi")
 CLOSED_MODEL_UNKNOWNS = {"quantization"}
+# Vercel's untiered endpoint price is its Standard price, and its tier and regional prices are rows of their own (decisions
+# 10 and 18, already the comparison table's dashboard/compare.py SETTLED). OpenRouter's discounts stay unknown here: a
+# discount starting or ending is not a price change card (10/27).
+VERCEL_SETTLED = {"service_tier", "service_tier_applicability", "region_applicability"}
 
 
 def open_weight(model_id: str) -> bool:
@@ -157,9 +161,10 @@ def open_weight(model_id: str) -> bool:
 
 def blocking_unknowns(obs: dict) -> list[str]:
     """The unstated conditions that leave this observation's product unknown."""
-    if open_weight(obs["model_id"]):
-        return list(obs["unknown_conditions"])
-    return [key for key in obs["unknown_conditions"] if key not in CLOSED_MODEL_UNKNOWNS]
+    settled = VERCEL_SETTLED if obs.get("route") == "vercel_ai_gateway" else set()
+    if not open_weight(obs["model_id"]):
+        settled = settled | CLOSED_MODEL_UNKNOWNS
+    return [key for key in obs["unknown_conditions"] if key not in settled]
 
 
 def comparability(obs: dict) -> str:
