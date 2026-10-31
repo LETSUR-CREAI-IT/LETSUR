@@ -1488,7 +1488,7 @@ def test_list_rows_lead_with_the_model(tmp_path):
     """2026-10-27 박건 request: each list row says which model it is about before what changed."""
     _write(tmp_path, [])
     page = _build(tmp_path)[1]
-    assert '<b><span class="subj">${esc(e.m)}</span> ${esc(e.sum)}' in page
+    assert '<b><span class="subj">${logoOf(e.mid)}${esc(e.m)}</span> ${esc(e.sum)}' in page
     assert '${esc(e.m)} · ${esc(e.ch)}</span></span>' not in page
 
 
@@ -1692,3 +1692,32 @@ def test_template_css_keeps_to_the_design_scales() -> None:
     assert set(re.findall(r"font-size:(\d+(?:\.\d+)?)px", css)) <= {"11", "12", "13", "14", "15", "18", "22", "26"}
     spacing = re.findall(r"(?:^|[;{\s])(?:padding|margin|gap|row-gap|column-gap)(?:-[a-z-]+)?:([^;}]+)", css)
     assert sorted({v for s in spacing for v in re.findall(r"(-?\d+(?:\.\d+)?)px", s) if abs(float(v)) not in (0, 2) and abs(float(v)) % 4}) == []
+
+
+def test_team_feedback_icons_calendar_words_title_and_letsur_mode(tmp_path: Path) -> None:
+    """2026-10-31 팀 상호 피드백 1~4 (박건 '네, 1~4 반영'): the company icon also stands before the model name in the change list,
+    the detail, the calendar, 다음 일정 and 수집 상태 and follows the text colour; a calendar chip names the change ('할인 종료', not
+    '종료'); the big page title is for screen readers only; '렛서 경로만' hides the cards on routes LETSUR does not use from the
+    summary, the calendar and the list. The browser check covers behaviour."""
+    _write(tmp_path, [])
+    page = _build(tmp_path)[1]
+    # icons: one class of their own (the old .mk status marks are round) that takes the text colour, then every model name
+    assert '`<svg class="logo" aria-hidden="true"><use href="#mk-${MAKER_ICONS[g]}"/></svg>`' in page
+    assert ".logo{width:14px;height:14px;flex:none;fill:currentColor}" in page and 'class="mk"' not in page
+    assert '<span class="subj">${logoOf(e0.mid)}${esc(e0.m)}</span>' in page and '<span class="who">${logoOf(e.mid)}${esc(e.m)}</span>' in page
+    assert '${calWord(x)}</span>${logoOf(e.mid)}<span>${esc(c[0])}</span>' in page and '${calWord(x)}</span>${logoOf(x.e.mid)}${esc(x.e.m)} · ' in page
+    assert 'who = x => `<b>${logoOf(x.model)}${esc(x.model || "모델 표기 없음")}</b>' in page
+    # calendar chips, 다음 일정 and the tooltip use the change's name; the colour still follows the date kind
+    assert "DATE_KIND[x.kind]}</span>" not in page and "${md(x.date)}(${wd(x.date)}) · ${calWord(x)} · ${x.label}" in page
+    for word in ("공급 중단", "경로 추가", "할인 종료", "기존가 종료", "인상 적용", "인하 적용"):
+        assert f'"{word}"' in page
+    assert 'return x.kind === "next_check" ? `${w} 확인` : w;' in page
+    # the title is still the page's heading for screen readers
+    assert '<h1 id="ptitle">변화</h1>' in page and ".title h1{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)" in page
+    assert "확인할 변화" not in page
+    # 렛서 경로만: off when the page opens, keeps 렛서 경로를 모르는 cards, filters the summary, the calendar and the list
+    assert '<button type="button" class="mchip" data-lmode aria-pressed="false"' in page and "let letsurOnly = false;" in page
+    assert 'const letsurRoute = e => ["use", "unk"].includes(relOf(e));' in page and "const modeShown = e => !letsurOnly || letsurRoute(e);" in page
+    assert "const shown = EVENTS.filter(modeShown)" in page and "const entries = CAL_ENTRIES.filter(x => modeShown(x.e));" in page
+    assert "const list = EVENTS.filter(e => modeShown(e) && kindShown(e) && (showPast || !isPast(e)));" in page
+    assert "letsurOnly = !letsurOnly; renderMeta(); renderCalendar(); refilter();" in page
