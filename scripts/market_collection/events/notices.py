@@ -32,6 +32,10 @@ RELEASE = re.compile(r"\b(?:is|are)\s+(?:now\s+)?available\s+today\b|\b(?:launch
 # "available today" alone may be an existing model reaching a new tier, plan, or region; a first release
 # also needs the maker to call it a new model, and no negation or narrowed scope in the same sentence.
 NEW_MODEL = re.compile(r"\bnew(?:est)?\s+(?:\w+\s+)?model\b|\bfirst\s+release\b", re.I)
+# The maker's own title that is nothing but "Introducing <model>" is its release post too: OpenAI titles its model
+# launches this way with no "available today" sentence (GPT-6.1 Terra 10/26, Sol 9/29; 2026-11-01 박건). Only the whole
+# title counts: one more word ("Introducing new capabilities to …", "… and Luna") or the word in the body does not.
+INTRODUCING = re.compile(r"Introducing\s+(.+)", re.I)
 NEGATED = re.compile(r"\bnot\b|n't\b|\bno\s+longer\b|\bcancel|\bpostpon|\bdelay|\bwithdr[ae]w", re.I)
 NARROW_SCOPE = re.compile(r"\bBatch\b|\bChatGPT\b|\bfree\s+tier\b|\bregions?\b|\b(?:Plus|Pro|Team|Enterprise)\s+(?:users|plans?)\b", re.I)
 ROUTE_ADD = re.compile(r"\b(?:is|are)\s+now\s+available\s+on\b", re.I)
@@ -83,6 +87,11 @@ def ambiguous_row(row: dict, model_id: str) -> bool:
     return False
 
 
+def introduces(title: str, alias) -> bool:
+    match = INTRODUCING.fullmatch(title.strip())
+    return bool(match) and alias.pattern.fullmatch(match.group(1).strip()) is not None
+
+
 def maker_route(catalog: Catalog, model_id: str) -> str:
     routes = {spec.route for spec in catalog.specs if spec.model_id == model_id and authority(model_id, spec.route) == "manufacturer_official"}
     return routes.pop() if len(routes) == 1 else ""
@@ -111,7 +120,7 @@ def entry_claims(entry, spec: dict, catalog: Catalog) -> list[dict]:
             base = {"model_id": model_id, "quote": line, "line": index, "info": info, "route": route}
             date = iso_date(line)
             if not ambiguous:
-                if (maker and RELEASE.search(line) and NEW_MODEL.search(line)
+                if (maker and (RELEASE.search(line) and NEW_MODEL.search(line) or index == 0 and introduces(line, alias))
                         and not NEGATED.search(line) and not NARROW_SCOPE.search(line)):
                     found.append(dict(base, kind="availability", maker_first_release_date=published, route_added_date=published))
                 elif not maker and ROUTE_ADD.search(line) and route:
