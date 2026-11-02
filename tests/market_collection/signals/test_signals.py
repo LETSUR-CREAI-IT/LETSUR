@@ -186,8 +186,9 @@ def test_gateway_api_sources_cover_every_listed_model_of_both_gateways():
     # in its model list) -> 104; the four retirement schedule pages come last -> 217
     # 2026-10-30: qwen3.5-plus gets an OpenRouter id and gemini-3-flash-preview a Vercel id -> OpenRouter 106, Vercel 105, 219;
     # GPT Image 2.5 Flare and Sunburst join the image models with a Vercel id only -> Vercel 107, 221
-    assert len(specs) == 221 and {parser: len(found) for parser, found in by_parser.items()} == {
-        "atom": 3, "rss": 1, "openrouter_endpoints": 106, "vercel_endpoints": 107, "azure_retirements": 1, "openai_deprecations": 1,
+    # 2026-11-03: 6 models LETSUR's calls failed on join the more models, 3 with an OpenRouter id and 5 with a Vercel id -> OpenRouter 109, Vercel 112, 229
+    assert len(specs) == 229 and {parser: len(found) for parser, found in by_parser.items()} == {
+        "atom": 3, "rss": 1, "openrouter_endpoints": 109, "vercel_endpoints": 112, "azure_retirements": 1, "openai_deprecations": 1,
         "anthropic_deprecations": 1, "google_deprecations": 1}
     assert [spec.source_key for spec in specs[-4:]] == ["azure_retirement_schedule", "openai_deprecations", "anthropic_deprecations",
                                                         "google_deprecations"]
@@ -206,16 +207,16 @@ def test_gateway_api_sources_cover_every_listed_model_of_both_gateways():
     for model, _, openrouter_id, vercel_id in BROKER_API_MODELS:
         key = model.replace("-", "_").replace(".", "_")
         assert (f"openrouter_endpoints_{key}" in keys) == bool(openrouter_id) and (f"vercel_endpoints_{key}" in keys) == bool(vercel_id)
-    # the 18 OpenRouter sources of before come first, the 32 of the gateway-only models after them, then the 50 of the 51 more
+    # the 18 OpenRouter sources of before come first, the 32 of the gateway-only models after them, then the 53 of the 57 more
     added = {model for model, *_ in BROKER_API_MODELS}
     more = {model for model, *_ in GATEWAY_MORE_MODELS + GATEWAY_EMBEDDING_MODELS}
-    assert len(more) == 51 and not added & more
+    assert len(more) == 57 and not added & more
     assert not {spec.model_id for spec in by_parser["openrouter_endpoints"][:18]} & (added | more)
     assert {spec.model_id for spec in by_parser["openrouter_endpoints"][18:50]} <= added
     images = {model for model, *_ in GATEWAY_IMAGE_MODELS}
     assert len(images) == 9 and not images & (added | more)
-    assert {spec.model_id for spec in by_parser["openrouter_endpoints"][50:100]} <= more
-    assert [spec.model_id for spec in by_parser["openrouter_endpoints"][100:]] == [m for m, _, openrouter_id, _ in GATEWAY_IMAGE_MODELS if openrouter_id]
+    assert {spec.model_id for spec in by_parser["openrouter_endpoints"][50:103]} <= more
+    assert [spec.model_id for spec in by_parser["openrouter_endpoints"][103:]] == [m for m, _, openrouter_id, _ in GATEWAY_IMAGE_MODELS if openrouter_id]
     for model, _, openrouter_id, vercel_id in GATEWAY_MORE_MODELS + GATEWAY_EMBEDDING_MODELS:
         key = re.sub(r"[^a-z0-9]+", "_", model)
         assert (f"openrouter_endpoints_{key}" in keys) == bool(openrouter_id) and (f"vercel_endpoints_{key}" in keys) == bool(vercel_id)

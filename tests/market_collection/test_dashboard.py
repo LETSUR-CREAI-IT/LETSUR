@@ -845,7 +845,7 @@ def test_supply_block_carries_the_registry_routes_and_the_whole_routes_file(tmp_
     assert [name for name, _ in supply["cols"]] == ["Anthropic", "Google", "Kling AI", "OpenAI", "Z.ai", "AWS", "BytePlus", "Databricks",
                                                     "Google Cloud", "Microsoft", "OpenRouter", "Vercel", "fal"]
     assert (dict(supply["cols"])["OpenAI"], dict(supply["cols"])["Vercel"]) == (["openai_direct", "openai"], ["vercel_ai_gateway", "vercel"])
-    assert len(supply["models"]) == 125 and sorted(supply["models"]["gpt-image-2"]) == ["openai", "openrouter", "vercel_ai_gateway"]
+    assert len(supply["models"]) == 132 and sorted(supply["models"]["gpt-image-2"]) == ["openai", "openrouter", "vercel_ai_gateway"]
     # qwen3.5-plus went through OpenRouter, which lists it only under dated ids: since 2026-10-30 the one LETSUR's call cost is read
     assert supply["models"]["qwen3.5-plus"] == ["openrouter", "vercel_ai_gateway"]
 
@@ -853,7 +853,7 @@ def test_supply_block_carries_the_registry_routes_and_the_whole_routes_file(tmp_
 def test_supply_block_without_a_routes_file_and_for_models_we_do_not_collect(tmp_path: Path) -> None:
     _write(tmp_path / "none", [])
     supply = _build(tmp_path / "none")[2]["SUPPLY"]
-    assert supply["routes"] is None and len(supply["models"]) == 125 and len(supply["cols"]) == 13
+    assert supply["routes"] is None and len(supply["models"]) == 132 and len(supply["cols"]) == 13
     routes = {"is_demo": False, "records": [_record("friendli", model_id="glm-9", basis="manual")], "unresolved": {"glm-10": "응답 형식으로 못 가림"}}
     _write(tmp_path / "own", [])
     supply = _build(tmp_path / "own", args=_routes(tmp_path / "own", routes))[2]["SUPPLY"]
@@ -861,7 +861,7 @@ def test_supply_block_without_a_routes_file_and_for_models_we_do_not_collect(tmp
     # a failed day still carries it: the tab needs no events
     _files(tmp_path / "fail")
     supply = _build(tmp_path / "fail", args=_routes(tmp_path / "fail", routes))[2]["SUPPLY"]
-    assert supply["routes"] == routes and len(supply["models"]) == 127
+    assert supply["routes"] == routes and len(supply["models"]) == 134
 
 
 def test_model_list_groups_the_gateway_models_under_their_makers_and_stays_a_box_of_its_own_height(tmp_path: Path) -> None:
@@ -873,7 +873,7 @@ def test_model_list_groups_the_gateway_models_under_their_makers_and_stays_a_box
     assert dict(makers) == {"qwen": "Alibaba", "claude": "Anthropic", "seedance": "ByteDance", "byteplus-seedance": "ByteDance",
                             "deepseek": "DeepSeek", "gemini": "Google", "kling": "Kling AI", "muse": "Meta", "minimax": "MiniMax",
                             "kimi": "Moonshot AI", "gpt": "OpenAI", "o1": "OpenAI", "o3": "OpenAI", "o4": "OpenAI",
-                            "text-embedding": "OpenAI", "grok": "xAI", "glm": "Z.AI"}
+                            "text-embedding": "OpenAI", "jev": "TypeSafe AI", "grok": "xAI", "glm": "Z.AI"}
     assert all(_maker_of(makers, f"{prefix}-x") == company for prefix, company in makers)
     assert [_maker_of(makers, model) for model in ("grok-4.20", "minimax-m2.5", "muse-wonder-1.0", "qwen3.8-max")] == ["xAI", "MiniMax", "Meta", "Alibaba"]
     models = {record["model_id"] for record in json.loads(DEMO_ROUTES.read_text(encoding="utf-8"))["records"]}

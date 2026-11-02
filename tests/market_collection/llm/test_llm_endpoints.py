@@ -40,11 +40,11 @@ def by_set(conditions):
     return grouped
 
 
-def test_registry_adds_199_distinct_sources_for_103_models_after_existing_ones():
+def test_registry_adds_207_distinct_sources_for_109_models_after_existing_ones():
     specs = llm_endpoint_source_specs()
-    assert len(specs) == 199 and len({s.source_key for s in specs}) == 199
-    # The first 36 (2026-10-17) cover the 18 page-sourced LLM models; the 34 gateway-only models and 51 more (2026-10-28) follow.
-    assert len({s.model_id for s in specs[:36]}) == 18 and len({s.model_id for s in specs}) == 103
+    assert len(specs) == 207 and len({s.source_key for s in specs}) == 207
+    # The first 36 (2026-10-17) cover the 18 page-sourced LLM models; the 34 gateway-only models, 51 more (2026-10-28) and 6 left out until 2026-11-03 follow.
+    assert len({s.model_id for s in specs[:36]}) == 18 and len({s.model_id for s in specs}) == 109
     registered = source_specs()
     first = registered.index(specs[0])
     assert registered[first:first + len(specs)] == specs  # one block, in this order
@@ -90,9 +90,9 @@ def test_gateway_only_models_have_a_source_only_on_each_gateway_that_lists_them(
 def test_more_gateway_models_have_a_source_only_on_each_gateway_that_lists_them():
     specs = llm_endpoint_source_specs()[99:]
     embeddings = {row[0] for row in GATEWAY_EMBEDDING_MODELS}
-    assert len(GATEWAY_MORE_MODELS) == 48 and embeddings == {"text-embedding-3-large", "text-embedding-3-small", "text-embedding-ada-002"}
+    assert len(GATEWAY_MORE_MODELS) == 54 and embeddings == {"text-embedding-3-large", "text-embedding-3-small", "text-embedding-ada-002"}
     assert {s.model_id for s in specs} == {row[0] for row in GATEWAY_MORE_MODELS} | embeddings
-    assert [s.route for s in specs].count("openrouter") == 50 and [s.route for s in specs].count("vercel_ai_gateway") == 50
+    assert [s.route for s in specs].count("openrouter") == 53 and [s.route for s in specs].count("vercel_ai_gateway") == 55
     assert {(s.route, s.parser) for s in specs} == {("openrouter", "openrouter_endpoints_llm"), ("vercel_ai_gateway", "vercel_endpoints_llm")}
     # Embeddings read task "embedding" on both gateways; every other model text_generation.
     assert {(s.route, s.task) for s in specs if s.model_id in embeddings} == {("openrouter", "embedding"), ("vercel_ai_gateway", "embedding")}
@@ -101,8 +101,9 @@ def test_more_gateway_models_have_a_source_only_on_each_gateway_that_lists_them(
     for s in specs:
         routes.setdefault(s.model_id, set()).add(s.route)
     # OpenRouter does not list gpt-5-codex; Vercel does not list gpt-5.1, and reads gemini-3-flash-preview as google/gemini-3-flash.
-    assert {m for m, r in routes.items() if r == {"vercel_ai_gateway"}} == {"gpt-5-codex"}
-    assert {m for m, r in routes.items() if r == {"openrouter"}} == {"gpt-5.1"}
+    # Of the models read on 2026-11-03, Jev and Qwen 3 Max Thinking are on Vercel only and GPT Audio Mini on OpenRouter only.
+    assert {m for m, r in routes.items() if r == {"vercel_ai_gateway"}} == {"gpt-5-codex", "jev-latest", "jev-1.13.0", "qwen3-max-thinking"}
+    assert {m for m, r in routes.items() if r == {"openrouter"}} == {"gpt-5.1", "gpt-audio-mini"}
     urls = {s.source_key: s.url for s in specs}
     for key, url in (
         # LETSUR's dated Claude ids are read through the gateways' undated models

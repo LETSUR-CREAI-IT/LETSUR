@@ -81,7 +81,7 @@ Vercel `deprecated_at`(2026-10-28): Vercel AI Gateway endpoints API는 일부 en
 읽는 방법:
 
 1. 페이지의 파이프 표만 읽는다. 위 표 머리글이 하나도 없으면(로그인 화면, HTML, 형식 변경) 해석 실패로 기록해 출처 실패로 보인다.
-2. **등록 모델 id와 글자까지 같은 행만** 단서가 된다(`MODEL_MODALITIES` 125개). Azure는 Model 칸, 또는 등록된 날짜판 id(Model-Version, 지금은 `gpt-5.4-2026-03-05` 하나로 가격 수집기도 같은 행을 읽는다). Anthropic은 상태 표의 API model name, OpenAI와 Google은 백틱 안의 id다. 다르게 쓴 이름은 추측하지 않고 뺀다: Azure의 `Kimi-K2.5`·`DeepSeek-V4-Flash-0731`(대소문자), `claude-opus-4-5`·`claude-sonnet-4-5`(날짜 없는 이름), OpenAI의 "GPT-4o (`gpt-4o-2024-08-06`, `gpt-4o-2024-11-20`)"(날짜판만 적고 `gpt-4o`는 없음), Anthropic의 `claude-haiku-4-5-20251001`(우리 id는 `claude-haiku-4-5`).
+2. **등록 모델 id와 글자까지 같은 행만** 단서가 된다(`MODEL_MODALITIES` 132개). Azure는 Model 칸, 또는 등록된 날짜판 id(Model-Version, 지금은 `gpt-5.4-2026-03-05` 하나로 가격 수집기도 같은 행을 읽는다). Anthropic은 상태 표의 API model name, OpenAI와 Google은 백틱 안의 id다. 다르게 쓴 이름은 추측하지 않고 뺀다: Azure의 `Kimi-K2.5`·`DeepSeek-V4-Flash-0731`(대소문자), `claude-opus-4-5`·`claude-sonnet-4-5`(날짜 없는 이름), OpenAI의 "GPT-4o (`gpt-4o-2024-08-06`, `gpt-4o-2024-11-20`)"(날짜판만 적고 `gpt-4o`는 없음), Anthropic의 `claude-haiku-4-5-20251001`(우리 id는 `claude-haiku-4-5`).
 3. 날짜는 적힌 대로 둔다. Gemini 표의 날짜(와 Anthropic Deprecated·Retired 행에 "Not sooner than …"이 적히면 그 날짜)는 가장 이른 종료일로 표시하고(`earliest`), 날짜가 없는 행("No shutdown date announced", "N/A", "To be announced", "—")은 뺀다. Gemini 3.5·3.7 Flash의 N/A는 종료가 아니라 3.6·3.8 Flash로 자동 연결이다.
 4. Azure는 모델 **버전마다** 날짜가 다르다(gpt-4o 2024-05-13 12/9, 2024-08-06·2024-11-20 2027-04-14). 렛서 배포 버전을 모르므로 버전마다 따로 두고 버전을 남긴다. 한 페이지에 같은 모델·버전이 또 나오면 앞의 행(최신 공지)을 쓴다.
 

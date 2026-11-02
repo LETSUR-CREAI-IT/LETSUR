@@ -167,6 +167,20 @@ GATEWAY_MORE_MODELS = (
     ("glm-5", "GLM 5", "z-ai/glm-5", "zai/glm-5"),
     ("glm-5.3", "GLM 5.3", "z-ai/glm-5.3", "zai/glm-5.3"),
     ("glm-5.3-flashx", "GLM 5.3 FlashX", "z-ai/glm-5.3-flashx", "zai/glm-5.3-flashx"),
+    # LETSUR lists these but its calls failed on 10/28, so they stayed out of the models of 10/29; its API key expired before another
+    # look (11/3). They are read from their public routes whatever LETSUR's route is (2026-11-03 박건), unlike the rows above.
+    # - jev-latest is Vercel's undated Jev. OpenRouter's ~typesafe/jev-latest lists no endpoint, and it has no id of jev-1.13.0.
+    #   Its title is not the bare "Jev": notices name versions ("Jev 1.14 is now available"), and those are other models.
+    # - qwen3.5-flash's only OpenRouter id is dated, like qwen3.5-plus's: its listing names Qwen3.5-Flash.
+    # - qwen3-coder is Qwen3 Coder 480B on both, served by DeepInfra and Vertex; LETSUR's call of 10/30 answered through OpenRouter.
+    # - qwen3-max-thinking: Alibaba's notice ended qwen3-max-2026-01-23 on 10/10, the same model only by its date, and Vercel still
+    #   lists it on Alibaba (11/3). The models that did end stay out: gpt-3.5-turbo, gpt-4, gpt-4-turbo, o1-pro, qwen3-max, qwen3-coder-plus.
+    ("jev-latest", "Jev Latest", None, "typesafe-ai/jev"),
+    ("jev-1.13.0", "Jev 1.13.0", None, "typesafe-ai/jev-1.13.0"),
+    ("gpt-audio-mini", "GPT Audio Mini", "openai/gpt-audio-mini", None),
+    ("qwen3.5-flash", "Qwen 3.5 Flash", "qwen/qwen3.5-flash-02-23", "alibaba/qwen3.5-flash"),
+    ("qwen3-coder", "Qwen3 Coder", "qwen/qwen3-coder", "alibaba/qwen3-coder"),
+    ("qwen3-max-thinking", "Qwen 3 Max Thinking", None, "alibaba/qwen3-max-thinking"),
 )
 
 # Embedding models, read with task "embedding". OpenRouter lists them in its separate embeddings catalog (not in /api/v1/models).
@@ -300,6 +314,10 @@ OPENAI_DIRECT_MORE_MODELS = (
 # and $1/$4), so its Standard price is read from the pricing page's Standard pricing data table instead.
 OPENAI_PRICING_STANDARD_MODELS = ("o3",)
 
+# OpenAI's audio models, read whatever LETSUR's route is (2026-11-03, see GATEWAY_MORE_MODELS). No gateway lists gpt-audio-1.5
+# (openai/gpt-audio is the older model), and gpt-audio-mini's model page has no audio rates, so both come from the pricing page.
+OPENAI_AUDIO_MODELS = ("gpt-audio-1.5", "gpt-audio-mini")
+
 # Embeddings priced on OpenAI's model pages; Azure sells the same three ids.
 OPENAI_EMBEDDING_MODELS = ("text-embedding-3-large", "text-embedding-3-small", "text-embedding-ada-002")
 
@@ -345,6 +363,7 @@ MODEL_MODALITIES = {
     **{model: "llm" for model, _ in ANTHROPIC_DIRECT_MODELS},
     **{model: "llm" for model, *_ in OPENAI_DIRECT_MODELS},
     **{model: "llm" for model in OPENAI_EMBEDDING_MODELS},
+    **{model: "llm" for model in OPENAI_AUDIO_MODELS},
     GPT_IMAGE_2_MODEL: "image",
     **{model: "video" for model, _ in KLING_VIDEO_MODELS + SEEDANCE_VARIANT_MODELS},
 }

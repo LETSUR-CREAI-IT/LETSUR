@@ -469,10 +469,9 @@ class Builder:
     def claim(self, claim: dict) -> None:
         if claim["kind"] == "availability" and claim.get("route_added_date") and not claim.get("maker_first_release_date"):
             # Only a confirmed maker release event supplies the first release date; never an observation date.
-            release = [e["dates"].get("maker_first_release_date") for e in self.state["events"].values()
-                       if e["event_type"] == "model_release" and e["status"] == "confirmed" and e["model_id"] == claim["model_id"]]
-            if len(set(release)) == 1 and release[0]:
-                claim = dict(claim, maker_first_release_date=release[0])
+            release = self._maker_release(claim["model_id"])
+            if release:
+                claim = dict(claim, maker_first_release_date=release)
         event_type, subtags, status, gaps, extra = classify_claim(claim)
         if event_type is None and not extra.get("type_candidates"):
             return
@@ -508,6 +507,34 @@ class Builder:
         if claim.get("effective_from"):
             event["dates"] = dict(event["dates"], effective_from=claim["effective_from"])
         self._put(event, f"{claim['kind']} claim from {claim['source_key']}")
+        if event_type == "model_release" and event["status"] == "confirmed":
+            self._type_waiting_additions(claim["model_id"])
+
+    def _maker_release(self, model_id: str) -> str | None:
+        release = {e["dates"].get("maker_first_release_date") for e in self.state["events"].values()
+                   if e["event_type"] == "model_release" and e["status"] == "confirmed" and e["model_id"] == model_id}
+        return release.pop() if len(release) == 1 else None
+
+    def _type_waiting_additions(self, model_id: str) -> None:
+        """A channel's 'now available' card made before the maker's release post was read waits untyped (유형 미정), and its
+        claim never comes again (claims_seen). The release date types it in place by the same 7-day rule (2026-11-01:
+        Vercel's GPT-6.1 Terra card waited until OpenAI's 'Introducing' post counted; in one run Vercel's feed comes first)."""
+        release = self._maker_release(model_id)
+        if not release:
+            return
+        for old in list(self.state["events"].values()):
+            if old["model_id"] != model_id or old["event_type"] or old.get("claim_kind") != "availability" \
+                    or sorted(old["type_candidates"]) != ["model_release", "route_change"] or not old["dates"].get("route_added_date"):
+                continue
+            source = old["sources"][0]
+            claim = {"kind": "availability", "authority": source["authority"], "scope": source.get("scope", []),
+                     "route": old["route"], "quote": source.get("quote", ""), "maker_first_release_date": release,
+                     "route_added_date": old["dates"]["route_added_date"]}
+            event_type, subtags, status, gaps, extra = classify_claim(claim)
+            held = [gap for gap in old["gaps"] if gap["field"] != "maker_first_release_date" and gap not in gaps]  # blockers
+            self._put(dict(old, event_type=event_type, subtags=subtags, type_candidates=[], status="candidate" if held else status,
+                           gaps=held + gaps, dates=dict(old["dates"], **extra["dates"])),
+                      f"maker first release date {release} types the waiting route addition")
 
     def _retirement(self, claim: dict) -> None:
         """One retirement schedule row is one event per model, route and version: a later run that states another date,

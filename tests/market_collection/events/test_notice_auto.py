@@ -90,8 +90,11 @@ def test_official_notices_become_typed_events_through_signal_collection(tmp_path
     assert release["status"] == "confirmed" and release["route"] == "openai_direct"
     assert release["dates"]["maker_first_release_date"] == "2026-09-01"
     assert "available today" in release["sources"][0]["quote"]
-    # "Introducing" alone is not a release.
-    assert not [e for e in events["events"] if e["model_id"] == SUNBURST_MODEL and e["status"] == "confirmed"]
+    # A maker title that is only "Introducing <model>" is a release too (2026-11-01); the same words in the body are not.
+    [introduced] = of(events, "model_release", SUNBURST_MODEL)
+    assert introduced["status"] == "confirmed" and introduced["route"] == "openai"  # OpenAI's image price route
+    assert introduced["dates"]["maker_first_release_date"] == "2026-09-02"
+    assert introduced["sources"][0]["quote"] == "Introducing GPT Image 2.5 Sunburst"
     # route_change add: channel notice after the maker's release (> 7 days) on the channel's own route.
     [added] = [e for e in of(events, "route_change", ASTRA_MODEL) if e["subtags"] == ["add"]]
     assert added["status"] == "confirmed" and added["route"] == "vercel_ai_gateway"
@@ -130,6 +133,46 @@ def test_official_notices_become_typed_events_through_signal_collection(tmp_path
     # Same input again from state adds nothing.
     again = ok_build(tmp_path / "again", run, extra=("--state", str(tmp_path / "out" / "state.json")))
     assert again["events"] == events["events"]
+
+
+TERRA = "gpt-6.1-terra"
+TERRA_ADDED = atom(("gpt-6-1-terra-gateway", "2026-10-26T16:00:00Z", "GPT-6.1 Terra on AI Gateway",
+                    "GPT-6.1 Terra from OpenAI is now available on AI Gateway."))
+TERRA_POSTS = rss(
+    ("introducing-gpt-6-1-terra", "Mon, 26 Oct 2026 00:00:00 GMT", "Introducing GPT-6.1 Terra", "A faster model for computer use."),
+    # Not a release: more than the model's name in the title, or the words only in the body.
+    ("sol-chatgpt", "Mon, 26 Oct 2026 01:00:00 GMT", "Introducing GPT-6.1 Sol in ChatGPT", "Sol for more people."),
+    ("sol-and-luna", "Mon, 26 Oct 2026 02:00:00 GMT", "Introducing GPT-6 Sol and Luna", "Two models for work."),
+    ("astra-capabilities", "Mon, 26 Oct 2026 03:00:00 GMT", "Introducing new capabilities to GPT-6 Astra", "More tools."),
+    ("astra-teams", "Mon, 26 Oct 2026 04:00:00 GMT", "GPT-6 Astra for teams", "Introducing GPT-6 Astra to more teams."),
+)
+
+
+def test_introducing_post_types_the_channel_card_that_waited(tmp_path):
+    """Vercel's 'now available' card read before OpenAI's release post waits untyped (유형 미정); the post types it in place
+    by the 7-day rule, from a stored state and within one run where Vercel's feed is read first (2026-11-01)."""
+    first = signals.live(tmp_path / "d1", lookback_days=3650, specs=[SPECS["vercel_changelog"]],
+                         fetcher=lambda spec: (TERRA_ADDED, spec.url, 200))
+    [waiting] = [e for e in ok_build(tmp_path / "o1", first)["events"] if e["model_id"] == TERRA]
+    assert waiting["event_type"] is None and sorted(waiting["type_candidates"]) == ["model_release", "route_change"]
+    second = signals.live(tmp_path / "d2", lookback_days=3650, specs=[SPECS["openai_news"]],
+                          fetcher=lambda spec: (TERRA_POSTS, spec.url, 200))
+    events = ok_build(tmp_path / "o2", second, extra=("--state", str(tmp_path / "o1" / "state.json")))
+    releases = {e["route"]: e for e in of(events, "model_release", TERRA)}
+    assert set(releases) == {"openai_direct", "vercel_ai_gateway"}
+    typed = releases["vercel_ai_gateway"]
+    assert typed["event_id"] == waiting["event_id"] and typed["revision"] == 2 and typed["status"] == "confirmed"
+    assert typed["dates"]["maker_first_release_date"] == typed["dates"]["route_added_date"] == "2026-10-26"
+    assert typed["type_candidates"] == [] and not [g for g in typed["gaps"] if g["field"] == "maker_first_release_date"]
+    assert not [e for e in events["events"] if e["event_type"] == "model_release" and e["model_id"] != TERRA]
+    again = ok_build(tmp_path / "o3", second, extra=("--state", str(tmp_path / "o2" / "state.json")))
+    assert again["events"] == events["events"]
+    # One run in the registry's order, Vercel's feed first.
+    both = signals.live(tmp_path / "d4", lookback_days=3650, specs=[SPECS["vercel_changelog"], SPECS["openai_news"]],
+                        fetcher=lambda spec: ({"vercel_changelog": TERRA_ADDED, "openai_news": TERRA_POSTS}[spec.source_key], spec.url, 200))
+    one = ok_build(tmp_path / "o4", both)
+    assert {e["route"] for e in of(one, "model_release", TERRA)} == {"openai_direct", "vercel_ai_gateway"}
+    assert not [e for e in one["events"] if e["model_id"] == TERRA and e["event_type"] is None]
 
 
 def test_tampered_signal_row_is_rejected_as_gap(tmp_path):

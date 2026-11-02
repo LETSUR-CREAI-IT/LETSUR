@@ -83,9 +83,11 @@ CONDITION_GROUPS = {
                         ("license", "라이선스"), ("alias", "alias"))),
 }
 ITEM_ORDER = ("input", "output", "cache_read", "cache_write")
-ITEM_KO = {"input": "입력 토큰", "output": "출력 토큰", "cache_read": "캐시 읽기", "cache_write": "캐시 쓰기"}  # the template's own row names
+ITEM_KO = {"input": "입력 토큰", "output": "출력 토큰", "cache_read": "캐시 읽기", "cache_write": "캐시 쓰기",
+           "audio_input": "오디오 입력 토큰", "audio_output": "오디오 출력 토큰"}  # the template's own row names
 MEASURE_KO = {"input": "입력", "output": "출력", "cache_read": "캐시 읽기", "cache_write": "캐시 쓰기", "image_input": "이미지 입력",
-              "image_cache_read": "이미지 캐시 읽기", "image_output": "이미지 출력", "generated_video": "생성 영상"}  # in the trend's order
+              "image_cache_read": "이미지 캐시 읽기", "image_output": "이미지 출력", "generated_video": "생성 영상",
+              "audio_input": "오디오 입력", "audio_output": "오디오 출력"}  # in the trend's order
 # OpenAI's image model pages name their token rates as the page writes them; the gateways' listings and Google name the same
 # rates input, cache_read, image_input and image_output, so the trend reads them as one item (2026-10-30: they were separate
 # items and never compared). Vercel's output for these models is left as output: its listing does not say image or text.

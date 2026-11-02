@@ -10,7 +10,7 @@
 | 이미지 | GPT Image 2.5 Sunburst, GPT Image 2.5 Flare | OpenAI Direct, fal, OpenRouter, Vercel AI Gateway, Azure Foundry retail API | 33 |
 | 영상 | Seedance 2.5 | fal, Vercel AI Gateway, BytePlus ModelArk | 4 |
 
-현재 registry에는 419개 `SourceSpec`(출처 사양, 2026-10-30 저녁 GPT Image 2.5 Flare·Sunburst의 Vercel 엔드포인트 목록·OpenRouter 이미지 카탈로그 4개 추가(아래 '게이트웨이'), 그 전 415개는 같은 날 오후 GPT 7개 모델의 OpenAI 직접 가격 7개 추가(아래 '렛서가 쓰는 경로의 빈 가격 8개' 끝), 그 전 408개는 같은 날 렛서가 쓰는데 가격을 모으지 않던 경로 8개를 채움(아래 '렛서가 쓰는 경로의 빈 가격 8개'), 그 전 400개는 같은 날 렛서가 Bedrock으로 부르기 시작한 gpt-6.1-terra의 AWS 모델 카드 1개 추가(아래 '렛서 공급 경로 다시 확인'), 그 전 399개는 2026-10-29에 렛서의 나머지 모델 70개 출처 191개 추가(아래 '구성과 출처 확장'), 그 전 208개는 2026-10-17에 OpenRouter·Vercel LLM endpoint API 36개 추가, 2026-10-22에 Google 직접 Veo 3.1 3개 퇴역, 2026-10-28에 렛서 모델 목록에 없는 Veo 3.1 fal·Vercel 6개와 Ideogram 4.5 6개 퇴역, 같은 날 Azure Foundry GPT 7개를 카탈로그 페이지에서 Azure Retail Prices API 사양으로 교체(수는 그대로)하고 렛서가 OpenRouter·Vercel로만 쓰는 LLM 34개의 endpoint API 62개 추가(아래 '구성과 출처 확장'); 가격 행 478→2,037, 상세는 [events.md](events.md)), 352개 모델/경로 조합, 125개 정규 모델 ID가 있다: LLM 340개/107개 모델, 이미지 55개/9개 모델, 영상 24개/9개 모델. 사양 수는 URL 수가 아니다. 기존 83·97·103·111·113·146·208개 단계의 수치와 검증 결과는 해당 시점의 기록으로 유지한다. GPT Image 2.5의 첫 API 조건 문서 8개에 12개 보충 문서를 더했다. 보충 문서는 두 모델×6종의 문서 유형이며 가격 관측을 만들지 않는다. 이미지 모델은 `gpt-image-2.5-sunburst`, `gpt-image-2.5-flare`; 영상은 `seedance-2.5`다. 수집기는 등록된 공개 HTTPS URL을 요청하며 로그인이나 유료 모델 호출은 하지 않는다. 문서별 판단 범위는 [수집 범위 검토](collector-coverage-review.md), 상세 정책은 [비교 규칙](image25-comparison-rules.md)을 참고한다.
+현재 registry에는 429개 `SourceSpec`(출처 사양, 2026-11-03 렛서 호출이 실패해 빠져 있던 모델 7개의 공개 가격 10개 추가(아래 '렛서 호출이 실패한 모델의 공개 가격'), 그 전 419개는 2026-10-30 저녁 GPT Image 2.5 Flare·Sunburst의 Vercel 엔드포인트 목록·OpenRouter 이미지 카탈로그 4개 추가(아래 '게이트웨이'), 그 전 415개는 같은 날 오후 GPT 7개 모델의 OpenAI 직접 가격 7개 추가(아래 '렛서가 쓰는 경로의 빈 가격 8개' 끝), 그 전 408개는 같은 날 렛서가 쓰는데 가격을 모으지 않던 경로 8개를 채움(아래 '렛서가 쓰는 경로의 빈 가격 8개'), 그 전 400개는 같은 날 렛서가 Bedrock으로 부르기 시작한 gpt-6.1-terra의 AWS 모델 카드 1개 추가(아래 '렛서 공급 경로 다시 확인'), 그 전 399개는 2026-10-29에 렛서의 나머지 모델 70개 출처 191개 추가(아래 '구성과 출처 확장'), 그 전 208개는 2026-10-17에 OpenRouter·Vercel LLM endpoint API 36개 추가, 2026-10-22에 Google 직접 Veo 3.1 3개 퇴역, 2026-10-28에 렛서 모델 목록에 없는 Veo 3.1 fal·Vercel 6개와 Ideogram 4.5 6개 퇴역, 같은 날 Azure Foundry GPT 7개를 카탈로그 페이지에서 Azure Retail Prices API 사양으로 교체(수는 그대로)하고 렛서가 OpenRouter·Vercel로만 쓰는 LLM 34개의 endpoint API 62개 추가(아래 '구성과 출처 확장'); 가격 행 478→2,037, 상세는 [events.md](events.md)), 362개 모델/경로 조합, 132개 정규 모델 ID가 있다: LLM 350개/114개 모델, 이미지 55개/9개 모델, 영상 24개/9개 모델. 사양 수는 URL 수가 아니다. 기존 83·97·103·111·113·146·208개 단계의 수치와 검증 결과는 해당 시점의 기록으로 유지한다. GPT Image 2.5의 첫 API 조건 문서 8개에 12개 보충 문서를 더했다. 보충 문서는 두 모델×6종의 문서 유형이며 가격 관측을 만들지 않는다. 이미지 모델은 `gpt-image-2.5-sunburst`, `gpt-image-2.5-flare`; 영상은 `seedance-2.5`다. 수집기는 등록된 공개 HTTPS URL을 요청하며 로그인이나 유료 모델 호출은 하지 않는다. 문서별 판단 범위는 [수집 범위 검토](collector-coverage-review.md), 상세 정책은 [비교 규칙](image25-comparison-rules.md)을 참고한다.
 
 ### LLM 경로 범위
 
@@ -285,6 +285,27 @@ GLM-4.7·GLM-5도 Bedrock으로 보여(위 추정) 확인했다. AWS에 모델 �
 두 게이트웨이 id가 생겨 signals endpoint 출처도 2개 늘었다(217→219, [events.md](events.md)).
 
 같은 날 오후 경로 재확인 도구가 GPT 계열에 채팅과 Responses를 함께 묻게 하고 16번씩 다시 물으니(요청 1,424번), Azure 배포 옆에 OpenAI 직접 배포를 둔 모델 7개가 더 나왔다(Responses 응답의 OpenAI `billing`): gpt-4.1·gpt-4.1-mini·gpt-4o·gpt-4o-mini·gpt-5·gpt-5-mini는 모델 페이지 Text tokens 표를 `OPENAI_DIRECT_MORE_MODELS`로 읽고(입력·캐시·출력 $2·$0.5·$8, $0.4·$0.1·$1.6, $2.5·$1.25·$10, $0.15·$0.075·$0.6, $1.25·$0.125·$10, $0.25·$0.025·$2), o3는 모델 페이지에 등급 이름 없는 Text tokens 표가 둘($2·$8, $1·$4)이라 가격 페이지 'Standard pricing data' 표의 o3 행($2.00·$8.00·캐시 $0.50)을 새 수집기 `openai_pricing_standard.py`로 읽는다(출처 408→415, LLM 333→340, 모델/경로 조합 343→350). 행이 없거나 둘이거나 금액 형식이 다르면 오류다. 배포된 출처의 fingerprint는 그대로이고, 같은 날 넣은 o3-pro 하나만 바뀌었다(아직 배포 전).
+
+### 렛서 호출이 실패한 모델의 공개 가격 (2026-11-03)
+
+10/29에 렛서 목록 138개 중 호출이 실패한 13개를 빼고 125개를 수집했다. 11/3 13개를 다시 부르려 했으나 렛서 API 키가 만료돼(`401 api_key_expired`, 모델 호출 0건) 확인하지 못했다. 박건 결정(2026-11-03): 종료된 모델을 뺀 나머지는 렛서 경로와 상관없이 대표 공개 공급로에서 직접 모은다. 그래서 모델 125→132개, 출처 419→429개, signals 221→229개가 됐다.
+
+| 모델 | 읽는 곳 | 11/3 가격(100만 토큰당) | 렛서 목록 단가 | 왜 넣었나 |
+| --- | --- | --- | --- | --- |
+| jev-latest, jev-1.13.0 | Vercel(`typesafe-ai/jev`, `typesafe-ai/jev-1.13.0`) | 입력 $0.042, 출력 $0 | 입력 0.042, 출력 없음 | TypeSafe AI의 평가 모델. 렛서 채팅 호출은 500 `configuration_error` |
+| gpt-audio-1.5 | OpenAI 가격표 | 글자 $2.5/$10, 오디오 $32/$64 | 2.5/10 | 렛서 호출은 400 |
+| gpt-audio-mini | OpenAI 가격표, OpenRouter | 글자 $0.6/$2.4, 오디오 $10/$20(OpenAI) | 0.6/2.4 | 렛서 호출은 400. OpenAI 종료 예정 2027-01-20 |
+| qwen3.5-flash | Vercel, OpenRouter(날짜 id) | $0.10/$0.40(Vercel), $0.065/$0.26(OpenRouter) | 0.05/0.4 | 10/28 시간 초과, 10/30 호출은 Vercel로 응답 |
+| qwen3-coder | OpenRouter, Vercel | $0.30/$1.00(DeepInfra), $0.22/$1.80(Vertex) | 기록 없음 | 10/28 404, 10/30 호출은 OpenRouter로 응답 |
+| qwen3-max-thinking | Vercel | 입력 구간별 $1.2/$6, $2.4/$12, $3/$15 | 기록 없음 | 렛서 호출은 404. 종료 공지의 `qwen3-max-2026-01-23`과 날짜만 같고 이름이 달라 종료를 확정하지 못함. Vercel은 Alibaba 공급으로 상태 0, `deprecated_at` 없이 판매 중 |
+
+- 그대로 뺀 6개: gpt-3.5-turbo, gpt-4, gpt-4-turbo, o1-pro(OpenAI 10/23 종료), qwen3-max, qwen3-coder-plus(알리바바 10/10 종료). 그래서 렛서 목록 138개 중 132개를 수집한다. 138은 10/29 조회 수이고, 키 만료로 그 뒤 목록은 보지 못했다.
+- OpenAI 오디오(`openai_audio.py`, parser `openai_audio_pricing`): gpt-audio-mini 모델 페이지에는 오디오 요금이 없어 두 모델 다 가격표(`pricing.md`)의 'Realtime and audio generation models' 표를 읽는다. 행이 빠지거나 겹치거나 형식이 바뀌면 실패로 남는다. 항목은 `audio_input`·`audio_output`이고 비교 표에 칸이 생긴다. gpt-audio-1.5는 어느 게이트웨이에도 없다(`openai/gpt-audio`는 이전 모델).
+- 게이트웨이(`GATEWAY_MORE_MODELS` 끝에 6개): 기존 endpoint parser를 그대로 쓴다. OpenRouter의 `~typesafe/jev-latest`와 `typesafe/jev-router`는 endpoint가 0개라 읽지 않는다. OpenRouter 목록의 gpt-audio-mini 오디오 칸(0.6·2.4)은 OpenAI 가격표(10·20)와 다르며 읽지 않는다.
+- 외부 단서 이름: jev-latest의 이름을 'Jev Latest'로 뒀다. 'Jev'만 쓰면 Vercel 글 "Jev 1.14 ... is now available"이 jev-latest의 경로 추가(유형 미정)로 잡힌다.
+- 경로 파일: 렛서 경로를 본 2개만 기록했다(qwen3-coder OpenRouter, qwen3.5-flash Vercel, `observed`, `checked_at` 10/30, 호출 한 번의 결과). 나머지 5개는 `unresolved`에 이유를 적었고, 그 모델 카드는 '사용 경로 확인 필요'(UNKNOWN)다. 렛서가 실제로 어느 경로로 보내는지는 새 키 없이 확인할 수 없다.
+
+검증: 기존 419개 출처의 parser fingerprint는 하나도 바뀌지 않았다. 11/3 01:42 KST 로컬 live run(11/2 15:20 배포 상태 위)에서 429개 모두 fetch·parse ok, 가격 행 5,709개(새 모델 40개), signals 229개 실패 0이었다. 이벤트는 1,031→1,049개이고 새 모델 이벤트는 gpt-audio-mini 제공 종료(2027-01-20, UNKNOWN) 1개뿐이다. 나머지 17개는 그 사이 OpenRouter의 가격·할인 변동이다. 새 모델의 첫 가격은 기준선이라 가격 변경 카드를 만들지 않는다. 슬랙 새 변화 알림은 첫 관측이나 공지일이 7일 안일 때만 나가므로 이 카드(공지일 7/20)는 새 변화 알림으로 나가지 않는다.
 
 ## 구조 변경 검증 기록
 

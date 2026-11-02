@@ -676,7 +676,7 @@ def test_a_run_over_some_models_leaves_the_others_alone():
 
 def test_diff_text_names_what_was_added_dropped_and_kept():
     _, diff = lr.merge(CURRENT, RESULTS, DAY)
-    diff["not_registered"] = ["gpt-4", "jev-latest"]
+    diff["not_registered"] = ["gpt-4", "o1-pro"]
     lines = lr.format_diff(diff).splitlines()
     for expected in ("new route (6)", "  b: aws_bedrock [observed]", "  s: openrouter [observed] (also fal [manual])",
                      "observed before, not seen this run, dropped (2)", "  b: azure_foundry [observed] 2026-10-28",
@@ -686,7 +686,7 @@ def test_diff_text_names_what_was_added_dropped_and_kept():
                      "  e: vercel_ai_gateway [observed] no date (chat 응답 없음(TimeoutError))",
                      "covered by a settings or manual record (2)", "  c: google_direct [observed]",
                      "no usable answer, nothing recorded (1)", "  x: chat 응답 없음(TimeoutError)",
-                     "re-seen (4): a, claude-haiku-4-5, g, p", "unresolved (6): d, k, q, u, v, z", "not registered, skipped (2): gpt-4, jev-latest"):
+                     "re-seen (4): a, claude-haiku-4-5, g, p", "unresolved (6): d, k, q, u, v, z", "not registered, skipped (2): gpt-4, o1-pro"):
         assert expected in lines
 
 
@@ -715,7 +715,7 @@ def test_aliases_point_at_registered_models_and_only_from_models_the_registry_do
 
 # ---- the command -------------------------------------------------------------------------------------------------------
 
-LETSUR_ONLY = ("gpt-4", "jev-latest", "gpt-audio-1.5")  # in LETSUR's list, not in our registry
+LETSUR_ONLY = ("gpt-4", "o1-pro", "qwen3-max")  # in LETSUR's list, not in our registry
 LISTING = {"object": "list", "data": [{"id": model, "modality": ["video" if model.startswith(("kling", "byteplus")) else "text"]} for model in (
     "gpt-5.4", "gpt-6.1-terra", "glm-5", "glm-5.2", "deepseek-v4-pro", "kimi-k2.5", "claude-haiku-4-5-20251001", "byteplus-seedance-2.5",
     "kling-v3-text-to-video", "gpt-image-2", *LETSUR_ONLY)]}
@@ -793,7 +793,7 @@ def test_a_run_samples_the_registered_models_names_the_rest_and_keeps_only_the_r
     for expected in ("new route (3)", "  gpt-6.1-terra: aws_bedrock [observed]", "  kimi-k2.5: vercel_ai_gateway [observed]", "  gpt-5.4: azure_foundry [observed]",
                      "observed before, not seen this run, dropped (2)", "  gpt-6.1-terra: openai_direct [observed] 2026-10-28",
                      "  kimi-k2.5: openrouter [observed] no date", "re-seen (2): claude-haiku-4-5, deepseek-v4-pro",
-                     "unresolved (4): glm-5, glm-5.2, gpt-image-2, kling-v3-text-to-video", "not registered, skipped (3): gpt-4, gpt-audio-1.5, jev-latest"):
+                     "unresolved (4): glm-5, glm-5.2, gpt-image-2, kling-v3-text-to-video", "not registered, skipped (3): gpt-4, o1-pro, qwen3-max"):
         assert expected in captured.out.splitlines()
     assert "checked 10 models with 54 requests, gateway-reported cost 0.0480" in captured.out
     for expected in ("[6/10] gpt-5.4: azure_foundry×6", "[8/10] gpt-image-2: not requested", "[4/10] glm-5: unresolved×6"):
@@ -907,7 +907,7 @@ def test_models_option_checks_only_those_models_without_listing_and_still_skips_
 
 def test_a_run_over_only_unregistered_models_asks_nothing_and_writes_nothing(setup, capsys):
     run, _, output, opener = setup
-    assert run("--models", "gpt-4,jev-latest") == 1 and not opener.requests and not output.exists()
+    assert run("--models", "gpt-4,o1-pro") == 1 and not opener.requests and not output.exists()
     assert "nothing written" in capsys.readouterr().err
 
 

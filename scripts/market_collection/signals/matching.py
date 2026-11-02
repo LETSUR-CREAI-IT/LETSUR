@@ -17,7 +17,7 @@ from scripts.market_collection.models import (ANTHROPIC_DIRECT_MODELS, AZURE_RET
                                               GATEWAY_EMBEDDING_MODELS, GATEWAY_IMAGE_MODELS, GATEWAY_MORE_MODELS, GOOGLE_DIRECT_MODELS,
                                               GOOGLE_IMAGE_MODELS,
                                               GPT_IMAGE_2_MODEL, KLING_PRICE_ROWS, KLING_VIDEO_MODELS, OPENAI_DIRECT_MODELS,
-                                              SEEDANCE_VARIANT_MODELS, ZAI_DIRECT_MODELS)
+                                              OPENAI_AUDIO_MODELS, SEEDANCE_VARIANT_MODELS, ZAI_DIRECT_MODELS)
 from scripts.market_collection.sources import _targets
 
 MAX_QUOTES = 2
@@ -71,7 +71,7 @@ def _exact_aliases() -> list[ModelAlias]:
     for model, title, *_ in ANTHROPIC_DIRECT_MODELS + GOOGLE_DIRECT_MODELS + GOOGLE_IMAGE_MODELS + ZAI_DIRECT_MODELS + OPENAI_DIRECT_MODELS:
         if model != "gpt-5.6":
             names.setdefault(model, [title]).append(model)
-    for model in AZURE_RETAIL_GPT5_MODELS + AZURE_RETAIL_OPENAI_MODELS:
+    for model in AZURE_RETAIL_GPT5_MODELS + AZURE_RETAIL_OPENAI_MODELS + OPENAI_AUDIO_MODELS:
         names.setdefault(model, [model])
     names["gpt-5.4-2026-03-05"] = names["gpt-5.4"] + ["gpt-5.4-2026-03-05"]  # a dated id: notices name the model, not the date
     names[GPT_IMAGE_2_MODEL] = ["GPT Image 2", GPT_IMAGE_2_MODEL]
