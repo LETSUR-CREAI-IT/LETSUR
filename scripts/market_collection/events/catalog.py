@@ -37,7 +37,7 @@ FAMILY_MAKERS = (("gemini", "Google"), ("veo", "Google"), ("gpt", "OpenAI"), ("c
                  ("grok", "xAI"), ("minimax", "MiniMax"), ("muse", "Meta"), ("qwen", "Alibaba"),
                  # OpenAI's o-series and embedding models, Kling and LETSUR's "byteplus-" Seedance ids (2026-10-28).
                  ("o1", "OpenAI"), ("o3", "OpenAI"), ("o4", "OpenAI"), ("text-embedding", "OpenAI"),
-                 ("kling", "Kling AI"), ("byteplus-seedance", "ByteDance"))
+                 ("kling", "Kling AI"), ("byteplus-seedance", "ByteDance"), ("jev", "TypeSafe AI"))
 # Signal feeds: publisher and the route a channel notice speaks for. A retirement schedule page (2026-10-29) speaks for the
 # route its publisher sells on, the maker's own page too (retirement_route).
 SIGNAL_PUBLISHERS = {"vercel_changelog": ("Vercel", "vercel_ai_gateway"), "openai_news": ("OpenAI", ""),

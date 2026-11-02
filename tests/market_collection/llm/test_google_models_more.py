@@ -72,7 +72,7 @@ def test_three_specs_read_the_page_google_models_reads_with_parsers_of_their_own
         ("google_gemini_3_7_flash", "gemini-3.7-flash", "google_routed_pricing")]
     assert all((s.modality, s.route, s.task, s.url) == ("llm", "google_direct", "text_generation", URL) for s in SPECS.values())
     gaps = route_gap_source_specs()
-    assert source_specs()[-len(gaps):] == gaps and gaps[:3] == list(SPECS.values())  # appended after every older source
+    assert source_specs()[-len(gaps) - 2:-2] == gaps and gaps[:3] == list(SPECS.values())  # after every older source; only OpenAI's two audio specs follow
     assert {source_role(s.parser) for s in SPECS.values()} == {"pricing"}
     own = next(s for s in source_specs() if s.parser == "google_model_pricing")
     assert all(parser_module(s) is google_models_more for s in SPECS.values()) and parser_module(own) is google_models

@@ -22,6 +22,7 @@ AZURE_PAGE = "https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/mo
 # (model, route, version, date, date basis, replacement) of every row within 90 days of 2026-10-29, or already past.
 # Anthropic's Active models (claude-opus-4-5-20251101: "Not sooner than November 24, 2026") have no row: a minimum lifetime.
 EXPECTED = {
+    ("gpt-audio-mini", "openai_direct", "", "2027-01-20", "stated", "gpt-audio-1.5"),  # registered on 2026-11-03
     ("o1", "azure_foundry", "2024-12-17", "2026-11-19", "stated", "gpt-5.6-sol"),
     ("o3", "azure_foundry", "2025-04-16", "2026-11-19", "stated", "gpt-5.6-sol"),
     ("o3-mini", "azure_foundry", "2025-01-31", "2026-11-19", "stated", "gpt-5.6-terra"),

@@ -39,7 +39,11 @@ ITEMS = ("input", "output", "cache_read")  # price columns; cache writes stay ou
 # table of the gateways' rows alone would misrepresent, so they keep no table.
 IMAGE_ITEMS = ITEMS + ("image_output",)
 TABLE_IMAGE_FAMILY = "gemini"
-ITEM_KO = {"input": "입력", "output": "출력", "cache_read": "캐시 읽기", "image_output": "이미지 출력"}
+# OpenAI's audio models also bill audio tokens (2026-11-03); a gateway row leaves these two columns empty: its listing's audio
+# fields are not read (llm_endpoints.py).
+AUDIO_ITEMS = ITEMS + ("audio_input", "audio_output")
+TABLE_AUDIO_FAMILY = "gpt-audio"
+ITEM_KO = {"input": "입력", "output": "출력", "cache_read": "캐시 읽기", "image_output": "이미지 출력", "audio_input": "오디오 입력", "audio_output": "오디오 출력"}
 GATEWAYS = ("openrouter", "vercel_ai_gateway")
 TIERS = ("Standard", "Priority", "Ultrafast", "Flex", "Batch")
 TIER_OF = {"standard": "Standard", "default": "Standard", "priority": "Priority", "ultrafast": "Ultrafast", "flex": "Flex", "batch": "Batch"}
@@ -245,10 +249,15 @@ def table_model(model_id: str) -> bool:
     return modality == "llm" or (modality == "image" and model_id.startswith(TABLE_IMAGE_FAMILY))
 
 
+def table_items(model_id: str) -> tuple[str, ...]:
+    if MODEL_MODALITIES.get(model_id) == "image":
+        return IMAGE_ITEMS
+    return AUDIO_ITEMS if model_id.startswith(TABLE_AUDIO_FAMILY) else ITEMS
+
+
 def usable(obs: dict) -> bool:
-    modality = MODEL_MODALITIES.get(obs.get("model_id"))
     return (table_model(obs.get("model_id") or "") and obs.get("currency") in ("USD", "") and obs.get("unit") in ("1M tokens", "")
-            and obs.get("billing_item") in (IMAGE_ITEMS if modality == "image" else ITEMS)
+            and obs.get("billing_item") in table_items(obs.get("model_id") or "")
             and obs.get("price_kind") in ("published_rate", "announced_future_rate"))
 
 
@@ -977,7 +986,7 @@ def build_tables(root: Path, model_ids: list[str], events: list[dict], gaps: lis
         if not rows:
             continue
         targets = assumed_routes(model_id, routes)
-        columns = IMAGE_ITEMS if MODEL_MODALITIES[model_id] == "image" else ITEMS
+        columns = table_items(model_id)
         for row in rows:
             row["assumed"] = assumed_chip(row, targets, demo)
             discount_cells(row, rows, columns, notices, today)

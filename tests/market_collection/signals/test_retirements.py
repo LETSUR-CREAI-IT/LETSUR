@@ -40,7 +40,7 @@ def test_the_date_forms_the_pages_write():
 
 def test_azure_rows_are_per_model_version_and_only_exact_names_map():
     found = entries("azure_retirement_schedule")
-    assert len(found) == 48
+    assert len(found) == 51
     for model in ("o1", "o3", "o3-mini", "o3-pro", "o4-mini"):
         assert [rest[:2] for (m, _), rest in found.items() if m == model] == [("Deprecated", "2026-11-19")]  # one version each
     assert found[("o3", "2025-04-16")] == ("Deprecated", "2026-11-19", False, "2026-11-19", "gpt-5.6-sol", "")
@@ -59,7 +59,7 @@ def test_azure_rows_are_per_model_version_and_only_exact_names_map():
 
 def test_openai_rows_take_the_backticked_ids_and_the_sections_announcement_day():
     found = entries("openai_deprecations")
-    assert len(found) == 14
+    assert len(found) == 15
     assert found[("o3", "")] == ("", "2026-12-11", False, "Dec 11, 2026", "gpt-5.6-sol", "2026-06-11")
     assert found[("o3-pro", "")][4] == "gpt-5.6-sol (reasoning.mode: pro)"
     assert found[("o1", "")][1:2] + found[("o1", "")][5:] == ("2026-10-23", "2026-04-22")
@@ -129,7 +129,7 @@ def test_live_reads_each_page_through_its_registered_spec(tmp_path: Path):
     run = signals.live(tmp_path, specs=RETIREMENT_PAGES, fetcher=lambda spec: (body(spec.source_key), spec.url, 200))
     _, sources, rows = signals.validated_run(run)
     assert [(s["source_key"], s["parse_status"], s["entries_total"], s["signal_count"]) for s in sources] == [
-        ("azure_retirement_schedule", "ok", "173", "48"), ("openai_deprecations", "ok", "151", "14"),
+        ("azure_retirement_schedule", "ok", "173", "51"), ("openai_deprecations", "ok", "151", "15"),
         ("anthropic_deprecations", "ok", "23", "1"), ("google_deprecations", "ok", "102", "4")]
     o3 = next(row for row in rows if row["source_key"] == "azure_retirement_schedule" and row["model_ids"] == "o3")
     assert {key: o3[key] for key in ("entry_id", "entry_url", "entry_title", "published_at_utc", "model_match", "claim_kinds", "date_phrases",

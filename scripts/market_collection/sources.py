@@ -11,6 +11,7 @@ from scripts.market_collection.models import KLING_VIDEO_MODELS, SEEDANCE_VARIAN
 from scripts.market_collection.models import GATEWAY_IMAGE_MODELS, GATEWAY_IMAGE_CATALOG_MODELS
 from scripts.market_collection.models import AWS_OPENAI_MORE_MODELS
 from scripts.market_collection.models import GOOGLE_DIRECT_MORE_MODELS, GOOGLE_ROUTED_MODELS, AWS_PRICELIST_MODELS, OPENAI_DIRECT_MORE_MODELS, OPENAI_PRICING_STANDARD_MODELS
+from scripts.market_collection.models import OPENAI_AUDIO_MODELS
 
 def _targets() -> dict[str, tuple[str, str, str, str, str]]:
     targets = {
@@ -137,6 +138,12 @@ def route_gap_source_specs() -> list[SourceSpec]:
     return specs
 
 
+def openai_audio_source_specs() -> list[SourceSpec]:
+    """OpenAI's audio models on its own route, read from the pricing page whatever LETSUR's route is (2026-11-03)."""
+    return [SourceSpec(f"openai_{_key(model)}", "llm", model, "openai_direct", "text_generation", "https://developers.openai.com/api/docs/pricing.md", "openai_audio_pricing")
+            for model in OPENAI_AUDIO_MODELS]
+
+
 _AZURE_IMAGE_PRICING = "https://prices.azure.com/api/retail/prices?$filter=contains(productName,'OpenAI')%20and%20contains(meterName,'2.5')%20and%20armRegionName%20eq%20'koreacentral'"
 
 
@@ -240,7 +247,7 @@ def video_source_specs() -> list[SourceSpec]:
 
 
 def source_specs() -> list[SourceSpec]:
-    specs = llm_source_specs() + image_source_specs() + video_source_specs() + image25_api_source_specs() + image25_openrouter_endpoint_source_specs() + image25_supplement_source_specs() + llm_endpoint_source_specs() + azure_retail_llm_source_specs() + azure_retail_models_source_specs() + maker_direct_source_specs() + google_model_source_specs() + zai_source_specs() + kling_seedance_source_specs() + gateway_image_source_specs() + bedrock_more_source_specs() + route_gap_source_specs()
+    specs = llm_source_specs() + image_source_specs() + video_source_specs() + image25_api_source_specs() + image25_openrouter_endpoint_source_specs() + image25_supplement_source_specs() + llm_endpoint_source_specs() + azure_retail_llm_source_specs() + azure_retail_models_source_specs() + maker_direct_source_specs() + google_model_source_specs() + zai_source_specs() + kling_seedance_source_specs() + gateway_image_source_specs() + bedrock_more_source_specs() + route_gap_source_specs() + openai_audio_source_specs()
     for spec in specs:
         if MODEL_MODALITIES.get(spec.model_id) != spec.modality:
             raise CollectionError(f"source model/modality mismatch: {spec.source_key}")
