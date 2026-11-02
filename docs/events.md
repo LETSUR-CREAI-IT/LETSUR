@@ -137,9 +137,9 @@ python -m scripts.market_collection.events legacy --event <case>/event.json ... 
 | scheduled_change | core 행 `announced_future_rate` + `effective_from`(현재 Google, Vertex parser가 생성) | 실제 보존 run build의 confirmed 18건에 Google과 Vertex(vertex_gemini_38_flash) 행이 모두 포함. 합성 fixture, legacy Gemini 변환 |
 | limited_discount | 공식 feed 문장 "N% off … through <Month D, YYYY>" 또는 "discounted to $X per 1M … through …"(채널 자기 경로/제조사 직접 경로). OpenRouter `pricing.discount`(하위 endpoint, 기간 없음 → candidate) | source-shaped 합성 Atom + signals.live |
 | condition_change | (1) 공식 feed 문장의 cache multiplier / context window(length) "from A to B". 같은 문장의 가격 변화는 별도 price 후보로 만들지 않는다. (2) core diff: 원문이 명시한 `cache_read_multiplier` 조건 행의 전후 값 변화(아래 "명시 정책과 파생 비율"). 가격 비율 변화만으로는 검출하지 않음 | (1) source-shaped 합성 Atom + signals.live, legacy Sonnet. (2) source-shaped 합성 pricing.md(명시 0.1x→0.05x 각주) → 실제 Anthropic parser → 3 CSV → build. 실제 보존 run으로 변화 사례는 미검증 |
-| model_release | 제조사 공지 feed의 같은 문장에 "new/newest … model" 또는 "first release"와 "is available today"/"launch(ed)·release(d)… today"가 함께 있고 부정·범위 축소 표현이 없을 때 + feed 게시일(UTC 날짜) → 제조사 직접 경로. Batch·ChatGPT·free tier·region·Plus/Pro/Team/Enterprise 사용자 범위 문장은 실제 신규 출시와 함께 있어도 현재 보수적 문법상 확정하지 않는다(미지원). "Introducing"만 있거나 게시일이 없으면 확정하지 않음 | source-shaped 합성 RSS + signals.live |
+| model_release | 제조사 공지 feed의 같은 문장에 "new/newest … model" 또는 "first release"와 "is available today"/"launch(ed)·release(d)… today"가 함께 있고 부정·범위 축소 표현이 없을 때 + feed 게시일(UTC 날짜) → 제조사 직접 경로. Batch·ChatGPT·free tier·region·Plus/Pro/Team/Enterprise 사용자 범위 문장은 실제 신규 출시와 함께 있어도 현재 보수적 문법상 확정하지 않는다(미지원). 게시일이 없으면 확정하지 않음. 2026-11-01부터 제조사 글 제목이 "Introducing <등록 모델 하나>"뿐이어도 출시다(박건 결정: OpenAI는 모델 출시 글을 이 제목으로만 쓰고 "available today" 문장이 없다. GPT-6.1 Terra 10/26, Sol 9/29). 제목에 다른 말이 더 있거나("Introducing new capabilities to …", "… in ChatGPT", "… Sol and Luna") 본문에만 "Introducing"이 있으면 출시가 아니다 | source-shaped 합성 RSS + signals.live |
 | model_end | 제조사 공지 "will be retired/shut down … across all products/everywhere" + 날짜만 confirmed. endpoint·snapshot·alias·version·ChatGPT 한정은 route_change remove candidate. 그 외 retirement 단어는 candidate. 퇴역 일정표 행(Azure·OpenAI·Anthropic·Gemini, 2026-10-29): 그 페이지 경로에서의 제공 종료, 날짜가 있으면 confirmed(아래 "퇴역 일정 → 제공 종료") | source-shaped 합성 RSS + signals.live. 퇴역 일정은 2026-10-29 실제 원문(머리글·표만 남김) + signals 원문 재해석 + 실제 run build |
-| route_change | 채널 공지 "is now available on" (add, 제조사 confirmed model_release 날짜가 state에 있을 때만 7일 판정), "will be removed from … <날짜>"(remove). OpenRouter `expiration_date`(remove). Vercel endpoint `deprecated_at`(remove, 그 경로 안 공급처 하나의 종료, 항상 candidate, 2026-10-28). legacy fal endpoint 폐기 | source-shaped 합성 Atom + signals.live, 합성 signal fixture |
+| route_change | 채널 공지 "is now available on" (add, 제조사 confirmed model_release 날짜가 state에 있을 때만 7일 판정. 날짜가 없어 유형 미정으로 남은 카드는 그 모델의 제조사 출시가 나중에 확정되는 순간 같은 카드 그대로 7일 규칙으로 정해진다, 2026-11-01. 한 run 안에서도 Vercel feed를 OpenAI feed보다 먼저 읽는다), "will be removed from … <날짜>"(remove). OpenRouter `expiration_date`(remove). Vercel endpoint `deprecated_at`(remove, 그 경로 안 공급처 하나의 종료, 항상 candidate, 2026-10-28). legacy fal endpoint 폐기 | source-shaped 합성 Atom + signals.live, 합성 signal fixture |
 
 - X/Threads 수집기는 없다. catalog에는 `unsupported`로 표시되고 `--manual` 입력은 항상 비공식 candidate로만 들어간다.
 - DeepSeek·Z.ai 공식 문서, Anthropic 공지 등은 등록된 출처가 아니며 추출 gap이다.
@@ -161,6 +161,14 @@ python -m scripts.market_collection.events legacy --event <case>/event.json ... 
   - 문자열 단서 규칙이라 다른 표현("OpenAI cut prices" 등)은 잡지 못하고 예전처럼 채널 route로 남는다.
   - run3 보존 state에 적용하면 대상은 `gpt-5.6-sol` 1장(ev_3961c4c41e49bf0c8c79)뿐이고, 다시 build하면 정정 0이다.
 - `--manual` claim의 정체성은 URL + 인용 문장이다. 같은 URL의 다른 문장은 별도 이벤트이고, 같은 입력을 다시 넣으면 새 이벤트·revision이 없다.
+
+## 제조사 'Introducing' 제목과 기다리던 경로 추가 (2026-11-01)
+
+- 계기: 기본 화면의 유형 미정 카드 1장(Vercel에 GPT-6.1 Terra 추가, 10/26)을 박건이 모델 출시로 봐야 한다고 짚었다. OpenAI는 같은 날 뉴스 feed에 "Introducing GPT-6.1 Terra"를 올렸지만 제목과 짧은 소개뿐이라 출시 문장으로 읽히지 않았고, 7일 판정에 쓸 제조사 출시일이 없었다.
+- `notices.py`: 제조사 글 제목이 "Introducing <등록 모델 하나>"뿐이면 출시다. 제목 전체가 그 모양일 때만이고 부정·범위 축소 검사는 그대로다.
+- `engine.py`: 제조사 출시가 confirmed로 생기는 순간, 같은 모델의 유형 미정 경로 추가 카드를 같은 event_id로 7일 규칙에 따라 다시 정한다(revision +1, 사유 기록). 그 카드의 claim은 `claims_seen`에 있어 다시 오지 않기 때문이다.
+- 실제 자료 확인: 10/31 run(41174367257)의 state.json에 11/1에 새로 모은 Vercel·OpenAI feed를 넣어 바꾸기 전·후 코드로 build했다. 바뀐 이벤트는 4개다. OpenAI 직접 모델 출시 2개(GPT-6.1 Sol 9/29, Terra 10/26)가 생기고, Vercel 유형 미정 2개가 모델 출시(confirmed, revision 2)가 됐다. 유형 미정 이벤트는 33→31, 나머지 926개는 그대로다. 같은 자료로 만든 대시보드는 카드 150→152, 기본 화면 유형 미정 1→0이다(Terra 2장 모두 '모델 출시 · 10/26').
+- 남은 유형 미정 29장은 OpenAI 밖 제조사(Anthropic·Google·Z.ai·Moonshot·DeepSeek·Meta·xAI·Alibaba·ByteDance)의 출시 공지를 모으지 않아 출시일이 없다. GPT-6 Astra(9/3 발표, Vercel 9/4)는 제목이 "GPT-6 Astra: …" 모양이라 이 규칙 밖이다.
 
 ## 퇴역 일정 → 제공 종료 (2026-10-29, 로컬 검증·미배포)
 
