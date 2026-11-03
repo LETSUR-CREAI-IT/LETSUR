@@ -1461,7 +1461,10 @@ def test_team_feedback_of_1103_legend_korean_labels_switch_draft_and_search(tmp_
     assert 'if (p !== "models") { renderMeta(); renderCalendar(); renderQueue(); renderDetail();' in page
     # 2. one search box in the header for all four tabs; spacing and punctuation do not count
     assert 'type="search" id="msq" placeholder="모델 검색"' in page
-    assert "@media (max-width:1100px){.top{flex-wrap:wrap;row-gap:8px;padding-block:8px}.top .base{margin-left:auto}.msearch{order:3;width:100%;margin-left:0}}" in page  # the header must not push the page wider
+    assert "@media (max-width:1000px){.top{flex-wrap:wrap;row-gap:8px;padding-block:8px}.top .base{margin-left:auto}.msearch{order:3;width:100%;margin-left:0}}" in page  # the header must not push the page wider
+    # the header's right end says when the data was last collected; the tool's name is gone (2026-11-04 박건)
+    assert '`최신 업데이트 : ${HEALTH.run ? HEALTH.run.at.replace(/ KST$/, "") : "기록 없음"}`' in page
+    assert "모델 가격·조건 모니터" not in page and "(고정)" not in page
     assert 'const searchKey = s => String(s || "").toLowerCase().replace(/[^0-9a-z가-힣]+/g, "");' in page
     for filtered in ('ks.filter(k => modelHit(k, modelName(k)))', 'l.filter(m => modelHit(m, modelName(m)))', 'l.filter(x => modelHit(x.model, x.model))', '!isPast(e) && modelHit(e.mid, e.m)'):
         assert filtered in page

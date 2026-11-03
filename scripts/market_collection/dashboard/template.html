@@ -45,7 +45,6 @@ a{color:var(--ink)}
 
 .top{display:flex;align-items:center;gap:20px;min-height:54px;padding-inline:24px;background:var(--nav);color:var(--nav-ink)}
 .top img{height:19px;width:auto;display:block}
-.top .tool{color:var(--nav-muted);font-size:13px;padding-left:16px;border-left:1px solid #3a3f3d;white-space:nowrap}
 .top .base{color:var(--nav-muted);font-size:13px;white-space:nowrap}
 /* 모델 검색(2026-11-03 팀 피드백 2): 머리줄에 하나를 두고 네 화면을 함께 거른다 */
 .msearch{display:flex;align-items:center;gap:8px;width:220px;height:32px;margin-left:auto;padding:0 12px;border:1px solid #3a3f3d;border-radius:var(--r-pill);color:var(--nav-muted);cursor:text}
@@ -53,9 +52,8 @@ a{color:var(--ink)}
 .msearch svg{flex:none;width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2.5;stroke-linecap:round}
 .msearch input{flex:1;min-width:0;border:0;outline:0;background:none;color:var(--nav-ink);font:inherit;font-size:13px}
 .msearch input::placeholder{color:var(--nav-muted)}
-@media (max-width:900px){.top .tool{display:none}}  /* 탭과 기준일이 한 줄에 들어가게 */
 @media (max-width:640px){.top{padding-inline:16px;gap:12px}}
-@media (max-width:1100px){.top{flex-wrap:wrap;row-gap:8px;padding-block:8px}.top .base{margin-left:auto}.msearch{order:3;width:100%;margin-left:0}}  /* 화면 탭이 들어가 좁으면 줄을 바꾼다 */
+@media (max-width:1000px){.top{flex-wrap:wrap;row-gap:8px;padding-block:8px}.top .base{margin-left:auto}.msearch{order:3;width:100%;margin-left:0}}  /* 화면 탭이 들어가 좁으면 줄을 바꾼다 */
 
 .wrap{max-width:1380px;margin:0 auto;padding-inline:24px;padding-block:24px 56px;display:flex;flex-direction:column;gap:16px}
 @media (max-width:640px){.wrap{padding-inline:16px}}
@@ -671,7 +669,6 @@ body:not([data-page="supply"]) .spage{display:none}
 
 <header class="top">
   <img src="data:image/png;base64,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" alt="LETSUR" width="130" height="17">
-  <span class="tool">모델 가격·조건 모니터</span>
   <nav class="ptabs" role="tablist" aria-label="화면"><button type="button" role="tab" data-ptab="changes" aria-selected="true">변화</button><button type="button" role="tab" data-ptab="models" aria-selected="false">모델별 가격</button><button type="button" role="tab" data-ptab="supply" aria-selected="false">공급로 현황</button><button type="button" role="tab" data-ptab="health" aria-selected="false">수집 상태</button></nav>
   <label class="msearch"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21"/></svg><input type="search" id="msq" placeholder="모델 검색" aria-label="모델 검색" autocomplete="off" spellcheck="false"></label>
   <span class="base" id="base"></span>
@@ -1190,7 +1187,8 @@ function renderMeta(){
   const fail = HEALTH.failing.length;  // 수집 실패는 '변화 없음'과 구분해 아침에 먼저 보이게(결정 기록 29절 렛서 답변)
   document.getElementById("sum-range").textContent = (runs.length ? `${runDay(runs[0][0])}~${runDay(runs[runs.length - 1][0])}` : "수집 기록 없음") + (HEALTH.run ? ` · 실패 ${fail}곳` : "");
   document.getElementById("hwarn").innerHTML = fail ? `<p class="hwarn" role="status">수집 실패 ${fail}곳: 최신 가격을 확인하지 못한 출처가 있습니다. 그 출처의 '변화 없음'은 확인된 결과가 아닙니다.<button type="button" data-ptab="health">수집 상태 보기 →</button></p>` : "";
-  document.getElementById("base").textContent = `기준일 ${TODAY} (고정)`;
+  // 머리줄 오른쪽 끝(2026-11-04 박건): 이 화면 자료를 마지막으로 수집한 시각
+  document.getElementById("base").textContent = `최신 업데이트 : ${HEALTH.run ? HEALTH.run.at.replace(/ KST$/, "") : "기록 없음"}`;
 }
 
 // ---- 일정 캘린더 ----
