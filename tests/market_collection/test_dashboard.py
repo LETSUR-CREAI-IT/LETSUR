@@ -945,6 +945,28 @@ def test_template_has_the_supply_tab_and_its_editor(tmp_path: Path) -> None:
     assert "@media (max-width:640px){.ptabs{flex-wrap:wrap;row-gap:4px}.ptabs button{padding:0 8px}}" in page
 
 
+
+def test_home_route_card_sits_beside_the_calendar_and_counts_models_not_usage(tmp_path: Path) -> None:
+    """2026-11-04 박기범 시험(팀 미논의): a narrow card to the right of the calendar (the calendar stays the main piece) with three
+    route-state tiles, a donut and table of models per supplier column, and a table per company of how many LETSUR routes its
+    models have. It repeats no change rows of the calendar or list: a supplier or company row filters the summary, calendar and
+    list, and the calendar head has a '대체 경로 없는 모델만' toggle. It counts models, not usage, keeps colours on supplier names,
+    and stays hidden without a routes file."""
+    _write(tmp_path, [])
+    page = _build(tmp_path)[1]
+    assert '<div id="cal"></div>\n    </div>\n    <div class="card" id="lchart" hidden></div>' in page
+    assert ".hero.withlc{grid-template-columns:minmax(0,1fr) minmax(280px,340px);align-items:start}" in page
+    assert '<div class="ch"><h2>일정 캘린더</h2><button type="button" class="mchip lcsolo" data-solo aria-pressed="false" hidden' in page
+    assert "const modeShown = e => (!letsurOnly || letsurRoute(e)) && modelHit(e.mid, e.m) && lcLensShown(e);" in page
+    assert "if (soloOnly && !lcSolo(e)) return false;" in page
+    assert 'lcLens = k === "off" || lcOn(k, v) ? null : {k, v};' in page
+    assert "lcitem" not in page and "data-lcmore" not in page and "lcbars" not in page
+    assert '<div class="spscroll">' in page and "${spChart(D)}" not in page
+    assert "숫자는 모델 수(사용량 아님) · 행을 누르면 캘린더·목록을 거름" in page
+    assert 'const SP_HUE = ["OpenRouter", "Vercel", "Microsoft", "Google", "OpenAI", "Anthropic"];' in page
+    assert "SUPPLY.cols.filter(c => spCell(D, m, c).length)" in page and 'if (!N || !SUPPLY.routes) return "";' in page
+
+
 @pytest.mark.parametrize(("doc", "reason"), [
     (None, "routes.json 없음"),
     ("{", "routes.json을 읽을 수 없음"),
@@ -1828,7 +1850,7 @@ def test_team_feedback_icons_calendar_words_title_and_letsur_mode(tmp_path: Path
     assert "확인할 변화" not in page
     # 렛서 경로만: off when the page opens, keeps 렛서 경로를 모르는 cards, filters the summary, the calendar and the list
     assert 'class="lswitch" role="switch" data-lmode aria-checked="false"' in page and "let letsurOnly = false;" in page
-    assert 'const letsurRoute = e => ["use", "unk"].includes(relOf(e));' in page and "const modeShown = e => (!letsurOnly || letsurRoute(e)) && modelHit(e.mid, e.m);" in page
+    assert 'const letsurRoute = e => ["use", "unk"].includes(relOf(e));' in page and "const modeShown = e => (!letsurOnly || letsurRoute(e)) && modelHit(e.mid, e.m) && lcLensShown(e);" in page
     assert "const shown = EVENTS.filter(modeShown)" in page and "const entries = CAL_ENTRIES.filter(x => modeShown(x.e));" in page
     assert "const listed = () => EVENTS.filter(e => modeShown(e) && kindShown(e) && (showPast || !isPast(e)));" in page
     assert "letsurOnly = !letsurOnly; renderMeta(); renderCalendar(); refilter();" in page

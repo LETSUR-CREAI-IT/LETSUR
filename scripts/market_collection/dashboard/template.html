@@ -665,6 +665,48 @@ body:not([data-page="supply"]) .spage{display:none}
 .spx:disabled{opacity:.3;cursor:default}
 .spx.warn{accent-color:var(--up);opacity:1}  /* 렛서가 쓰는데 가격을 수집하지 않는 칸: 있으면 안 되는 상태라 빨간 체크로 드러낸다 */
 .sptab td.ed{background:var(--amber-soft)}  /* 편집으로 바꾼 칸(커밋 전) */
+/* 홈 렛서 공급 경로 카드(2026-11-04 박기범 시험): 캘린더 오른쪽 좁은 칸(캘린더가 주인공). 경로 상태 세 칸, 공급사별 도넛·표, 회사별 표. 숫자는 모델 수(사용량 아님) */
+.hero.withlc{grid-template-columns:minmax(0,1fr) minmax(280px,340px);align-items:start}  /* 카드가 길어도 캘린더는 제 높이 */
+@media (max-width:1100px){.hero.withlc{grid-template-columns:minmax(0,1fr)}}
+/* 캘린더 머리 '대체 경로 없는 모델만' 토글 */
+.hero .ch .lcsolo{margin-left:auto} .lcsolo[hidden]{display:none}
+#lchart{--lc2:#2a78d6}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) #lchart{--lc2:#6da7ec}}
+:root[data-theme="dark"] #lchart{--lc2:#6da7ec}
+/* 캘린더 아래로 내려가 카드가 넓어지면 공급사·회사를 두 칸으로 */
+@media (min-width:641px) and (max-width:1100px){.lcgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0 24px}}
+#lchart h3{margin:16px 0 8px;font-size:12px;font-weight:700;color:var(--muted)}
+#lchart .lcnote{margin:12px 0 0;font-size:11px;color:var(--muted)}
+.lcstats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.lcstats>*{display:flex;flex-direction:column;gap:2px;padding:8px;border:0;border-radius:var(--r-m);background:var(--surface-2);color:inherit;font:inherit;text-align:left}
+.lcstats button{cursor:pointer} .lcstats button:hover{outline:1px solid var(--up)}
+.lcstats b{font-size:22px;font-weight:750;line-height:1.1;color:var(--ink);font-variant-numeric:tabular-nums}
+.lcstats b.risk{color:var(--up)}
+.lcstats span{font-size:11px;line-height:1.3;color:var(--body)}
+.lclens{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;margin:0 0 8px;padding:4px 8px;border-radius:var(--r-s);background:var(--ink);color:var(--surface);font-size:12px}
+.lclens b{color:inherit}
+.lclens button{margin-left:auto;padding:0 8px;border:1px solid currentColor;border-radius:var(--r-pill);background:none;color:inherit;font:inherit;font-size:11px;line-height:18px;cursor:pointer}
+.lcdonut{display:grid;grid-template-columns:96px minmax(0,280px);gap:12px;align-items:center}
+.lcdonut svg{display:block;width:96px;height:96px}
+.lcdonut path{stroke:var(--surface);stroke-width:1}
+.lcdonut text{pointer-events:none}
+.lcdonut text.c1{font-size:22px;font-weight:700;fill:var(--ink);font-variant-numeric:tabular-nums}
+.lcdonut text.c2{font-size:11px;fill:var(--muted)}
+/* 작은 표: 공급사(색 칸 · 이름 · 모델 · 단독 · 변화), 회사(이름 · 모델 · 2곳+ · 1곳 · 없음). 행은 누르는 렌즈 */
+.lclist{margin:0;padding:0;list-style:none;font-size:12px;color:var(--body)}
+.lclist .lcpick,.lclist .lcplain,.lclist .lchead{display:grid;grid-template-columns:10px minmax(0,1fr) 24px 24px 24px;gap:4px;align-items:center;padding:0 4px;border:1px solid transparent;line-height:22px}
+.lcco .lcpick,.lcco .lcplain,.lcco .lchead{grid-template-columns:minmax(0,1fr) 28px 28px 28px 28px}
+.lclist .lchead{font-size:11px;color:var(--muted);line-height:16px;border-bottom-color:var(--line);border-radius:0;margin-bottom:2px}
+.lclist .lchead span:not(:first-child),.lclist .lcv,.lclist b{text-align:right;font-variant-numeric:tabular-nums}
+.lclist .lchead span.lchn{text-align:left}  /* 위 :not(:first-child) 오른쪽 정렬보다 강하게 */
+.lclist b{color:var(--ink);font-weight:650}
+.lclist .lcv{color:var(--muted)} .lclist .lcv.solo{color:var(--amber);font-weight:650} .lclist .lcv.on{color:var(--mint-ink);font-weight:650} .lclist .lcv.dual{color:var(--lc2);font-weight:650}
+.lclist .lcnm{display:flex;align-items:center;gap:4px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--ink)}
+.lclist .lcnm.bad{color:var(--up);font-weight:650}
+.lcpick{width:100%;border-radius:var(--r-s);background:none;color:inherit;font:inherit;text-align:left;cursor:pointer}
+.lcpick:hover{background:var(--surface-2)} .lcpick[aria-pressed="true"]{border-color:var(--ink);background:var(--surface-2)}
+.lcsw{width:10px;height:10px;border-radius:var(--r-xs)}
+.lcsw.unk{background:repeating-linear-gradient(135deg,var(--deemph) 0 2px,transparent 2px 4px);box-shadow:inset 0 0 0 1px var(--deemph)}
 </style>
 
 <header class="top">
@@ -692,9 +734,10 @@ body:not([data-page="supply"]) .spage{display:none}
 
   <section class="hero" aria-label="일정">
     <div class="card">
-      <div class="ch"><h2>일정 캘린더</h2></div>
+      <div class="ch"><h2>일정 캘린더</h2><button type="button" class="mchip lcsolo" data-solo aria-pressed="false" hidden data-t1="대체 경로 없는 모델만" data-t2="렛서 경로가 한 곳뿐인 모델의 렛서 경로 변화만 캘린더·목록에 남깁니다. 숫자는 켰을 때 목록에 나오는 수">대체 경로 없는 모델만 <small class="tn"></small></button></div>
       <div id="cal"></div>
     </div>
+    <div class="card" id="lchart" hidden></div>
   </section>
 
   <section class="work" aria-label="변화 목록과 상세">
@@ -843,12 +886,13 @@ let showPast = false;
 // 수집하는 모델은 모두 렛서 API로 확인한 모델이라 모델로는 거를 것이 없어 경로로 거른다. 렛서 경로를 모르는 카드(UNKNOWN)는 렛서가 쓰고 있을 수 있어 남긴다.
 // 유형 메뉴와 달리 페이지 전체에 걸리고, 메뉴처럼 저장하지 않아 새로고침하면 꺼진다.
 let letsurOnly = false;
+let lcLens = null, soloOnly = false, lcUseMap = {};  // 홈 렛서 카드 렌즈 {k: sup·maker, v}, 캘린더 '대체 경로 없는 모델만', 모델별 렛서 공급사(카드가 채움)
 const letsurRoute = e => ["use", "unk"].includes(relOf(e));
 // 모델 검색(2026-11-03 팀 피드백 2): 띄어쓰기·하이픈·점은 무시하고('gemini 4 argon') 모델 id·이름·만든 회사에서 찾는다. 유형 메뉴처럼 저장하지 않는다.
 let modelQ = "";
 const searchKey = s => String(s || "").toLowerCase().replace(/[^0-9a-z가-힣]+/g, "");
 const modelHit = (id, name) => !modelQ || [id, name, makerOf(id || "")].some(s => searchKey(s).includes(modelQ));
-const modeShown = e => (!letsurOnly || letsurRoute(e)) && modelHit(e.mid, e.m);
+const modeShown = e => (!letsurOnly || letsurRoute(e)) && modelHit(e.mid, e.m) && lcLensShown(e);
 const listed = () => EVENTS.filter(e => modeShown(e) && kindShown(e) && (showPast || !isPast(e)));
 // 상세페이지 상단용 7유형 (이벤트유형_분류규칙.md 기준, 10/10 김연우)
 const EV7 = byEv("t7"), EV7SUB = byEv("sub"), EV7FLAG = byEv("flag");
@@ -1519,7 +1563,7 @@ function renderQueue(){
   renderFilter();
   document.getElementById("qsort").value = state.queueSort;
   const lines = bundled(list).length;
-  document.getElementById("lt").textContent = `${letsurOnly ? "렛서 경로 변화" : "전체 변화"} ${list.length}${lines < list.length ? ` · 묶어서 ${lines}줄` : ""}`;
+  document.getElementById("lt").textContent = `${soloOnly ? "대체 경로 없는 모델 · " : ""}${lcLens ? lcLens.v + " · " : ""}${letsurOnly ? "렛서 경로 변화" : "전체 변화"} ${list.length}${lines < list.length ? ` · 묶어서 ${lines}줄` : ""}`;
   const none = EVENTS.length ? `<p class="lempty">${letsurOnly ? "렛서 경로의 " : ""}${modelQ ? "검색한 모델의 " : ""}${listKind ? "선택한 유형의 " : ""}${showPast ? "" : "최근 7일과 앞으로의 "}변화 0건</p>` : "";
   if (state.queueSort !== "type") { document.getElementById("queue").innerHTML = list.length ? `<ul class="rows">${bundled(list.slice().sort(queueCmp)).map(rowOf).join("")}</ul>` : none; return; }
   const groups = Object.keys(TYPE).map(k => [k, list.filter(e => typeOf(e) === k).sort((a, b) => cmpU(a, b) || actOrder(a) - actOrder(b))]).filter(([, l]) => l.length);
@@ -1746,6 +1790,95 @@ try { const d = JSON.parse(localStorage.getItem(SP_DRAFT) || "null");  // 초안
   else if (d && SUPPLY.routes) Object.entries(d.edits || {}).forEach(([k, e]) => { const [m, name] = k.split("\t"), c = SUPPLY.cols.find(x => x[0] === name);
     if (spHas(SUPPLY.models, m) && c && e && typeof e.on === "boolean" && /^\d{4}-\d{2}-\d{2}$/.test(e.at) && (!e.on || spGot(m, c).length)) spEdits[k] = {on: e.on, at: e.at}; });
 } catch (err) {}
+// 홈 렛서 공급 경로 카드(2026-11-04 박기범 시험, 팀 미논의): 캘린더 오른쪽 좁은 칸. 공급로 현황 표와 같은 공급사 열로 렛서 경로를 세고
+// 표의 편집 초안도 반영한다. 크기는 모델 수이고 사용량이 아니다.
+// 색은 공급사 이름에 고정(모델 수가 바뀌어도 색이 바뀌지 않게), 여섯 곳 밖은 회색, 경로 기록이 없는 모델은 빗금이다.
+const SP_HUE = ["OpenRouter", "Vercel", "Microsoft", "Google", "OpenAI", "Anthropic"];
+const spFill = g => g === "" ? "url(#sphatch)" : SP_HUE.includes(g) ? `var(--s${SP_HUE.indexOf(g) + 1})` : "var(--deemph)";
+function spArc(r0, r1, a0, a1){  // 12시에서 시계 방향, 라디안
+  if (a1 - a0 >= 2 * Math.PI - 1e-6) a1 = a0 + 2 * Math.PI - 1e-4;
+  const p = (r, a) => `${(Math.sin(a) * r).toFixed(2)},${(-Math.cos(a) * r).toFixed(2)}`, big = a1 - a0 > Math.PI ? 1 : 0;
+  return `M${p(r1, a0)}A${r1},${r1} 0 ${big} 1 ${p(r1, a1)}L${p(r0, a1)}A${r0},${r0} 0 ${big} 0 ${p(r0, a0)}Z`;
+}
+// 카드 경로(e.ch '게시자 · route_id')가 공급로 현황의 어느 공급사 열인지
+const lcCol = e => { const rid = String(e.ch || "").split(" · ").pop(), c = SUPPLY.cols.find(x => x[1].includes(rid)); return c ? c[0] : String(e.ch || "").split(" · ")[0]; };
+// 렌즈: 카드에서 공급사·회사를 누르면 요약·캘린더·목록을 그 변화만으로 거른다(다시 누르거나 해제하면 전체).
+// 캘린더 머리 '대체 경로 없는 모델만'(soloOnly)은 렛서 경로가 한 곳뿐인 모델의 렛서 경로 변화만 남긴다. 둘 다 켜면 둘 다 맞는 것만.
+const lcSolo = e => relOf(e) === "use" && (lcUseMap[e.mid] || []).length === 1;
+function lcLensShown(e){
+  if (soloOnly && !lcSolo(e)) return false;
+  if (!lcLens) return true;
+  return lcLens.k === "sup" ? lcCol(e) === lcLens.v : makerOf(e.mid || "") === lcLens.v;
+}
+const lcOn = (k, v) => !!lcLens && lcLens.k === k && lcLens.v === (v || "");
+function spChart(D){
+  const ids = SP_GROUPS.flatMap(([, l]) => l), N = ids.length; if (!N || !SUPPLY.routes) return "";
+  const uses = Object.fromEntries(ids.map(m => [m, SUPPLY.cols.filter(c => spCell(D, m, c).length).map(c => c[0])]));
+  lcUseMap = uses;  // 캘린더 '대체 경로 없는 모델만'이 쓴다
+  const count = {}; ids.forEach(m => (uses[m].length ? uses[m] : [""]).forEach(g => { count[g] = (count[g] || 0) + 1; }));
+  const groups = Object.keys(count).sort((a, b) => (a === "") - (b === "") || count[b] - count[a] || a.localeCompare(b));
+  const total = groups.reduce((s, g) => s + count[g], 0), name = g => g || "경로 기록 없음", tau = 2 * Math.PI;
+  const tip = (t1, t2) => ` data-t1="${esc(t1)}" data-t2="${esc(t2)}"`;
+  const lens = (k, v) => ` data-lclens="${k}" data-v="${esc(v)}" aria-pressed="${lcOn(k, v)}"`;
+  const num = (n, k) => `<span class="lcv${n ? " " + k : ""}">${n || "–"}</span>`;
+  const hatch = `<defs><pattern id="sphatch" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="5" height="5" fill="var(--track)"/><line x1="0" y1="0" x2="0" y2="5" stroke="var(--deemph)" stroke-width="2"/></pattern></defs>`;
+  const fail = HEALTH.failing || [], onCol = {}, failCol = {}, solo = {};
+  const live = EVENTS.filter(e => !isPast(e) && (!letsurOnly || letsurRoute(e)));  // 렌즈를 켰을 때 목록과 같은 기준
+  live.forEach(e => { const c = lcCol(e); onCol[c] = (onCol[c] || 0) + 1; });
+  fail.forEach(f => { const c = lcCol({ch: f.ch || f.route}); failCol[c] = (failCol[c] || 0) + 1; });
+  ids.forEach(m => { if (uses[m].length === 1) solo[uses[m][0]] = (solo[uses[m][0]] || 0) + 1; });
+  const single = ids.filter(m => uses[m].length === 1), none = ids.filter(m => !uses[m].length);
+  // 경로 상태 세 칸: 캘린더·목록에 없는 의존도와 데이터 상태
+  const stat = (n, label, why, risk) => `<div${tip(label, why)}><b${risk && n ? ` class="risk"` : ""}>${n}</b><span>${label}</span></div>`;
+  const stats = `<div class="lcstats">${stat(single.length, "대체 경로 없는 모델", `렛서 경로가 한 곳뿐인 모델 ${single.length}개\n캘린더 머리의 '대체 경로 없는 모델만'으로 이 모델들의 변화만 볼 수 있습니다`, true)}
+    ${stat(none.length, "경로 기록 없음", none.slice(0, 8).join(", ") + (none.length > 8 ? ` 외 ${none.length - 8}개` : "") + "\n렛서 API 키 만료로 다시 확인하지 못함")}
+    ${fail.length ? `<button type="button" data-ptab="health"${tip("수집 실패", "지금 실패 중인 출처. 누르면 수집 상태")}><b class="risk">${fail.length}</b><span>수집 실패 →</span></button>` : stat(0, "수집 실패", "지금 실패 중인 출처 없음")}</div>`;
+  const banner = lcLens ? `<p class="lclens"><span><b>${esc(lcLens.v)}</b> 변화만 · 목록 ${EVENTS.filter(e => modeShown(e) && !isPast(e)).length}건</span><button type="button" data-lclens="off">전체 보기</button></p>` : "";
+  // 공급사별: 도넛과 작은 표(모델 · 단독 · 변화). 모델 1개뿐이고 표시할 것이 없는 공급사는 한 줄로 묶는다.
+  let b = 0, donut = "";
+  groups.forEach(g => { const e = b + count[g] / total * tau; donut += `<path d="${spArc(44, 76, b + 0.01, e - 0.01)}" fill="${spFill(g)}"${tip(name(g), `모델 ${count[g]}개`)}/>`; b = e; });
+  const tiny = groups.filter(g => g && count[g] === 1 && !onCol[g] && !failCol[g]), fold = tiny.length > 1 ? tiny : [];
+  const why = g => `모델 ${count[g]}개${solo[g] ? `\n단독 ${solo[g]}: 렛서가 이 공급사로만 쓰는 모델` : ""}${onCol[g] ? `\n변화 ${onCol[g]}: 이 공급사 경로의 최근 7일·앞으로 변화(누르면 목록에 나오는 수)` : ""}${failCol[g] ? `\n수집 실패 ${failCol[g]}곳: 이 공급사 가격은 최신이 아님` : ""}\n누르면 캘린더·목록을 이 공급사 변화로 거릅니다`;
+  const row = g => g ? `<li><button type="button" class="lcpick"${lens("sup", g)}${tip(g, why(g))}><i class="lcsw" style="background:${spFill(g)}"></i><span class="lcnm${failCol[g] ? " bad" : ""}">${esc(g)}${failCol[g] ? " !" : ""}</span><b>${count[g]}</b>${num(solo[g], "solo")}${num(onCol[g], "on")}</button></li>`
+    : `<li class="lcplain"${tip(name(g), `모델 ${count[g]}개`)}><i class="lcsw unk"></i><span class="lcnm">${esc(name(g))}</span><b>${count[g]}</b>${num(0)}${num(0)}</li>`;
+  const list = groups.filter(g => !fold.includes(g)).map(g => g === "" && fold.length
+    ? `<li class="lcplain"${tip(`그 밖 ${fold.length}곳`, fold.map(x => `${x} 모델 ${count[x]}개${solo[x] ? ` · 단독 ${solo[x]}` : ""}`).join("\n"))}><i class="lcsw" style="background:var(--deemph)"></i><span class="lcnm">그 밖 ${fold.length}곳</span><b>${fold.length}</b>${num(fold.reduce((t, x) => t + (solo[x] || 0), 0), "solo")}${num(0)}</li>` + row(g) : row(g)).join("");
+  const head = `<li class="lchead" aria-hidden="true"><span></span><span class="lchn">공급사</span><span>모델</span><span${tip("단독", "렛서가 이 공급사로만 쓰는 모델 수")}>단독</span><span${tip("변화", "이 공급사 경로의 최근 7일·앞으로 변화 수(누르면 목록에 나오는 수)")}>변화</span></li>`;
+  // 회사별: 숫자 표(모델 · 경로 두 곳 이상 · 한 곳 · 기록 없음). 모델 많은 8곳 + 나머지 한 줄. 누르면 그 회사 변화로 거른다.
+  const rows = SP_GROUPS.map(([g, l]) => ({g, n: l.length, n2: l.filter(m => uses[m].length > 1).length, n1: l.filter(m => uses[m].length === 1).length, n0: l.filter(m => !uses[m].length).length,
+    no: l.filter(m => !uses[m].length)})).sort((x, y) => y.n - x.n || x.g.localeCompare(y.g));
+  const top = rows.length > 9 ? rows.slice(0, 8) : rows, rest = rows.slice(top.length), add = k => rest.reduce((t, r) => t + r[k], 0);
+  const cells = r => `<b>${r.n}</b>${num(r.n2, "dual")}${num(r.n1, "solo")}${num(r.n0, "")}`;
+  const co = top.map(r => `<li><button type="button" class="lcpick"${lens("maker", r.g)}${tip(r.g, `모델 ${r.n}개 · 렛서 경로 두 곳 이상 ${r.n2} · 한 곳 ${r.n1} · 기록 없음 ${r.n0}${r.n0 ? "\n기록 없음: " + r.no.slice(0, 6).join(", ") + (r.n0 > 6 ? ` 외 ${r.n0 - 6}개` : "") : ""}\n누르면 캘린더·목록을 이 회사 변화로 거릅니다`)}><span class="lcnm">${makerIcon(r.g)}${esc(r.g)}</span>${cells(r)}</button></li>`).join("")
+    + (rest.length ? `<li class="lcplain"${tip(`그 밖 ${rest.length}곳`, rest.map(r => `${r.g} 모델 ${r.n}개`).join("\n"))}><span class="lcnm">그 밖 ${rest.length}곳</span>${cells({n: add("n"), n2: add("n2"), n1: add("n1"), n0: add("n0")})}</li>` : "");
+  const cohead = `<li class="lchead" aria-hidden="true"><span class="lchn">회사</span><span>모델</span><span${tip("두 곳 이상", "렛서 경로가 두 곳 이상인 모델: 한 곳이 막혀도 옮길 곳이 있음")}>2곳+</span><span${tip("한 곳", "렛서 경로가 한 곳뿐인 모델: 대체 경로 없음")}>1곳</span><span${tip("기록 없음", "렛서 경로 기록이 없는 모델")}>없음</span></li>`;
+  const run = HEALTH.run && HEALTH.run.at ? `${md(HEALTH.run.at.slice(0, 10))} ${HEALTH.run.at.slice(11, 16)} 수집` : "수집 기록 없음";
+  return `<div class="ch"><h2>렛서 공급 경로</h2><span>${esc(run)}</span></div>
+    ${banner}${stats}
+    <div class="lcgrid"><div>
+    <h3>공급사별 렛서 사용 모델</h3>
+    <div class="lcdonut"><svg viewBox="-80 -80 160 160" role="img" aria-label="공급사별 렛서 사용 모델 수">${hatch}${donut}<text class="c1" text-anchor="middle" y="4">${groups.filter(g => g).length}</text><text class="c2" text-anchor="middle" y="20">공급사</text></svg>
+      <ul class="lclist">${head}${list}</ul></div>
+    </div><div>
+    <h3>회사별 렛서 경로 수</h3>
+    <ul class="lclist lcco">${cohead}${co}</ul>
+    </div></div>
+    <p class="lcnote">숫자는 모델 수(사용량 아님) · 행을 누르면 캘린더·목록을 거름</p>`;
+}
+function renderLchart(){
+  const el = document.getElementById("lchart"), h = spChart(spDoc() || {records: []}); el.innerHTML = h; el.hidden = !h; el.parentNode.classList.toggle("withlc", !!h);
+  const sb = document.querySelector("[data-solo]"); if (!sb) return;  // 캘린더 머리 토글: 켰을 때 목록에 나올 수
+  sb.hidden = !h; sb.setAttribute("aria-pressed", soloOnly);
+  sb.querySelector("small").textContent = EVENTS.filter(e => !isPast(e) && (!letsurOnly || letsurRoute(e)) && lcSolo(e)).length;
+}
+// '렛서 경로만'을 바꾸면 숫자도 따라간다(전체 클릭 처리기가 값을 바꾼 뒤에 그린다)
+document.addEventListener("click", ev => { if (ev.target.closest && ev.target.closest("[data-lmode]")) setTimeout(renderLchart); });
+document.addEventListener("click", ev => { const t = ev.target.closest && ev.target.closest("[data-lclens],[data-solo]"); if (!t) return;
+  const key = ev.detail === 0;
+  if (t.hasAttribute("data-solo")) soloOnly = !soloOnly;
+  else { const k = t.dataset.lclens, v = t.dataset.v || ""; lcLens = k === "off" || lcOn(k, v) ? null : {k, v}; }
+  renderMeta(); renderCalendar(); refilter(); renderLchart();
+  if (key && !t.hasAttribute("data-solo")) { const f = [...document.querySelectorAll("#lchart [data-lclens]")].find(x => x.dataset.lclens === t.dataset.lclens && (x.dataset.v || "") === (t.dataset.v || "")); if (f) f.focus({preventScroll: true}); } });
 function renderSupply(){
   const el = document.getElementById("supply"), box = el.querySelector(".spscroll"), pos = box ? [box.scrollTop, box.scrollLeft] : null;
   const D = spDoc() || {records: []}, C = SUPPLY.cols, n = Object.keys(spEdits).length, count = SP_GROUPS.reduce((s, [, l]) => s + l.length, 0);
@@ -1758,6 +1891,7 @@ function renderSupply(){
     ${n || spMsg ? `<div class="spbar"><span>바꾼 칸 ${n}개 · 변화 화면에는 이 브라우저에서 바로 반영됩니다. 다른 사람에게 보이려면 커밋하세요</span><button type="button" data-sp="dl"${n ? "" : " disabled"}>파일 내려받기</button><button type="button" data-sp="copy"${n ? "" : " disabled"}>JSON 복사</button><a href="${SP_FILE}" target="_blank" rel="noopener">GitHub에서 파일 편집 →</a><button type="button" data-sp="reset"${n ? "" : " disabled"}>모두 되돌리기</button>${spMsg ? `<span class="msg" role="status">${esc(spMsg)}</span>` : ""}${spText && n ? `<textarea readonly aria-label="바꾼 경로 파일 JSON">${esc(spJson())}</textarea>` : ""}</div>` : ""}
     <div class="spscroll"><table class="sptab"><thead><tr><th>모델</th>${C.map(c => `<th>${esc(c[0])}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table></div>`;
   const nb = el.querySelector(".spscroll"); if (pos && nb) [nb.scrollTop, nb.scrollLeft] = pos;
+  renderLchart();
 }
 function spAct(t, key){  // key: Space·Enter로 누른 것. 다시 그린 뒤 같은 상자(버튼)에 포커스를 둔다
   const a = t.dataset.sp, m = t.dataset.m, c = t.dataset.c == null ? null : SUPPLY.cols[+t.dataset.c];
@@ -1869,5 +2003,6 @@ function renderCollected(){
 document.addEventListener("change", ev => { if (ev.target && ev.target.id === "collsel") { collModel = ev.target.value; renderCollected(); } });
 renderMeta(); renderCalendar(); renderPrice(); renderQueue(); renderDetail(); showSel();
 if (startModel !== null) setPage("models", startModel); else if (startHealth) setPage("health"); else if (startSupply) setPage("supply"); else document.body.dataset.page = "changes";
+renderLchart();
 let rzT; window.addEventListener("resize", () => { clearTimeout(rzT); rzT = setTimeout(renderPrice, 150); });
 </script>
