@@ -45,10 +45,15 @@ a{color:var(--ink)}
 
 .top{display:flex;align-items:center;gap:20px;min-height:54px;padding-inline:24px;background:var(--nav);color:var(--nav-ink)}
 .top img{height:19px;width:auto;display:block}
-.top .tool{color:var(--nav-muted);font-size:13px;padding-left:16px;border-left:1px solid #3a3f3d;white-space:nowrap}
-.top .base{margin-left:auto;color:var(--nav-muted);font-size:13px;white-space:nowrap}
-@media (max-width:640px){.top{padding-inline:16px;gap:12px}.top .tool{display:none}}
-@media (max-width:640px){.top{flex-wrap:wrap;row-gap:8px;padding-block:8px}.top .base{margin-left:0}}  /* 화면 탭이 들어가 좁으면 줄을 바꾼다 */
+.top .base{color:var(--nav-muted);font-size:13px;white-space:nowrap}
+/* 모델 검색(2026-11-03 팀 피드백 2): 머리줄에 하나를 두고 네 화면을 함께 거른다 */
+.msearch{display:flex;align-items:center;gap:8px;width:220px;height:32px;margin-left:auto;padding:0 12px;border:1px solid #3a3f3d;border-radius:var(--r-pill);color:var(--nav-muted);cursor:text}
+.msearch:focus-within{border-color:var(--nav-muted)}
+.msearch svg{flex:none;width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2.5;stroke-linecap:round}
+.msearch input{flex:1;min-width:0;border:0;outline:0;background:none;color:var(--nav-ink);font:inherit;font-size:13px}
+.msearch input::placeholder{color:var(--nav-muted)}
+@media (max-width:640px){.top{padding-inline:16px;gap:12px}}
+@media (max-width:1000px){.top{flex-wrap:wrap;row-gap:8px;padding-block:8px}.top .base{margin-left:auto}.msearch{order:3;width:100%;margin-left:0}}  /* 화면 탭이 들어가 좁으면 줄을 바꾼다 */
 
 .wrap{max-width:1380px;margin:0 auto;padding-inline:24px;padding-block:24px 56px;display:flex;flex-direction:column;gap:16px}
 @media (max-width:640px){.wrap{padding-inline:16px}}
@@ -61,7 +66,20 @@ a{color:var(--ink)}
 .summary-item strong,.summary-note strong{font-size:14px;font-weight:500;color:var(--body);font-variant-numeric:tabular-nums}
 .summary-sub{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
 @media (max-width:640px){.summary-grid{gap:8px 16px;padding:12px 16px}}
-.summary-item.lmode{margin-left:auto}  /* '렛서 경로만'(2026-10-31 팀 상호 피드백 '렛서모드'): 요약 줄 오른쪽 끝 */
+.summary-item.lmode{margin-left:auto;align-items:center}  /* '렛서 경로만'(2026-10-31 팀 상호 피드백 '렛서모드'): 요약 줄 오른쪽 끝 */
+.lmode label{font-size:13px;font-weight:600;color:var(--ink);cursor:pointer}
+/* 켜기·끄기 스위치와 설정 버튼(2026-11-03 팀 피드백 3). 글자가 흰색이라 색은 라이트·다크 모두 4.5:1 이상인 고정값이다 */
+.lswitch{position:relative;width:60px;height:26px;padding:0;border:2px solid var(--ink);border-radius:var(--r-pill);background:#c23a39;color:#fff;font-size:11px;font-weight:750;cursor:pointer}
+.lswitch span{position:absolute;top:50%;right:8px;transform:translateY(-50%)}
+.lswitch::after{content:"";position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:var(--ink);transition:left .15s}
+.lswitch[aria-checked="true"]{background:#0b7a5a}
+.lswitch[aria-checked="true"] span{right:auto;left:8px}
+.lswitch[aria-checked="true"]::after{left:36px}
+@media (prefers-reduced-motion:reduce){.lswitch::after{transition:none}}
+.lgear{position:relative;display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;padding:0;border:1px solid var(--line-strong);border-radius:50%;background:var(--surface);color:var(--ink);cursor:pointer}
+.lgear:hover{border-color:var(--ink)}
+.lgear svg{width:16px;height:16px;fill:none;stroke:currentColor}
+.lgear.on::after{content:"";position:absolute;top:-2px;right:-2px;width:8px;height:8px;border-radius:50%;background:var(--amber)}  /* 공급로 초안이 반영 중 */
 
 .card{background:var(--surface);border:0;border-radius:var(--r-xl);padding:20px;min-width:0}
 @media (max-width:640px){.card{padding:16px}}
@@ -132,17 +150,22 @@ a{color:var(--ink)}
 .qt{flex:none;display:inline-block;padding:0 4px;border:1px solid var(--amber);border-radius:var(--r-xs);font-size:11px;font-weight:700;line-height:15px;color:var(--amber);vertical-align:1px}
 .linkmiss{margin:0 0 12px;padding:8px 12px;border-radius:var(--r-m);background:var(--amber-soft);color:var(--amber);font-size:13px;overflow-wrap:anywhere}
 .ev.drv{outline:1.5px dashed var(--amber);outline-offset:-1.5px}
-.drvk{display:inline-block;width:14px;height:10px;margin-right:4px;border:1.5px dashed var(--amber);border-radius:var(--r-xs);vertical-align:-1px}
 .lk{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin-top:12px;padding:12px 12px;border:1px dashed var(--line-strong);border-radius:var(--r-m);font-size:13px;color:var(--body)}
 .lk b{color:var(--ink)}
 .lk button{height:28px;padding:0 12px;border:1px solid var(--line-strong);border-radius:var(--r-pill);background:var(--surface);font-size:13px;color:var(--ink);cursor:pointer}
 .lk button:hover{border-color:var(--ink)}
-.calnext{display:flex;flex-wrap:wrap;align-items:center;gap:8px 8px;margin:12px 0 0;font-size:12px;color:var(--muted)}
-.calnext button{display:inline-flex;align-items:center;gap:8px;height:28px;padding:0 8px;border:1px solid var(--line);border-radius:var(--r-pill);background:var(--surface);font-size:12px;color:var(--ink);cursor:pointer}
-.calnext button:hover{border-color:var(--line-strong)}
+/* 다음 일정(2026-11-04 박건: 어느 비율에서든 정갈하게): 같은 크기 칸 4개, 좁으면 2개씩, 폰은 한 줄씩. 칸의 양끝이 캘린더 양끝과 맞는다 */
+.calnext{margin:12px 0 0}
+.calnext h3{margin:0 0 8px;font-size:12px;font-weight:700;color:var(--muted)}
+.cngrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+@media (max-width:1100px){.cngrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:560px){.cngrid{grid-template-columns:minmax(0,1fr)}}
+.cngrid button{display:flex;flex-direction:column;gap:4px;min-width:0;padding:8px 12px;border:1px solid var(--line);border-radius:var(--r-m);background:var(--surface);font-size:12px;color:var(--ink);text-align:left;cursor:pointer}
+.cngrid button:hover{border-color:var(--line-strong)}
+.cn1,.cn2{display:flex;align-items:center;gap:8px;min-width:0}
+.cn2 b{min-width:0;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cn2 small{flex:none;margin-left:auto;font-size:11px;color:var(--muted)}
 .calnext .dd{height:18px;padding:0 4px;font-size:11px}
-.callg{display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:8px;font-size:12px;color:var(--muted)}
-.callg i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px;vertical-align:0}
 @media (max-width:560px){.day{min-height:46px;padding:4px}.ev{height:12px;padding:0}.ev span,.ev i,.ev .logo{display:none}.cal{gap:4px}}
 
 /* 단가 변동 */
@@ -164,18 +187,17 @@ a{color:var(--ink)}
 .lhead{display:flex;align-items:baseline;justify-content:space-between;padding:4px 8px 8px}
 .lhead h2{margin:0;font-size:15px;font-weight:700;color:var(--ink)}
 .lhead span{font-size:12px;color:var(--muted)}
-.lfilter{display:flex;flex-direction:column;gap:8px;padding:0 8px 8px} .lfilter:empty{display:none} .lfilter>div{display:flex;flex-wrap:wrap;align-items:center;gap:4px}
+.lfilter{padding:0 8px 8px} .lfilter:empty{display:none} .lfilter>div{display:flex;flex-wrap:wrap;align-items:center;gap:4px}
 .lfilter .mchip{height:24px;padding:0 8px;gap:4px;font-size:12px}
 .lfilter .mchip[data-past][aria-pressed="true"]{background:var(--grey-soft);border-color:var(--line-strong);color:var(--ink)}
-.lfilter.picked .mchip[data-kind][aria-pressed="false"]{border-style:dashed;color:var(--muted)}
-.lfilter .mchip.zero{opacity:.55}
 .lhid{font-size:12px;color:var(--muted)}
 .lempty{margin:16px 8px 8px;font-size:13px;color:var(--muted)}
 /* 메인페이지 정규화 (김연우 10/27): 정렬 · Suggested Action · Applicability · 달력 날짜 종류 · 그래프 비교 조건 */
 .lhead{align-items:center;gap:12px}
-.qtools{display:flex;align-items:center;gap:8px}
+.qtools{display:flex;flex-direction:column;align-items:flex-end;gap:4px}  /* 정렬 아래 유형(2026-11-03 팀 피드백 6) */
+.qtools>div{display:flex;align-items:center;gap:8px}
 .qtools label{font-size:12px;color:var(--muted)}
-.qtools select{height:32px;padding:0 8px;border:1px solid var(--line);border-radius:var(--r-m);background:var(--surface);color:var(--ink);font:inherit;font-size:12px}
+.qtools select{width:136px;height:32px;padding:0 8px;border:1px solid var(--line);border-radius:var(--r-m);background:var(--surface);color:var(--ink);font:inherit;font-size:12px}
 .qbadges{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:4px}
 .qchip{display:inline-flex;align-items:center;min-height:18px;padding:0 8px;border:1px solid transparent;border-radius:var(--r-pill);font-size:11px;font-weight:750;letter-spacing:.01em;white-space:nowrap}
 .qchip.review{background:var(--mint-soft);color:var(--mint-ink)} .qchip.verify{background:var(--amber-soft);color:var(--amber)}
@@ -187,9 +209,6 @@ a{color:var(--ink)}
 .dkind{display:inline-flex;align-items:center;flex:none;height:16px;padding:0 4px;border-radius:var(--r-xs);font-size:11px;font-weight:800}
 .dkind.effective{background:var(--mint-soft);color:var(--mint-ink)} .dkind.end{background:var(--surface-2);color:var(--up);box-shadow:inset 0 0 0 1px var(--line)} .dkind.next_check{background:var(--slate-soft);color:var(--slate)}
 .ev.dk-end{box-shadow:inset 3px 0 0 var(--up)} .ev.dk-next_check{box-shadow:inset 3px 0 0 var(--slate)} .ev.dk-effective{box-shadow:inset 3px 0 0 var(--mint)}
-.callg .dkey{display:inline-flex;align-items:center;gap:4px}
-.callg .dkey i{width:9px;height:9px;margin:0;border-radius:var(--r-xs)}
-.callg .dkey.effective i{background:var(--mint)} .callg .dkey.end i{background:var(--up)} .callg .dkey.next_check i{background:var(--slate)}
 .cmpbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin:8px 0 8px;padding:8px 12px;border:1px solid var(--line);border-radius:var(--r-m);background:var(--surface-2);font-size:12px;color:var(--muted)}
 .cmpbar b{color:var(--ink);font-weight:700}
 .cmpwarn{color:var(--amber);font-weight:650}
@@ -471,8 +490,22 @@ body:not([data-page="health"]) .hpage{display:none}
 .vgbtn .tlink{height:auto;min-height:32px;padding:4px 12px;flex-wrap:wrap;text-align:left}
 .tlink small{color:var(--muted);font-size:12px;font-weight:500}
 .row.vg{box-shadow:inset 3px 0 0 var(--line-strong)}
-.vgnote{margin:12px 0 0;font-size:13px;line-height:1.6;color:var(--body)}
-.vgh{margin:20px 0 8px;font-size:13px;font-weight:700;color:var(--ink)}
+/* 변동 잦음 추이 그래프(2026-11-04 박건): 선 색은 --s1~ 순서로 공급처를 따른다(docs/design-system.md 선 색). 글자는 글자 색만 쓴다 */
+.vgc{margin-top:12px}
+.vgc-lg{display:flex;flex-wrap:wrap;align-items:center;gap:4px 12px;font-size:12px;color:var(--body)}
+.vgc-lg i{display:inline-block;width:12px;height:2px;margin-right:4px;border-radius:var(--r-xs);vertical-align:middle}
+.vgc-lg small{font-size:12px;color:var(--muted)}
+.vgc-grid{display:flex;flex-direction:column;gap:16px;margin-top:12px}
+.vgc-p{min-width:0;margin:0}
+.vgc-p figcaption{margin-bottom:4px;font-size:12px;font-weight:700;color:var(--ink)}
+.vgc-box{display:grid;grid-template-columns:auto minmax(0,1fr);column-gap:8px}
+.vgc-y{display:flex;flex-direction:column;justify-content:space-between;font-size:11px;color:var(--muted);text-align:right}
+.vgc-plot{position:relative;height:120px;border-top:1px solid var(--line);border-bottom:1px solid var(--line-strong)}
+.vgc-plot svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none}
+.vgc-h{position:absolute;top:0;bottom:0}
+.vgc-h:hover{background:var(--grey-soft)}
+.vgc-plot polyline{fill:none;stroke-width:2;stroke-linejoin:round;vector-effect:non-scaling-stroke}
+.vgc-x{grid-column:2;display:flex;justify-content:space-between;margin-top:4px;font-size:11px;color:var(--muted)}
 
 /* ---- v16: 캘린더·그래프 메인, 종류별 목록, 상세 2×2 ---- */
 .hero{display:grid;grid-template-columns:minmax(0,1fr);gap:16px;align-items:stretch}  /* 단가 추이는 모델별 가격 화면으로(2026-10-28) */
@@ -613,6 +646,7 @@ tr.gh td{padding-top:12px;font-size:12px;font-weight:700;color:var(--muted);back
 body[data-page="supply"] .summary-grid,body[data-page="supply"] .hero,body[data-page="supply"] .work,body[data-page="supply"] #hwarn{display:none}
 body:not([data-page="supply"]) .spage{display:none}
 @media (max-width:640px){.ptabs{flex-wrap:wrap;row-gap:4px}.ptabs button{padding:0 8px}}  /* 화면 탭 4개가 폰 폭을 넘지 않게 */
+.spnote{margin:0 0 8px;font-size:12px;color:var(--amber)}
 .spbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin:0 0 12px;padding:8px 12px;border:1px solid var(--line-strong);border-radius:var(--r-m);background:var(--surface-2);font-size:13px;color:var(--body)}
 .spbar button,.spbar a{display:inline-flex;align-items:center;height:32px;padding:0 12px;border:1px solid var(--line-strong);border-radius:var(--r-pill);background:var(--surface);font-size:13px;color:var(--ink);text-decoration:none;cursor:pointer}
 .spbar button:disabled{opacity:.45;cursor:default}
@@ -635,8 +669,8 @@ body:not([data-page="supply"]) .spage{display:none}
 
 <header class="top">
   <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALoAAAAYCAYAAABN2ucUAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAAuqADAAQAAAABAAAAGAAAAACiJhx4AAAHM0lEQVR4Ae2caWwVRRzA6evrIeJBQoV6EFtP/GAwBK012PJFDSai2GhqojHFC0kIwaCCIY1+MEpUYkxQNAavhmgkRSMfRAOCkmhA06hEMQ3lKK1YghCvXq/19y/dze7s7PH2TR/lsZNMZ+Y//3v+c+zsvhZNyCINDAzcPDQ0tGl4eLivqKiom3JXcXFxazqd/pL2YBasEtTEA3n1QJGfNIK4ur+/v6a0tHQDQTwseL29vduo16s04P4B7KWysrI36P9L7R8vbfQ827Auw9j7r2GeCbsx8IA20AmICoJ8L/Imk58igFcDuxDY4SAdwOlOpVLzmRy7gvDUvr6+vgywlAUneGbDY7fVNlGiWxX67zPBy+IBz/by8vIrrLaU7Hpz2PV2OGGm6vhlDX5ZpvJDj8nY9iTl/eBcpPZn2X6G8X7eSYNNt2DT5xYMOUexu8JqRy0Z5/vAbXHg/4qsGY62XUXG+dj0MmUdNk2no8TujFGxg8tJi4AltCXIJTUj7Bwx9mTT/y8KVYK7E4MW+GNpe7QTTouZAF0eYJedx3h1AHzaQJAL75Hd2yUkzw1iaCox9DNim7DpMsqcglzU1wY6gmTmWWkiQb6AGX2DBQgpRakN0NwUgpd05+gBAnwmgfApbM7LkdW4IseuNYYmrW1X2q6NVmQ2IajaCQcmq3k2W1VpJpNphe4qFP7Tycunno8VvRd9tvvIjwXGtsMqIQvC8ShyoJ0DrXOh+RG6QF9B0+6UB34j7WInTOrABc+jm4qnayPjoA6eTxj6z0YPl0hgOwDE3m08gc6W4RGCgFnkrLYPFK1gVW+Gbin5lCf06UaJ+rFWhDPnT1Hk4Od/wJto6cOzzfKSkpItVjtieYkG7wN0eAB7YweFhmdeQeiu2rWCZ4IXclEixUxJs4I/Qjl1lJHu4UBWZlV4qFx4LiZPCUKk3z11g5CTPtUDB1QA7XLy6e5T16JK7GW7AHjckmLVbSTY1hHs1pN2lQfrJMAl3AdHBafhf5cKTNrGPPAenNSVu4GxlAuBexhXz45tTPLYMjI+UWVFv1t0pryDnGL2TDNpAzxvD+Fn3KgQeQXTzRHlF8ZrkcagGmAfEuyd5OcYA6NjqpE37kFpnDALZ00gyxGjiva50jaYrgzhZVSYnyzsms6gf+vXHweOn/YTbLVxaE3RcK++jl1zHw//69HHdYdOW46jq1jhV2J7K88Br/McsNWU7NOJTxpn2LcpOEzqpre7S0MckpdAR4dibK0M0SWrbiaPPFCe8kTwfoEu1YzfvZSLUUi9CpabmQZuhBoIeNkF1kLzLuW4fYtt2qkpDcOMBpYLqATnBwVzUF8ucs8oWoK2n9X9fXaYGurXYfx68n8aJ8xgPF5jle/iZdNaAv8aDU7BgeTo0oNjLhbLmOU9GD5g0kr4d8JffWAyKSIqrwy6dEVFjoKHXfKNz7hLBHwbSjVh7zLGcyH1Jegqr9GdaRIwOd8vIuC/4uO8ZsZf7qoLMsnR5Xssk0A/Ru6gbXo7dr3k0HgxLys6dh1EtusMq9GloEDYfByD5HuRVwj4ebQfpj1fNRJ4Pcea7QT829xXP6T2F0Jbblk2jhqyifoQTukxbNjmEH55CfQQHQq6m3EdJoA3c6y5k9W+mvarGHxCNRr4Qo40D6rwQmin2K7kM9xHccBKMYj6IR/D+nzggWCc+3Eggr4zCX69X3KGMr4djPVSslw5rlYZstA9rsJoq0dPta0hiQQaioRlAElW9EGMfpPyyCi/vSpfjG8n+00AFd1uQyPfp3faAH1F57Sr9agJ1JQHGJdesm4RmqmR4Roj6CoY2ws0eGGgaxUEF1+lz2jTc5VI0O9m+3IJwbA2DJsE8HJXR3DjGKv5qmCUkR2kn7PhEWRYnyDIy6u3gMlDVOyE7LnwtB0Jz2mcU9+JzVBDCP8u5DRpuvICkjHBps9iCiuGXr5hciVg1oJnwzm/exYr5LYxRr/ZSCEVfCVv1m90oiHLw9fZb7LuCXQU2o8Bhyjtb1uob0EpdTYG6TEgP8CA7mgQkqNvD3U70KmXQVvn6DdRPQuet5pgZPHAJ2EP2hbqWJUlpv3EuHlWeRa/dhY/ObqWWYYgt5K65NgJHvIBXF6S7h5dzuktDum9nOM/wgFyZRUlyfVkIzTfREEWHHgvpxiMih8R70w459s7VkSfhKHtYdw8XwkSD4NM6hVhxNn0w+93JtCL2dDkgqsNdBSQp3LrZcOzGHqC7evrMEEo3wVuLdu5dZMTRjLSj7wfCPY66A9EIkiQjHlAAo68jfwE41DL+HmOLiKMWxv5McRjVHO+fkbWTmLkevhF3fFzttd31eN18m0E9xSMb0GhkZWDc5kcMTxv0lBcnGP9OPrvnLUaIwboGfjJcAyxGXwT+GOJGDwTkjHwgG+g62QR/HMJ/o0EjPy7i07K73ij9gn/7mIrbdOfDuhUSGCJB2J54H86A6/06/ZFywAAAABJRU5ErkJggg==" alt="LETSUR" width="130" height="17">
-  <span class="tool">모델 가격·조건 모니터</span>
   <nav class="ptabs" role="tablist" aria-label="화면"><button type="button" role="tab" data-ptab="changes" aria-selected="true">변화</button><button type="button" role="tab" data-ptab="models" aria-selected="false">모델별 가격</button><button type="button" role="tab" data-ptab="supply" aria-selected="false">공급로 현황</button><button type="button" role="tab" data-ptab="health" aria-selected="false">수집 상태</button></nav>
+  <label class="msearch"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21"/></svg><input type="search" id="msq" placeholder="모델 검색" aria-label="모델 검색" autocomplete="off" spellcheck="false"></label>
   <span class="base" id="base"></span>
 </header>
 
@@ -652,7 +686,7 @@ body:not([data-page="supply"]) .spage{display:none}
       <div class="summary-item" role="listitem"><span class="summary-label">조건 변경</span><strong id="sum-cond">0</strong></div>
       <div class="summary-item" role="listitem"><span class="summary-label">14일 내 일정</span><strong id="sum-soon">0</strong></div>
       <div class="summary-item" role="listitem"><span class="summary-label">수집 현황</span><strong id="sum-runs">0회</strong><span class="summary-sub" id="sum-range">수집 기록 없음</span></div>
-      <div class="summary-item lmode" role="listitem"><button type="button" class="mchip" data-lmode aria-pressed="false" data-t1="렛서 경로만">렛서 경로만</button></div>
+      <div class="summary-item lmode" role="listitem"><label for="lsw">렛서 경로만</label><button type="button" id="lsw" class="lswitch" role="switch" data-lmode aria-checked="false" data-t1="렛서 경로만"><span>OFF</span></button><button type="button" class="lgear" data-ptab="supply" aria-label="공급로 현황에서 렛서 경로 설정" data-t1="공급로 설정"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke-width="3" stroke-dasharray="3.53 3.54"/><circle cx="12" cy="12" r="5.5" stroke-width="3"/></svg></button></div>
     </div>
   </div>
 
@@ -664,7 +698,7 @@ body:not([data-page="supply"]) .spage{display:none}
   </section>
 
   <section class="work" aria-label="변화 목록과 상세">
-    <nav class="card list" aria-label="변화 목록"><div class="lhead"><h2 id="lt">전체 변화</h2><div class="qtools"><label for="qsort">정렬</label><select id="qsort"><option value="recommended">추천 순</option><option value="date">적용일 순</option><option value="type">유형별</option></select></div></div><div class="lfilter" id="lf"></div><div id="queue"></div></nav>
+    <nav class="card list" aria-label="변화 목록"><div class="lhead"><h2 id="lt">전체 변화</h2><div class="qtools"><div><label for="qsort">정렬</label><select id="qsort"><option value="recommended">추천 순</option><option value="date">적용일 순</option><option value="type">유형별</option></select></div><div><label for="qkind">유형</label><select id="qkind"></select></div></div></div><div class="lfilter" id="lf"></div><div id="queue"></div></nav>
     <article class="card detail" id="detail" aria-live="polite"></article>
   </section>
 
@@ -739,7 +773,7 @@ const TODAY = BASE || /*DATA:TODAY*/;
 const SRC = /*DATA:SRC*/;
 const ID = /*DATA:ID*/;
 // 필드: t7 7유형 · sub 하위 태그 · relKey use/other/none/unk · relDemo 가정 여부
-// 목록 거르기: kind 유형 칩 키(7유형, 유형을 못 정했으면 "유형 미정") · cd 최근 7일 안인지 가르는 날짜(적용일·종료일·경로 추가일, 없으면 발표일·관측일, 그것도 없으면 피드 글의 게시일이나 마지막 관측일. 날짜가 없으면 키 자체가 없다) · ld 묶음 카드의 마지막 관측일(구성원 중 가장 늦게 관측된 날. 묶음이 아니거나 관측한 구성원이 없으면 키 자체가 없다)
+// 목록 거르기: kind 유형 메뉴 값(7유형, 유형을 못 정했으면 "유형 미정") · cd 최근 7일 안인지 가르는 날짜(적용일·종료일·경로 추가일, 없으면 발표일·관측일, 그것도 없으면 피드 글의 게시일이나 마지막 관측일. 날짜가 없으면 키 자체가 없다) · ld 묶음 카드의 마지막 관측일(구성원 중 가장 늦게 관측된 날. 묶음이 아니거나 관측한 구성원이 없으면 키 자체가 없다)
 // 수정안: mid = events.json subject.model_id (그래프 연결 키) · effQual 해석한 날짜 · link 함께 볼 이벤트 [ID, 이유] · risk 다음 할 일에 붙는 주의
 // 수정안: 목록·캘린더 묶음은 type4 대신 7유형에서 한 표(T7GROUP)로 정함
 // key{big,sub} 핵심 변화 문구 고정 · keyAdd 핵심 변화 보조 줄에 덧붙일 말 · chip 원가 칩 고정 · chgHead 바뀐 내용 표 머리글
@@ -780,6 +814,7 @@ function tableHtml(head, rows){ return `<table><thead><tr>${head.map(h => `<th>$
 // 변동 잦음 묶음(2026-10-28 가안): build.py mark_volatile이 같은 모델·경로의 가격 변경 카드가 7일 안에 3장 이상이면 같은 vg를 준다.
 // 목록은 그 카드들을 한 줄로 묶고, 묶음 상세(#vg)는 묶인 카드와 모델별 가격(가격 추이·현재 가격 표)으로 가는 링크를 보인다.
 const VG = {}; EVENTS.forEach(e => { if (e.vg) (VG[e.vg] = VG[e.vg] || []).push(e); });
+const VGS = /*DATA:VGS*/;
 let state = {filter:"all", sel:null, queueSort:"recommended"};
 // 주소의 #카드id가 이 페이지에 없으면 맨 위 카드를 보이되 그렇다고 알린다(2026-10-27 결정 26-6). 카드 id는 엔진 묶음 키로 만들어서,
 // 묶음이 바뀌면 옛 슬랙 메시지의 링크가 없는 id가 될 수 있다. 다른 카드를 고르면 안내는 사라진다.
@@ -793,25 +828,31 @@ const byEv = k => Object.fromEntries(EVENTS.filter(e => e[k] !== undefined).map(
 // 수정안: 상세의 7유형과 목록·캘린더 묶음이 어긋나지 않게 한 표에서 정함 (예: Sonnet 캐시 = 조건 변경)
 const T7GROUP = {"가격 변경":"price", "예정 변경":"price", "한시 할인":"price", "조건 변경":"cond", "조건·가격 변경":"cond", "모델 출시":"model", "제공 종료":"model", "공급 경로 변경":"model"};
 const typeOf = e => e.t7 === null ? "data" : T7GROUP[e.t7] || "cond";
-// 목록 거르기: 유형 칩(누른 유형만 보임, 아무것도 누르지 않으면 전체, 2026-10-27 박건 요청) + 날짜(기본은 최근 7일과 앞으로 날짜가 있는 카드). 둘은 AND로 겹친다.
+// 목록 거르기: 유형 메뉴(고른 유형 하나만 보임, 처음은 전체, 2026-11-03 팀 피드백 6: 칩을 늘어놓지 않는다) + 날짜(기본은 최근 7일과 앞으로 날짜가 있는 카드). 둘은 AND로 겹친다.
 // 기준일은 페이지 기준일(TODAY: 생성 시점 KST 날짜, ?base= 를 붙였으면 그 날짜)이다(2026-10-27 결정 19절). 하루 늦게 본 사람도 처리하지 않은 변화를 놓치지 않게 7일을 남긴다.
-// 칩·토글 상태는 저장하지 않아 새로고침하면 처음(유형 선택 없음, 지난 변화 숨김)으로 돌아온다.
+// 메뉴·토글 상태는 저장하지 않아 새로고침하면 처음(전체 유형, 지난 변화 숨김)으로 돌아온다.
 const PAST_DAYS = 7;
 // 지난 변화 판정: 카드의 cd와 ld 중 늦은 날이 기준일을 포함한 최근 7일보다 앞서야 지난 변화다. ld는 묶음 카드에만 있고, 없는 카드는 cd만 본다.
 // cd는 build.py가 적용일·종료일·게시일·관측일 순으로 채우고, 날짜가 없는 피드 카드는 글의 게시일, 그 밖에는 마지막 관측일로 채운다. 날짜가 하나도 없는 카드는 지난 변화로 센다.
 // 묶음의 cd는 대표 이벤트 하나의 날짜인데 같은 묶음에는 첫 카드로부터 3일 안에 관측된 구성원이 들어오므로, 늦게 관측된 변화가 cd만으로 숨지 않게 ld로 받친다.
 const isPast = e => { const day = [e.cd, e.ld].filter(Boolean).sort().pop(); return !day || days(day) <= -PAST_DAYS; };
-const listOn = new Set();
-const kindShown = e => !listOn.size || listOn.has(e.kind);
+let listKind = "";
+const kindShown = e => !listKind || e.kind === listKind;
 let showPast = false;
 // '렛서 경로만'(2026-10-31 팀 상호 피드백 '렛서모드'): 켜면 렛서가 쓰지 않는 경로의 카드(NOT APPLIES)를 요약·캘린더·목록에서 숨긴다.
 // 수집하는 모델은 모두 렛서 API로 확인한 모델이라 모델로는 거를 것이 없어 경로로 거른다. 렛서 경로를 모르는 카드(UNKNOWN)는 렛서가 쓰고 있을 수 있어 남긴다.
-// 유형 칩과 달리 페이지 전체에 걸리고, 칩처럼 저장하지 않아 새로고침하면 꺼진다.
+// 유형 메뉴와 달리 페이지 전체에 걸리고, 메뉴처럼 저장하지 않아 새로고침하면 꺼진다.
 let letsurOnly = false;
 const letsurRoute = e => ["use", "unk"].includes(relOf(e));
-const modeShown = e => !letsurOnly || letsurRoute(e);
+// 모델 검색(2026-11-03 팀 피드백 2): 띄어쓰기·하이픈·점은 무시하고('gemini 4 argon') 모델 id·이름·만든 회사에서 찾는다. 유형 메뉴처럼 저장하지 않는다.
+let modelQ = "";
+const searchKey = s => String(s || "").toLowerCase().replace(/[^0-9a-z가-힣]+/g, "");
+const modelHit = (id, name) => !modelQ || [id, name, makerOf(id || "")].some(s => searchKey(s).includes(modelQ));
+const modeShown = e => (!letsurOnly || letsurRoute(e)) && modelHit(e.mid, e.m);
+const listed = () => EVENTS.filter(e => modeShown(e) && kindShown(e) && (showPast || !isPast(e)));
 // 상세페이지 상단용 7유형 (이벤트유형_분류규칙.md 기준, 10/10 김연우)
 const EV7 = byEv("t7"), EV7SUB = byEv("sub"), EV7FLAG = byEv("flag");
+Object.keys(VGS).forEach(id => { EV7[id] = "가격 변경"; EV7SUB[id] = "변동 잦음"; });
 // ---- 상세: 종류별 정교화 (박기범) ----
 // 상태(e.st)·확인할 것(e.chk)·유형 후보(e.tc)·단서만(e.clue)·할인 상태(e.ps)·행 수(e.n)·행 묶음(e.cg)은 build.py가 엔진 출력에서 넘긴다.
 const ST_KO = {confirmed:"확정", candidate:"공식 확인 전", conflicted:"출처 상충"};
@@ -834,6 +875,7 @@ const changed = e => (e.chg || []).filter(r => r[3] || JSON.stringify(r[1]) !== 
 const rowLine = r => `<li><span class="it">${r[0]}</span><span class="ba">${val(r[1])} <i>→</i> <b>${val(r[2])}</b></span>${r[3] && r[3][1] ? `<small>${esc(r[3][1])}</small>` : r[3] && r[3][0] ? `<small>${esc(r[3][0])}</small>` : ""}</li>`;
 const dateTxt = d => `${md(d)}(${wd(d)})`;
 function keyChange(e){
+  if (e.vgs) return vgKey(e);
   const t = EV7[e.id], rows = changed(e), o = KEYOVR[e.id] || {}, sub7 = EV7SUB[e.id] || "";
   if (isClue(e)) return clueBox(e);
   if (t === "가격 변경") return priceKey(e);
@@ -907,7 +949,7 @@ function impactHtml(e){
   const unkPrice = (e.chg || []).filter(r => money(r[1]) != null && r[2] && (r[2].unk || r[2].con));
   const newPrice = rows.filter(r => money(r[1]) == null && money(r[2]) != null);
   const textChg = rows.filter(r => !isPriceRow(r) && /인상|인하|%/.test(plain(String(r[2]))));
-  let use = get(["제공·사용"]); if (!use.length) use = [esc(e.relShort || e.rel || "")];
+  let use = relDraft(e) ? [] : get(["제공·사용"]); if (!use.length) use = [esc(relShortOf(e))];
   let cond = get(["제공 조건", "라이선스", "계약 조건"]);
   if (!cond.length) { const cr = rows.filter(r => !isPriceRow(r) && r[2] !== e.eff && !(r[2] && (r[2].unk || r[2].con)) && !textChg.includes(r));
     cond = (t === "조건 변경" || t === "제공 종료" || t === "공급 경로 변경") && cr.length ? cr.map(r => `${r[0]} ${val(r[1])} → ${val(r[2])}`) : t === "조건 변경" && newPrice.length ? newPrice.map(r => `${r[0]} 신설 (${esc(r[2])})`) : ["제공 조건 변화 없음"]; }
@@ -947,7 +989,7 @@ const CHECKFIRST = byEv("checkFirst");
 // 렛서 대응 3가지(킥오프 노션): 고객 할인 제공 / 조달 경로 추가·변경 / 기존 조건 유지 중 어느 쪽 검토로 이어지는지
 const RESP = {disc:"고객 할인 제공", route:"조달 경로 추가·변경", keep:"기존 조건 유지", hold:"판단 보류"};
 // 렛서 관계: use 이 경로로 사용 중 / other 모델은 제공, 다른 경로 사용 / none 미제공 / unk 확인 필요 (시연에서는 가정값)
-function relOf(e){ if (e.relKey) return e.relKey; const r = String(e.relShort || e.rel || "");
+function relOf(e){ const d = relDraft(e); if (d) return d.key; if (e.relKey) return e.relKey; const r = String(e.relShort || e.rel || "");
   if (/미확인|확인 필요/.test(r) && !/제공 중/.test(r)) return "unk";
   if (/미제공/.test(r)) return "none";
   if (/경로(는)? 미사용/.test(r)) return "other";
@@ -1041,7 +1083,7 @@ function suggestHtml(e){
   const g = suggestOf(e), cf = CHECKFIRST[e.id] || [];
   return `<div class="sg"><div class="sgh"><span class="pre">${esc(g.pre || "")}</span><span class="resp ${g.resp}">${RESP[g.resp]}${g.note ? ` · ${esc(g.note)}` : ""}</span>${g.resp === "hold" ? "" : " 검토"}${e.done ? ` <span class="tg">결정됨 · ${esc(e.next)}</span>` : ""}${g.due ? ` <span class="due">${esc(g.due)}</span>` : ""}</div>
     <div class="sgw"><b>검토할 것</b> ${esc(g.text)}</div>
-    <div class="sgy">제안 근거 · ${esc(g.why)}${EV7[e.id] !== null && relOf(e) !== "unk" && e.relDemo ? " (렛서 관계는 시연용 가정)" : ""}</div></div>`;
+    <div class="sgy">제안 근거 · ${esc(g.why)}${EV7[e.id] !== null && relOf(e) !== "unk" && relDemoOf(e) ? " (렛서 관계는 시연용 가정)" : ""}</div></div>`;
 }
 // 상단 원가 칩: 유리/불리 판정이 아니라 단가 방향 사실만 (▲ 인상 빨강 / ▼ 인하 파랑 / 회색)
 function costChip(e){
@@ -1076,17 +1118,19 @@ const CAL = byEv("cal");
 // ---- 메인페이지 정규화 (김연우 10/27 규칙, 상세 제안과 한 판단으로 합침) ----
 // Applicability: 이 이벤트의 경로가 렛서의 현재 사용 경로에 해당하는지(relKey). relDemo면 시연용 가정이라 "가정"을 붙인다.
 // 렛서 사용 경로는 근거(9/23 설정 답변·API 호출 확인·관리자 지정)를 가리지 않고 같게 보인다(2026-10-30 박건: 사용이면 사용).
-const APPSTAT = {use:{en:"APPLIES", ko:"적용", cls:"applies"}, unk:{en:"UNKNOWN", ko:"미확인", cls:"unknown"}, no:{en:"NOT APPLIES", ko:"비적용", cls:"not-applies"}};
+// 표시는 한국어로 쓴다(2026-11-03 팀 피드백 5). cards.json의 action·applicability(슬랙봇이 읽는 값)는 build.py judge()의 영어 값 그대로다.
+const APPSTAT = {use:{ko:"렛서 사용", tip:"렛서가 이 경로를 씁니다", cls:"applies"}, unk:{ko:"사용 미확인", tip:"렛서가 이 경로를 쓰는지 아직 모릅니다", cls:"unknown"}, no:{ko:"렛서 미사용", tip:"렛서가 쓰지 않는 경로입니다", cls:"not-applies"}};
 const applicabilityOf = e => { const r = relOf(e); return r === "use" ? APPSTAT.use : r === "unk" ? APPSTAT.unk : APPSTAT.no; };
-const relMark = e => e.relDemo ? {chip: "가정", note: "시연용 가정"} : null;
+const relMark = e => relDemoOf(e) ? {chip: "가정", note: "시연용 가정"} : null;
 const appChip = e => { const a = applicabilityOf(e), m = relMark(e);
-  return `<span class="qchip ${a.cls}" title="렛서 적용 ${a.ko}${m ? ` (${m.note})` : ""}">${a.en}${m && a !== APPSTAT.unk ? " · " + m.chip : ""}</span>`; };
+  return `<span class="qchip ${a.cls}" title="${a.tip}${m ? ` (${m.note})` : ""}">${a.ko}${m && a !== APPSTAT.unk ? " · " + m.chip : ""}</span>`; };
 // Suggested Action: 담당자가 다음에 할 작업 구분(조달 결정이 아님). 상세의 제안(suggestOf)과 같은 판단에서 나와 목록·달력·상세가 같은 말을 한다.
 // VERIFY 유형·값·출처·렛서 적용이 아직 안 정해짐 → RECORD 끝난 할인, 제안이 "기존 조건 유지" → MONITOR 값은 있으나 공식 확인 전 → REVIEW 나머지(고객 할인·경로 검토)
-const QACTION = {review:{en:"REVIEW", ko:"검토", order:0}, verify:{en:"VERIFY", ko:"확인 필요", order:1}, monitor:{en:"MONITOR", ko:"관측 유지", order:2}, record:{en:"RECORD", ko:"기록", order:3}};
+const QACTION = {review:{ko:"검토", tip:"고객 할인이나 경로 변경을 검토할 변화", order:0}, verify:{ko:"확인 필요", tip:"유형·값·출처·렛서 사용 여부의 확인이 먼저 필요한 변화", order:1}, monitor:{ko:"관측 유지", tip:"공식 확인 전이거나 가격이 오르내리는 중이라 지켜볼 변화", order:2}, record:{ko:"기록", tip:"끝난 변화라 기록만 남기는 변화", order:3}};
 // 되돌아간 가격(build.py mark_reverted, 2026-10-28): rv = 이후 원래 값으로 돌아온 가격 항목 수, rn = 가격이 바뀐 항목 수
 const isReverted = e => !!e.rv && e.rv === e.rn;
 function actionKey(e){
+  if (e.vgs && e.vgs.up && e.vgs.down) return "monitor";  // 오르내리는 중인 묶음은 지켜본다
   if (EV7[e.id] === null || isClue(e) || (EV7FLAG[e.id] && !e.st) || e.st === "conflicted" || priceUnk(e)) return "verify";  // flag는 st가 없는 옛 카드에서만(공식 확인 전은 st가 말한다)
   if (isEnded(e)) return "record";
   if (isReverted(e)) return "record";  // 해소됨: 지금은 적용되지 않는 변화라 기록만(결정 기록 29절 렛서 답변). build.py judge()와 함께 고친다.
@@ -1097,7 +1141,7 @@ function actionKey(e){
 }
 const actOrder = e => QACTION[actionKey(e)].order;
 const qchips = e => { const k = actionKey(e);
-  return `<span class="qchip ${k}" title="${QACTION[k].ko}">${QACTION[k].en}</span>${appChip(e)}${e.rv ? `<span class="qchip rvc" title="이후 수집에서 원래 가격으로 돌아온 항목 ${e.rv}/${e.rn}">${e.rv === e.rn ? "해소됨" : `일부 해소 ${e.rv}/${e.rn}`}</span>` : ""}`; };
+  return `<span class="qchip ${k}" title="${QACTION[k].tip}">${QACTION[k].ko}</span>${appChip(e)}${e.rv && !e.vgs ? `<span class="qchip rvc" title="이후 수집에서 원래 가격으로 돌아온 항목 ${e.rv}/${e.rn}">${e.rv === e.rn ? "해소됨" : `일부 해소 ${e.rv}/${e.rn}`}</span>` : ""}`; };
 // 달력 날짜: 한 이벤트에 날짜가 여럿일 수 있다. effective 적용·변경 / end 할인·경로·현재 단가가 끝나는 날 / next_check 다시 볼 날(팀 기준, 공지 날짜 아님)
 const DATE_KIND = {effective:"적용", end:"종료", next_check:"확인"};
 const calAddDays = (d, n) => new Date(dt(d) + n * 864e5).toISOString().slice(0, 10);
@@ -1127,8 +1171,12 @@ function renderMeta(){
   const runs = COLLECTED.runs;
   const runDay = stamp => { const [, month, day] = stamp.slice(0, 10).split("-"); return `${Number(month)}/${Number(day)}`; };
   const lm = document.querySelector("[data-lmode]");
-  lm.setAttribute("aria-pressed", letsurOnly);
-  lm.dataset.t2 = `켜면 렛서가 쓰지 않는 경로(NOT APPLIES)의 카드 ${EVENTS.filter(e => !letsurRoute(e)).length}장을 요약·캘린더·목록에서 숨깁니다. 렛서 경로를 아직 모르는 카드(UNKNOWN)는 남깁니다.`;
+  lm.setAttribute("aria-checked", letsurOnly);
+  lm.firstElementChild.textContent = letsurOnly ? "ON" : "OFF";
+  lm.dataset.t2 = `켜면 렛서가 쓰지 않는 경로의 카드 ${EVENTS.filter(e => !letsurRoute(e)).length}장을 요약·캘린더·목록에서 숨깁니다. 렛서가 쓰는지 아직 모르는 카드는 남깁니다.`;
+  const gear = document.querySelector(".lgear"), drafts = Object.keys(spEdits).length;
+  gear.classList.toggle("on", drafts > 0);
+  gear.dataset.t2 = drafts ? `공급로 현황에서 바꾼 칸 ${drafts}개가 이 브라우저의 화면에 반영돼 있습니다. 커밋 전에는 다른 사람에게 보이지 않습니다.` : "공급로 현황에서 모델별 렛서 경로를 고칩니다.";
   document.getElementById("sum-total-k").textContent = letsurOnly ? "렛서 경로 변화" : "전체 변화";
   document.getElementById("sum-total").textContent = shown.length;
   document.getElementById("sum-price").textContent = n("price");
@@ -1139,7 +1187,8 @@ function renderMeta(){
   const fail = HEALTH.failing.length;  // 수집 실패는 '변화 없음'과 구분해 아침에 먼저 보이게(결정 기록 29절 렛서 답변)
   document.getElementById("sum-range").textContent = (runs.length ? `${runDay(runs[0][0])}~${runDay(runs[runs.length - 1][0])}` : "수집 기록 없음") + (HEALTH.run ? ` · 실패 ${fail}곳` : "");
   document.getElementById("hwarn").innerHTML = fail ? `<p class="hwarn" role="status">수집 실패 ${fail}곳: 최신 가격을 확인하지 못한 출처가 있습니다. 그 출처의 '변화 없음'은 확인된 결과가 아닙니다.<button type="button" data-ptab="health">수집 상태 보기 →</button></p>` : "";
-  document.getElementById("base").textContent = `기준일 ${TODAY} (고정)`;
+  // 머리줄 오른쪽 끝(2026-11-04 박건): 이 화면 자료를 마지막으로 수집한 시각
+  document.getElementById("base").textContent = `최신 업데이트 : ${HEALTH.run ? HEALTH.run.at.replace(/ KST$/, "") : "기록 없음"}`;
 }
 
 // ---- 일정 캘린더 ----
@@ -1151,9 +1200,12 @@ let calMonth = monthOf(TODAY);
 const plain = s => String(s).replace(/<[^>]+>/g, "");
 function calTip(x){ const e = x.e, g = suggestOf(e);
   return {t1: `${md(x.date)}(${wd(x.date)}) · ${calWord(x)} · ${x.label}${x.drv ? " (해석)" : ""} · ${ddTxt(x.date)}`,
-    t2: `${EV7[e.id] || "수집 확인 필요"} · ${e.m} · ${e.ch}\n${plain(e.head || e.sum)}\n${QACTION[actionKey(e)].en} · 제안: ${(g.pre || "") + RESP[g.resp]}${x.team ? "\n다음 확인은 팀 기준 날짜(공지 날짜 아님)" : ""}`}; }
+    t2: `${EV7[e.id] || "수집 확인 필요"} · ${e.m} · ${e.ch}\n${plain(e.head || e.sum)}\n${QACTION[actionKey(e)].ko} · 제안: ${(g.pre || "") + RESP[g.resp]}${x.team ? "\n다음 확인은 팀 기준 날짜(공지 날짜 아님)" : ""}`}; }
 function calBtn(x){ const e = x.e, tp = calTip(x), k = typeOf(e), c = CAL[e.id] || [e.m], arrow = x.kind === "effective" && c[1];
   return `<button type="button" class="ev t-${k} dk-${x.kind}${x.drv ? " drv" : ""}" data-id="${esc(e.id)}" data-t1="${esc(tp.t1)}" data-t2="${esc(tp.t2)}" aria-current="${state.sel === e.id}" aria-label="${esc(tp.t1 + ", " + e.m + " " + e.sum)}"><span class="dkind ${x.kind}">${calWord(x)}</span>${logoOf(e.mid)}<span>${esc(c[0])}</span>${arrow ? `<b class="ar ${c[2]}">${esc(c[1])}</b>` : ""}</button>`; }
+// 다음 일정 칸: 언제·무슨 변화·어느 모델·어느 공급사만 쓰고 나머지는 툴팁에 둔다(2026-11-04 박건: 문구가 길다).
+function nextCell(x){ const tp = calTip(x), who = x.e.ch.includes(" · ") ? x.e.ch.split(" · ")[0] : "";
+  return `<button type="button" data-id="${esc(x.e.id)}" data-t1="${esc(tp.t1)}" data-t2="${esc(tp.t2)}"><span class="cn1"><span class="dd ${ddCls(x.date)} tn">${ddTxt(x.date)}</span><span class="dkind ${x.kind}">${calWord(x)}</span></span><span class="cn2">${logoOf(x.e.mid)}<b>${esc(x.e.m)}</b>${who ? `<small>${esc(who)}</small>` : ""}</span></button>`; }
 function renderCalendar(){
   const [y, m] = calMonth.split("-").map(Number);
   const first = Date.UTC(y, m - 1, 1), startDow = new Date(first).getUTCDay(), last = new Date(Date.UTC(y, m, 0)).getUTCDate();
@@ -1168,14 +1220,12 @@ function renderCalendar(){
     g += `<div class="${cls}"><span class="dn tn">${+d.slice(8)}${d === TODAY ? " 기준일" : ""}</span>${l.slice(0, 2).map(calBtn).join("")}${l.length > 2 ? `<span class="more-ev">+${l.length - 2}</span>` : ""}</div>`;
   }
   const next = entries.filter(x => days(x.date) >= 0).sort((a, b) => dt(a.date) - dt(b.date)).slice(0, 4);
-  const used = Object.keys(TYPE).filter(k => entries.some(x => typeOf(x.e) === k)), kinds = Object.keys(DATE_KIND).filter(k => entries.some(x => x.kind === k));
   document.getElementById("cal").innerHTML = `<div class="calh"><span class="mo">${y}년 ${m}월<small>날짜 ${inMonth}건</small></span>
       <button type="button" class="todayb" data-mon="today">기준일</button>
       <button type="button" class="nav" data-mon="-1" aria-label="이전 달"${calMonth <= MONTHS[0] ? " disabled" : ""}>‹</button>
       <button type="button" class="nav" data-mon="1" aria-label="다음 달"${calMonth >= MONTHS[MONTHS.length - 1] ? " disabled" : ""}>›</button></div>
     <div class="cal" role="grid" aria-label="${y}년 ${m}월 일정">${g}</div>
-    <div class="calnext">다음 일정 ${next.map(x => { const tp = calTip(x); return `<button type="button" data-id="${esc(x.e.id)}" data-t1="${esc(tp.t1)}" data-t2="${esc(tp.t2)}"><span class="dd ${ddCls(x.date)} tn">${ddTxt(x.date)}</span><span class="dkind ${x.kind}">${calWord(x)}</span>${logoOf(x.e.mid)}${esc(x.e.m)} · ${esc(x.kind === "effective" ? x.e.sum : `${x.label} · ${x.e.ch.split(" · ")[0]}`)}</button>`; }).join("")}</div>
-    <div class="callg">${used.map(k => `<span><i class="ti-${k}" style="border-radius:var(--r-xs)"></i>${TYPE[k].ko}</span>`).join("")}${kinds.map(k => `<span class="dkey ${k}"><i></i>${k === "effective" ? "적용·변경" : k === "end" ? "종료·중단" : "다음 확인(팀 기준)"}</span>`).join("")}<span>▲ 인상 · ▼ 인하 · 흐린 표시는 지난 날짜</span><span><span class="drvk"></span>점선은 공지 게시일 등으로 해석한 날짜</span></div>`;
+    ${next.length ? `<div class="calnext"><h3>다음 일정</h3><div class="cngrid">${next.map(nextCell).join("")}</div></div>` : ""}`;
 }
 
 // ---- 단가 추이 (모델 하나씩) ----
@@ -1285,13 +1335,14 @@ function trendStats(M, mi, look){
       next ? `${esc(look.name(next.s))} · ${ddTxt(next.d)}` : note ? esc(note[1]) : "알려진 예정 없음");
 }
 function renderModelList(){
-  document.getElementById("mlist").innerHTML = MODEL_GROUPS.map(([g, ks]) => `<div class="mgrp"><h3>${makerIcon(g)}${esc(g)}</h3>${ks.map(k => `<button type="button" class="mrow" data-model="${esc(k)}" aria-pressed="${k === trendModel}"><span>${esc(modelName(k))}</span><small class="${modelBadge(k)[1]}">${esc(modelBadge(k)[0])}</small></button>`).join("")}</div>`).join("");
+  const groups = MODEL_GROUPS.map(([g, ks]) => [g, ks.filter(k => modelHit(k, modelName(k)))]).filter(([, ks]) => ks.length);
+  document.getElementById("mlist").innerHTML = groups.map(([g, ks]) => `<div class="mgrp"><h3>${makerIcon(g)}${esc(g)}</h3>${ks.map(k => `<button type="button" class="mrow" data-model="${esc(k)}" aria-pressed="${k === trendModel}"><span>${esc(modelName(k))}</span><small class="${modelBadge(k)[1]}">${esc(modelBadge(k)[0])}</small></button>`).join("")}</div>`).join("") || `<p class="lempty">검색한 모델이 없습니다.</p>`;
 }
 // 현재 가격 표: 공급사 비교 표를 모델별 가격 화면의 가격 추이 아래에 둔다(2026-10-28 가안, 카드 상세에는 링크만).
 function renderTable(){
   const el = document.getElementById("ptable"), T = COMPARE[trendModel];
   el.hidden = !T;
-  el.innerHTML = T ? `<div class="th"><h2>현재 가격 표</h2><span>${compareMeta(trendModel)}</span></div>${compareTable(trendModel)}` : "";
+  el.innerHTML = T ? `<div class="th"><h2>현재 가격 표</h2><span>${compareMeta(trendModel)}</span></div>${TREND[trendModel] ? "" : spNote(trendModel)}${compareTable(trendModel)}` : "";
 }
 function renderPrice(){
   renderModelList(); renderTable();
@@ -1316,7 +1367,7 @@ function renderPrice(){
     ${(down => down.length ? `<p class="hwarn" role="status">이 모델의 출처 ${down.length}곳이 최근 수집에 실패했습니다(${down.map(x => `${esc(x.ch)} ${md(x.since)}부터`).join(", ")}). 실패한 기간의 선은 마지막 값을 이은 것이라 '변화 없음'으로 읽으면 안 됩니다.</p>` : "")(HEALTH.failing.filter(x => x.model === trendModel))}
     <div class="cmpbar"><b>비교 조건</b><span>${esc(comparisonKeyText(M, mi, tier))}</span>${refs.length ? `<span class="cmpwarn">비교 제외 ${refs.length}개는 점선, 최저에서 뺌</span>` : ""}</div>
     <div class="tstats">${trendStats(M, mi, look)}</div>
-    <div class="lg">${look.via ? `<span class="via">${esc(look.via)} 하위 공급자</span>` : ""}${lg}</div>${said.length ? `<p class="lrn"><b>렛서 경로</b>${said.map(esc).join(" / ")}</p>` : ""}<div class="tplot" id="tplot"></div>
+    <div class="lg">${look.via ? `<span class="via">${esc(look.via)} 하위 공급자</span>` : ""}${lg}</div>${said.length ? `<p class="lrn"><b>렛서 경로</b>${said.map(esc).join(" / ")}</p>` : ""}${spNote(trendModel)}<div class="tplot" id="tplot"></div>
     <div class="tfoot"><p class="tnote">${overlapNote(M, mi, look)}올리면 그 날 가격을 싼 순서로(같은 조건 최저 대비), 점을 누르면 상세로 이동</p>
       <details class="tv"><summary>출처·설명 · 표로 보기</summary><p>${esc(M.note)}</p>${refs.length ? `<p class="cmpwarn">비교 제외 선(점선): ${esc(refs.map(x => `${plain(x.name)} · ${x.refWhy}`).join(", "))}. 공급사 비교 표가 같은 이유로 비교에서 빼는 선이라 그래프 안 최저·숫자 칸·말풍선의 최저 대비에서 뺐습니다.</p>` : ""}<div id="trend-tv"></div></details></div>`;
   // 선택 묶음(2026-10-30 박건 결정: 묶음마다 한 줄에 이름과 테두리). 한 줄에 다 들어가지 않는 묶음(gpt-6-astra의 가격 조건 10개 등)은
@@ -1415,19 +1466,15 @@ function drawPrice(M, mi, look, span){
 }
 
 // ---- 2. 목록 (변화 종류별) ----
-// 칩과 "지난 변화 보기" 토글은 처음에 한 번만 만들고 그 뒤로는 눌림 상태와 개수만 고친다(누른 버튼의 포커스가 남는다). 칩 개수는 날짜 거르기만 적용한 값이다.
+// "지난 변화 보기" 토글은 처음에 한 번만 만들고 그 뒤로는 눌림 상태만 고친다(누른 버튼의 포커스가 남는다). 유형 메뉴의 개수는 날짜 거르기만 적용한 값이다.
 function renderFilter(){
   const box = document.getElementById("lf");
   if (!EVENTS.length) return;
-  if (!box.children.length) {
-    const kinds = [...Object.keys(T7GROUP), ...(EVENTS.some(e => e.kind === "유형 미정") ? ["유형 미정"] : [])];
-    box.innerHTML = `<div>${kinds.map(k => `<button type="button" class="mchip" data-kind="${esc(k)}">${esc(k)} <small class="tn"></small></button>`).join("")}</div>
-      <div><button type="button" class="mchip" data-past>지난 변화 보기</button><span class="lhid"></span></div>`;
-  }
+  if (!box.children.length) box.innerHTML = `<div><button type="button" class="mchip" data-past>지난 변화 보기</button><span class="lhid"></span></div>`;
+  const kinds = [...Object.keys(T7GROUP), ...(EVENTS.some(e => e.kind === "유형 미정") ? ["유형 미정"] : [])], menu = document.getElementById("qkind");
   const byDay = EVENTS.filter(e => modeShown(e) && (showPast || !isPast(e)));
-  box.querySelectorAll("[data-kind]").forEach(b => { const n = byDay.filter(e => e.kind === b.dataset.kind).length;
-    b.setAttribute("aria-pressed", listOn.has(b.dataset.kind)); b.classList.toggle("zero", !n); b.querySelector("small").textContent = n; });
-  box.classList.toggle("picked", listOn.size > 0);
+  menu.innerHTML = `<option value="">전체 ${byDay.length}</option>` + kinds.map(k => `<option value="${esc(k)}">${esc(k)} ${byDay.filter(e => e.kind === k).length}</option>`).join("");
+  menu.value = listKind;
   box.querySelector("[data-past]").setAttribute("aria-pressed", showPast);
   const hid = showPast ? 0 : EVENTS.filter(e => modeShown(e) && kindShown(e) && isPast(e)).length;
   box.querySelector(".lhid").textContent = hid ? `지난 변화 ${hid}건 숨김` : "";
@@ -1465,7 +1512,7 @@ function vgRow(b){ const {l, e0, up, down, res, from, to} = vgSum(b.vg);
     </button></li>`; }
 const rowOf = x => x.vg && !x.id ? vgRow(x) : queueRow(x);
 function renderQueue(){
-  const list = EVENTS.filter(e => modeShown(e) && kindShown(e) && (showPast || !isPast(e)));
+  const list = listed();
   // 선택은 거르기와 무관하다: 주소의 #id나 캘린더에서 고른 카드는 목록에서 숨겨져도 상세에 남는다. 처음 고를 때만 보이는 카드를 먼저 본다.
   // 맨 위 카드가 변동 잦음 묶음에 들면 묶음을 고른다.
   if (!state.sel || (!EVENTS.some(e => e.id === state.sel) && !VG[state.sel])) { const top = (list.length ? list : EVENTS).slice().sort(recCmp)[0]; state.sel = top && top.vg ? top.vg : top?.id; }
@@ -1473,7 +1520,7 @@ function renderQueue(){
   document.getElementById("qsort").value = state.queueSort;
   const lines = bundled(list).length;
   document.getElementById("lt").textContent = `${letsurOnly ? "렛서 경로 변화" : "전체 변화"} ${list.length}${lines < list.length ? ` · 묶어서 ${lines}줄` : ""}`;
-  const none = EVENTS.length ? `<p class="lempty">${letsurOnly ? "렛서 경로의 " : ""}${listOn.size ? "선택한 유형의 " : ""}${showPast ? "" : "최근 7일과 앞으로의 "}변화 0건</p>` : "";
+  const none = EVENTS.length ? `<p class="lempty">${letsurOnly ? "렛서 경로의 " : ""}${modelQ ? "검색한 모델의 " : ""}${listKind ? "선택한 유형의 " : ""}${showPast ? "" : "최근 7일과 앞으로의 "}변화 0건</p>` : "";
   if (state.queueSort !== "type") { document.getElementById("queue").innerHTML = list.length ? `<ul class="rows">${bundled(list.slice().sort(queueCmp)).map(rowOf).join("")}</ul>` : none; return; }
   const groups = Object.keys(TYPE).map(k => [k, list.filter(e => typeOf(e) === k).sort((a, b) => cmpU(a, b) || actOrder(a) - actOrder(b))]).filter(([, l]) => l.length);
   document.getElementById("queue").innerHTML = groups.map(([k, l]) => `<section class="grp" aria-label="${TYPE[k].ko}"><h3><i class="ti-${k}"></i>${TYPE[k].ko} ${l.length}</h3><ul class="rows">${bundled(l).map(rowOf).join("")}</ul></section>`).join("") || none;
@@ -1532,31 +1579,59 @@ function compareTable(mid){
 const compareMeta = mid => { const T = COMPARE[mid];
   return `${T.groups.reduce((n, [, rows]) => n + rows.length, 0)}행 비교${T.ex.length ? ` · 제외 ${T.ex.length}행` : ""} · 가격 기준 ${esc(T.at)} 관측 · ${esc(T.unit)}`; };
 const sec = (title, meta, body, open) => `<details class="sec"${open ? " open" : ""}><summary>${title}${meta ? ` <small>${meta}</small>` : ""}</summary><div class="secb">${body}</div></details>`;
-function renderBundle(id){
-  const {l, e0, up, down, res, from, to} = vgSum(id), mid = e0.mid;
-  document.getElementById("detail").innerHTML = `<div class="dmeta"><span class="tg">가격 변경 묶음</span><span class="who">${logoOf(mid)}${esc(e0.m)}</span><span>${esc(e0.ch)}</span><span class="tg real">실제 · 공개 출처</span></div>
-    <h2 class="headline">${esc(e0.m)} 가격이 자주 바뀜 · 카드 ${l.length}장</h2>
-    <p class="vgnote">${md(from)}~${md(to)}에 이 경로의 가격 변경 카드가 ${l.length}장(인상 ${up} · 인하 ${down}) 생겼습니다.${res ? ` 그중 ${res}장은 바뀐 가격의 일부나 전부가 이후 원래 값으로 돌아왔습니다.` : ""} 같은 모델·경로의 가격 변경 카드가 7일 안에 3장 이상이면 목록에서 한 줄로 묶습니다(2026-10-28 가안). 가격 흐름은 가격 추이와 현재 가격 표에서 보세요.</p>
-    <div class="vgbtn">${TREND[mid] ? `<button type="button" class="tlink" data-trend="${esc(mid)}" data-tview="chart">가격 추이 보기 →</button>` : ""}${COMPARE[mid] ? `<button type="button" class="tlink" data-trend="${esc(mid)}" data-tview="table">현재 가격 표 보기 →</button>` : ""}</div>
-    <h3 class="vgh">묶인 카드 ${l.length}장</h3><ul class="rows">${l.slice().sort((a, b) => (b.cd || "").localeCompare(a.cd || "") || recCmp(a, b)).map(queueRow).join("")}</ul>`;
+// 변동 잦음 묶음의 상세(2026-11-04 박건: 건을 하나씩 읽지 않고, 단일 변화와 같은 상세에 추이 그래프로): VGS(build.py volatile_summary)를
+// 카드 한 장 꼴로 펴서 단일 상세를 그대로 쓴다. 판단은 묶음 전체(처음 가격 → 지금 가격)로 한다.
+function vgCard(id){
+  const s = VGS[id], l = VG[id], last = l.slice().sort((a, b) => (a.cd || "").localeCompare(b.cd || "")).pop();
+  const c = {...last, id, vgs: s, vg: undefined, link: undefined, alt: undefined, imp_rows: undefined, chk: [], chg: s.chg, cg: s.cg, n: s.n, chgHead: s.head, cond: s.cond, ev: s.ev,
+    head: `${s.n[0]}개 항목 가격이 ${md(s.from)}~${md(s.to)}에 변동 ${s.cards}건`, rv: s.back, rn: s.n[0], st: l.every(x => x.st === "confirmed") ? "confirmed" : "candidate",
+    effLabel: "최근 변동", effShort: `${md(s.to)} 관측`, effNote: "", effQual: undefined};
+  if (s.up && s.down) DIROVR[id] = "neutral";  // 오르고 내린 항목이 섞이면 합계로 할인·전환을 제안하지 않는다
+  const g = suggestOf(c);
+  c.nextOvr = {act: "건별 대응 없이 기간 전체 변화로 판단", subs: [...(relOf(c) === "unk" ? ["먼저 렛서 사용 경로 확인"] : []), `대응 : ${g.pre || ""}${RESP[g.resp]}`]};
+  return c;
 }
+// 추이 그래프: 항목마다 한 줄씩(세로축이 달라 한 그림에 겹치지 않는다), 자주 바뀐 공급처만 계단선으로 그린다. 위치가 %라 폭이 바뀌어도 다시 그리지 않는다.
+// 추이만 보이므로 점은 두지 않는다(2026-11-04 박건: 세 개를 나란히 두고 점을 찍으니 눌려 보이지 않았다). 값이 바뀌는 구간마다 올리면 공급처별 값이 뜬다.
+// 색은 공급처를 따라 그래프끼리 같다. 전체 값은 바뀐 내용 표에, 각 변동은 변동 내역에 있다.
+function vgChart(s){
+  const names = [...new Set(s.lines.map(l => l.s))], items = [...new Set(s.lines.map(l => l.item))];
+  if (!names.length) return "";
+  const color = n => `var(--s${names.indexOf(n) + 1})`, d0 = addDays(s.from, -1), d1 = s.to > TODAY ? s.to : TODAY, X = d => (dt(d) - dt(d0)) / (dt(d1) - dt(d0)) * 100;
+  const panel = item => { const own = s.lines.filter(l => l.item === item), shown = {};
+    own.forEach(l => l.pts.forEach(p => { shown[money(p[1])] = p[1]; shown[money(p[2])] = p[2]; }));
+    const vals = Object.keys(shown).map(Number), lo = Math.min(...vals), hi = Math.max(...vals), pad = (hi - lo) * .15 || hi * .1 || 1, Y = v => 100 - (v - lo + pad) / (hi - lo + 2 * pad) * 100;
+    const path = l => { const a = [[0, Y(money(l.pts[0][1]))]]; l.pts.forEach(p => a.push([X(p[0]), a[a.length - 1][1]], [X(p[0]), Y(money(p[2]))])); a.push([100, a[a.length - 1][1]]); return a.map(q => q.map(n => n.toFixed(2)).join(",")).join(" "); };
+    const days = [...new Set(own.flatMap(l => l.pts.map(p => p[0])))].sort(), edges = [d0, ...days.filter(d => d !== d0 && d !== d1), d1];
+    const at = (l, d) => { let v = l.pts[0][1]; l.pts.forEach(p => { if (p[0] <= d) v = p[2]; }); return v; };
+    const spans = edges.slice(0, -1).map((a, i) => { const z = edges[i + 1];
+      return `<span class="vgc-h" data-t1="${esc(`${md(a)}~${md(z)}`)}" data-t2="${esc(own.map(l => `${l.s} ${at(l, a)}`).join("\n"))}" style="left:${X(a).toFixed(2)}%;width:${(X(z) - X(a)).toFixed(2)}%"></span>`; }).join("");
+    const mid = addDays(d0, Math.round((dt(d1) - dt(d0)) / 864e5 / 2));
+    return `<figure class="vgc-p" role="img" aria-label="${esc(`${item} 추이 ${shown[lo]}~${shown[hi]}`)}"><figcaption>${esc(item)}</figcaption><div class="vgc-box"><div class="vgc-y tn"><span>${esc(shown[hi])}</span><span>${lo === hi ? "" : esc(shown[lo])}</span></div>
+      <div class="vgc-plot">${spans}<svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${own.map(l => `<polyline points="${path(l)}" style="stroke:${color(l.s)}"/>`).join("")}</svg></div>
+      <div class="vgc-x tn"><span>${md(d0)}</span><span>${md(mid)}</span><span>${md(d1)}</span></div></div></figure>`; };
+  return `<div class="vgc"><div class="vgc-lg">${names.map(n => `<span><i style="background:${color(n)}"></i>${esc(n)}</span>`).join("")}${s.others ? `<small>자주 바뀐 ${names.length}곳만 그림 · 나머지 ${s.others}곳은 바뀐 내용 표</small>` : ""}</div><div class="vgc-grid">${items.map(panel).join("")}</div></div>`;
+}
+function vgKey(e){ const s = e.vgs, said = [["인상", s.up], ["인하", s.down], ["되돌아감", s.back]].filter(x => x[1]).map(x => x.join(" "));
+  return `<section class="kc"><h3>핵심 변화</h3><div class="big">처음 가격과 비교해 ${said.join(" · ") || "변화 없음"}</div>${vgChart(s)}</section>`; }
 function renderDetail(){
-  if (VG[state.sel]) { renderBundle(state.sel); return; }
-  const e = EVENTS.find(x => x.id === state.sel), el = document.getElementById("detail");
+  const e = VG[state.sel] ? vgCard(state.sel) : EVENTS.find(x => x.id === state.sel), el = document.getElementById("detail");
   if (!e) { el.innerHTML = `<p class="unknown">이 칸에 해당하는 변화가 없습니다.</p>`; return; }
+  const net = e.vgs ? {...e, chg: e.chg.filter(r => money(r[1]) !== money(r[2]))} : e;  // 묶음에서 되돌아간 항목은 원가 판단에 넣지 않는다
   const eff = e.eff ? `${md(e.eff)} (${wd(e.eff)}) ${ddHtml(e)}${e.effQual ? ` <b class="qt" title="${esc(e.effQual)}">해석</b>` : ""}` : esc([e.effShort, e.effNote].filter(Boolean).join(" · ") || "미확인");
-  let h = `${missingLink ? `<p class="linkmiss" role="status">링크한 카드(#${esc(missingLink)})를 이 페이지에서 찾지 못했습니다. 아래는 목록 맨 위 카드입니다.</p>` : ""}<div class="dmeta">${typeHead(e)}${costChip(e)}<span class="who">${logoOf(e.mid)}${esc(e.m)}</span><span>${esc(e.ch)}</span>${e.real ? `<span class="tg real">실제 · 공개 출처</span>` : `<span class="tg">시연 데이터</span>`}${e.done ? `<span class="tg">결정됨</span>` : ""}</div>
+  let h = `${missingLink ? `<p class="linkmiss" role="status">링크한 카드(#${esc(missingLink)})를 이 페이지에서 찾지 못했습니다. 아래는 목록 맨 위 카드입니다.</p>` : ""}<div class="dmeta">${typeHead(e)}${costChip(net)}<span class="who">${logoOf(e.mid)}${esc(e.m)}</span><span>${esc(e.ch)}</span>${e.real ? `<span class="tg real">실제 · 공개 출처</span>` : `<span class="tg">시연 데이터</span>`}${e.done ? `<span class="tg">결정됨</span>` : ""}</div>
     <h2 class="headline">${e.head || esc(e.sum)}</h2>
-    ${e.rv ? `<p class="rvnote">${e.rv === e.rn ? `이후 수집에서 바뀐 가격 ${e.rn}개가 모두 원래 값으로 돌아왔습니다. 지금은 적용되지 않는 변화라 기록만 남깁니다(해소됨).` : `바뀐 가격 ${e.rn}개 중 ${e.rv}개가 이후 수집에서 원래 값으로 돌아왔습니다(일부 해소).`}</p>` : ""}
+    ${e.rv && !e.vgs ? `<p class="rvnote">${e.rv === e.rn ? `이후 수집에서 바뀐 가격 ${e.rn}개가 모두 원래 값으로 돌아왔습니다. 지금은 적용되지 않는 변화라 기록만 남깁니다(해소됨).` : `바뀐 가격 ${e.rn}개 중 ${e.rv}개가 이후 수집에서 원래 값으로 돌아왔습니다(일부 해소).`}</p>` : ""}
     <div class="decide"><div class="next"><div class="k">다음 할 일 <span class="qbadges" style="display:inline-flex">${qchips(e)}</span></div><div class="v">${nextHtml(e)}</div></div><div><div class="k">${esc(e.effLabel || "적용일")}</div><div class="v">${eff}</div></div>
-      <div><div class="k">현재 사용 경로${e.relDemo ? ` <span class="tg">가정</span>` : ""}</div><div class="v">${esc(e.relShort || e.rel)}</div></div></div>
+      <div><div class="k">현재 사용 경로${relDemoOf(e) ? ` <span class="tg">가정</span>` : ""}</div><div class="v">${esc(relShortOf(e))}</div></div></div>
     ${e.link && EVENTS.some(x => x.id === e.link[0]) ? (l => `<div class="lk"><span>함께 볼 이벤트</span><b>${esc(l.m)} · ${esc(l.ch)}</b><span>${esc(e.link[1])}</span><button type="button" data-id="${esc(l.id)}">열기 →</button></div>`)(EVENTS.find(x => x.id === e.link[0])) : ""}
     ${e.vg ? `<div class="lk"><span>변동 잦음 묶음</span><b>${esc(e.m)} · ${esc(e.ch)}</b><span>이 경로의 가격 변경 카드 ${VG[e.vg].length}장을 목록에서 한 줄로 묶었습니다</span><button type="button" data-id="${esc(e.vg)}">묶음 보기 →</button></div>` : ""}
     ${keyChange(e)}<div class="vgbtn">${TREND[e.mid] ? `<button type="button" class="tlink" data-trend="${esc(e.mid)}" data-tview="chart">${esc(TREND[e.mid].name)} 가격 추이 보기 →</button>` : ""}${COMPARE[e.mid] ? `<button type="button" class="tlink" data-trend="${esc(e.mid)}" data-tview="table">공급사 비교 표 보기 → <small>${compareMeta(e.mid)}</small></button>` : ""}</div>`;
   const parts = [];
   if (e.chg && e.chg.length) parts.push(sec("바뀐 내용", changeMeta(e), changeTable(e)));
-  parts.push(sec("렛서에 주는 영향", "", impactHtml(e), true));
+  parts.push(sec("렛서에 주는 영향", "", impactHtml(net), true));
   parts.push(sec("제안", "", suggestHtml(e), true));
+  if (e.vgs) parts.push(sec("변동 내역", `${VG[e.id].length}건`, `<ul class="rows">${VG[e.id].slice().sort((a, b) => (b.cd || "").localeCompare(a.cd || "") || recCmp(a, b)).map(queueRow).join("")}</ul>`));
   if (e.ev && e.ev.length) parts.push(sec("출처", `${e.ev.length}건`, `<ul class="srcs">${e.ev.map(([n, t]) => { const s = SRC[n] || {nm:n}; const q = t == null ? "" : Array.isArray(t) ? `이전 “${esc(t[0])}” → 현재 “${esc(t[1])}”` : esc(t);
     const link = s.url ? `<a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.url.replace(/^https:\/\//, ""))}</a>` : esc(s.u || "");
     return `<li><span class="n">${esc(s.short || n)}</span><div><div class="nm">${esc(s.nm)}${srcTag(n)}</div><div class="meta">${esc(s.t || "")}${link ? ` · ${link}` : ""}</div>${q ? `<div class="quote">${q}</div>` : ""}</div></li>`; }).join("")}</ul>`));
@@ -1593,20 +1668,20 @@ function renderTrend(){
 // ---- 수집 상태 (2026-10-28 박건 제안, 결정 기록 29절 렛서 답변: 수집 실패를 '변화 없음'과 구분) ----
 // 출처 페이지가 바뀌거나 모델이 새로 나오고 끝나면 누군가 등록부와 파서를 손봐야 시스템이 계속 돈다. 그 일을 한곳에 모은다.
 function renderHealth(){
-  const H = HEALTH, who = x => `<b>${logoOf(x.model)}${esc(x.model || "모델 표기 없음")}</b><small>${esc(x.ch)} · ${esc(x.key)}</small>`;
+  const hit = l => l.filter(x => modelHit(x.model, x.model)), H = {...HEALTH, failing: hit(HEALTH.failing), recent: hit(HEALTH.recent), recheck: hit(HEALTH.recheck)}, who = x => `<b>${logoOf(x.model)}${esc(x.model || "모델 표기 없음")}</b><small>${esc(x.ch)} · ${esc(x.key)}</small>`;
   const table = (head, rows) => `<table><thead><tr>${head.map(h => `<th>${h}</th>`).join("")}</tr></thead><tbody>${rows.join("")}</tbody></table>`;
   const link = u => u ? `<small><a href="${esc(u)}" target="_blank" rel="noopener">${esc(u.replace(/^https?:\/\//, ""))}</a></small>` : "";
   // 판단 (2026-10-29 박건 제안: 수집기를 고쳐야 하는 실패를 가려 보인다): build.py가 core/failures.py로 정하고 확인할 곳(fix)을 앞에 둔다
   const todo = H.failing.filter(x => x.fix).length, tone = x => x.fix ? "bad" : "gone";
   const count = H.failing.length ? `<p class="hcount"><b>수집기 확인 필요 ${todo}곳</b> · 일시 오류 ${H.failing.length - todo}곳</p>` : "";
   const fail = H.failing.length ? table(["출처", "판단", "오류", "실패"], H.failing.map(x => `<tr><td>${who(x)}${link(x.url)}</td><td><span class="hst ${tone(x)}">${esc(x.label)}</span><small>${esc(x.action)}</small></td><td>${esc(x.error)}</td><td><span class="hst ${tone(x)}">${x.since ? md(x.since) + "부터 · " : ""}${x.runs}회 연속</span></td></tr>`))
-    : `<p class="none">지금 실패 중인 출처가 없습니다.</p>`;
+    : `<p class="none">${modelQ ? "검색한 모델에서 " : ""}지금 실패 중인 출처가 없습니다.</p>`;
   const recent = H.recent.length ? table(["출처", "실패한 수집", "마지막 오류", "지금"], H.recent.map(x => `<tr><td>${who(x)}</td><td>${md(x.first)}${x.first !== x.last ? "~" + md(x.last) : ""} · ${x.runs}회</td><td>${esc(x.error || "—")}</td><td><span class="hst ${x.now === "ok" ? "ok" : "gone"}">${x.now === "ok" ? "정상으로 돌아옴" : "등록부에서 빠짐"}</span></td></tr>`))
-    : `<p class="none">최근 ${H.days || 14}일 동안 실패한 출처가 없습니다.</p>`;
+    : `<p class="none">${modelQ ? "검색한 모델에서 " : ""}최근 ${H.days || 14}일 동안 실패한 출처가 없습니다.</p>`;
   const recheck = H.recheck.length ? table(["출처", "건수"], H.recheck.map(x => `<tr><td>${who(x)}</td><td>${x.n}건</td></tr>`)) : `<p class="none">없습니다.</p>`;
-  const reg = EVENTS.filter(e => ["제공 종료", "모델 출시", "공급 경로 변경"].includes(EV7[e.id]) && !isPast(e)).sort(recCmp);
+  const reg = EVENTS.filter(e => ["제공 종료", "모델 출시", "공급 경로 변경"].includes(EV7[e.id]) && !isPast(e) && modelHit(e.mid, e.m)).sort(recCmp);
   document.getElementById("health").innerHTML = `<div class="ch"><h2>수집 상태</h2></div>
-    <p class="hsum">마지막 수집 ${H.run ? esc(H.run.at) : "기록 없음"} · 출처 ${H.total}곳 중 정상 ${H.ok}곳 · 실패 ${H.failing.length}곳</p>
+    <p class="hsum">마지막 수집 ${H.run ? esc(H.run.at) : "기록 없음"} · 출처 ${H.total}곳 중 정상 ${H.ok}곳 · 실패 ${HEALTH.failing.length}곳</p>
     <section class="hsec"><h3>지금 실패 중인 출처</h3>${count}<p class="note">최근 수집에서 받지 못했거나 읽지 못한 출처입니다. 이 출처의 가격은 실패한 동안 모릅니다. 대시보드의 '변화 없음'이나 그래프의 이어진 선은 이 출처에 대해서는 확인된 결과가 아닙니다. 수집기·등록부·주소를 손봐야 하는 실패를 먼저 보입니다. 일시 오류(시간 초과, 연결 끊김, HTTP 429·5xx)는 다음 수집에서 다시 받아 보고, 2회 연속 실패하면 확인이 필요한 것으로 바뀝니다.</p>${fail}</section>
     <section class="hsec"><h3>최근 ${H.days || 14}일 실패 기록</h3><p class="note">지금은 실패하지 않는 출처입니다. 다시 정상으로 받았는지, 등록부에서 빠졌는지 적습니다.</p>${recent}</section>
     <section class="hsec"><h3>원문 재검증 필요</h3><p class="note">파서 코드가 바뀐 뒤 이전 관측을 원문으로 다시 확인하지 못한 가격입니다. 값이 틀렸다는 뜻은 아니고, 아직 확인하지 않았다는 뜻입니다.</p>${recheck}</section>
@@ -1618,7 +1693,8 @@ function renderHealth(){
 // 경로를 씀(경로 파일의 기록), 빈 상자는 가격을 수집하는 후보, 비활성 상자는 그 공급사 경로의 가격을 수집하지 않아 후보가 아님.
 // 근거·날짜는 화면에 쓰지 않는다(2026-10-30 박건: 사용이면 사용하는 경로일 뿐).
 // SUPPLY(build.py supply): cols [[공급사, [route_id…]]] · models {모델: [가격을 수집하는 route_id…]} · routes 렛서 사용 경로 파일 전체(없거나 형식이 다르면 null)
-// 상자를 바꾸면 이 브라우저 안의 초안이 된다. 바뀐 파일 전체를 내려받거나 복사해 GitHub에서 develop에 커밋하면 다음 수집 실행이 화면을 다시 만든다.
+// 상자를 바꾸면 이 브라우저 안의 초안이 되고, 변화 화면(렛서 경로만·캘린더·목록·상세)에 바로 반영된다(2026-11-03 팀 피드백 4). 다른 사람과 모델별 가격의 렛서 표시는
+// 바뀐 파일 전체를 내려받거나 복사해 GitHub에서 develop에 커밋한 뒤 다음 수집 실행이 화면을 다시 만들 때 바뀐다.
 const SUPPLY = /*DATA:SUPPLY*/;
 const SP_FILE = "https://github.com/LETSUR-CREAI-IT/LETSUR/edit/develop/samples/market_collection/demo_internal_routes.json";
 const SP_DRAFT = "letsur-supply-draft";  // 커밋 전 편집 초안: 이 브라우저에만 두고, 없어도 화면은 그대로 돈다
@@ -1633,17 +1709,34 @@ const spGot = (m, c) => c[1].filter(r => SUPPLY.models[m].includes(r));
 const spToday = () => { const d = new Date(), p = n => String(n).padStart(2, "0"); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`; };
 // 편집을 반영한 경로 파일: 파일 그대로에서 시작해 바꾼 칸만 적용한다. 체크는 그 칸에서 가격을 수집하는 경로로 관리자 지정(manual)
 // 기록을 더하고 그 모델의 경로 미확인 메모를 지운다. 체크 해제는 그 칸의 기록을 모두 뺀다. 체크는 후보 칸에서만 된다.
+// 칸을 모두 해제한 모델은 미도입 기록(route_id null)을 남긴다. 기록이 아예 없으면 build.py relation()이 '사용 경로 확인 필요'로 읽어 렛서 경로로 남기 때문이다.
 function spDoc(){
   if (!SUPPLY.routes) return null;
-  const doc = JSON.parse(JSON.stringify(SUPPLY.routes));
+  const doc = JSON.parse(JSON.stringify(SUPPLY.routes)), touched = {};
   Object.entries(spEdits).forEach(([k, e]) => {
     const [m, name] = k.split("\t"), c = SUPPLY.cols.find(x => x[0] === name);
+    touched[m] = e.at;
     if (!e.on) { doc.records = doc.records.filter(r => !(r.model_id === m && c[1].includes(r.route_id))); return; }
+    doc.records = doc.records.filter(r => !(r.model_id === m && r.route_id === null));
     doc.records.push({model_id: m, route_id: spGot(m, c)[0], endpoint_id: null, basis: "manual", checked_at: e.at});
     if (spHas(doc.unresolved, m)) delete doc.unresolved[m];
   });
+  Object.entries(touched).forEach(([m, at]) => { if (!doc.records.some(r => r.model_id === m)) doc.records.push({model_id: m, route_id: null, endpoint_id: null, basis: "manual", checked_at: at}); });
   return doc;
 }
+// 초안이 건드린 모델의 렛서 관계: build.py relation()과 같은 규칙으로 다시 판단한다. 건드리지 않은 모델은 null이라 빌드 값 그대로다.
+function relDraft(e){
+  if (!Object.keys(spEdits).some(k => k.startsWith(e.mid + "\t"))) return null;
+  const records = spDoc().records.filter(r => r.model_id === e.mid), used = [...new Set(records.map(r => r.route_id).filter(Boolean))];
+  const label = r => { const c = SUPPLY.cols.find(x => x[1].includes(r)); return c && c[0] !== r ? `${c[0]} · ${r}` : r; };
+  const demo = !!SUPPLY.routes.is_demo && !records.every(r => ["settings", "observed", "manual"].includes(r.basis)), mark = (demo ? " (가정)" : "") + " (초안)";
+  if (!e.rt && used.length) return {key: "unk", short: "경로 표기 없음 : 사용 경로 확인 필요 (초안)", demo: false};
+  if (used.includes(e.rt)) return {key: "use", short: "이 경로로 사용 중" + mark, demo};
+  return used.length ? {key: "other", short: `모델 제공 중 : ${used.map(label).join(", ")} 경로로 사용${mark}`, demo} : {key: "none", short: "미도입" + mark, demo};
+}
+const relShortOf = e => { const d = relDraft(e); return d ? d.short : e.relShort || e.rel || ""; };
+const relDemoOf = e => { const d = relDraft(e); return d ? d.demo : !!e.relDemo; };
+const spNote = m => Object.keys(spEdits).some(k => k.startsWith(m + "\t")) ? `<p class="spnote">공급로 현황의 초안이 있는 모델입니다. 이 화면의 렛서 표시는 커밋 뒤 다음 수집에서 바뀝니다.</p>` : "";
 const spJson = () => JSON.stringify(spDoc(), null, 2) + "\n";  // 저장소 파일과 같은 꼴(들여쓰기 2칸, 끝 줄바꿈)
 const spHash = s => { let h = 5381; for (let i = 0; i < s.length; i++) h = h * 33 + s.charCodeAt(i) >>> 0; return h.toString(36); };
 const SP_BASE = SUPPLY.routes ? spHash(JSON.stringify(SUPPLY.routes)) : "";
@@ -1658,10 +1751,11 @@ function renderSupply(){
   const D = spDoc() || {records: []}, C = SUPPLY.cols, n = Object.keys(spEdits).length, count = SP_GROUPS.reduce((s, [, l]) => s + l.length, 0);
   const cell = (m, c, i) => { const use = spCell(D, m, c).length > 0, got = spGot(m, c).length > 0;
     return `<td${spEdits[spKey(m, c)] ? ` class="ed"` : ""}><input type="checkbox" class="spx${use && !got ? " warn" : ""}" data-sp="cell" data-m="${esc(m)}" data-c="${i}" aria-label="${esc(m + " · " + c[0])}"${use ? " checked" : ""}${got && SUPPLY.routes ? "" : " disabled"}></td>`; };
-  const rows = SP_GROUPS.map(([g, l]) => `<tr class="spg"><th scope="rowgroup">${makerIcon(g)}${esc(g)}</th><td colspan="${C.length}"></td></tr>`
-    + l.map(m => `<tr><th scope="row">${esc(m)}</th>${C.map((c, i) => cell(m, c, i)).join("")}</tr>`).join("")).join("");
-  el.innerHTML = `<div class="ch"><h2>공급로 현황</h2><span>모델 ${count}개</span></div>
-    ${n || spMsg ? `<div class="spbar"><span>바꾼 칸 ${n}개 · 커밋해야 반영됩니다</span><button type="button" data-sp="dl"${n ? "" : " disabled"}>파일 내려받기</button><button type="button" data-sp="copy"${n ? "" : " disabled"}>JSON 복사</button><a href="${SP_FILE}" target="_blank" rel="noopener">GitHub에서 파일 편집 →</a><button type="button" data-sp="reset"${n ? "" : " disabled"}>모두 되돌리기</button>${spMsg ? `<span class="msg" role="status">${esc(spMsg)}</span>` : ""}${spText && n ? `<textarea readonly aria-label="바꾼 경로 파일 JSON">${esc(spJson())}</textarea>` : ""}</div>` : ""}
+  const shown = SP_GROUPS.map(([g, l]) => [g, l.filter(m => modelHit(m, modelName(m)))]).filter(([, l]) => l.length);
+  const rows = shown.map(([g, l]) => `<tr class="spg"><th scope="rowgroup">${makerIcon(g)}${esc(g)}</th><td colspan="${C.length}"></td></tr>`
+    + l.map(m => `<tr><th scope="row">${esc(m)}</th>${C.map((c, i) => cell(m, c, i)).join("")}</tr>`).join("")).join("") || `<tr><th scope="row" class="lempty" colspan="${C.length + 1}">검색한 모델이 없습니다.</th></tr>`;
+  el.innerHTML = `<div class="ch"><h2>공급로 현황</h2><span>모델 ${modelQ ? `${shown.reduce((s, [, l]) => s + l.length, 0)}/` : ""}${count}개</span></div>
+    ${n || spMsg ? `<div class="spbar"><span>바꾼 칸 ${n}개 · 변화 화면에는 이 브라우저에서 바로 반영됩니다. 다른 사람에게 보이려면 커밋하세요</span><button type="button" data-sp="dl"${n ? "" : " disabled"}>파일 내려받기</button><button type="button" data-sp="copy"${n ? "" : " disabled"}>JSON 복사</button><a href="${SP_FILE}" target="_blank" rel="noopener">GitHub에서 파일 편집 →</a><button type="button" data-sp="reset"${n ? "" : " disabled"}>모두 되돌리기</button>${spMsg ? `<span class="msg" role="status">${esc(spMsg)}</span>` : ""}${spText && n ? `<textarea readonly aria-label="바꾼 경로 파일 JSON">${esc(spJson())}</textarea>` : ""}</div>` : ""}
     <div class="spscroll"><table class="sptab"><thead><tr><th>모델</th>${C.map(c => `<th>${esc(c[0])}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table></div>`;
   const nb = el.querySelector(".spscroll"); if (pos && nb) [nb.scrollTop, nb.scrollLeft] = pos;
 }
@@ -1699,13 +1793,16 @@ function showSel(){ const q = document.getElementById("queue"), r = q.querySelec
   if (b.top < a.top || b.bottom > a.bottom) q.scrollTop += b.top - a.top - (q.clientHeight - b.height) / 2; }
 // 화면 탭(2026-10-28 박건 요청): 변화(요약·캘린더·목록·상세) | 모델별 가격(모델 목록·가격 추이·현재 가격 표).
 // 주소는 변화가 #카드id, 모델별 가격이 #m/모델이다. target이 있으면 그 칸(가격 추이 'chart', 현재 가격 표 'table')으로 내려간다.
+const searchFirst = () => modelQ && !modelHit(trendModel, modelName(trendModel)) ? MODEL_ORDER.find(k => modelHit(k, modelName(k))) : null;
 function setPage(p, model, target){
   document.body.dataset.page = p;
-  document.querySelectorAll("[data-ptab]").forEach(b => b.setAttribute("aria-selected", String(b.dataset.ptab === p)));
+  document.querySelectorAll(".ptabs [data-ptab]").forEach(b => b.setAttribute("aria-selected", String(b.dataset.ptab === p)));
   document.getElementById("ptitle").textContent = {models: "모델별 가격", health: "수집 상태", supply: "공급로 현황"}[p] || "변화";
   if (p === "health") { renderHealth(); try { history.replaceState(null, "", "#health"); } catch (err) {} return; }
   if (p === "supply") { renderSupply(); try { history.replaceState(null, "", "#supply"); } catch (err) {} return; }
-  if (p !== "models") { try { history.replaceState(null, "", state.sel ? "#" + state.sel : location.pathname + location.search); } catch (err) {} return; }
+  // 다른 화면에서 바꾼 검색어·공급로 초안이 여기에 보이게 다시 그린다
+  if (p !== "models") { renderMeta(); renderCalendar(); renderQueue(); renderDetail(); try { history.replaceState(null, "", state.sel ? "#" + state.sel : location.pathname + location.search); } catch (err) {} return; }
+  model = model || searchFirst();
   if (model && MODEL_IDS.includes(model) && model !== trendModel) { trendModel = model; trendMeasure = 0; trendTier = "Standard"; }
   renderPrice();
   try { history.replaceState(null, "", "#m/" + encodeURIComponent(trendModel)); } catch (err) {}
@@ -1719,7 +1816,19 @@ function select(id, scroll){ const e = EVENTS.find(x => x.id === id); if (!e && 
   renderCalendar(); renderQueue(); renderDetail();
   if (scroll) { showSel(); document.getElementById("detail").scrollIntoView({behavior: REDUCE ? "auto" : "smooth", block: "start"}); } }
 function refilter(){ renderQueue(); document.getElementById("queue").scrollTop = 0; }
-document.addEventListener("change", ev => { if (ev.target && ev.target.id === "qsort") { state.queueSort = ev.target.value; refilter(); } });
+// 검색어가 바뀌면 지금 화면만 다시 그린다. 변화 화면과 모델별 가격은 고른 카드·모델이 결과에 없으면 맨 위 결과를 연다(상세와 그래프가 다른 모델에 남지 않게).
+function onModelSearch(){
+  const page = document.body.dataset.page;
+  if (page === "models") { const first = searchFirst(); if (first) setPage("models", first); else renderModelList(); return; }
+  if (page === "supply") { renderSupply(); return; }
+  if (page === "health") { renderHealth(); return; }
+  renderMeta();
+  const l = listed();
+  if (modelQ && l.length && !l.some(e => e.id === state.sel || e.vg === state.sel)) { const top = l.slice().sort(recCmp)[0]; select(top.vg || top.id); return; }
+  renderCalendar(); refilter();
+}
+document.addEventListener("input", ev => { if (ev.target && ev.target.id === "msq") { modelQ = searchKey(ev.target.value); onModelSearch(); } });
+document.addEventListener("change", ev => { if (ev.target && ev.target.id === "qsort") { state.queueSort = ev.target.value; refilter(); } else if (ev.target && ev.target.id === "qkind") { listKind = ev.target.value; refilter(); } });
 document.addEventListener("click", ev => {
   const pg = ev.target.closest("[data-ptab]"); if (pg) { setPage(pg.dataset.ptab); window.scrollTo(0, 0); return; }
   const sp = ev.target.closest("[data-sp]"); if (sp) { spAct(sp, ev.detail === 0); return; }
@@ -1730,7 +1839,6 @@ document.addEventListener("click", ev => {
   const tr = ev.target.closest("[data-trend]"); if (tr) { setPage("models", tr.dataset.trend, tr.dataset.tview || "chart"); return; }
   const mn = ev.target.closest("[data-mon]");
   if (mn) { if (!mn.disabled) { calMonth = mn.dataset.mon === "today" ? monthOf(TODAY) : addMonth(calMonth, +mn.dataset.mon); renderCalendar(); } return; }
-  const kb = ev.target.closest("[data-kind]"); if (kb) { const k = kb.dataset.kind; listOn.has(k) ? listOn.delete(k) : listOn.add(k); refilter(); return; }
   const pb = ev.target.closest("[data-past]"); if (pb) { showPast = !showPast; refilter(); return; }
   const lm = ev.target.closest("[data-lmode]"); if (lm) { letsurOnly = !letsurOnly; renderMeta(); renderCalendar(); refilter(); return; }
   const r = ev.target.closest("[data-id]"); if (!r) return;

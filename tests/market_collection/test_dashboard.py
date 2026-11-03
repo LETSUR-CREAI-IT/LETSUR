@@ -546,7 +546,7 @@ def test_template_bundles_the_list_and_moves_the_table_to_the_model_view(tmp_pat
     assert "const VG = {}; EVENTS.forEach(e => { if (e.vg) (VG[e.vg] = VG[e.vg] || []).push(e); });" in page
     assert 'list.flatMap(e => !e.vg ? [e] : seen.has(e.vg) ? [] : (seen.add(e.vg), [{vg: e.vg}]))' in page
     assert "bundled(list.slice().sort(queueCmp)).map(rowOf)" in page and "bundled(l).map(rowOf)" in page
-    assert "if (VG[state.sel]) { renderBundle(state.sel); return; }" in page
+    assert "const e = VG[state.sel] ? vgCard(state.sel) : EVENTS.find(x => x.id === state.sel)," in page
     # two screens: the tabs live in the header, body[data-page] picks what shows, #m/<model> opens 모델별 가격
     assert '<button type="button" role="tab" data-ptab="changes" aria-selected="true">변화</button>' in page
     assert 'body:not([data-page="models"]) .mpage{display:none}' in page and 'if (h.startsWith("m/")) startModel' in page
@@ -707,7 +707,7 @@ def test_registered_routes_are_marked_as_letsur_settings(tmp_path: Path, records
     assert (card["relKey"], card["relShort"], card["relDemo"]) == relation
     assert not {"relSet", "relObs", "relMan", "relInf"} & set(card)
     page = (tmp_path / "site" / "index.html").read_text(encoding="utf-8")
-    assert 'const relMark = e => e.relDemo ? {chip: "가정", note: "시연용 가정"} : null;' in page
+    assert 'const relMark = e => relDemoOf(e) ? {chip: "가정", note: "시연용 가정"} : null;' in page
 
 
 def _astra_records() -> dict:
@@ -911,9 +911,9 @@ def test_template_marks_a_called_route_like_a_registered_one(tmp_path: Path) -> 
     assumption (relDemo) keeps its 가정 mark."""
     _write(tmp_path, [])
     page = _build(tmp_path)[1]
-    assert 'const relMark = e => e.relDemo ? {chip: "가정", note: "시연용 가정"} : null;' in page
-    assert '현재 사용 경로${e.relDemo ? ` <span class="tg">가정</span>` : ""}</div>' in page
-    assert '&& e.relDemo ? " (렛서 관계는 시연용 가정)" : ""}</div></div>`;' in page
+    assert 'const relMark = e => relDemoOf(e) ? {chip: "가정", note: "시연용 가정"} : null;' in page
+    assert '현재 사용 경로${relDemoOf(e) ? ` <span class="tg">가정</span>` : ""}</div>' in page
+    assert '&& relDemoOf(e) ? " (렛서 관계는 시연용 가정)" : ""}</div></div>`;' in page
     assert not re.search(r"relSet|relObs|relMan|relInf|호출 추정", page)
 
 
@@ -939,7 +939,7 @@ def test_template_has_the_supply_tab_and_its_editor(tmp_path: Path) -> None:
     assert '<input type="checkbox" class="spx${use && !got ? " warn" : ""}" data-sp="cell"' in page
     assert '${use ? " checked" : ""}${got && SUPPLY.routes ? "" : " disabled"}></td>' in page
     assert "if (spEdits[k]) delete spEdits[k]; else spEdits[k] = {on: !spCell(SUPPLY.routes, m, c).length, at: spToday()}; }" in page
-    assert "<h2>공급로 현황</h2><span>모델 ${count}개</span></div>" in page
+    assert '<h2>공급로 현황</h2><span>모델 ${modelQ ? `${shown.reduce((s, [, l]) => s + l.length, 0)}/` : ""}${count}개</span></div>' in page
     for gone in ("spBasis", "spChip", "sppanel", "spun", "호출 추정", "렛서가 쓰는데 가격 수집 안 함"):
         assert gone not in page[page.index("// ---- 공급로 현황"):page.index("// ---- 상호작용 ----")]
     assert "@media (max-width:640px){.ptabs{flex-wrap:wrap;row-gap:4px}.ptabs button{padding:0 8px}}" in page
@@ -1439,14 +1439,125 @@ def test_undated_card_shows_its_basis_in_the_list_and_the_whole_reason_on_hover_
     assert 'esc([e.effShort, e.effNote].filter(Boolean).join(" · ") || "미확인")' in page
 
 
-def test_type_chips_show_only_the_picked_types(tmp_path):
-    """2026-10-27 박건 request: a pressed type chip shows only its type (more chips add types); none pressed shows all."""
+def test_team_feedback_of_1103_legend_korean_labels_switch_draft_and_search(tmp_path: Path) -> None:
+    """2026-11-03 팀 피드백 1~5. The browser check covers behaviour; this pins the page's own words and wiring."""
     _write(tmp_path, [])
     page = _build(tmp_path)[1]
-    assert "const kindShown = e => !listOn.size || listOn.has(e.kind);" in page
-    assert "listOn.has(k) ? listOn.delete(k) : listOn.add(k);" in page
-    assert 'b.setAttribute("aria-pressed", listOn.has(b.dataset.kind));' in page
-    assert "listOff" not in page
+    # 1. no colour legend under the calendar
+    assert "callg" not in page and "dkey" not in page and "drvk" not in page
+    # 5. the list says what to do and whether LETSUR uses the route in Korean; only the Slack bot's cards.json keeps the English values
+    assert '<span class="qchip ${k}" title="${QACTION[k].tip}">${QACTION[k].ko}</span>' in page and "${a.ko}${m && a !== APPSTAT.unk" in page
+    assert 'en:"' not in page and "${QACTION[actionKey(e)].ko} · 제안: " in page
+    for word in ("렛서 사용", "렛서 미사용", "사용 미확인", "관측 유지", "확인 필요"):
+        assert f'ko:"{word}"' in page
+    # 3. a switch with its state written on it, and a settings button that opens the 공급로 현황 tab without being a tab itself
+    assert 'lm.firstElementChild.textContent = letsurOnly ? "ON" : "OFF";' in page and 'lm.setAttribute("aria-checked", letsurOnly);' in page
+    assert 'class="lgear" data-ptab="supply" aria-label="공급로 현황에서 렛서 경로 설정"' in page
+    assert 'document.querySelectorAll(".ptabs [data-ptab]").forEach(b => b.setAttribute("aria-selected"' in page
+    # 4. the routes draft reaches the change page: a model with a draft is judged again, every other model keeps its built value,
+    # and a model with every route released gets the 미도입 record relation() reads, not no record at all
+    assert "function relOf(e){ const d = relDraft(e); if (d) return d.key; if (e.relKey) return e.relKey;" in page
+    assert 'doc.records.push({model_id: m, route_id: null, endpoint_id: null, basis: "manual", checked_at: at});' in page
+    assert 'if (p !== "models") { renderMeta(); renderCalendar(); renderQueue(); renderDetail();' in page
+    # 2. one search box in the header for all four tabs; spacing and punctuation do not count
+    assert 'type="search" id="msq" placeholder="모델 검색"' in page
+    assert "@media (max-width:1000px){.top{flex-wrap:wrap;row-gap:8px;padding-block:8px}.top .base{margin-left:auto}.msearch{order:3;width:100%;margin-left:0}}" in page  # the header must not push the page wider
+    # the header's right end says when the data was last collected; the tool's name is gone (2026-11-04 박건)
+    assert '`최신 업데이트 : ${HEALTH.run ? HEALTH.run.at.replace(/ KST$/, "") : "기록 없음"}`' in page
+    assert "모델 가격·조건 모니터" not in page and "(고정)" not in page
+    assert 'const searchKey = s => String(s || "").toLowerCase().replace(/[^0-9a-z가-힣]+/g, "");' in page
+    for filtered in ('ks.filter(k => modelHit(k, modelName(k)))', 'l.filter(m => modelHit(m, modelName(m)))', 'l.filter(x => modelHit(x.model, x.model))', '!isPast(e) && modelHit(e.mid, e.m)'):
+        assert filtered in page
+    assert 'if (modelQ && l.length && !l.some(e => e.id === state.sel || e.vg === state.sel))' in page
+
+
+def test_a_model_released_on_the_supply_tab_is_read_as_not_offered() -> None:
+    """2026-11-03 팀 피드백 4: the record spDoc() writes when every route of a model is released is a valid record, and relation() reads it
+    as 미도입 (hidden by 렛서 경로만), where a model with no record stays unconfirmed (kept by 렛서 경로만)."""
+    released = {"model_id": "gemini-4-argon", "route_id": None, "endpoint_id": None, "basis": "manual", "checked_at": "2026-11-03"}
+    assert build.record_problem(released) == ""
+    routes = {"is_demo": False, "records": [released]}
+    for route in ("google_direct", ""):
+        assert build.relation({"model_id": "gemini-4-argon", "route": route}, routes) == {"relKey": "none", "relShort": "미도입", "relDemo": False}
+    assert build.relation({"model_id": "gemini-4-argon", "route": "google_direct"}, {"is_demo": False, "records": []})["relKey"] == "unk"
+    assert build.model_use("gemini-4-argon", routes) == {"use": "미도입"}
+    assert "gemini-4-argon" in build.supply(routes)["models"]
+
+
+def _volatile_card(card_id: str, day: str, rows: list[tuple], latest: list[tuple] = ()) -> dict:
+    """rows are (group, item, before, after, delta); a delta of None is a price that stayed."""
+    all_rows = [*rows, *latest]
+    return {"id": card_id, "cd": day, "chg": [[f"{g} · {i}", b, a, d, f"관측 {int(day[5:7])}/{int(day[8:10])}", "ok", [f"s_{card_id}"]] for g, i, b, a, d in all_rows],
+            "cg": [[g, i] for g, i, *_ in all_rows], "ev": [[f"s_{card_id}", f"{card_id} 근거"]],
+            "cond": [["통화", "USD"], ["엔드포인트", "relace/fp4"], ["경로", "OpenRouter · openrouter"], ["관측", "지난 값"]]}
+
+
+def test_a_volatile_bundle_reads_as_one_change_from_the_first_price_to_the_latest() -> None:
+    """2026-11-04 박건: a 변동 잦음 detail has the single-change format and a small graph instead of a list of cards. Prices are compared
+    first to latest, and a price that came back says so rather than counting as a change."""
+    up, down = ["+$0.05", "인상 5.56%"], ["−$0.05", "인하 5.26%"]
+    wide = "컨텍스트 1M · relace/fp4 · fp4"
+    cards = [_volatile_card("c3", "2026-10-28", [("컨텍스트 1M · siliconflow/fp8 · fp8", "입력 토큰", "$1.50", "$1.00", ["−$0.50", "인하 33.33%"])], [(wide, "캐시 읽기", "$0.25", "$0.25", None)]),
+             _volatile_card("c1", "2026-10-17", [(wide, "입력 토큰", "$0.90", "$0.95", up), (wide, "캐시 읽기", "$0.16", "$0.20", ["+$0.04", "인상 25.00%"])]),
+             _volatile_card("c2", "2026-10-18", [(wide, "입력 토큰", "$0.95", "$0.90", down), (wide, "캐시 읽기", "$0.20", "$0.25", ["+$0.05", "인상 25.00%"])])]
+    s = build.volatile_summary(cards)
+    assert (s["from"], s["to"], s["cards"], s["up"], s["down"], s["back"], s["n"], s["others"]) == ("2026-10-17", "2026-10-28", 3, 1, 1, 1, [3, 0], 0)
+    rows = {row[0]: row for row in s["chg"]}
+    # the supplier that moved most comes first, and a line is named by the supplier alone
+    assert list(rows) == ["relace/fp4 · 입력 토큰", "relace/fp4 · 캐시 읽기", "siliconflow/fp8 · 입력 토큰"]
+    assert rows["relace/fp4 · 입력 토큰"][1:5] == ["$0.90", "$0.90", ["되돌아감", ""], "2번 · 10/18"]
+    assert rows["relace/fp4 · 캐시 읽기"][1:5] == ["$0.16", "$0.25", ["+$0.09", "인상 56.25%"], "2번 · 10/18"]
+    assert rows["siliconflow/fp8 · 입력 토큰"][1:5] == ["$1.50", "$1.00", ["−$0.50", "인하 33.33%"], "1번 · 10/28"]
+    assert s["cg"][0] == ["relace/fp4", "입력 토큰"]
+    assert s["lines"][0] == {"s": "relace/fp4", "item": "입력 토큰", "pts": [["2026-10-17", "$0.90", "$0.95", "c1"], ["2026-10-18", "$0.95", "$0.90", "c2"]]}
+    # conditions of one observation do not stand for the whole bundle, and the evidence is the first card's and the latest's
+    assert s["cond"] == [["통화", "USD"], ["경로", "OpenRouter · openrouter"], ["관측", "10/17 → 10/28"]]
+    assert s["ev"] == [["s_c1", "c1 근거"], ["s_c3", "c3 근거"]]
+
+
+def test_a_volatile_bundle_draws_only_the_suppliers_that_moved_most() -> None:
+    change = ["+$0.10", "인상 10.00%"]
+    cards = [_volatile_card(f"c{n}", f"2026-10-{10 + n}", [(f"s{k}/fp8", "입력 토큰", "$1.00", "$1.10", change) for k in range(5) if n <= k]) for n in range(5)]
+    s = build.volatile_summary(cards)
+    assert [line["s"] for line in s["lines"]] == ["s4/fp8", "s3/fp8", "s2/fp8"] and s["others"] == 2 and len(s["chg"]) == 5
+
+
+@pytest.mark.parametrize("group,short", [("컨텍스트 1M · relace/fp4 · fp4", "relace/fp4"), ("컨텍스트 1048575 · gmicloud", "gmicloud"),
+                                         ("inference-net/fast · fp4 · Priority", "inference-net/fast · fp4 · Priority"), ("morph/fp8 · fp8 · Standard", "morph/fp8"),
+                                         ("컨텍스트 1000000 · alibaba/fp8/us-east-1 · fp8", "alibaba/fp8/us-east-1"), ("", "")])
+def test_a_price_line_is_named_by_its_supplier(group: str, short: str) -> None:
+    assert build.short_supplier(group) == short
+
+
+def test_template_bundle_detail_uses_the_single_detail_and_next_schedule_is_a_tidy_grid(tmp_path: Path) -> None:
+    """2026-11-04 박건. The browser check covers behaviour; this pins the wiring."""
+    _write(tmp_path, [])
+    page = _build(tmp_path)[1]
+    assert "renderBundle" not in page and "vgnote" not in page
+    assert "if (e.vgs) return vgKey(e);" in page and "const c = {...last, id, vgs: s, vg: undefined," in page
+    assert 'parts.push(sec("변동 내역", `${VG[e.id].length}건`' in page  # the cards are still there, folded
+    assert 'preserveAspectRatio="none"' in page and "vector-effect:non-scaling-stroke" in page  # the graph follows the width without a redraw
+    # one row per item, no dots: side by side with dots the lines could not be read (박건); a stretch of the line tells its values on hover
+    assert ".vgc-grid{display:flex;flex-direction:column;gap:16px;margin-top:12px}" in page and "vgc-d" not in page
+    assert '<span class="vgc-h" data-t1=' in page
+    # next schedule: equal cells on the calendar's width, four, then two, then one; only when, what, which model, which supplier
+    assert ".cngrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}" in page
+    assert "@media (max-width:1100px){.cngrid{grid-template-columns:repeat(2,minmax(0,1fr))}}" in page
+    assert "@media (max-width:560px){.cngrid{grid-template-columns:minmax(0,1fr)}}" in page
+    assert '${next.length ? `<div class="calnext"><h3>다음 일정</h3><div class="cngrid">${next.map(nextCell).join("")}</div></div>` : ""}' in page
+
+
+def test_type_menu_under_the_sort_menu_shows_one_type(tmp_path):
+    """2026-11-03 팀 피드백 6: the type menu sits under the sort menu instead of a row of chips; the type picked is the only one shown,
+    전체 shows all, and its counts apply only the date filter."""
+    _write(tmp_path, [])
+    page = _build(tmp_path)[1]
+    assert ('<select id="qsort"><option value="recommended">추천 순</option><option value="date">적용일 순</option><option value="type">유형별</option></select></div>'
+            '<div><label for="qkind">유형</label><select id="qkind"></select></div>') in page
+    assert 'let listKind = "";\nconst kindShown = e => !listKind || e.kind === listKind;' in page
+    assert 'menu.innerHTML = `<option value="">전체 ${byDay.length}</option>`' in page and "menu.value = listKind;" in page
+    assert 'ev.target.id === "qkind") { listKind = ev.target.value; refilter(); }' in page
+    assert "data-kind" not in page and "listOn" not in page
 
 
 def test_next_step_lines_read_label_colon_text(tmp_path):
@@ -1705,7 +1816,7 @@ def test_team_feedback_icons_calendar_words_title_and_letsur_mode(tmp_path: Path
     assert '`<svg class="logo" aria-hidden="true"><use href="#mk-${MAKER_ICONS[g]}"/></svg>`' in page
     assert ".logo{width:14px;height:14px;flex:none;fill:currentColor}" in page and 'class="mk"' not in page
     assert '<span class="subj">${logoOf(e0.mid)}${esc(e0.m)}</span>' in page and '<span class="who">${logoOf(e.mid)}${esc(e.m)}</span>' in page
-    assert '${calWord(x)}</span>${logoOf(e.mid)}<span>${esc(c[0])}</span>' in page and '${calWord(x)}</span>${logoOf(x.e.mid)}${esc(x.e.m)} · ' in page
+    assert '${calWord(x)}</span>${logoOf(e.mid)}<span>${esc(c[0])}</span>' in page and '${calWord(x)}</span></span><span class="cn2">${logoOf(x.e.mid)}<b>${esc(x.e.m)}</b>' in page
     assert 'who = x => `<b>${logoOf(x.model)}${esc(x.model || "모델 표기 없음")}</b>' in page
     # calendar chips, 다음 일정 and the tooltip use the change's name; the colour still follows the date kind
     assert "DATE_KIND[x.kind]}</span>" not in page and "${md(x.date)}(${wd(x.date)}) · ${calWord(x)} · ${x.label}" in page
@@ -1716,8 +1827,8 @@ def test_team_feedback_icons_calendar_words_title_and_letsur_mode(tmp_path: Path
     assert '<h1 id="ptitle">변화</h1>' in page and ".title h1{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)" in page
     assert "확인할 변화" not in page
     # 렛서 경로만: off when the page opens, keeps 렛서 경로를 모르는 cards, filters the summary, the calendar and the list
-    assert '<button type="button" class="mchip" data-lmode aria-pressed="false"' in page and "let letsurOnly = false;" in page
-    assert 'const letsurRoute = e => ["use", "unk"].includes(relOf(e));' in page and "const modeShown = e => !letsurOnly || letsurRoute(e);" in page
+    assert 'class="lswitch" role="switch" data-lmode aria-checked="false"' in page and "let letsurOnly = false;" in page
+    assert 'const letsurRoute = e => ["use", "unk"].includes(relOf(e));' in page and "const modeShown = e => (!letsurOnly || letsurRoute(e)) && modelHit(e.mid, e.m);" in page
     assert "const shown = EVENTS.filter(modeShown)" in page and "const entries = CAL_ENTRIES.filter(x => modeShown(x.e));" in page
-    assert "const list = EVENTS.filter(e => modeShown(e) && kindShown(e) && (showPast || !isPast(e)));" in page
+    assert "const listed = () => EVENTS.filter(e => modeShown(e) && kindShown(e) && (showPast || !isPast(e)));" in page
     assert "letsurOnly = !letsurOnly; renderMeta(); renderCalendar(); refilter();" in page
