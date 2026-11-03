@@ -1534,6 +1534,9 @@ def test_template_bundle_detail_uses_the_single_detail_and_next_schedule_is_a_ti
     assert "if (e.vgs) return vgKey(e);" in page and "const c = {...last, id, vgs: s, vg: undefined," in page
     assert 'parts.push(sec("변동 내역", `${VG[e.id].length}건`' in page  # the cards are still there, folded
     assert 'preserveAspectRatio="none"' in page and "vector-effect:non-scaling-stroke" in page  # the graph follows the width without a redraw
+    # one row per item, no dots: side by side with dots the lines could not be read (박건); a stretch of the line tells its values on hover
+    assert ".vgc-grid{display:flex;flex-direction:column;gap:16px;margin-top:12px}" in page and "vgc-d" not in page
+    assert '<span class="vgc-h" data-t1=' in page
     # next schedule: equal cells on the calendar's width, four, then two, then one; only when, what, which model, which supplier
     assert ".cngrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}" in page
     assert "@media (max-width:1100px){.cngrid{grid-template-columns:repeat(2,minmax(0,1fr))}}" in page

@@ -497,16 +497,16 @@ body:not([data-page="health"]) .hpage{display:none}
 .vgc-lg{display:flex;flex-wrap:wrap;align-items:center;gap:4px 12px;font-size:12px;color:var(--body)}
 .vgc-lg i{display:inline-block;width:12px;height:2px;margin-right:4px;border-radius:var(--r-xs);vertical-align:middle}
 .vgc-lg small{font-size:12px;color:var(--muted)}
-.vgc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px 16px;margin-top:8px}
+.vgc-grid{display:flex;flex-direction:column;gap:16px;margin-top:12px}
 .vgc-p{min-width:0;margin:0}
 .vgc-p figcaption{margin-bottom:4px;font-size:12px;font-weight:700;color:var(--ink)}
 .vgc-box{display:grid;grid-template-columns:auto minmax(0,1fr);column-gap:8px}
 .vgc-y{display:flex;flex-direction:column;justify-content:space-between;font-size:11px;color:var(--muted);text-align:right}
-.vgc-plot{position:relative;height:88px;border-bottom:1px solid var(--line-strong)}
-.vgc-plot svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.vgc-plot{position:relative;height:120px;border-top:1px solid var(--line);border-bottom:1px solid var(--line-strong)}
+.vgc-plot svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none}
+.vgc-h{position:absolute;top:0;bottom:0}
+.vgc-h:hover{background:var(--grey-soft)}
 .vgc-plot polyline{fill:none;stroke-width:2;stroke-linejoin:round;vector-effect:non-scaling-stroke}
-.vgc-d{position:absolute;width:8px;height:8px;padding:0;border:0;border-radius:50%;box-shadow:0 0 0 2px var(--surface);transform:translate(-50%,-50%);cursor:pointer}
-.vgc-d::before{content:"";position:absolute;inset:-6px}  /* 누르기 쉬운 크기 */
 .vgc-x{grid-column:2;display:flex;justify-content:space-between;margin-top:4px;font-size:11px;color:var(--muted)}
 
 /* ---- v16: 캘린더·그래프 메인, 종류별 목록, 상세 2×2 ---- */
@@ -1593,8 +1593,9 @@ function vgCard(id){
   c.nextOvr = {act: "건별 대응 없이 기간 전체 변화로 판단", subs: [...(relOf(c) === "unk" ? ["먼저 렛서 사용 경로 확인"] : []), `대응 : ${g.pre || ""}${RESP[g.resp]}`]};
   return c;
 }
-// 추이 그래프: 항목마다 작은 그래프 하나(세로축이 달라 한 그림에 겹치지 않는다), 자주 바뀐 공급처만 계단선으로 그린다. 위치가 %라 폭이 바뀌어도 다시 그리지 않는다.
-// 색은 공급처를 따라 그래프끼리 같고, 점을 누르면 그 변동의 상세로 간다. 전체 값은 바뀐 내용 표에 있다.
+// 추이 그래프: 항목마다 한 줄씩(세로축이 달라 한 그림에 겹치지 않는다), 자주 바뀐 공급처만 계단선으로 그린다. 위치가 %라 폭이 바뀌어도 다시 그리지 않는다.
+// 추이만 보이므로 점은 두지 않는다(2026-11-04 박건: 세 개를 나란히 두고 점을 찍으니 눌려 보이지 않았다). 값이 바뀌는 구간마다 올리면 공급처별 값이 뜬다.
+// 색은 공급처를 따라 그래프끼리 같다. 전체 값은 바뀐 내용 표에, 각 변동은 변동 내역에 있다.
 function vgChart(s){
   const names = [...new Set(s.lines.map(l => l.s))], items = [...new Set(s.lines.map(l => l.item))];
   if (!names.length) return "";
@@ -1603,10 +1604,14 @@ function vgChart(s){
     own.forEach(l => l.pts.forEach(p => { shown[money(p[1])] = p[1]; shown[money(p[2])] = p[2]; }));
     const vals = Object.keys(shown).map(Number), lo = Math.min(...vals), hi = Math.max(...vals), pad = (hi - lo) * .15 || hi * .1 || 1, Y = v => 100 - (v - lo + pad) / (hi - lo + 2 * pad) * 100;
     const path = l => { const a = [[0, Y(money(l.pts[0][1]))]]; l.pts.forEach(p => a.push([X(p[0]), a[a.length - 1][1]], [X(p[0]), Y(money(p[2]))])); a.push([100, a[a.length - 1][1]]); return a.map(q => q.map(n => n.toFixed(2)).join(",")).join(" "); };
-    const dots = own.flatMap(l => l.pts.map(p => `<button type="button" class="vgc-d" data-id="${esc(p[3])}" data-t1="${esc(md(p[0]) + " · " + l.s)}" data-t2="${esc(`${item} ${p[1]} → ${p[2]}\n누르면 이 변동의 상세로 이동`)}" aria-label="${esc(`${md(p[0])} ${l.s} ${item} ${p[1]}에서 ${p[2]}`)}" style="left:${X(p[0]).toFixed(2)}%;top:${Y(money(p[2])).toFixed(2)}%;background:${color(l.s)}"></button>`)).join("");
-    return `<figure class="vgc-p"><figcaption>${esc(item)}</figcaption><div class="vgc-box"><div class="vgc-y tn"><span>${esc(shown[hi])}</span><span>${lo === hi ? "" : esc(shown[lo])}</span></div>
-      <div class="vgc-plot"><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${own.map(l => `<polyline points="${path(l)}" style="stroke:${color(l.s)}"/>`).join("")}</svg>${dots}</div>
-      <div class="vgc-x tn"><span>${md(d0)}</span><span>${md(d1)}</span></div></div></figure>`; };
+    const days = [...new Set(own.flatMap(l => l.pts.map(p => p[0])))].sort(), edges = [d0, ...days.filter(d => d !== d0 && d !== d1), d1];
+    const at = (l, d) => { let v = l.pts[0][1]; l.pts.forEach(p => { if (p[0] <= d) v = p[2]; }); return v; };
+    const spans = edges.slice(0, -1).map((a, i) => { const z = edges[i + 1];
+      return `<span class="vgc-h" data-t1="${esc(`${md(a)}~${md(z)}`)}" data-t2="${esc(own.map(l => `${l.s} ${at(l, a)}`).join("\n"))}" style="left:${X(a).toFixed(2)}%;width:${(X(z) - X(a)).toFixed(2)}%"></span>`; }).join("");
+    const mid = addDays(d0, Math.round((dt(d1) - dt(d0)) / 864e5 / 2));
+    return `<figure class="vgc-p" role="img" aria-label="${esc(`${item} 추이 ${shown[lo]}~${shown[hi]}`)}"><figcaption>${esc(item)}</figcaption><div class="vgc-box"><div class="vgc-y tn"><span>${esc(shown[hi])}</span><span>${lo === hi ? "" : esc(shown[lo])}</span></div>
+      <div class="vgc-plot">${spans}<svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${own.map(l => `<polyline points="${path(l)}" style="stroke:${color(l.s)}"/>`).join("")}</svg></div>
+      <div class="vgc-x tn"><span>${md(d0)}</span><span>${md(mid)}</span><span>${md(d1)}</span></div></div></figure>`; };
   return `<div class="vgc"><div class="vgc-lg">${names.map(n => `<span><i style="background:${color(n)}"></i>${esc(n)}</span>`).join("")}${s.others ? `<small>자주 바뀐 ${names.length}곳만 그림 · 나머지 ${s.others}곳은 바뀐 내용 표</small>` : ""}</div><div class="vgc-grid">${items.map(panel).join("")}</div></div>`;
 }
 function vgKey(e){ const s = e.vgs, said = [["인상", s.up], ["인하", s.down], ["되돌아감", s.back]].filter(x => x[1]).map(x => x.join(" "));
