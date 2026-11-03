@@ -707,7 +707,7 @@ def test_registered_routes_are_marked_as_letsur_settings(tmp_path: Path, records
     assert (card["relKey"], card["relShort"], card["relDemo"]) == relation
     assert not {"relSet", "relObs", "relMan", "relInf"} & set(card)
     page = (tmp_path / "site" / "index.html").read_text(encoding="utf-8")
-    assert 'const relMark = e => e.relDemo ? {chip: "가정", note: "시연용 가정"} : null;' in page
+    assert 'const relMark = e => relDemoOf(e) ? {chip: "가정", note: "시연용 가정"} : null;' in page
 
 
 def _astra_records() -> dict:
@@ -911,9 +911,9 @@ def test_template_marks_a_called_route_like_a_registered_one(tmp_path: Path) -> 
     assumption (relDemo) keeps its 가정 mark."""
     _write(tmp_path, [])
     page = _build(tmp_path)[1]
-    assert 'const relMark = e => e.relDemo ? {chip: "가정", note: "시연용 가정"} : null;' in page
-    assert '현재 사용 경로${e.relDemo ? ` <span class="tg">가정</span>` : ""}</div>' in page
-    assert '&& e.relDemo ? " (렛서 관계는 시연용 가정)" : ""}</div></div>`;' in page
+    assert 'const relMark = e => relDemoOf(e) ? {chip: "가정", note: "시연용 가정"} : null;' in page
+    assert '현재 사용 경로${relDemoOf(e) ? ` <span class="tg">가정</span>` : ""}</div>' in page
+    assert '&& relDemoOf(e) ? " (렛서 관계는 시연용 가정)" : ""}</div></div>`;' in page
     assert not re.search(r"relSet|relObs|relMan|relInf|호출 추정", page)
 
 
@@ -939,7 +939,7 @@ def test_template_has_the_supply_tab_and_its_editor(tmp_path: Path) -> None:
     assert '<input type="checkbox" class="spx${use && !got ? " warn" : ""}" data-sp="cell"' in page
     assert '${use ? " checked" : ""}${got && SUPPLY.routes ? "" : " disabled"}></td>' in page
     assert "if (spEdits[k]) delete spEdits[k]; else spEdits[k] = {on: !spCell(SUPPLY.routes, m, c).length, at: spToday()}; }" in page
-    assert "<h2>공급로 현황</h2><span>모델 ${count}개</span></div>" in page
+    assert '<h2>공급로 현황</h2><span>모델 ${modelQ ? `${shown.reduce((s, [, l]) => s + l.length, 0)}/` : ""}${count}개</span></div>' in page
     for gone in ("spBasis", "spChip", "sppanel", "spun", "호출 추정", "렛서가 쓰는데 가격 수집 안 함"):
         assert gone not in page[page.index("// ---- 공급로 현황"):page.index("// ---- 상호작용 ----")]
     assert "@media (max-width:640px){.ptabs{flex-wrap:wrap;row-gap:4px}.ptabs button{padding:0 8px}}" in page
@@ -1439,14 +1439,58 @@ def test_undated_card_shows_its_basis_in_the_list_and_the_whole_reason_on_hover_
     assert 'esc([e.effShort, e.effNote].filter(Boolean).join(" · ") || "미확인")' in page
 
 
-def test_type_chips_show_only_the_picked_types(tmp_path):
-    """2026-10-27 박건 request: a pressed type chip shows only its type (more chips add types); none pressed shows all."""
+def test_team_feedback_of_1103_legend_korean_labels_switch_draft_and_search(tmp_path: Path) -> None:
+    """2026-11-03 팀 피드백 1~5. The browser check covers behaviour; this pins the page's own words and wiring."""
     _write(tmp_path, [])
     page = _build(tmp_path)[1]
-    assert "const kindShown = e => !listOn.size || listOn.has(e.kind);" in page
-    assert "listOn.has(k) ? listOn.delete(k) : listOn.add(k);" in page
-    assert 'b.setAttribute("aria-pressed", listOn.has(b.dataset.kind));' in page
-    assert "listOff" not in page
+    # 1. no colour legend under the calendar
+    assert "callg" not in page and "dkey" not in page and "drvk" not in page
+    # 5. the list says what to do and whether LETSUR uses the route in Korean; only the Slack bot's cards.json keeps the English values
+    assert '<span class="qchip ${k}" title="${QACTION[k].tip}">${QACTION[k].ko}</span>' in page and "${a.ko}${m && a !== APPSTAT.unk" in page
+    assert 'en:"' not in page and "${QACTION[actionKey(e)].ko} · 제안: " in page
+    for word in ("렛서 사용", "렛서 미사용", "사용 미확인", "관측 유지", "확인 필요"):
+        assert f'ko:"{word}"' in page
+    # 3. a switch with its state written on it, and a settings button that opens the 공급로 현황 tab without being a tab itself
+    assert 'lm.firstElementChild.textContent = letsurOnly ? "ON" : "OFF";' in page and 'lm.setAttribute("aria-checked", letsurOnly);' in page
+    assert 'class="lgear" data-ptab="supply" aria-label="공급로 현황에서 렛서 경로 설정"' in page
+    assert 'document.querySelectorAll(".ptabs [data-ptab]").forEach(b => b.setAttribute("aria-selected"' in page
+    # 4. the routes draft reaches the change page: a model with a draft is judged again, every other model keeps its built value,
+    # and a model with every route released gets the 미도입 record relation() reads, not no record at all
+    assert "function relOf(e){ const d = relDraft(e); if (d) return d.key; if (e.relKey) return e.relKey;" in page
+    assert 'doc.records.push({model_id: m, route_id: null, endpoint_id: null, basis: "manual", checked_at: at});' in page
+    assert 'if (p !== "models") { renderMeta(); renderCalendar(); renderQueue(); renderDetail();' in page
+    # 2. one search box in the header for all four tabs; spacing and punctuation do not count
+    assert 'type="search" id="msq" placeholder="모델 검색"' in page
+    assert 'const searchKey = s => String(s || "").toLowerCase().replace(/[^0-9a-z가-힣]+/g, "");' in page
+    for filtered in ('ks.filter(k => modelHit(k, modelName(k)))', 'l.filter(m => modelHit(m, modelName(m)))', 'l.filter(x => modelHit(x.model, x.model))', '!isPast(e) && modelHit(e.mid, e.m)'):
+        assert filtered in page
+    assert 'if (modelQ && l.length && !l.some(e => e.id === state.sel || e.vg === state.sel))' in page
+
+
+def test_a_model_released_on_the_supply_tab_is_read_as_not_offered() -> None:
+    """2026-11-03 팀 피드백 4: the record spDoc() writes when every route of a model is released is a valid record, and relation() reads it
+    as 미도입 (hidden by 렛서 경로만), where a model with no record stays unconfirmed (kept by 렛서 경로만)."""
+    released = {"model_id": "gemini-4-argon", "route_id": None, "endpoint_id": None, "basis": "manual", "checked_at": "2026-11-03"}
+    assert build.record_problem(released) == ""
+    routes = {"is_demo": False, "records": [released]}
+    for route in ("google_direct", ""):
+        assert build.relation({"model_id": "gemini-4-argon", "route": route}, routes) == {"relKey": "none", "relShort": "미도입", "relDemo": False}
+    assert build.relation({"model_id": "gemini-4-argon", "route": "google_direct"}, {"is_demo": False, "records": []})["relKey"] == "unk"
+    assert build.model_use("gemini-4-argon", routes) == {"use": "미도입"}
+    assert "gemini-4-argon" in build.supply(routes)["models"]
+
+
+def test_type_menu_under_the_sort_menu_shows_one_type(tmp_path):
+    """2026-11-03 팀 피드백 6: the type menu sits under the sort menu instead of a row of chips; the type picked is the only one shown,
+    전체 shows all, and its counts apply only the date filter."""
+    _write(tmp_path, [])
+    page = _build(tmp_path)[1]
+    assert ('<select id="qsort"><option value="recommended">추천 순</option><option value="date">적용일 순</option><option value="type">유형별</option></select></div>'
+            '<div><label for="qkind">유형</label><select id="qkind"></select></div>') in page
+    assert 'let listKind = "";\nconst kindShown = e => !listKind || e.kind === listKind;' in page
+    assert 'menu.innerHTML = `<option value="">전체 ${byDay.length}</option>`' in page and "menu.value = listKind;" in page
+    assert 'ev.target.id === "qkind") { listKind = ev.target.value; refilter(); }' in page
+    assert "data-kind" not in page and "listOn" not in page
 
 
 def test_next_step_lines_read_label_colon_text(tmp_path):
@@ -1716,8 +1760,8 @@ def test_team_feedback_icons_calendar_words_title_and_letsur_mode(tmp_path: Path
     assert '<h1 id="ptitle">변화</h1>' in page and ".title h1{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)" in page
     assert "확인할 변화" not in page
     # 렛서 경로만: off when the page opens, keeps 렛서 경로를 모르는 cards, filters the summary, the calendar and the list
-    assert '<button type="button" class="mchip" data-lmode aria-pressed="false"' in page and "let letsurOnly = false;" in page
-    assert 'const letsurRoute = e => ["use", "unk"].includes(relOf(e));' in page and "const modeShown = e => !letsurOnly || letsurRoute(e);" in page
+    assert 'class="lswitch" role="switch" data-lmode aria-checked="false"' in page and "let letsurOnly = false;" in page
+    assert 'const letsurRoute = e => ["use", "unk"].includes(relOf(e));' in page and "const modeShown = e => (!letsurOnly || letsurRoute(e)) && modelHit(e.mid, e.m);" in page
     assert "const shown = EVENTS.filter(modeShown)" in page and "const entries = CAL_ENTRIES.filter(x => modeShown(x.e));" in page
-    assert "const list = EVENTS.filter(e => modeShown(e) && kindShown(e) && (showPast || !isPast(e)));" in page
+    assert "const listed = () => EVENTS.filter(e => modeShown(e) && kindShown(e) && (showPast || !isPast(e)));" in page
     assert "letsurOnly = !letsurOnly; renderMeta(); renderCalendar(); refilter();" in page

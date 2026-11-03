@@ -1143,7 +1143,7 @@ def build_card(card_id: str, members: list[dict], sources: Sources, routes: dict
                           for e in members for side in (part(e, "before"), part(e, "after")) if side.get("currency"))
     card = {"id": card_id, "t7": t7, "kind": T7.get(rep.get("event_type")) or "유형 미정", "m": rep.get("model_id") or "모델 표기 없음", "mid": rep.get("model_id") or "", "ch": ch,
             "unit": " · ".join(f"{c} / {u}" if u else c for c, u in pairs), "sum": summary_text(t7, members, eff, sub, q1, remove, added, ends, rep.get("route") or ""),
-            **relation(rep, routes), "act": "pending", "real": True,
+            **relation(rep, routes), "rt": rep.get("route") or "", "act": "pending", "real": True,
             "chgHead": table_head(t7, members), "chg": [row["row"] for row in rows], "cond": compare_line(members, rep, ch, t7), "ev": ev}
     phrase = next((part(e, "dates")["end_phrase"] for e in members if part(e, "dates").get("end_phrase")), None) if t7 == "한시 할인" else None
     for key, value in (("effLabel", label if t7 else ""), ("sub", sub), ("flag", flag_text(members)), ("eff", eff), ("effQual", qual),
