@@ -60,7 +60,7 @@ data/market_collection/signals/runs/<run_id>/
 | `azure_retirement_schedule` | Markdown | channel_notice | Microsoft Foundry 모델 퇴역 일정표(`?accept=text/markdown`). 모델·버전별 퇴역일과 대체 모델 (2026-10-29, 아래) |
 | `openai_deprecations` | Markdown | supplier_notice | OpenAI API 종료 공지 페이지(`.md`). 공지일 절마다 종료일 표 |
 | `anthropic_deprecations` | Markdown | supplier_notice | Anthropic 모델 퇴역 페이지(`.md`). 모델 상태 표와 종료 공지 이력 |
-| `google_deprecations` | Markdown | supplier_notice | Gemini API 종료 일정 페이지(`.md.txt`). 표의 날짜는 모두 가장 이른 종료일 |
+| `google_deprecations` | Markdown | supplier_notice | Gemini API 종료 일정 페이지(`.md`, Markdoc 원본). 표의 날짜는 모두 가장 이른 종료일 |
 
 2026-10-28: 렛서가 OpenRouter·Vercel로만 쓰는 LLM 34개가 가격 수집에 들어오면서 signals 출처가 22개에서 102개가 됐다(feed 4 + OpenRouter 49 + Vercel 49). 두 게이트웨이 API 출처는 가격 수집기의 endpoint 출처(`sources.py`의 `llm_endpoint_source_specs`)와 같은 모델·같은 id 규칙이라 98개가 하나씩 짝을 이룬다. 그 게이트웨이 목록에 없는 모델은 출처가 없다(OpenRouter에 없는 `muse-wonder-1.0`·`qwen3.5-plus`·`qwen3.8-max`, Vercel에 없는 `grok-4.20`·`kimi-k2-thinking`·`qwen3-coder-flash`). 기존 22개 출처는 키·URL·순서 그대로다.
 
@@ -75,7 +75,7 @@ Vercel `deprecated_at`(2026-10-28): Vercel AI Gateway endpoints API는 일부 en
 - Azure: `https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/model-retirement-schedule?accept=text/markdown`. 표마다 Model · Version · Lifecycle · Retirement date · Replacement. Microsoft는 GPT·Claude 등 모든 모델에 대해 채널이라 경로 `azure_foundry`의 제공 여부만 말한다(`channel_official`).
 - OpenAI: `https://developers.openai.com/api/docs/deprecations.md`. 절 제목의 공지일(`### 2026-06-11: …`)과 Shutdown date 표. 경로는 `openai_direct`, 이미지 모델은 `openai`.
 - Anthropic: `https://platform.claude.com/docs/en/about-claude/model-deprecations.md`. 모델 상태 표(현재 상태, 종료 공지일, Tentative retirement date)와 종료 공지 이력 표(대체 모델). 경로 `anthropic_direct`. 상태 표는 현재 상태가 **Deprecated·Retired인 행만** 쓴다. Active 모델의 "Not sooner than …"은 그 날짜까지는 제공한다는 최소 기간 약속이지 퇴역 공지가 아니다(2026-10-30 정정: Active인 claude-opus-4-5-20251101이 11/24 제공 종료 카드와 슬랙 알림이 되던 거짓 경보).
-- Google: `https://ai.google.dev/gemini-api/docs/deprecations.md.txt`. 경로 `google_direct`. 페이지 설명대로 표의 Shutdown date는 모두 **가장 이른 종료일**이다.
+- Google: `https://aistudio.google.com/docs/deprecations.md`. 경로 `google_direct`. 페이지 설명대로 표의 Shutdown date는 모두 **가장 이른 종료일**이다. 2026-11-03 Google이 문서를 옮기면서 옛 주소의 `deprecations.md.txt`는 응답은 하지만 갱신이 멈췄다([market-collection.md](market-collection.md)의 'Google 문서 주소 이전').
 - AWS Bedrock은 넣지 않았다. 새 수명 주기 페이지(2026-09-07 이후 출시 모델)에는 날짜 표가 없고 모델 카드마다 흩어져 있으며, 이전 출시 모델 페이지(`model-lifecycle-legacy.md`)는 `anthropic.claude-sonnet-4-5-20250929-v1:0`처럼 이름이 다르고 지역마다 날짜가 달라 정확히 맞출 수 없다. 우리가 Bedrock 가격을 읽는 모델 11개(렛서 설정에 Bedrock이 있는 claude-fable-5-1 포함)는 그 페이지의 종료 예정·종료 목록에 없다(2026-10-29 확인).
 
 읽는 방법:

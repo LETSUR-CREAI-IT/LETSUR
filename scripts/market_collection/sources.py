@@ -40,7 +40,7 @@ _BEDROCK_PRICING = "https://aws.amazon.com/bedrock/pricing/"
 
 def llm_source_specs() -> list[SourceSpec]:
     specs = [
-        SourceSpec("google_gemini_38_flash", "llm", GOOGLE_LLM_MODEL, "google_direct", "text_generation", "https://ai.google.dev/gemini-api/docs/pricing", "google"),
+        SourceSpec("google_gemini_38_flash", "llm", GOOGLE_LLM_MODEL, "google_direct", "text_generation", "https://aistudio.google.com/docs/pricing.md", "google"),
         SourceSpec("openrouter_gemini_38_flash", "llm", GOOGLE_LLM_MODEL, "openrouter", "text_generation", "https://openrouter.ai/google/gemini-3.8-flash/providers", "openrouter"),
         SourceSpec("vercel_gemini_38_flash", "llm", GOOGLE_LLM_MODEL, "vercel_ai_gateway", "text_generation", "https://vercel.com/ai-gateway/models/gemini-3.8-flash", "vercel"),
         SourceSpec("openai_gpt_6_astra", "llm", ASTRA_MODEL, "openai_direct", "text_generation", "https://developers.openai.com/api/docs/models/gpt-6-astra.md", "openai_astra"),
@@ -124,7 +124,7 @@ def route_gap_source_specs() -> list[SourceSpec]:
     """Routes LETSUR uses whose price no other source collected (2026-10-30): a Gemini section google_model_source_specs() cannot
     read, two Gemini models Google serves with another model, GLM 4.7 and GLM 5 on Bedrock, and o3-pro on OpenAI's own route.
     The other two such routes are gateway ids in models.py (qwen3.5-plus on OpenRouter, gemini-3-flash-preview on Vercel)."""
-    google = "https://ai.google.dev/gemini-api/docs/pricing"
+    google = "https://aistudio.google.com/docs/pricing.md"
     specs = [SourceSpec(f"google_{_key(model)}", "llm", model, "google_direct", "text_generation", google, "google_model_pricing_more")
              for model, _ in GOOGLE_DIRECT_MORE_MODELS]
     specs.extend(SourceSpec(f"google_{_key(model)}", "llm", model, "google_direct", "text_generation", google, "google_routed_pricing")
@@ -184,7 +184,7 @@ def maker_direct_source_specs() -> list[SourceSpec]:
 
 def google_model_source_specs() -> list[SourceSpec]:
     # One section of the Gemini API pricing page (the page google_gemini_38_flash reads) per model, picked by h2 id = model id.
-    return [SourceSpec(f"google_{_key(model)}", modality, model, "google_direct", task, "https://ai.google.dev/gemini-api/docs/pricing", "google_model_pricing")
+    return [SourceSpec(f"google_{_key(model)}", modality, model, "google_direct", task, "https://aistudio.google.com/docs/pricing.md", "google_model_pricing")
             for modality, task, models in (("llm", "text_generation", GOOGLE_DIRECT_MODELS), ("image", "text-to-image", GOOGLE_IMAGE_MODELS))
             for model, _ in models]
 

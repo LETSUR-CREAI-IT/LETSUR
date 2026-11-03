@@ -46,6 +46,8 @@ EXPECTED = {
     ("claude-sonnet-4-5-20250929", "anthropic_direct", "", "2026-11-30", "stated", "claude-sonnet-5-5"),
     ("gemini-3.1-flash-image-preview", "google_direct", "", "2026-06-25", "not_before", "gemini-nano-banana-2.1"),
     ("gemini-3-pro-image-preview", "google_direct", "", "2026-06-25", "not_before", "gemini-3-pro-image"),
+    ("gemini-2.5-pro", "google_direct", "", "2026-12-01", "not_before", "gemini-3.8-flash (gemini-2.5-pro is no longer available in Google AI Studio; effective December 1, 2026, API requests to gemini-2.5-pro will automatically route to gemini-3.8-flash)"),  # on the page since 2026-11-03
+    ("gemini-2.5-flash", "google_direct", "", "2026-12-01", "not_before", "gemini-3.5-flash-lite (gemini-2.5-flash is no longer available in Google AI Studio; effective December 1, 2026, API requests to gemini-2.5-flash will automatically route to gemini-3.5-flash-lite)"),
 }
 
 

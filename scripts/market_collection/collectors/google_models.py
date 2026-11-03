@@ -1,13 +1,13 @@
-"""Google Gemini API price parsers: one model's section of the shared pricing page, picked by its h2 id."""
+"""Google Gemini API price parsers: one model's section of the shared pricing page, picked by its heading id."""
 
 from __future__ import annotations
 
 import re
 from datetime import datetime
-from html.parser import HTMLParser
 
 from scripts.market_collection.core import SourceSpec
-from .common import _clean, llm_condition, llm_price
+from scripts.market_collection.google_docs import read_section
+from .common import llm_condition, llm_price
 
 
 PARSERS = frozenset({"google_model_pricing"})
@@ -25,7 +25,7 @@ NUMBER = r"\$(\d+(?:\.\d+)?)"
 DATE = r"([A-Z][a-z]+ \d{1,2}, \d{4})"
 RESOLUTION = r"\d+(?:\.\d+)?K(?:/\d+(?:\.\d+)?K)*"
 
-# The statements a paid cell is made of. The page separates them with <br>, a bare line wrap or nothing, so a cell is
+# The statements a paid cell is made of. The page separates them with a line break, a bare line wrap or nothing, so a cell is
 # read as one text. Anything left over that is no statement makes the whole cell unknown instead of a partial price.
 STATEMENTS = (
     ("period", re.compile(rf"{NUMBER} (through|starting) {DATE}\.?")),
@@ -41,79 +41,6 @@ MODALITIES = re.compile(r"(?:text|image|video|audio)(?:\s*[/,]\s*(?:text|image|v
 UNREADABLE = "paid rate or period missing/ambiguous"
 STORAGE = "source quotes USD per token-hour; core has no canonical token-hour price unit"
 UNIT_UNSTATED = "unit not stated: the value carries a footnote under a per-1M-token column header"
-
-
-class _Section(HTMLParser):
-    """Tier tables of the one h2 section with the given id; a cell is its whitespace-normalized text."""
-
-    def __init__(self, section_id: str) -> None:
-        super().__init__(convert_charrefs=True)
-        self.section_id = section_id
-        self.count = 0
-        self.title = ""
-        self.tables: list[tuple[str, list[list[tuple[str, str]]]]] = []
-        self._inside = False
-        self._tier = ""
-        self._heading: str | None = None
-        self._heading_parts: list[str] = []
-        self._rows: list | None = None
-        self._row: list | None = None
-        self._cell: tuple[str, list[str]] | None = None
-        self._skip = 0
-
-    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
-        if tag in ("script", "style", "noscript"):
-            self._skip += 1
-        if self._skip:
-            return
-        if tag in ("h2", "h3"):
-            self._heading, self._heading_parts = tag, []
-            if tag == "h2":  # any h2 ends the previous section
-                self._inside = dict(attrs).get("id") == self.section_id
-                self._tier = ""
-                if self._inside:
-                    self.count += 1
-        elif not self._inside:
-            return
-        elif tag == "table" and self._tier:
-            self._rows = []
-        elif tag == "tr" and self._rows is not None:
-            self._row = []
-        elif tag in ("th", "td") and self._row is not None:
-            self._cell = (tag, [])
-        elif tag == "br" and self._cell:
-            self._cell[1].append(" ")
-
-    def handle_data(self, data: str) -> None:
-        if self._skip:
-            return
-        if self._heading:
-            self._heading_parts.append(data)
-        if self._cell:
-            self._cell[1].append(data)
-
-    def handle_endtag(self, tag: str) -> None:
-        if tag in ("script", "style", "noscript") and self._skip:
-            self._skip -= 1
-            return
-        if self._skip:
-            return
-        if tag == self._heading:
-            text = _clean("".join(self._heading_parts))
-            if self._inside and tag == "h2":
-                self.title = text
-            elif self._inside:
-                self._tier = text.lower()
-            self._heading = None
-        elif tag in ("th", "td") and self._cell and self._row is not None:
-            self._row.append((self._cell[0], _clean("".join(self._cell[1]))))
-            self._cell = None
-        elif tag == "tr" and self._row is not None:
-            self._rows.append(self._row)
-            self._row = None
-        elif tag == "table" and self._rows is not None:
-            self.tables.append((self._tier, self._rows))
-            self._rows = None
 
 
 def _statements(text: str) -> list[tuple[str, tuple, str]] | None:
@@ -216,8 +143,7 @@ def _paid_header(rows: list) -> bool:
 
 
 def parse_source(spec: SourceSpec, body: bytes, source_id: str) -> tuple[list[dict], list[dict]]:
-    page = _Section(spec.model_id)
-    page.feed(body.decode("utf-8", errors="replace")); page.close()
+    page = read_section(body, spec.model_id)
     if page.count != 1:
         raise ValueError(f"Google pricing page has {page.count} sections with id {spec.model_id}")
     labels = LABELS[spec.modality]

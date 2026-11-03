@@ -66,24 +66,24 @@ def _spec(key: str) -> dict:
     return asdict(next(spec for spec in source_specs() if spec.source_key == key))
 
 
-def google_html(*rows: tuple) -> bytes:
+def google_page(*rows: tuple) -> bytes:
     """rows are (tier, item, amount[, period]); empty amount leaves the paid cell without a rate."""
     tables: dict[str, list[str]] = {}
     for row in rows:
         tier, item, amount = row[:3]
         period = row[3] if len(row) > 3 else "through December 31, 2026."
         cell = f"${amount} {period}" if amount else "Not published"
-        tables.setdefault(tier, []).append(f"<tr><td>{LABELS[item]}</td><td>Free of charge</td><td>{cell}</td></tr>")
-    body = ["<!-- synthetic fixture page for tests -->", '<h2 id="gemini-3.8-flash">Gemini 3.8 Flash</h2>']
-    for tier, trs in tables.items():
-        body += [f"<h3>{tier.title()}</h3>", "<table><tr><th></th><th>Free Tier</th><th>Paid Tier, per 1M tokens in USD</th></tr>",
-                 *trs, "</table>"]
-    return "\n".join(body).encode()
+        tables.setdefault(tier, []).append(f"  * {LABELS[item]}\n  * Free of charge\n  * {cell}")
+    body = ["<!-- synthetic fixture page for tests -->", '## Gemini 3.8 Flash  {% id="gemini-3.8-flash" %}', "{% tabs %}"]
+    for tier, cells in tables.items():
+        body += [f'  {{% tab title="{tier.title()}" %}}', "  {% table %}", "  * Feature\n  * Free Tier\n  * Paid Tier, per 1M tokens in USD",
+                 *(f"  ---\n{row}" for row in cells), "  {% /table %}", "  {% /tab %}"]
+    return "\n".join(body + ["{% /tabs %}"]).encode()
 
 
 def google_entry(*rows: tuple, spec: dict | None = None, csv_amounts: dict | None = None) -> dict:
-    """Raw HTML plus the rows the real Google parser extracts from it. csv_amounts edits CSV only."""
-    return {"spec": spec or _spec(GOOGLE), "body": google_html(*rows), "csv_amounts": csv_amounts or {}}
+    """Raw page plus the rows the real Google parser extracts from it. csv_amounts edits CSV only."""
+    return {"spec": spec or _spec(GOOGLE), "body": google_page(*rows), "csv_amounts": csv_amounts or {}}
 
 
 def openrouter_entry(amount: str) -> dict:

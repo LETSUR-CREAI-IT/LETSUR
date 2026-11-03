@@ -1,7 +1,8 @@
 """Official retirement schedule pages -> dated entries of registered models (2026-10-29).
 
-The fixtures are the four pages as a local live signals run fetched them on 2026-10-29, trimmed to their headings and
-tables (fixtures/retirements/provenance.json); the parser reads them exactly as it reads the whole pages.
+The fixtures are the four pages as a local live signals run fetched them on 2026-10-29 (Google's on 2026-11-03, from its new
+address), trimmed to their headings and tables (fixtures/retirements/provenance.json); the parser reads them exactly as it reads
+the whole pages.
 """
 
 from __future__ import annotations
@@ -84,6 +85,8 @@ def test_google_dates_are_earliest_dates_and_undated_rows_are_left_out():
     found = entries("google_deprecations")
     assert found == {
         ("gemini-3.1-flash-lite", ""): ("", "2027-05-07", True, "May 7, 2027", "gemini-3.5-flash-lite", ""),
+        ("gemini-2.5-pro", ""): ("", "2026-12-01", True, "December 1, 2026", "gemini-3.8-flash (gemini-2.5-pro is no longer available in Google AI Studio; effective December 1, 2026, API requests to gemini-2.5-pro will automatically route to gemini-3.8-flash)", ""),
+        ("gemini-2.5-flash", ""): ("", "2026-12-01", True, "December 1, 2026", "gemini-3.5-flash-lite (gemini-2.5-flash is no longer available in Google AI Studio; effective December 1, 2026, API requests to gemini-2.5-flash will automatically route to gemini-3.5-flash-lite)", ""),
         ("gemini-2.5-flash-image", ""): ("", "2027-03-15", True, "March 15, 2027", "gemini-3.1-flash-lite-image", ""),
         ("gemini-3.1-flash-image-preview", ""): ("", "2026-06-25", True, "June 25, 2026", "gemini-nano-banana-2.1", ""),
         ("gemini-3-pro-image-preview", ""): ("", "2026-06-25", True, "June 25, 2026", "gemini-3-pro-image", "")}
@@ -107,7 +110,7 @@ def test_the_four_pages_are_registered_last_and_speak_for_their_owners_route():
     assert [page_url(s.url) for s in RETIREMENT_PAGES] == [
         "https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/model-retirement-schedule",
         "https://developers.openai.com/api/docs/deprecations", "https://platform.claude.com/docs/en/about-claude/model-deprecations",
-        "https://ai.google.dev/gemini-api/docs/deprecations"]
+        "https://aistudio.google.com/docs/deprecations"]
     catalog = Catalog()
     seen = {(key, model): catalog.signal_source(asdict(SPECS[key]), model) for key, model in (
         ("azure_retirement_schedule", "o3"), ("azure_retirement_schedule", "claude-haiku-4-5"), ("openai_deprecations", "o3"),
@@ -130,7 +133,7 @@ def test_live_reads_each_page_through_its_registered_spec(tmp_path: Path):
     _, sources, rows = signals.validated_run(run)
     assert [(s["source_key"], s["parse_status"], s["entries_total"], s["signal_count"]) for s in sources] == [
         ("azure_retirement_schedule", "ok", "173", "51"), ("openai_deprecations", "ok", "151", "15"),
-        ("anthropic_deprecations", "ok", "23", "1"), ("google_deprecations", "ok", "102", "4")]
+        ("anthropic_deprecations", "ok", "23", "1"), ("google_deprecations", "ok", "88", "6")]
     o3 = next(row for row in rows if row["source_key"] == "azure_retirement_schedule" and row["model_ids"] == "o3")
     assert {key: o3[key] for key in ("entry_id", "entry_url", "entry_title", "published_at_utc", "model_match", "claim_kinds", "date_phrases",
                                       "match_terms", "origin_status", "locator")} == {
