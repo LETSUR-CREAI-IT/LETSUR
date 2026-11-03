@@ -53,8 +53,9 @@ a{color:var(--ink)}
 .msearch svg{flex:none;width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2.5;stroke-linecap:round}
 .msearch input{flex:1;min-width:0;border:0;outline:0;background:none;color:var(--nav-ink);font:inherit;font-size:13px}
 .msearch input::placeholder{color:var(--nav-muted)}
-@media (max-width:640px){.top{padding-inline:16px;gap:12px}.top .tool{display:none}}
-@media (max-width:640px){.top{flex-wrap:wrap;row-gap:8px;padding-block:8px}.msearch{order:3;width:100%;margin-left:0}}  /* 화면 탭이 들어가 좁으면 줄을 바꾼다 */
+@media (max-width:900px){.top .tool{display:none}}  /* 탭과 기준일이 한 줄에 들어가게 */
+@media (max-width:640px){.top{padding-inline:16px;gap:12px}}
+@media (max-width:1100px){.top{flex-wrap:wrap;row-gap:8px;padding-block:8px}.top .base{margin-left:auto}.msearch{order:3;width:100%;margin-left:0}}  /* 화면 탭이 들어가 좁으면 줄을 바꾼다 */
 
 .wrap{max-width:1380px;margin:0 auto;padding-inline:24px;padding-block:24px 56px;display:flex;flex-direction:column;gap:16px}
 @media (max-width:640px){.wrap{padding-inline:16px}}
@@ -155,9 +156,17 @@ a{color:var(--ink)}
 .lk b{color:var(--ink)}
 .lk button{height:28px;padding:0 12px;border:1px solid var(--line-strong);border-radius:var(--r-pill);background:var(--surface);font-size:13px;color:var(--ink);cursor:pointer}
 .lk button:hover{border-color:var(--ink)}
-.calnext{display:flex;flex-wrap:wrap;align-items:center;gap:8px 8px;margin:12px 0 0;font-size:12px;color:var(--muted)}
-.calnext button{display:inline-flex;align-items:center;gap:8px;height:28px;padding:0 8px;border:1px solid var(--line);border-radius:var(--r-pill);background:var(--surface);font-size:12px;color:var(--ink);cursor:pointer}
-.calnext button:hover{border-color:var(--line-strong)}
+/* 다음 일정(2026-11-04 박건: 어느 비율에서든 정갈하게): 같은 크기 칸 4개, 좁으면 2개씩, 폰은 한 줄씩. 칸의 양끝이 캘린더 양끝과 맞는다 */
+.calnext{margin:12px 0 0}
+.calnext h3{margin:0 0 8px;font-size:12px;font-weight:700;color:var(--muted)}
+.cngrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+@media (max-width:1100px){.cngrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:560px){.cngrid{grid-template-columns:minmax(0,1fr)}}
+.cngrid button{display:flex;flex-direction:column;gap:4px;min-width:0;padding:8px 12px;border:1px solid var(--line);border-radius:var(--r-m);background:var(--surface);font-size:12px;color:var(--ink);text-align:left;cursor:pointer}
+.cngrid button:hover{border-color:var(--line-strong)}
+.cn1,.cn2{display:flex;align-items:center;gap:8px;min-width:0}
+.cn2 b{min-width:0;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cn2 small{flex:none;margin-left:auto;font-size:11px;color:var(--muted)}
 .calnext .dd{height:18px;padding:0 4px;font-size:11px}
 @media (max-width:560px){.day{min-height:46px;padding:4px}.ev{height:12px;padding:0}.ev span,.ev i,.ev .logo{display:none}.cal{gap:4px}}
 
@@ -483,8 +492,22 @@ body:not([data-page="health"]) .hpage{display:none}
 .vgbtn .tlink{height:auto;min-height:32px;padding:4px 12px;flex-wrap:wrap;text-align:left}
 .tlink small{color:var(--muted);font-size:12px;font-weight:500}
 .row.vg{box-shadow:inset 3px 0 0 var(--line-strong)}
-.vgnote{margin:12px 0 0;font-size:13px;line-height:1.6;color:var(--body)}
-.vgh{margin:20px 0 8px;font-size:13px;font-weight:700;color:var(--ink)}
+/* 변동 잦음 추이 그래프(2026-11-04 박건): 선 색은 --s1~ 순서로 공급처를 따른다(docs/design-system.md 선 색). 글자는 글자 색만 쓴다 */
+.vgc{margin-top:12px}
+.vgc-lg{display:flex;flex-wrap:wrap;align-items:center;gap:4px 12px;font-size:12px;color:var(--body)}
+.vgc-lg i{display:inline-block;width:12px;height:2px;margin-right:4px;border-radius:var(--r-xs);vertical-align:middle}
+.vgc-lg small{font-size:12px;color:var(--muted)}
+.vgc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px 16px;margin-top:8px}
+.vgc-p{min-width:0;margin:0}
+.vgc-p figcaption{margin-bottom:4px;font-size:12px;font-weight:700;color:var(--ink)}
+.vgc-box{display:grid;grid-template-columns:auto minmax(0,1fr);column-gap:8px}
+.vgc-y{display:flex;flex-direction:column;justify-content:space-between;font-size:11px;color:var(--muted);text-align:right}
+.vgc-plot{position:relative;height:88px;border-bottom:1px solid var(--line-strong)}
+.vgc-plot svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.vgc-plot polyline{fill:none;stroke-width:2;stroke-linejoin:round;vector-effect:non-scaling-stroke}
+.vgc-d{position:absolute;width:8px;height:8px;padding:0;border:0;border-radius:50%;box-shadow:0 0 0 2px var(--surface);transform:translate(-50%,-50%);cursor:pointer}
+.vgc-d::before{content:"";position:absolute;inset:-6px}  /* 누르기 쉬운 크기 */
+.vgc-x{grid-column:2;display:flex;justify-content:space-between;margin-top:4px;font-size:11px;color:var(--muted)}
 
 /* ---- v16: 캘린더·그래프 메인, 종류별 목록, 상세 2×2 ---- */
 .hero{display:grid;grid-template-columns:minmax(0,1fr);gap:16px;align-items:stretch}  /* 단가 추이는 모델별 가격 화면으로(2026-10-28) */
@@ -794,6 +817,7 @@ function tableHtml(head, rows){ return `<table><thead><tr>${head.map(h => `<th>$
 // 변동 잦음 묶음(2026-10-28 가안): build.py mark_volatile이 같은 모델·경로의 가격 변경 카드가 7일 안에 3장 이상이면 같은 vg를 준다.
 // 목록은 그 카드들을 한 줄로 묶고, 묶음 상세(#vg)는 묶인 카드와 모델별 가격(가격 추이·현재 가격 표)으로 가는 링크를 보인다.
 const VG = {}; EVENTS.forEach(e => { if (e.vg) (VG[e.vg] = VG[e.vg] || []).push(e); });
+const VGS = /*DATA:VGS*/;
 let state = {filter:"all", sel:null, queueSort:"recommended"};
 // 주소의 #카드id가 이 페이지에 없으면 맨 위 카드를 보이되 그렇다고 알린다(2026-10-27 결정 26-6). 카드 id는 엔진 묶음 키로 만들어서,
 // 묶음이 바뀌면 옛 슬랙 메시지의 링크가 없는 id가 될 수 있다. 다른 카드를 고르면 안내는 사라진다.
@@ -831,6 +855,7 @@ const modeShown = e => (!letsurOnly || letsurRoute(e)) && modelHit(e.mid, e.m);
 const listed = () => EVENTS.filter(e => modeShown(e) && kindShown(e) && (showPast || !isPast(e)));
 // 상세페이지 상단용 7유형 (이벤트유형_분류규칙.md 기준, 10/10 김연우)
 const EV7 = byEv("t7"), EV7SUB = byEv("sub"), EV7FLAG = byEv("flag");
+Object.keys(VGS).forEach(id => { EV7[id] = "가격 변경"; EV7SUB[id] = "변동 잦음"; });
 // ---- 상세: 종류별 정교화 (박기범) ----
 // 상태(e.st)·확인할 것(e.chk)·유형 후보(e.tc)·단서만(e.clue)·할인 상태(e.ps)·행 수(e.n)·행 묶음(e.cg)은 build.py가 엔진 출력에서 넘긴다.
 const ST_KO = {confirmed:"확정", candidate:"공식 확인 전", conflicted:"출처 상충"};
@@ -853,6 +878,7 @@ const changed = e => (e.chg || []).filter(r => r[3] || JSON.stringify(r[1]) !== 
 const rowLine = r => `<li><span class="it">${r[0]}</span><span class="ba">${val(r[1])} <i>→</i> <b>${val(r[2])}</b></span>${r[3] && r[3][1] ? `<small>${esc(r[3][1])}</small>` : r[3] && r[3][0] ? `<small>${esc(r[3][0])}</small>` : ""}</li>`;
 const dateTxt = d => `${md(d)}(${wd(d)})`;
 function keyChange(e){
+  if (e.vgs) return vgKey(e);
   const t = EV7[e.id], rows = changed(e), o = KEYOVR[e.id] || {}, sub7 = EV7SUB[e.id] || "";
   if (isClue(e)) return clueBox(e);
   if (t === "가격 변경") return priceKey(e);
@@ -1103,10 +1129,11 @@ const appChip = e => { const a = applicabilityOf(e), m = relMark(e);
   return `<span class="qchip ${a.cls}" title="${a.tip}${m ? ` (${m.note})` : ""}">${a.ko}${m && a !== APPSTAT.unk ? " · " + m.chip : ""}</span>`; };
 // Suggested Action: 담당자가 다음에 할 작업 구분(조달 결정이 아님). 상세의 제안(suggestOf)과 같은 판단에서 나와 목록·달력·상세가 같은 말을 한다.
 // VERIFY 유형·값·출처·렛서 적용이 아직 안 정해짐 → RECORD 끝난 할인, 제안이 "기존 조건 유지" → MONITOR 값은 있으나 공식 확인 전 → REVIEW 나머지(고객 할인·경로 검토)
-const QACTION = {review:{ko:"검토", tip:"고객 할인이나 경로 변경을 검토할 변화", order:0}, verify:{ko:"확인 필요", tip:"유형·값·출처·렛서 사용 여부의 확인이 먼저 필요한 변화", order:1}, monitor:{ko:"관측 유지", tip:"값은 있으나 공식 확인 전이라 지켜볼 변화", order:2}, record:{ko:"기록", tip:"끝난 변화라 기록만 남기는 변화", order:3}};
+const QACTION = {review:{ko:"검토", tip:"고객 할인이나 경로 변경을 검토할 변화", order:0}, verify:{ko:"확인 필요", tip:"유형·값·출처·렛서 사용 여부의 확인이 먼저 필요한 변화", order:1}, monitor:{ko:"관측 유지", tip:"공식 확인 전이거나 가격이 오르내리는 중이라 지켜볼 변화", order:2}, record:{ko:"기록", tip:"끝난 변화라 기록만 남기는 변화", order:3}};
 // 되돌아간 가격(build.py mark_reverted, 2026-10-28): rv = 이후 원래 값으로 돌아온 가격 항목 수, rn = 가격이 바뀐 항목 수
 const isReverted = e => !!e.rv && e.rv === e.rn;
 function actionKey(e){
+  if (e.vgs && e.vgs.up && e.vgs.down) return "monitor";  // 오르내리는 중인 묶음은 지켜본다
   if (EV7[e.id] === null || isClue(e) || (EV7FLAG[e.id] && !e.st) || e.st === "conflicted" || priceUnk(e)) return "verify";  // flag는 st가 없는 옛 카드에서만(공식 확인 전은 st가 말한다)
   if (isEnded(e)) return "record";
   if (isReverted(e)) return "record";  // 해소됨: 지금은 적용되지 않는 변화라 기록만(결정 기록 29절 렛서 답변). build.py judge()와 함께 고친다.
@@ -1117,7 +1144,7 @@ function actionKey(e){
 }
 const actOrder = e => QACTION[actionKey(e)].order;
 const qchips = e => { const k = actionKey(e);
-  return `<span class="qchip ${k}" title="${QACTION[k].tip}">${QACTION[k].ko}</span>${appChip(e)}${e.rv ? `<span class="qchip rvc" title="이후 수집에서 원래 가격으로 돌아온 항목 ${e.rv}/${e.rn}">${e.rv === e.rn ? "해소됨" : `일부 해소 ${e.rv}/${e.rn}`}</span>` : ""}`; };
+  return `<span class="qchip ${k}" title="${QACTION[k].tip}">${QACTION[k].ko}</span>${appChip(e)}${e.rv && !e.vgs ? `<span class="qchip rvc" title="이후 수집에서 원래 가격으로 돌아온 항목 ${e.rv}/${e.rn}">${e.rv === e.rn ? "해소됨" : `일부 해소 ${e.rv}/${e.rn}`}</span>` : ""}`; };
 // 달력 날짜: 한 이벤트에 날짜가 여럿일 수 있다. effective 적용·변경 / end 할인·경로·현재 단가가 끝나는 날 / next_check 다시 볼 날(팀 기준, 공지 날짜 아님)
 const DATE_KIND = {effective:"적용", end:"종료", next_check:"확인"};
 const calAddDays = (d, n) => new Date(dt(d) + n * 864e5).toISOString().slice(0, 10);
@@ -1178,6 +1205,9 @@ function calTip(x){ const e = x.e, g = suggestOf(e);
     t2: `${EV7[e.id] || "수집 확인 필요"} · ${e.m} · ${e.ch}\n${plain(e.head || e.sum)}\n${QACTION[actionKey(e)].ko} · 제안: ${(g.pre || "") + RESP[g.resp]}${x.team ? "\n다음 확인은 팀 기준 날짜(공지 날짜 아님)" : ""}`}; }
 function calBtn(x){ const e = x.e, tp = calTip(x), k = typeOf(e), c = CAL[e.id] || [e.m], arrow = x.kind === "effective" && c[1];
   return `<button type="button" class="ev t-${k} dk-${x.kind}${x.drv ? " drv" : ""}" data-id="${esc(e.id)}" data-t1="${esc(tp.t1)}" data-t2="${esc(tp.t2)}" aria-current="${state.sel === e.id}" aria-label="${esc(tp.t1 + ", " + e.m + " " + e.sum)}"><span class="dkind ${x.kind}">${calWord(x)}</span>${logoOf(e.mid)}<span>${esc(c[0])}</span>${arrow ? `<b class="ar ${c[2]}">${esc(c[1])}</b>` : ""}</button>`; }
+// 다음 일정 칸: 언제·무슨 변화·어느 모델·어느 공급사만 쓰고 나머지는 툴팁에 둔다(2026-11-04 박건: 문구가 길다).
+function nextCell(x){ const tp = calTip(x), who = x.e.ch.includes(" · ") ? x.e.ch.split(" · ")[0] : "";
+  return `<button type="button" data-id="${esc(x.e.id)}" data-t1="${esc(tp.t1)}" data-t2="${esc(tp.t2)}"><span class="cn1"><span class="dd ${ddCls(x.date)} tn">${ddTxt(x.date)}</span><span class="dkind ${x.kind}">${calWord(x)}</span></span><span class="cn2">${logoOf(x.e.mid)}<b>${esc(x.e.m)}</b>${who ? `<small>${esc(who)}</small>` : ""}</span></button>`; }
 function renderCalendar(){
   const [y, m] = calMonth.split("-").map(Number);
   const first = Date.UTC(y, m - 1, 1), startDow = new Date(first).getUTCDay(), last = new Date(Date.UTC(y, m, 0)).getUTCDate();
@@ -1197,7 +1227,7 @@ function renderCalendar(){
       <button type="button" class="nav" data-mon="-1" aria-label="이전 달"${calMonth <= MONTHS[0] ? " disabled" : ""}>‹</button>
       <button type="button" class="nav" data-mon="1" aria-label="다음 달"${calMonth >= MONTHS[MONTHS.length - 1] ? " disabled" : ""}>›</button></div>
     <div class="cal" role="grid" aria-label="${y}년 ${m}월 일정">${g}</div>
-    <div class="calnext">다음 일정 ${next.map(x => { const tp = calTip(x); return `<button type="button" data-id="${esc(x.e.id)}" data-t1="${esc(tp.t1)}" data-t2="${esc(tp.t2)}"><span class="dd ${ddCls(x.date)} tn">${ddTxt(x.date)}</span><span class="dkind ${x.kind}">${calWord(x)}</span>${logoOf(x.e.mid)}${esc(x.e.m)} · ${esc(x.kind === "effective" ? x.e.sum : `${x.label} · ${x.e.ch.split(" · ")[0]}`)}</button>`; }).join("")}</div>`;
+    ${next.length ? `<div class="calnext"><h3>다음 일정</h3><div class="cngrid">${next.map(nextCell).join("")}</div></div>` : ""}`;
 }
 
 // ---- 단가 추이 (모델 하나씩) ----
@@ -1551,22 +1581,44 @@ function compareTable(mid){
 const compareMeta = mid => { const T = COMPARE[mid];
   return `${T.groups.reduce((n, [, rows]) => n + rows.length, 0)}행 비교${T.ex.length ? ` · 제외 ${T.ex.length}행` : ""} · 가격 기준 ${esc(T.at)} 관측 · ${esc(T.unit)}`; };
 const sec = (title, meta, body, open) => `<details class="sec"${open ? " open" : ""}><summary>${title}${meta ? ` <small>${meta}</small>` : ""}</summary><div class="secb">${body}</div></details>`;
-function renderBundle(id){
-  const {l, e0, up, down, res, from, to} = vgSum(id), mid = e0.mid;
-  document.getElementById("detail").innerHTML = `<div class="dmeta"><span class="tg">가격 변경 묶음</span><span class="who">${logoOf(mid)}${esc(e0.m)}</span><span>${esc(e0.ch)}</span><span class="tg real">실제 · 공개 출처</span></div>
-    <h2 class="headline">${esc(e0.m)} 가격이 자주 바뀜 · 카드 ${l.length}장</h2>
-    <p class="vgnote">${md(from)}~${md(to)}에 이 경로의 가격 변경 카드가 ${l.length}장(인상 ${up} · 인하 ${down}) 생겼습니다.${res ? ` 그중 ${res}장은 바뀐 가격의 일부나 전부가 이후 원래 값으로 돌아왔습니다.` : ""} 같은 모델·경로의 가격 변경 카드가 7일 안에 3장 이상이면 목록에서 한 줄로 묶습니다(2026-10-28 가안). 가격 흐름은 가격 추이와 현재 가격 표에서 보세요.</p>
-    <div class="vgbtn">${TREND[mid] ? `<button type="button" class="tlink" data-trend="${esc(mid)}" data-tview="chart">가격 추이 보기 →</button>` : ""}${COMPARE[mid] ? `<button type="button" class="tlink" data-trend="${esc(mid)}" data-tview="table">현재 가격 표 보기 →</button>` : ""}</div>
-    <h3 class="vgh">묶인 카드 ${l.length}장</h3><ul class="rows">${l.slice().sort((a, b) => (b.cd || "").localeCompare(a.cd || "") || recCmp(a, b)).map(queueRow).join("")}</ul>`;
+// 변동 잦음 묶음의 상세(2026-11-04 박건: 건을 하나씩 읽지 않고, 단일 변화와 같은 상세에 추이 그래프로): VGS(build.py volatile_summary)를
+// 카드 한 장 꼴로 펴서 단일 상세를 그대로 쓴다. 판단은 묶음 전체(처음 가격 → 지금 가격)로 한다.
+function vgCard(id){
+  const s = VGS[id], l = VG[id], last = l.slice().sort((a, b) => (a.cd || "").localeCompare(b.cd || "")).pop();
+  const c = {...last, id, vgs: s, vg: undefined, link: undefined, alt: undefined, imp_rows: undefined, chk: [], chg: s.chg, cg: s.cg, n: s.n, chgHead: s.head, cond: s.cond, ev: s.ev,
+    head: `${s.n[0]}개 항목 가격이 ${md(s.from)}~${md(s.to)}에 변동 ${s.cards}건`, rv: s.back, rn: s.n[0], st: l.every(x => x.st === "confirmed") ? "confirmed" : "candidate",
+    effLabel: "최근 변동", effShort: `${md(s.to)} 관측`, effNote: "", effQual: undefined};
+  if (s.up && s.down) DIROVR[id] = "neutral";  // 오르고 내린 항목이 섞이면 합계로 할인·전환을 제안하지 않는다
+  const g = suggestOf(c);
+  c.nextOvr = {act: "건별 대응 없이 기간 전체 변화로 판단", subs: [...(relOf(c) === "unk" ? ["먼저 렛서 사용 경로 확인"] : []), `대응 : ${g.pre || ""}${RESP[g.resp]}`]};
+  return c;
 }
+// 추이 그래프: 항목마다 작은 그래프 하나(세로축이 달라 한 그림에 겹치지 않는다), 자주 바뀐 공급처만 계단선으로 그린다. 위치가 %라 폭이 바뀌어도 다시 그리지 않는다.
+// 색은 공급처를 따라 그래프끼리 같고, 점을 누르면 그 변동의 상세로 간다. 전체 값은 바뀐 내용 표에 있다.
+function vgChart(s){
+  const names = [...new Set(s.lines.map(l => l.s))], items = [...new Set(s.lines.map(l => l.item))];
+  if (!names.length) return "";
+  const color = n => `var(--s${names.indexOf(n) + 1})`, d0 = addDays(s.from, -1), d1 = s.to > TODAY ? s.to : TODAY, X = d => (dt(d) - dt(d0)) / (dt(d1) - dt(d0)) * 100;
+  const panel = item => { const own = s.lines.filter(l => l.item === item), shown = {};
+    own.forEach(l => l.pts.forEach(p => { shown[money(p[1])] = p[1]; shown[money(p[2])] = p[2]; }));
+    const vals = Object.keys(shown).map(Number), lo = Math.min(...vals), hi = Math.max(...vals), pad = (hi - lo) * .15 || hi * .1 || 1, Y = v => 100 - (v - lo + pad) / (hi - lo + 2 * pad) * 100;
+    const path = l => { const a = [[0, Y(money(l.pts[0][1]))]]; l.pts.forEach(p => a.push([X(p[0]), a[a.length - 1][1]], [X(p[0]), Y(money(p[2]))])); a.push([100, a[a.length - 1][1]]); return a.map(q => q.map(n => n.toFixed(2)).join(",")).join(" "); };
+    const dots = own.flatMap(l => l.pts.map(p => `<button type="button" class="vgc-d" data-id="${esc(p[3])}" data-t1="${esc(md(p[0]) + " · " + l.s)}" data-t2="${esc(`${item} ${p[1]} → ${p[2]}\n누르면 이 변동의 상세로 이동`)}" aria-label="${esc(`${md(p[0])} ${l.s} ${item} ${p[1]}에서 ${p[2]}`)}" style="left:${X(p[0]).toFixed(2)}%;top:${Y(money(p[2])).toFixed(2)}%;background:${color(l.s)}"></button>`)).join("");
+    return `<figure class="vgc-p"><figcaption>${esc(item)}</figcaption><div class="vgc-box"><div class="vgc-y tn"><span>${esc(shown[hi])}</span><span>${lo === hi ? "" : esc(shown[lo])}</span></div>
+      <div class="vgc-plot"><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${own.map(l => `<polyline points="${path(l)}" style="stroke:${color(l.s)}"/>`).join("")}</svg>${dots}</div>
+      <div class="vgc-x tn"><span>${md(d0)}</span><span>${md(d1)}</span></div></div></figure>`; };
+  return `<div class="vgc"><div class="vgc-lg">${names.map(n => `<span><i style="background:${color(n)}"></i>${esc(n)}</span>`).join("")}${s.others ? `<small>자주 바뀐 ${names.length}곳만 그림 · 나머지 ${s.others}곳은 바뀐 내용 표</small>` : ""}</div><div class="vgc-grid">${items.map(panel).join("")}</div></div>`;
+}
+function vgKey(e){ const s = e.vgs, said = [["인상", s.up], ["인하", s.down], ["되돌아감", s.back]].filter(x => x[1]).map(x => x.join(" "));
+  return `<section class="kc"><h3>핵심 변화</h3><div class="big">처음 가격과 비교해 ${said.join(" · ") || "변화 없음"}</div>${vgChart(s)}</section>`; }
 function renderDetail(){
-  if (VG[state.sel]) { renderBundle(state.sel); return; }
-  const e = EVENTS.find(x => x.id === state.sel), el = document.getElementById("detail");
+  const e = VG[state.sel] ? vgCard(state.sel) : EVENTS.find(x => x.id === state.sel), el = document.getElementById("detail");
   if (!e) { el.innerHTML = `<p class="unknown">이 칸에 해당하는 변화가 없습니다.</p>`; return; }
+  const net = e.vgs ? {...e, chg: e.chg.filter(r => money(r[1]) !== money(r[2]))} : e;  // 묶음에서 되돌아간 항목은 원가 판단에 넣지 않는다
   const eff = e.eff ? `${md(e.eff)} (${wd(e.eff)}) ${ddHtml(e)}${e.effQual ? ` <b class="qt" title="${esc(e.effQual)}">해석</b>` : ""}` : esc([e.effShort, e.effNote].filter(Boolean).join(" · ") || "미확인");
-  let h = `${missingLink ? `<p class="linkmiss" role="status">링크한 카드(#${esc(missingLink)})를 이 페이지에서 찾지 못했습니다. 아래는 목록 맨 위 카드입니다.</p>` : ""}<div class="dmeta">${typeHead(e)}${costChip(e)}<span class="who">${logoOf(e.mid)}${esc(e.m)}</span><span>${esc(e.ch)}</span>${e.real ? `<span class="tg real">실제 · 공개 출처</span>` : `<span class="tg">시연 데이터</span>`}${e.done ? `<span class="tg">결정됨</span>` : ""}</div>
+  let h = `${missingLink ? `<p class="linkmiss" role="status">링크한 카드(#${esc(missingLink)})를 이 페이지에서 찾지 못했습니다. 아래는 목록 맨 위 카드입니다.</p>` : ""}<div class="dmeta">${typeHead(e)}${costChip(net)}<span class="who">${logoOf(e.mid)}${esc(e.m)}</span><span>${esc(e.ch)}</span>${e.real ? `<span class="tg real">실제 · 공개 출처</span>` : `<span class="tg">시연 데이터</span>`}${e.done ? `<span class="tg">결정됨</span>` : ""}</div>
     <h2 class="headline">${e.head || esc(e.sum)}</h2>
-    ${e.rv ? `<p class="rvnote">${e.rv === e.rn ? `이후 수집에서 바뀐 가격 ${e.rn}개가 모두 원래 값으로 돌아왔습니다. 지금은 적용되지 않는 변화라 기록만 남깁니다(해소됨).` : `바뀐 가격 ${e.rn}개 중 ${e.rv}개가 이후 수집에서 원래 값으로 돌아왔습니다(일부 해소).`}</p>` : ""}
+    ${e.rv && !e.vgs ? `<p class="rvnote">${e.rv === e.rn ? `이후 수집에서 바뀐 가격 ${e.rn}개가 모두 원래 값으로 돌아왔습니다. 지금은 적용되지 않는 변화라 기록만 남깁니다(해소됨).` : `바뀐 가격 ${e.rn}개 중 ${e.rv}개가 이후 수집에서 원래 값으로 돌아왔습니다(일부 해소).`}</p>` : ""}
     <div class="decide"><div class="next"><div class="k">다음 할 일 <span class="qbadges" style="display:inline-flex">${qchips(e)}</span></div><div class="v">${nextHtml(e)}</div></div><div><div class="k">${esc(e.effLabel || "적용일")}</div><div class="v">${eff}</div></div>
       <div><div class="k">현재 사용 경로${relDemoOf(e) ? ` <span class="tg">가정</span>` : ""}</div><div class="v">${esc(relShortOf(e))}</div></div></div>
     ${e.link && EVENTS.some(x => x.id === e.link[0]) ? (l => `<div class="lk"><span>함께 볼 이벤트</span><b>${esc(l.m)} · ${esc(l.ch)}</b><span>${esc(e.link[1])}</span><button type="button" data-id="${esc(l.id)}">열기 →</button></div>`)(EVENTS.find(x => x.id === e.link[0])) : ""}
@@ -1574,8 +1626,9 @@ function renderDetail(){
     ${keyChange(e)}<div class="vgbtn">${TREND[e.mid] ? `<button type="button" class="tlink" data-trend="${esc(e.mid)}" data-tview="chart">${esc(TREND[e.mid].name)} 가격 추이 보기 →</button>` : ""}${COMPARE[e.mid] ? `<button type="button" class="tlink" data-trend="${esc(e.mid)}" data-tview="table">공급사 비교 표 보기 → <small>${compareMeta(e.mid)}</small></button>` : ""}</div>`;
   const parts = [];
   if (e.chg && e.chg.length) parts.push(sec("바뀐 내용", changeMeta(e), changeTable(e)));
-  parts.push(sec("렛서에 주는 영향", "", impactHtml(e), true));
+  parts.push(sec("렛서에 주는 영향", "", impactHtml(net), true));
   parts.push(sec("제안", "", suggestHtml(e), true));
+  if (e.vgs) parts.push(sec("변동 내역", `${VG[e.id].length}건`, `<ul class="rows">${VG[e.id].slice().sort((a, b) => (b.cd || "").localeCompare(a.cd || "") || recCmp(a, b)).map(queueRow).join("")}</ul>`));
   if (e.ev && e.ev.length) parts.push(sec("출처", `${e.ev.length}건`, `<ul class="srcs">${e.ev.map(([n, t]) => { const s = SRC[n] || {nm:n}; const q = t == null ? "" : Array.isArray(t) ? `이전 “${esc(t[0])}” → 현재 “${esc(t[1])}”` : esc(t);
     const link = s.url ? `<a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.url.replace(/^https:\/\//, ""))}</a>` : esc(s.u || "");
     return `<li><span class="n">${esc(s.short || n)}</span><div><div class="nm">${esc(s.nm)}${srcTag(n)}</div><div class="meta">${esc(s.t || "")}${link ? ` · ${link}` : ""}</div>${q ? `<div class="quote">${q}</div>` : ""}</div></li>`; }).join("")}</ul>`));

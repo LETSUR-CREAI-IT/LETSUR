@@ -546,7 +546,7 @@ def test_template_bundles_the_list_and_moves_the_table_to_the_model_view(tmp_pat
     assert "const VG = {}; EVENTS.forEach(e => { if (e.vg) (VG[e.vg] = VG[e.vg] || []).push(e); });" in page
     assert 'list.flatMap(e => !e.vg ? [e] : seen.has(e.vg) ? [] : (seen.add(e.vg), [{vg: e.vg}]))' in page
     assert "bundled(list.slice().sort(queueCmp)).map(rowOf)" in page and "bundled(l).map(rowOf)" in page
-    assert "if (VG[state.sel]) { renderBundle(state.sel); return; }" in page
+    assert "const e = VG[state.sel] ? vgCard(state.sel) : EVENTS.find(x => x.id === state.sel)," in page
     # two screens: the tabs live in the header, body[data-page] picks what shows, #m/<model> opens 모델별 가격
     assert '<button type="button" role="tab" data-ptab="changes" aria-selected="true">변화</button>' in page
     assert 'body:not([data-page="models"]) .mpage{display:none}' in page and 'if (h.startsWith("m/")) startModel' in page
@@ -1461,6 +1461,7 @@ def test_team_feedback_of_1103_legend_korean_labels_switch_draft_and_search(tmp_
     assert 'if (p !== "models") { renderMeta(); renderCalendar(); renderQueue(); renderDetail();' in page
     # 2. one search box in the header for all four tabs; spacing and punctuation do not count
     assert 'type="search" id="msq" placeholder="모델 검색"' in page
+    assert "@media (max-width:1100px){.top{flex-wrap:wrap;row-gap:8px;padding-block:8px}.top .base{margin-left:auto}.msearch{order:3;width:100%;margin-left:0}}" in page  # the header must not push the page wider
     assert 'const searchKey = s => String(s || "").toLowerCase().replace(/[^0-9a-z가-힣]+/g, "");' in page
     for filtered in ('ks.filter(k => modelHit(k, modelName(k)))', 'l.filter(m => modelHit(m, modelName(m)))', 'l.filter(x => modelHit(x.model, x.model))', '!isPast(e) && modelHit(e.mid, e.m)'):
         assert filtered in page
@@ -1478,6 +1479,66 @@ def test_a_model_released_on_the_supply_tab_is_read_as_not_offered() -> None:
     assert build.relation({"model_id": "gemini-4-argon", "route": "google_direct"}, {"is_demo": False, "records": []})["relKey"] == "unk"
     assert build.model_use("gemini-4-argon", routes) == {"use": "미도입"}
     assert "gemini-4-argon" in build.supply(routes)["models"]
+
+
+def _volatile_card(card_id: str, day: str, rows: list[tuple], latest: list[tuple] = ()) -> dict:
+    """rows are (group, item, before, after, delta); a delta of None is a price that stayed."""
+    all_rows = [*rows, *latest]
+    return {"id": card_id, "cd": day, "chg": [[f"{g} · {i}", b, a, d, f"관측 {int(day[5:7])}/{int(day[8:10])}", "ok", [f"s_{card_id}"]] for g, i, b, a, d in all_rows],
+            "cg": [[g, i] for g, i, *_ in all_rows], "ev": [[f"s_{card_id}", f"{card_id} 근거"]],
+            "cond": [["통화", "USD"], ["엔드포인트", "relace/fp4"], ["경로", "OpenRouter · openrouter"], ["관측", "지난 값"]]}
+
+
+def test_a_volatile_bundle_reads_as_one_change_from_the_first_price_to_the_latest() -> None:
+    """2026-11-04 박건: a 변동 잦음 detail has the single-change format and a small graph instead of a list of cards. Prices are compared
+    first to latest, and a price that came back says so rather than counting as a change."""
+    up, down = ["+$0.05", "인상 5.56%"], ["−$0.05", "인하 5.26%"]
+    wide = "컨텍스트 1M · relace/fp4 · fp4"
+    cards = [_volatile_card("c3", "2026-10-28", [("컨텍스트 1M · siliconflow/fp8 · fp8", "입력 토큰", "$1.50", "$1.00", ["−$0.50", "인하 33.33%"])], [(wide, "캐시 읽기", "$0.25", "$0.25", None)]),
+             _volatile_card("c1", "2026-10-17", [(wide, "입력 토큰", "$0.90", "$0.95", up), (wide, "캐시 읽기", "$0.16", "$0.20", ["+$0.04", "인상 25.00%"])]),
+             _volatile_card("c2", "2026-10-18", [(wide, "입력 토큰", "$0.95", "$0.90", down), (wide, "캐시 읽기", "$0.20", "$0.25", ["+$0.05", "인상 25.00%"])])]
+    s = build.volatile_summary(cards)
+    assert (s["from"], s["to"], s["cards"], s["up"], s["down"], s["back"], s["n"], s["others"]) == ("2026-10-17", "2026-10-28", 3, 1, 1, 1, [3, 0], 0)
+    rows = {row[0]: row for row in s["chg"]}
+    # the supplier that moved most comes first, and a line is named by the supplier alone
+    assert list(rows) == ["relace/fp4 · 입력 토큰", "relace/fp4 · 캐시 읽기", "siliconflow/fp8 · 입력 토큰"]
+    assert rows["relace/fp4 · 입력 토큰"][1:5] == ["$0.90", "$0.90", ["되돌아감", ""], "2번 · 10/18"]
+    assert rows["relace/fp4 · 캐시 읽기"][1:5] == ["$0.16", "$0.25", ["+$0.09", "인상 56.25%"], "2번 · 10/18"]
+    assert rows["siliconflow/fp8 · 입력 토큰"][1:5] == ["$1.50", "$1.00", ["−$0.50", "인하 33.33%"], "1번 · 10/28"]
+    assert s["cg"][0] == ["relace/fp4", "입력 토큰"]
+    assert s["lines"][0] == {"s": "relace/fp4", "item": "입력 토큰", "pts": [["2026-10-17", "$0.90", "$0.95", "c1"], ["2026-10-18", "$0.95", "$0.90", "c2"]]}
+    # conditions of one observation do not stand for the whole bundle, and the evidence is the first card's and the latest's
+    assert s["cond"] == [["통화", "USD"], ["경로", "OpenRouter · openrouter"], ["관측", "10/17 → 10/28"]]
+    assert s["ev"] == [["s_c1", "c1 근거"], ["s_c3", "c3 근거"]]
+
+
+def test_a_volatile_bundle_draws_only_the_suppliers_that_moved_most() -> None:
+    change = ["+$0.10", "인상 10.00%"]
+    cards = [_volatile_card(f"c{n}", f"2026-10-{10 + n}", [(f"s{k}/fp8", "입력 토큰", "$1.00", "$1.10", change) for k in range(5) if n <= k]) for n in range(5)]
+    s = build.volatile_summary(cards)
+    assert [line["s"] for line in s["lines"]] == ["s4/fp8", "s3/fp8", "s2/fp8"] and s["others"] == 2 and len(s["chg"]) == 5
+
+
+@pytest.mark.parametrize("group,short", [("컨텍스트 1M · relace/fp4 · fp4", "relace/fp4"), ("컨텍스트 1048575 · gmicloud", "gmicloud"),
+                                         ("inference-net/fast · fp4 · Priority", "inference-net/fast · fp4 · Priority"), ("morph/fp8 · fp8 · Standard", "morph/fp8"),
+                                         ("컨텍스트 1000000 · alibaba/fp8/us-east-1 · fp8", "alibaba/fp8/us-east-1"), ("", "")])
+def test_a_price_line_is_named_by_its_supplier(group: str, short: str) -> None:
+    assert build.short_supplier(group) == short
+
+
+def test_template_bundle_detail_uses_the_single_detail_and_next_schedule_is_a_tidy_grid(tmp_path: Path) -> None:
+    """2026-11-04 박건. The browser check covers behaviour; this pins the wiring."""
+    _write(tmp_path, [])
+    page = _build(tmp_path)[1]
+    assert "renderBundle" not in page and "vgnote" not in page
+    assert "if (e.vgs) return vgKey(e);" in page and "const c = {...last, id, vgs: s, vg: undefined," in page
+    assert 'parts.push(sec("변동 내역", `${VG[e.id].length}건`' in page  # the cards are still there, folded
+    assert 'preserveAspectRatio="none"' in page and "vector-effect:non-scaling-stroke" in page  # the graph follows the width without a redraw
+    # next schedule: equal cells on the calendar's width, four, then two, then one; only when, what, which model, which supplier
+    assert ".cngrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}" in page
+    assert "@media (max-width:1100px){.cngrid{grid-template-columns:repeat(2,minmax(0,1fr))}}" in page
+    assert "@media (max-width:560px){.cngrid{grid-template-columns:minmax(0,1fr)}}" in page
+    assert '${next.length ? `<div class="calnext"><h3>다음 일정</h3><div class="cngrid">${next.map(nextCell).join("")}</div></div>` : ""}' in page
 
 
 def test_type_menu_under_the_sort_menu_shows_one_type(tmp_path):
@@ -1749,7 +1810,7 @@ def test_team_feedback_icons_calendar_words_title_and_letsur_mode(tmp_path: Path
     assert '`<svg class="logo" aria-hidden="true"><use href="#mk-${MAKER_ICONS[g]}"/></svg>`' in page
     assert ".logo{width:14px;height:14px;flex:none;fill:currentColor}" in page and 'class="mk"' not in page
     assert '<span class="subj">${logoOf(e0.mid)}${esc(e0.m)}</span>' in page and '<span class="who">${logoOf(e.mid)}${esc(e.m)}</span>' in page
-    assert '${calWord(x)}</span>${logoOf(e.mid)}<span>${esc(c[0])}</span>' in page and '${calWord(x)}</span>${logoOf(x.e.mid)}${esc(x.e.m)} · ' in page
+    assert '${calWord(x)}</span>${logoOf(e.mid)}<span>${esc(c[0])}</span>' in page and '${calWord(x)}</span></span><span class="cn2">${logoOf(x.e.mid)}<b>${esc(x.e.m)}</b>' in page
     assert 'who = x => `<b>${logoOf(x.model)}${esc(x.model || "모델 표기 없음")}</b>' in page
     # calendar chips, 다음 일정 and the tooltip use the change's name; the colour still follows the date kind
     assert "DATE_KIND[x.kind]}</span>" not in page and "${md(x.date)}(${wd(x.date)}) · ${calWord(x)} · ${x.label}" in page

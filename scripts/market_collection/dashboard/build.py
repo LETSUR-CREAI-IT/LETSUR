@@ -597,6 +597,88 @@ def mark_volatile(cards: list[dict]) -> None:
                 card["vg"] = vg
 
 
+VOLATILE_LINES = 3  # suppliers drawn in a bundle's small graph
+VOLATILE_ITEMS = ("입력 토큰", "출력 토큰", "캐시 읽기")
+
+
+def short_supplier(group: str) -> str:
+    """The supplier a bundle's price line belongs to: '컨텍스트 1M · relace/fp4 · fp4' -> 'relace/fp4'. Context size and the
+    Standard tier say nothing here, and a precision the endpoint already names is said once."""
+    parts = [part for part in group.split(" · ") if part and not part.startswith("컨텍스트 ") and part != "Standard"]
+    return " · ".join(parts[:1] + [part for part in parts[1:] if part not in parts[0].split("/")])
+
+
+def volatile_summary(members: list[dict]) -> dict:
+    """What one 변동 잦음 bundle's detail shows (2026-11-04 박건: one change with a small trend graph, not a list of cards to read
+    one by one): every price that moved, from where it stood first to where it stands now, and the price lines of the suppliers
+    that moved most. A row is found by supplier and item, so a label that gained 'Standard' later stays one line."""
+    def price(text) -> Decimal | None:
+        return number(text[1:]) if isinstance(text, str) and text.startswith("$") else None
+
+    def where(card: dict, index: int, row: list) -> tuple[str, str]:
+        names = card.get("cg") or []
+        group, item = names[index] if index < len(names) else ("", row[0])
+        return short_supplier(group), item
+
+    def seen_on(card: dict, row: list) -> str:
+        found = re.search(r"(\d{1,2})/(\d{1,2})", str(row[4]))  # a card can span days; each row says its own ('관측 10/20')
+        return f"{card['cd'][:4]}-{int(found[1]):02}-{int(found[2]):02}" if found else card["cd"][:10]
+
+    ordered = sorted(members, key=lambda card: card["cd"])
+    moved: dict[tuple[str, str], list[tuple]] = {}
+    for card in ordered:
+        for index, row in enumerate(card.get("chg") or []):
+            if row[3]:
+                moved.setdefault(where(card, index, row), []).append((seen_on(card, row), row, card["id"]))
+    for changes in moved.values():
+        changes.sort(key=lambda change: change[0])
+    totals: dict[str, int] = {}
+    for (supplier, _), changes in moved.items():
+        totals[supplier] = totals.get(supplier, 0) + len(changes)
+    suppliers = sorted(totals, key=lambda name: (-totals[name], name))
+    rank = lambda item: VOLATILE_ITEMS.index(item) if item in VOLATILE_ITEMS else len(VOLATILE_ITEMS)
+    keys = sorted(moved, key=lambda key: (suppliers.index(key[0]), rank(key[1]), key[1]))
+    counts = {"up": 0, "down": 0, "back": 0}
+    rows, names, lines = [], [], []
+    for key in keys:
+        changes = moved[key]
+        before, after = changes[0][1][1], changes[-1][1][2]
+        first, last = price(before), price(after)
+        if first is not None and first == last:
+            delta = ["되돌아감", ""]
+            counts["back"] += 1
+        elif first is not None and last is not None:
+            rate = ((last - first) / first * 100).quantize(Decimal("0.01")) if first else None
+            delta = delta_cell(last - first, rate, first, "USD")
+            counts["up" if last > first else "down"] += 1
+        else:
+            delta = changes[-1][1][3]
+        sources = list(dict.fromkeys([*(changes[0][1][6] or []), *(changes[-1][1][6] or [])]))
+        rows.append([f"{key[0]} · {key[1]}" if key[0] else key[1], before, after, delta, f"{len(changes)}번 · {md(changes[-1][0])}", changes[-1][1][5], sources])
+        names.append([key[0], key[1]])
+        if key[0] in suppliers[:VOLATILE_LINES] and all(price(change[1][1]) is not None and price(change[1][2]) is not None for change in changes):
+            lines.append({"s": key[0], "item": key[1], "pts": [[day, row[1], row[2], card_id] for day, row, card_id in changes]})
+    latest = ordered[-1]
+    still = [(where(latest, index, row), row) for index, row in enumerate(latest.get("chg") or []) if not row[3]]
+    still = [(key, row) for key, row in still if key not in moved]
+    days = [change[0] for changes in moved.values() for change in changes] or [latest["cd"][:10]]
+    start, end = min(days), max(days)
+    evidence = list({json.dumps(item, ensure_ascii=False): item for item in [*(ordered[0].get("ev") or []), *(latest.get("ev") or [])]}.values())
+    return {"from": start, "to": end, "cards": len(members), **counts, "n": [len(rows), len(still)], "others": len(suppliers[VOLATILE_LINES:]),
+            "chg": rows + [[f"{key[0]} · {key[1]}" if key[0] else key[1], row[1], row[2], None, row[4], row[5], row[6]] for key, row in still],
+            "cg": names + [[key[0], key[1]] for key, _ in still], "head": ["항목", "처음", "현재", "변동", "횟수 · 마지막", "출처"],
+            "cond": [pair for pair in latest.get("cond") or [] if pair[0] in ("통화", "단위", "경로", "조회")] + [["관측", f"{md(start)} → {md(end)}"]],
+            "ev": evidence, "lines": lines}
+
+
+def volatile_summaries(cards: list[dict]) -> dict:
+    bundles: dict[str, list[dict]] = {}
+    for card in cards:
+        if card.get("vg"):
+            bundles.setdefault(card["vg"], []).append(card)
+    return {vg: volatile_summary(members) for vg, members in bundles.items()}
+
+
 def reverted(events: list[dict]) -> set[str]:
     """되돌아간 가격 (2026-10-28, 결정 기록 29절 렛서 답변: 원래 가격으로 돌아온 건은 지금도 바뀐 것처럼 보이지 않게): ids of
     observed price changes whose series, read in observation order, last stands at the price the change started from.
@@ -1701,7 +1783,7 @@ def supply(routes: dict | None) -> dict:
 def empty(today: str, runs: dict) -> dict:
     return {"TODAY": today, "SRC": {}, "ID": {}, "EVENTS": [], "MODELS": {}, "TREND": {}, "COLLECTED": runs, "COMPARE": {},
             "HEALTH": {"run": None, "total": 0, "ok": 0, "failing": [], "recent": [], "recheck": []},
-            "SUPPLY": {"cols": [], "models": {}, "routes": None}}
+            "SUPPLY": {"cols": [], "models": {}, "routes": None}, "VGS": {}}
 
 
 def render(template: str, data: dict, status: str) -> str:
@@ -1901,7 +1983,7 @@ def collect(root: Path, today: str, routes: dict | None) -> tuple[dict, str]:
     shown = list(dict.fromkeys([*(card["mid"] for card in cards if card["mid"]), *compare.observed_models(root, report)]))
     data = {"TODAY": today, "SRC": sources.entries(), "ID": {cid: [e.get("event_id") for e in groups[cid]] for cid in order},
             "EVENTS": cards, "MODELS": models(cards, routes), "TREND": trend(cards, groups, state, doc.get("gaps") or [], shown, routes),
-            "COLLECTED": collected(report), "HEALTH": health(root, report, state, today), "SUPPLY": supply(routes)}
+            "COLLECTED": collected(report), "HEALTH": health(root, report, state, today), "SUPPLY": supply(routes), "VGS": volatile_summaries(cards)}
     # 공급사 비교 표 per LLM model of `shown` (compare.py; reads the newest processed run under <root>/runs)
     data["COMPARE"] = compare.tables(root, shown, [e for e in doc["events"] if isinstance(e, dict)],
                                      doc.get("gaps") or [], state, report, routes, today)
