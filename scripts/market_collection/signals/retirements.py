@@ -1,5 +1,5 @@
 """Official model retirement schedules, read in their Markdown form (2026-10-29): Azure's Foundry model retirement
-schedule, OpenAI's and Anthropic's deprecation pages and the Gemini API deprecations page.
+schedule, OpenAI's and Anthropic's deprecation pages and the Gemini API deprecations page (its Markdoc form since 2026-11-03).
 
 A table row becomes an entry only when it names a registered model id exactly: Azure's Model cell (or Model-Version for
 a dated id we register, gpt-5.4-2026-03-05), the API model name in Anthropic's status table, an id in backticks on the
@@ -17,6 +17,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import date
 
+from scripts.market_collection.google_docs import section_tables
 from scripts.market_collection.models import MODEL_MODALITIES
 
 from .parsers import SignalParseError
@@ -148,7 +149,7 @@ def _google(text: str) -> tuple[int, list[Retirement]]:
     earliest = re.search(r"earliest\s+possible", text, re.I) is not None
     note = " (page note: the shutdown dates indicate the earliest possible dates)" if earliest else ""
     rows, found = 0, []
-    for section, head, cells_list in tables(text):
+    for section, head, cells_list in section_tables(text):
         if len(head) != 4 or head[2:] != ["Shutdown date", "Recommended replacement"]:
             continue
         for index, cells in enumerate(cells_list):

@@ -1,5 +1,5 @@
 """Gemini API prices google_models.py does not read, from the same pricing page (its own module, so the sources of google_models.py
-keep their parser fingerprints). The section reader, table header check and cell statements are google_models.py's.
+keep their parser fingerprints). The section reader is google_docs.py's, the table header check and cell statements google_models.py's.
 
 - google_model_pricing_more: a model's own section whose input row is labelled by its modalities, "Input price (text, image,
   video)", as gemini-2.5-flash-lite's is (2026-10-30). The cell still states each modality's rate, so audio stays a row of its own.
@@ -13,23 +13,18 @@ from __future__ import annotations
 from dataclasses import replace
 
 from scripts.market_collection.core import SourceSpec
+from scripts.market_collection.google_docs import read_section
 from scripts.market_collection.models import GOOGLE_ROUTED_MODELS
 from . import google_models
-from .google_models import TIERS, _Section, _cell, _paid_header
+from .google_models import TIERS, _cell, _paid_header
 
 PARSERS = frozenset({"google_model_pricing_more", "google_routed_pricing"})
 LABELS = {**google_models.LABELS["llm"], "Input price (text, image, video)": "input"}
 
 
-def _page(body: bytes, section_id: str) -> _Section:
-    page = _Section(section_id)
-    page.feed(body.decode("utf-8", errors="replace")); page.close()
-    return page
-
-
 def _own_section(spec: SourceSpec, body: bytes) -> tuple[list[dict], list[dict]]:
     """google_models.parse_source with LABELS; two rows of one table read as the same item raise."""
-    page = _page(body, spec.model_id)
+    page = read_section(body, spec.model_id)
     if page.count != 1:
         raise ValueError(f"Google pricing page has {page.count} sections with id {spec.model_id}")
     prices: list[dict] = []
@@ -63,6 +58,6 @@ def parse_source(spec: SourceSpec, body: bytes, source_id: str) -> tuple[list[di
     if spec.parser == "google_model_pricing_more":
         return _own_section(spec, body)
     served = dict(GOOGLE_ROUTED_MODELS)[spec.model_id]
-    if _page(body, spec.model_id).count:
+    if read_section(body, spec.model_id).count:
         raise ValueError(f"Google pricing page now has a section of its own for {spec.model_id}; it is no longer read as {served}")
     return google_models.parse_source(replace(spec, model_id=served), body, source_id)

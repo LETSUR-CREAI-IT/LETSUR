@@ -307,6 +307,19 @@ GLM-4.7·GLM-5도 Bedrock으로 보여(위 추정) 확인했다. AWS에 모델 �
 
 검증: 기존 419개 출처의 parser fingerprint는 하나도 바뀌지 않았다. 11/3 01:42 KST 로컬 live run(11/2 15:20 배포 상태 위)에서 429개 모두 fetch·parse ok, 가격 행 5,709개(새 모델 40개), signals 229개 실패 0이었다. 이벤트는 1,031→1,049개이고 새 모델 이벤트는 gpt-audio-mini 제공 종료(2027-01-20, UNKNOWN) 1개뿐이다. 나머지 17개는 그 사이 OpenRouter의 가격·할인 변동이다. 새 모델의 첫 가격은 기준선이라 가격 변경 카드를 만들지 않는다. 슬랙 새 변화 알림은 첫 관측이나 공지일이 7일 안일 때만 나가므로 이 카드(공지일 7/20)는 새 변화 알림으로 나가지 않는다.
 
+### Google 문서 주소 이전 (2026-11-03)
+
+2026-11-03 01:43~02:13 KST 사이 Google이 Gemini API 문서를 `ai.google.dev`에서 `aistudio.google.com`으로 옮겼다. 옛 가격표 주소가 다른 호스트로 301을 돌려줘 Google 직접 출처 16곳이 `redirect changed host`로 실패했고, 새 페이지의 HTML에는 h2·table 요소가 없어 주소만 바꿔서는 읽을 수 없다.
+
+- 가격표: `https://aistudio.google.com/docs/pricing.md`의 Markdoc 원본을 읽는다. `google_docs.py`가 `## 제목 {% id="모델" %}`, `{% tab title="Standard" %}`, `{% table %}`의 `*` 칸을 읽고, 행 이름·칸 문장·등급·실패 규칙은 `google.py`·`google_models.py`·`google_models_more.py` 그대로다. 강조(`*Same as Standard*`)와 각주 표시, 링크, 줄바꿈은 화면에 보이는 글자로 읽고, 다른 표시가 값 칸에 남으면 금액 없는 행이 된다. `{% sup /%}`는 11/2 HTML에서 각주 별표가 있던 자리라 별표로 읽어, 단위가 각주에 있는 금액을 100만 토큰당으로 읽지 않게 했다.
+- 종료 일정: `https://aistudio.google.com/docs/deprecations.md`. 옛 `deprecations.md.txt`는 200을 주지만 갱신이 멈췄다. 11/3 기준 새 페이지에는 `gemini-2.5-pro`·`gemini-2.5-flash` 종료일 2026-12-01과 자동 전환 안내가 있고 옛 사본은 '종료일 미정'이다. 실패로 드러나지 않는 낡은 자료라 가격표와 함께 옮겼다. 옛 `pricing.md.txt`도 11/3 낮에 새 페이지만 바뀌어 쓰지 않는다.
+- 11/2 수집값과 대조: 16개 출처 373줄 중 352줄이 조건까지 같다. 나머지는 Google 쪽 변화다. `gemini-3.5-flash-lite` Batch 캐시 $0.02→$0.015, `gemini-3-pro-image`의 Batch·Flex·Priority 표(13줄)와 `gemini-3.1-flash-image`의 Batch 표(7줄)가 페이지에서 사라졌다. 화면 렌더링(11/3 브라우저 확인)도 두 모델 모두 Standard 탭뿐이다.
+- 단위가 각주에 있던 `gemini-3-pro-image` Batch 입력(`$0.0006 (image)*`)은 표가 사라져 실제 페이지로 더는 시험할 수 없어, 테스트에서 칸을 고쳐 넣어 확인한다.
+- 16개 출처의 parser fingerprint가 달라져, 배포 뒤 첫 run의 실제 가격 변화는 `confirmed` 대신 `candidate`(`parser_fingerprint_mismatch`)로 나올 수 있다. 다음 run부터는 새 fingerprint끼리 비교한다([events.md](events.md)의 parser fingerprint 범위). 지난 run의 HTML 원문은 새 parser로 다시 읽지 않는다.
+- 테스트 fixture는 11/3 실제 페이지에서 모델 14개 절만 잘라 `llm/fixtures/google_models/pricing.md`로 두고, 예전 HTML fixture 2개를 지웠다.
+
+검증: 11/3 14:12 KST 로컬 live run(11/3 02:13 배포 상태 위)에서 429개 모두 fetch·parse ok, 가격 행 5,716개, signals 229개 실패 0이었다. 바뀐 parser fingerprint는 Google 16개뿐이다. Google 쪽 새 이벤트는 `gemini-2.5-pro`·`gemini-2.5-flash` 제공 종료(12/1, 렛서 사용 경로)와 `gemini-3.5-flash-lite` Batch 캐시 인하(`candidate`)다. 이미 있던 `gemini-3-pro-image-preview`·`gemini-3.1-flash-image-preview` 제공 종료 2건은 출처 주소만 바뀌어 revision 2가 됐고 날짜는 그대로다. 같은 run의 다른 새 이벤트는 OpenRouter·Vercel의 일상 가격 변동이다. 실제 Actions 환경에서의 접속은 배포 뒤 run으로 확인한다.
+
 ## 구조 변경 검증 기록
 
 2026-10-05 supplier layout QA에서 당시 구성은 21개 model ID와 83개 source spec을 유지했다. 저장된 원문을 검증한 QA는 73개 테스트 통과와 348개 가격 관측·731개 조건의 전체 행 일치를 기록했다. 별도 integration QA는 보존 live 원문을 offline replay해 같은 83/348/731 개수와 원문 해시·조회 시각 보존을 확인했다. 이것은 이전 단계 기록이며 아래 새 확장 결과와 혼동하지 않는다.

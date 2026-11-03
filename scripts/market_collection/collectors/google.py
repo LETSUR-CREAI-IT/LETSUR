@@ -9,8 +9,9 @@ from datetime import datetime
 from decimal import Decimal
 
 from scripts.market_collection.core import ADAPTER_CONDITION_FIELDS, ADAPTER_PRICE_FIELDS, SourceSpec
+from scripts.market_collection.google_docs import Section, read_section
 from scripts.market_collection.models import GOOGLE_LLM_MODEL
-from .common import GeminiPricingScopeReader, _clean, llm_condition, llm_price
+from .common import _clean, llm_condition, llm_price
 
 
 MONEY = r"\$([0-9]+(?:\.[0-9]+)?)"
@@ -22,7 +23,7 @@ PERIOD = re.compile(rf"{MONEY}\s+(through|starting)\s+([A-Z][a-z]+\s+\d{{1,2}},\
 STORAGE = re.compile(rf"{MONEY}\s*/\s*1,000,000\s+tokens\s+per\s+hour\s*\(storage price\)\s+(through|starting)\s+([A-Z][a-z]+\s+\d{{1,2}},\s+\d{{4}})\.?", re.I)
 
 
-def _google(reader: GeminiPricingScopeReader) -> tuple[list[dict], list[dict]]:
+def _google(reader: Section) -> tuple[list[dict], list[dict]]:
     prices: list[dict] = []
     conditions: list[dict] = []
     labels = {"Input price": "input", "Output price (including thinking tokens)": "output", "Context caching price": "cache_read"}
@@ -86,5 +87,4 @@ def _google(reader: GeminiPricingScopeReader) -> tuple[list[dict], list[dict]]:
 
 
 def parse_source(spec: SourceSpec, body: bytes, source_id: str) -> tuple[list[dict], list[dict]]:
-    page = GeminiPricingScopeReader(); page.feed(body.decode("utf-8", errors="replace")); page.close()
-    return _google(page)
+    return _google(read_section(body, GOOGLE_LLM_MODEL))

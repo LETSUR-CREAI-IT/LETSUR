@@ -18,7 +18,7 @@ from scripts.market_collection.models import GOOGLE_DIRECT_MODELS, GOOGLE_IMAGE_
 from scripts.market_collection.sources import _key, source_specs
 
 F = Path(__file__).parent / "fixtures" / "google_models"
-BODY = (F / "pricing.html").read_bytes()
+BODY = (F / "pricing.md").read_bytes()
 SPECS = {s.model_id: s for s in source_specs() if s.parser == "google_model_pricing"}
 T, I = "1M tokens", "1 image"
 LE, GT = {"context_band": "prompts <= 200k tokens"}, {"context_band": "prompts > 200k tokens"}
@@ -70,8 +70,8 @@ TIER_RATES = {
     "gemini-2.5-pro": {"standard": ("1.25", "10.00"), "batch": ("0.625", "5.00"), "flex": ("0.625", "5.00"), "priority": ("2.25", "18.00")},
     "gemini-nano-banana-2.1": {"standard": ("1.50", "7.50"), "batch": ("0.75", "3.75")},
     "gemini-2.5-flash-image": {"standard": ("0.30", None), "batch": ("0.15", None), "flex": ("0.15", None), "priority": ("0.54", None)},
-    "gemini-3-pro-image": {"standard": ("2.00", "12.00"), "batch": ("1.00", "6.00"), "flex": ("1.00", "6.00"), "priority": ("3.60", "21.60")},
-    "gemini-3.1-flash-image": {"standard": ("0.50", "3"), "batch": ("0.25", "1.50")},
+    "gemini-3-pro-image": {"standard": ("2.00", "12.00")},
+    "gemini-3.1-flash-image": {"standard": ("0.50", "3")},
 }
 
 
@@ -100,8 +100,8 @@ def rows(model, tier="standard", body=BODY):
 
 def section(model, body=BODY):
     text = body.decode()
-    start = text.index(f'<h2 id="{model}"')
-    end = text.find("<h2 ", start + 1)
+    start = text.rfind("## ", 0, text.index(f'{{% id="{model}" %}}'))
+    end = text.find("\n## ", start)
     return text, start, len(text) if end < 0 else end
 
 
@@ -197,11 +197,14 @@ def test_image_models_state_tokens_and_images_with_their_own_units_and_resolutio
             assert {p["task"] for p in parse(model)[0]} == {"text-to-image"}
     per_image = [r for r in rows("gemini-3.1-flash-image") if r[2] == I]
     assert [(r[1], r[3]["resolution"]) for r in per_image] == [("0.045", "0.5K"), ("0.067", "1K"), ("0.101", "2K"), ("0.151", "4K")]
-    # Batch of gemini-3-pro-image: image output has per-image prices only; the image input "$0.0006 (image)*" has no unit of its own.
-    assert [r for r in rows("gemini-3-pro-image", "batch") if r[0] == "image_output"] == [img("image_output", "0.067", resolution="1K/2K"), img("image_output", "0.12", resolution="4K")]
-    unstated = [p for p in parse("gemini-3-pro-image")[0] if "unit not stated" in p["unknown_reason"]]
-    assert [(p["billing_item"], p["amount"], p["unit"]) for p in unstated] == [("input", "", "")] * 2
-    assert all("$0.0006 (image)*" in p["locator"] for p in unstated) and not any(p["amount"] == "0.0006" for p in parse("gemini-3-pro-image")[0])
+    # The Batch input of this model read "$1.00 (text), $0.0006 (image)*" until Google took the tier off the page (2026-11-03): an image input
+    # with no unit of its own, under either form of the footnote mark, is never read as per 1M tokens.
+    for mark in ("{% sup %}*{% /sup %}", "{% sup /%}"):
+        cell = f"$1.00 (text), $0.0006 (image){mark}"
+        body = edit("gemini-3-pro-image", "$2.00 (text/image),    \n  equivalent to $0.0011 per image{% sup %}*{% /sup %}", cell)
+        unstated = [p for p in parse("gemini-3-pro-image", body)[0] if "unit not stated" in p["unknown_reason"]]
+        assert [(p["billing_item"], p["amount"], p["unit"]) for p in unstated] == [("input", "", "")]
+        assert "$0.0006 (image)*" in unstated[0]["locator"] and not any(p["amount"] == "0.0006" for p in parse("gemini-3-pro-image", body)[0])
     with pytest.raises(ValueError):  # an image source needs its source id
         parse_source(SPECS["gemini-3-pro-image"], BODY, "")
 
@@ -227,11 +230,13 @@ def test_a_model_without_its_own_section_is_not_read_here_or_borrowed_from_a_nei
 
 def test_missing_and_repeated_section_fail_closed():
     with pytest.raises(ValueError, match="0 sections"):
-        parse("gemini-2.5-pro", BODY.replace(b'<h2 id="gemini-2.5-pro"', b'<h2 id="gemini-2.5-pro-v2"'))
+        parse("gemini-2.5-pro", BODY.replace(b'{% id="gemini-2.5-pro" %}', b'{% id="gemini-2.5-pro-v2" %}'))
     with pytest.raises(ValueError, match="2 sections"):
-        parse("gemini-2.5-pro", BODY.replace(b'<h2 id="gemini-2.5-flash"', b'<h2 id="gemini-2.5-pro"'))
+        parse("gemini-2.5-pro", BODY.replace(b'{% id="gemini-2.5-flash" %}', b'{% id="gemini-2.5-pro" %}'))
     with pytest.raises(ValueError, match="0 sections"):
         parse("gemini-2.5-pro", b"<h1>Gemini API pricing</h1>")
+    with pytest.raises(ValueError, match="0 sections"):  # the HTML this parser read until 2026-11-03: its h2 and table elements are not read
+        parse("gemini-2.5-pro", b'<h2 id="gemini-2.5-pro">Gemini 2.5 Pro</h2><h3>Standard</h3><table><tr><th></th><th>Free Tier</th><th>Paid Tier, per 1M tokens in USD</th></tr></table>')
 
 
 @pytest.mark.parametrize("old,new", [
@@ -246,8 +251,8 @@ def test_changed_column_header_fails_closed(old, new):
 
 def test_a_cell_that_cannot_be_read_exactly_is_one_amount_less_row_never_a_partial_price():
     page = "gemini-3.1-pro-preview"
-    old = "$2.00, prompts <= 200k tokens<br>$4.00, prompts > 200k tokens"
-    for cell in ("$2.00, prompts <= 200k tokens<br>$4.00, prompts > 1M tokens", "Contact sales", "Same as Standard", "$2.00 for prompts <= 200k tokens"):
+    old = "$2.00, prompts <= 200k tokens    \n  $4.00, prompts > 200k tokens"
+    for cell in ("$2.00, prompts <= 200k tokens    \n  $4.00, prompts > 1M tokens", "Contact sales", "*Same as Standard*", "$2.00 for prompts <= 200k tokens", "{% icon name=\"check\" /%} $2.00"):
         body = edit(page, old, cell)
         unread = [p for p in parse(page, body)[0] if p["locator"] == "Gemini 3.1 Pro Preview > Standard > Input price > Paid Tier"]
         assert [(p["billing_item"], p["amount"], p["unit"], p["unknown_reason"]) for p in unread] == [("input", "", "", "paid rate or period missing/ambiguous")]
@@ -262,20 +267,36 @@ def test_a_cell_that_cannot_be_read_exactly_is_one_amount_less_row_never_a_parti
 def test_missing_repeated_or_malformed_rows_fail_closed():
     page = "gemini-3.5-flash-lite"
     with pytest.raises(ValueError, match="lacks"):
-        parse(page, edit(page, "<td>Output price (including thinking tokens)</td>", "<td>Output price</td>"))
+        parse(page, edit(page, "* Output price (including thinking tokens)", "* Output price"))
     with pytest.raises(ValueError, match="lacks"):
-        parse(page, edit(page, "<td>Input price</td>", "<td>Input cost</td>"))
+        parse(page, edit(page, "* Input price", "* Input cost"))
     with pytest.raises(ValueError, match="repeated or malformed"):
-        parse(page, edit(page, "<td>Context caching price</td>", "<td>Input price</td>"))
+        parse(page, edit(page, "* Context caching price", "* Input price"))
     with pytest.raises(ValueError, match="repeated or malformed"):
-        parse(page, edit(page, "<td>Free of charge</td>\n      <td>$0.30 (text / image / video / audio)</td>", "<td>$0.30 (text / image / video / audio)</td>"))
+        parse(page, edit(page, "* Free of charge\n  * $0.30 (text / image / video / audio)", "* $0.30 (text / image / video / audio)"))
     with pytest.raises(ValueError, match="repeated or header changed"):  # two Standard tables
-        parse(page, edit(page, 'data-text="Batch" tabindex="-1">Batch</h3>', 'data-text="Standard" tabindex="-1">Standard</h3>'))
+        parse(page, edit(page, '{% tab title="Batch" %}', '{% tab title="Standard" %}'))
     with pytest.raises(ValueError, match="no Standard table"):
-        parse(page, edit(page, 'data-text="Standard" tabindex="-1">Standard</h3>', 'data-text="Default" tabindex="-1">Default</h3>'))
+        parse(page, edit(page, '{% tab title="Standard" %}', '{% tab title="Default" %}'))
     # An image model's row labels are its own: the text model's label for the output row is not accepted.
     with pytest.raises(ValueError, match="lacks"):
-        parse("gemini-nano-banana-2.1", edit("gemini-nano-banana-2.1", "<td>Output price</td>", "<td>Output price (including thinking tokens)</td>"))
+        parse("gemini-nano-banana-2.1", edit("gemini-nano-banana-2.1", "* Output price", "* Output price (including thinking tokens)"))
+
+
+def test_markup_is_read_as_the_page_shows_it():
+    # "*Same as Standard*" is emphasis; the rates after it are read, and the storage row with them.
+    assert rows("gemini-3.1-pro-preview", "batch")[4:] == [tok("cache_read", "0.20", **LE), tok("cache_read", "0.40", **GT), STORAGE]
+    # A cell's line break is either form, and an empty cell of the free column is a cell.
+    assert parse("gemini-3.5-flash-lite", edit("gemini-3.5-flash-lite", "$0.03    \n", "$0.03 \\\\\n"))[0][4:] == parse("gemini-3.5-flash-lite")[0][4:]
+    assert "*\n" in section("gemini-3.5-flash-lite")[0] and rows("gemini-3.5-flash-lite")[2] == tok("cache_read", "0.03")
+
+
+def test_a_table_outside_a_tier_tab_is_not_read():
+    text, start, end = section("gemini-2.5-pro")
+    outside = '{% table %}\n  * Feature\n  * Free Tier\n  * Paid Tier, per 1M tokens in USD\n\n  ---\n\n  * Input price\n  * Free of charge\n  * $999\n{% /table %}\n\n'
+    assert text[start:end].count("{% /tabs %}") == 1
+    body = text[:start] + text[start:end].replace("{% /tabs %}\n", "{% /tabs %}\n\n" + outside) + text[end:]
+    assert parse("gemini-2.5-pro", body.encode()) == parse("gemini-2.5-pro")
 
 
 def test_two_statements_for_one_condition_set_fail_closed():
@@ -292,7 +313,7 @@ def test_run_is_read_back_into_events_and_the_comparison_table(tmp_path):
     # The two announced doublings (gemini-4-argon, gemini-3.6-flash) are the only changes; the rows with no amount are gaps, not prices.
     assert {(e["model_id"], e["event_type"]) for e in builder.state["events"].values()} == {("gemini-4-argon", "scheduled_change"), ("gemini-3.6-flash", "scheduled_change")}
     assert {n["reason"] for n in builder.state["not_comparable"]} == {"price_missing"}
-    assert {(n["billing_item"]) for n in builder.state["not_comparable"]} == {"cache_storage", "input"}
+    assert {(n["billing_item"]) for n in builder.state["not_comparable"]} == {"cache_storage"}
     text_models = [model for model, _ in GOOGLE_DIRECT_MODELS]
     tables = compare.tables(tmp_path, text_models, [], [], None, None, None, "2026-10-28")
     standard = {model: [[cell[0] for cell in row["c"]] for name, members in table["groups"] if name == "비공개 · Standard" for row in members] for model, table in tables.items()}

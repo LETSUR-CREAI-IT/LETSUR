@@ -1,5 +1,5 @@
 """Gemini sources google_models.py cannot read (2026-10-30), read from the same pricing page by google_models_more.py: the trimmed
-real page of 10/30 (provenance.json, second record), gemini-2.5-flash-lite's input row labelled by its modalities, gemini-3.5-flash and
+real page (provenance.json), gemini-2.5-flash-lite's input row labelled by its modalities, gemini-3.5-flash and
 gemini-3.7-flash priced from the sections of the models Google routes their requests to, fail-closed checks, and the run read back
 into events and the 공급사 비교 표."""
 import hashlib
@@ -21,10 +21,9 @@ from scripts.market_collection.models import GOOGLE_DIRECT_MODELS, GOOGLE_ROUTED
 from scripts.market_collection.sources import route_gap_source_specs, source_specs
 
 F = Path(__file__).parent / "fixtures" / "google_models"
-BODY = (F / "pricing-20261030.html").read_bytes()
-OLD = (F / "pricing.html").read_bytes()  # the 10/28 page of test_google_models.py
+BODY = (F / "pricing.md").read_bytes()
 SPECS = {s.model_id: s for s in source_specs() if s.parser in google_models_more.PARSERS}
-URL = "https://ai.google.dev/gemini-api/docs/pricing"
+URL = "https://aistudio.google.com/docs/pricing.md"
 T = "1M tokens"
 AUDIO = {"input_modality": "audio"}
 THROUGH, STARTING = {"rate_period": "through"}, {"rate_period": "starting"}
@@ -33,7 +32,7 @@ LITE = {tier: [("input", i, T, {}), ("input", ia, T, AUDIO), ("output", o, T, {}
                ("cache_storage", "", "", {})]
         for tier, (i, ia, o, c, ca) in {"standard": ("0.10", "0.30", "0.40", "0.01", "0.03"), "batch": ("0.05", "0.15", "0.20", "0.01", "0.03"),
                                         "flex": ("0.05", "0.15", "0.20", "0.01", "0.03"), "priority": ("0.18", "0.54", "0.72", "0.018", "0.054")}.items()}
-# The Standard rows of gemini-3.6-flash and gemini-3.8-flash on 10/30: the current rate through 2026-12-31, then double.
+# The Standard rows of gemini-3.6-flash and gemini-3.8-flash: the current rate through 2026-12-31, then double.
 SERVED = [("input", "0.75", T, THROUGH), ("input", "1.50", T, STARTING), ("output", "3.75", T, THROUGH), ("output", "7.50", T, STARTING),
           ("cache_read", "0.075", T, THROUGH), ("cache_read", "0.15", T, STARTING), ("cache_storage", "", "", THROUGH), ("cache_storage", "", "", STARTING)]
 
@@ -58,8 +57,8 @@ def rows(model, tier="standard", body=BODY):
 def edit(section, old, new, body=BODY):
     """The body with the first `old` inside the given model's section replaced."""
     text = body.decode()
-    start = text.index(f'<h2 id="{section}"')
-    end = text.find("<h2 ", start + 1)
+    start = text.rfind("## ", 0, text.index(f'{{% id="{section}" %}}'))
+    end = text.find("\n## ", start)
     end = len(text) if end < 0 else end
     assert old in text[start:end]
     return (text[:start] + text[start:end].replace(old, new, 1) + text[end:]).encode()
@@ -77,9 +76,9 @@ def test_three_specs_read_the_page_google_models_reads_with_parsers_of_their_own
     own = next(s for s in source_specs() if s.parser == "google_model_pricing")
     assert all(parser_module(s) is google_models_more for s in SPECS.values()) and parser_module(own) is google_models
     assert parser_fingerprint(asdict(own)) not in {parser_fingerprint(asdict(s)) for s in SPECS.values()}
-    p = json.loads((F / "provenance.json").read_text())[1]
-    assert (p["fixture"], p["source_url"], p["fixture_sha256"]) == ("pricing-20261030.html", URL, hashlib.sha256(BODY).hexdigest())
-    assert p["sections"] == ["gemini-3.8-flash", "gemini-3.6-flash", "gemini-2.5-flash-lite"]
+    p = json.loads((F / "provenance.json").read_text())[0]
+    assert (p["fixture"], p["source_url"], p["fixture_sha256"]) == ("pricing.md", URL, hashlib.sha256(BODY).hexdigest())
+    assert {"gemini-3.8-flash", "gemini-3.6-flash", "gemini-2.5-flash-lite"} <= set(p["sections"])
 
 
 @pytest.mark.parametrize("tier", list(LITE))
@@ -105,7 +104,7 @@ def test_the_modality_labelled_input_row_is_read_and_audio_stays_a_row_of_its_ow
 def test_a_section_google_models_reads_is_read_the_same_way(model):
     old = next(s for s in source_specs() if s.parser == "google_model_pricing" and s.model_id == model)
     mine = replace(SPECS["gemini-2.5-flash-lite"], model_id=model)
-    assert google_models_more.parse_source(mine, OLD, "s") == google_models.parse_source(old, OLD, "s")
+    assert google_models_more.parse_source(mine, BODY, "s") == google_models.parse_source(old, BODY, "s")
 
 
 @pytest.mark.parametrize("model,served", GOOGLE_ROUTED_MODELS)
@@ -130,26 +129,26 @@ def test_only_the_section_of_the_serving_model_is_read():
 @pytest.mark.parametrize("model,served", GOOGLE_ROUTED_MODELS)
 def test_a_routed_model_with_a_section_of_its_own_or_a_missing_successor_fails_closed(model, served):
     with pytest.raises(ValueError, match="section of its own"):
-        parse(model, BODY.replace(b"</body>", f'<h2 id="{model}">Gemini</h2></body>'.encode()))
+        parse(model, BODY + f'\n## Gemini  {{% id="{model}" %}}\n'.encode())
     with pytest.raises(ValueError, match="0 sections"):
-        parse(model, BODY.replace(f'<h2 id="{served}"'.encode(), f'<h2 id="{served}-old"'.encode()))
+        parse(model, BODY.replace(f'{{% id="{served}" %}}'.encode(), f'{{% id="{served}-old" %}}'.encode()))
     with pytest.raises(ValueError, match="2 sections"):
-        parse(model, BODY.replace(b'<h2 id="gemini-2.5-flash-lite"', f'<h2 id="{served}"'.encode()))
+        parse(model, BODY.replace(b'{% id="gemini-2.5-flash-lite" %}', f'{{% id="{served}" %}}'.encode()))
 
 
 @pytest.mark.parametrize("old,new,match", [
-    ("<td>Output price (including thinking tokens)</td>", "<td>Input price</td>", "repeated or malformed"),  # a second input row
-    ("<td>Input price (text, image, video)</td>", "<td>Input price (text, image)</td>", "lacks"),
-    ("<td>Output price (including thinking tokens)</td>", "<td>Output price</td>", "lacks"),
+    ("* Output price (including thinking tokens)", "* Input price", "repeated or malformed"),  # a second input row
+    ("* Input price (text, image, video)", "* Input price (text, image)", "lacks"),
+    ("* Output price (including thinking tokens)", "* Output price", "lacks"),
     ("Paid Tier, per 1M tokens in USD", "Paid Tier, per 1K tokens in USD", "header changed"),
-    ('data-text="Batch" tabindex="-1">Batch</h3>', 'data-text="Standard" tabindex="-1">Standard</h3>', "repeated or header changed"),
-    ('data-text="Standard" tabindex="-1">Standard</h3>', 'data-text="Default" tabindex="-1">Default</h3>', "no Standard table"),
+    ('{% tab title="Batch" %}', '{% tab title="Standard" %}', "repeated or header changed"),
+    ('{% tab title="Standard" %}', '{% tab title="Default" %}', "no Standard table"),
 ], ids=["second_input_row", "input_label", "output_label", "unit", "two_standard_tables", "no_standard_table"])
 def test_gemini_2_5_flash_lite_rows_and_tables_fail_closed(old, new, match):
     with pytest.raises(ValueError, match=match):
         parse("gemini-2.5-flash-lite", edit("gemini-2.5-flash-lite", old, new))
     with pytest.raises(ValueError, match="0 sections"):
-        parse("gemini-2.5-flash-lite", BODY.replace(b'<h2 id="gemini-2.5-flash-lite"', b'<h2 id="gemini-2.5-flash-lite-001"'))
+        parse("gemini-2.5-flash-lite", BODY.replace(b'{% id="gemini-2.5-flash-lite" %}', b'{% id="gemini-2.5-flash-lite-001" %}'))
 
 
 def test_run_is_read_back_into_events_and_the_comparison_table(tmp_path):

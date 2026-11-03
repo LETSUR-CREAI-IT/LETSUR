@@ -52,7 +52,7 @@ RETIREMENT_PAGES = [
     SignalSourceSpec("openai_deprecations", "supplier_notice", "https://developers.openai.com/api/docs/deprecations.md", "openai_deprecations"),
     SignalSourceSpec("anthropic_deprecations", "supplier_notice", "https://platform.claude.com/docs/en/about-claude/model-deprecations.md",
                      "anthropic_deprecations"),
-    SignalSourceSpec("google_deprecations", "supplier_notice", "https://ai.google.dev/gemini-api/docs/deprecations.md.txt", "google_deprecations"),
+    SignalSourceSpec("google_deprecations", "supplier_notice", "https://aistudio.google.com/docs/deprecations.md", "google_deprecations"),
 ]
 
 

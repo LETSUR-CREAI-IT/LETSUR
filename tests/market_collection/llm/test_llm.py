@@ -8,15 +8,29 @@ from scripts.market_collection.core import _validate_parse, validate_registry
 
 
 def google_page(input_amount="0.75", *, paid_header="Paid Tier, per 1M tokens in USD", input_row=True):
-    row = f"<tr><td>Input price</td><td>Free of charge</td><td>${input_amount} through December 31, 2026.<br>$1.50 starting January 1, 2027.</td></tr>" if input_row else ""
-    return f"""<h2 id='gemini-3.7-flash'>Gemini 3.7 Flash</h2><h3>Standard</h3><table><tr><th></th><th>Free Tier</th><th>{paid_header}</th></tr><tr><td>Input price</td><td></td><td>$999 through December 31, 2026.</td></tr></table>
-<h2 id='gemini-3.8-flash'>Gemini 3.8 Flash</h2>
-<h3 id='standard'>Standard</h3><table><tr><th></th><th>Free Tier</th><th>{paid_header}</th></tr>
-{row}<tr><td>Output price (including thinking tokens)</td><td>Free of charge</td><td>$3.75 through December 31, 2026.<br>$7.50 starting January 1, 2027.</td></tr>
-<tr><td>Context caching price</td><td>Free of charge</td><td>$0.075 through December 31, 2026.<br>$0.15 starting January 1, 2027.<br>$0.50 / 1,000,000 tokens per hour (storage price) through December 31, 2026.<br>$1.00 / 1,000,000 tokens per hour (storage price) starting January 1, 2027.</td></tr></table>
-<h3 id='flex'>Flex</h3><table><tr><th></th><th>Free Tier</th><th>{paid_header}</th></tr><tr><td>Input price</td><td>Not available</td><td>$0.375 through December 31, 2026.<br>$0.75 starting January 1, 2027.</td></tr></table>
-<h3 id='priority'>Priority</h3><table><tr><th></th><th>Free Tier</th><th>{paid_header}</th></tr><tr><td>Input price</td><td>Free of charge</td><td>$1.35 through December 31, 2026.<br>$2.70 starting January 1, 2027.</td></tr></table>
-<h2 id='gemini-3.9-flash'>Gemini 3.9 Flash</h2><h3>Standard</h3><table><tr><th></th><th>Free Tier</th><th>{paid_header}</th></tr><tr><td>Input price</td><td></td><td>$888 through December 31, 2026.</td></tr></table>""".encode()
+    def tab(title, *rows):
+        return "\n\n  ---\n\n".join((f'  {{% tab title="{title}" %}}\n  {{% table %}}\n  * Feature\n  * Free Tier\n  * {paid_header}', *rows)) + "\n  {% /table %}\n\n  {% /tab %}\n"
+    def row(label, free, *lines):
+        return f"  * {label}\n  * {free}\n  * " + "    \n  ".join(lines)
+    first = [row("Input price", "Free of charge", f"${input_amount} through December 31, 2026.", "$1.50 starting January 1, 2027.")] if input_row else []
+    return f"""## Gemini 3.7 Flash  {{% id="gemini-3.7-flash" %}}
+
+{{% tabs %}}
+{tab("Standard", row("Input price", "Free of charge", "$999 through December 31, 2026."))}{{% /tabs %}}
+
+## Gemini 3.8 Flash  {{% id="gemini-3.8-flash" %}}
+
+{{% tabs %}}
+{tab("Standard", *first, row("Output price (including thinking tokens)", "Free of charge", "$3.75 through December 31, 2026.", "$7.50 starting January 1, 2027."),
+     row("Context caching price", "Free of charge", "$0.075 through December 31, 2026.", "$0.15 starting January 1, 2027.", "$0.50 / 1,000,000 tokens per hour (storage price) through December 31, 2026.", "$1.00 / 1,000,000 tokens per hour (storage price) starting January 1, 2027."))}
+{tab("Flex", row("Input price", "Not available", "$0.375 through December 31, 2026.", "$0.75 starting January 1, 2027."))}
+{tab("Priority", row("Input price", "Free of charge", "$1.35 through December 31, 2026.", "$2.70 starting January 1, 2027."))}{{% /tabs %}}
+
+## Gemini 3.9 Flash  {{% id="gemini-3.9-flash" %}}
+
+{{% tabs %}}
+{tab("Standard", row("Input price", "Free of charge", "$888 through December 31, 2026."))}{{% /tabs %}}
+""".encode()
 
 
 class LlmAdapterTests(unittest.TestCase):
