@@ -928,7 +928,7 @@ def test_template_has_the_supply_tab_and_its_editor(tmp_path: Path) -> None:
     assert ('<button type="button" role="tab" data-ptab="supply" aria-selected="false">공급로 현황</button>'
             '<button type="button" role="tab" data-ptab="health" aria-selected="false">수집 상태</button></nav>') in page
     assert 'if (confirm(`${m}의 ${c[0]} 공급로${on ? "에서 해제" : "를 추가"}하시겠습니까?`)) {' in page
-    assert '<section class="spage" aria-label="공급로 현황">' in page and 'if (h === "supply") startSupply = true;' in page
+    assert '<section class="spage" id="supply" aria-label="공급로 현황">' in page and 'if (h === "supply") startSupply = true;' in page
     assert 'if (p === "supply") { renderSupply(); try { history.replaceState(null, "", "#supply"); } catch (err) {} return; }' in page
     assert 'const SP_FILE = "https://github.com/LETSUR-CREAI-IT/LETSUR/edit/develop/samples/market_collection/demo_internal_routes.json";' in page
     assert 'const spJson = () => JSON.stringify(spDoc(), null, 2) + "\\n";' in page and 'link.download = "demo_internal_routes.json";' in page
@@ -939,7 +939,7 @@ def test_template_has_the_supply_tab_and_its_editor(tmp_path: Path) -> None:
     assert '<input type="checkbox" class="spx${use && !got ? " warn" : ""}" data-sp="cell"' in page
     assert '${use ? " checked" : ""}${got && SUPPLY.routes ? "" : " disabled"}></td>' in page
     assert "if (spEdits[k]) delete spEdits[k]; else spEdits[k] = {on: !spCell(SUPPLY.routes, m, c).length, at: spToday()}; }" in page
-    assert '<h2>공급로 현황</h2><span>모델 ${modelQ ? `${shown.reduce((s, [, l]) => s + l.length, 0)}/` : ""}${count}개</span></div>' in page
+    assert '<h2>공급로 현황</h2><span>모델 ${modelQ || spLens ? `${shown.reduce((s, [, l]) => s + l.length, 0)}/` : ""}${count}개${spLens ? ` · ${esc(spLens.l)}만` : ""}</span>' in page
     for gone in ("spBasis", "spChip", "sppanel", "spun", "호출 추정", "렛서가 쓰는데 가격 수집 안 함"):
         assert gone not in page[page.index("// ---- 공급로 현황"):page.index("// ---- 상호작용 ----")]
     assert "@media (max-width:640px){.ptabs{flex-wrap:wrap;row-gap:4px}.ptabs button{padding:0 8px}}" in page
@@ -1466,7 +1466,7 @@ def test_team_feedback_of_1103_legend_korean_labels_switch_draft_and_search(tmp_
     assert '`최신 업데이트 : ${HEALTH.run ? HEALTH.run.at.replace(/ KST$/, "") : "기록 없음"}`' in page
     assert "모델 가격·조건 모니터" not in page and "(고정)" not in page
     assert 'const searchKey = s => String(s || "").toLowerCase().replace(/[^0-9a-z가-힣]+/g, "");' in page
-    for filtered in ('ks.filter(k => modelHit(k, modelName(k)))', 'l.filter(m => modelHit(m, modelName(m)))', 'l.filter(x => modelHit(x.model, x.model))', '!isPast(e) && modelHit(e.mid, e.m)'):
+    for filtered in ('ks.filter(k => modelHit(k, modelName(k)))', 'l.filter(m => modelHit(m, modelName(m)) && spLensHit(D, m))', 'l.filter(x => modelHit(x.model, x.model))', '!isPast(e) && modelHit(e.mid, e.m)'):
         assert filtered in page
     assert 'if (modelQ && l.length && !l.some(e => e.id === state.sel || e.vg === state.sel))' in page
 
@@ -1791,6 +1791,33 @@ def test_template_has_the_health_screen(tmp_path: Path) -> None:
     assert '<button type="button" data-ptab="health">수집 상태 보기 →</button>' in page
     # 2026-10-29: the failing table has a 판단 column and the section says how many sources need action
     assert 'table(["출처", "판단", "오류", "실패"]' in page and "수집기 확인 필요 ${todo}곳" in page
+
+
+def test_the_supply_tab_opens_with_a_summary_of_letsur_routes(tmp_path: Path) -> None:
+    """2026-11-05 박건 '이런식의 뷰는 못 만드는거야? 저런걸 공급로 현황 탭에 넣으면 좋을 것 같긴 한데' (박기범's draft PR #40 keeps the same card on the
+    home screen): three states, suppliers as a donut and a list, companies as a list. It counts models, never usage, from the same columns
+    and the same draft as the table under it, and a pressed row filters that table. The browser check covers the numbers against a separate
+    count from the page data, the filter, the draft, the dark theme and 375px."""
+    _write(tmp_path, [])
+    page = _build(tmp_path)[1]
+    # the address #supply lands on the top of the tab, not on the table under the summary
+    assert '<section class="spage" id="supply" aria-label="공급로 현황">\n    <div class="card" id="spsum" hidden></div>\n    <div class="card" id="sptable"></div>' in page
+    # the same columns and draft as the table, and no card without a routes file
+    assert "const spUses = (D, m) => SUPPLY.cols.filter(c => spCell(D, m, c).length).map(c => c[0]);" in page
+    assert 'sumHtml = spSummary(D); sum.innerHTML = sumHtml; sum.hidden = !sumHtml;' in page and 'if (!ids.length || !SUPPLY.routes) return "";' in page
+    # 변화 counts what the list shows for a route LETSUR uses: recent or coming, not yet handled
+    assert 'EVENTS.filter(e => relOf(e) === "use" && !isPast(e) && !isAcked(e))' in page
+    # colour and order follow the supplier's name, so a change in counts repaints nothing and keeps the validated neighbours
+    assert 'const SUM_HUE = ["OpenRouter", "Vercel", "Microsoft", "Google", "OpenAI", "Anthropic"];' in page
+    assert "sort((a, b) => hue(a) - hue(b) || count[b] - count[a] || a.localeCompare(b))" in page
+    for words in ("렛서 공급 경로", "대체 경로 없는 모델", "경로 기록 없음", "수집 실패", "공급사별 렛서 사용 모델", "회사별 렛서 경로 수", "숫자는 모델 수(사용량 아님) · 행을 누르면 아래 표를 거름"):
+        assert words in page
+    # a pressed row or state filters the table, again or '전체 보기' clears it, and the row keeps the focus
+    assert "modelHit(m, modelName(m)) && spLensHit(D, m)" in page and 'data-sp="lens" data-lk="off">전체 보기</button>' in page
+    assert 'spLens = t.dataset.lk === "off" || (spLens && spLens.k === t.dataset.lk && spLens.v === t.dataset.lv) ? null :' in page
+    # text wears text tokens, and the new rules bring no colour of their own
+    css = page[page.index(".spage{display:flex"):page.index(".spsnote{")]
+    assert not re.search(r"#[0-9a-fA-F]{3,8}\b", css) and ".spv.solo{font-weight:650;color:var(--amber)}" in css and ".spv.dual{font-weight:650;color:var(--down-ink)}" in css
 
 
 def test_template_css_keeps_to_the_design_scales() -> None:

@@ -210,6 +210,7 @@ python3 -B -m scripts.market_collection.dashboard --root data/market_collection 
   - 2026-10-29 (나머지 70개 모델, 박건 '70개도 모두 보도록'): 호출이 Azure(23)·Google 직접(10)·Anthropic 직접(9)·OpenAI 직접(4)을 지나간 46개 모델의 `basis: "observed"` 기록을 더했다. 기록은 59개에서 105개(settings 10, observed 95)가 됐다. gpt-5.6·gpt-5.5-2026-04-23은 응답에 Azure 필드가 없어 OpenAI 직접으로 보이지만 확인이 아니라 추정이라, GLM 5개(glm-4.7·glm-5·glm-5.2·glm-5.3·glm-5.3-flashx)와 임베딩 3개는 경로를 알아내지 못해, 이미지·영상 15개는 호출하지 않아 기록이 없다(카드는 '사용 경로 확인 필요'). GLM의 Z.ai 직접 행은 공개 가중치 모델인데 정밀도가 적혀 있지 않아 비교 표에서 '정밀도 미상 · 직접 확인 필요'로 빠진다.
   - 2026-10-29 (렛서 API 호출 2차): 8개 모델에 `basis: "observed"` 기록을 더했다(`checked_at` 2026-10-29, `note`에 근거). gpt-5.6·gpt-5.5-2026-04-23은 OpenAI 직접(Responses API 응답에 OpenAI 자체 과금 필드 billing {payer: developer}, gpt-5.2-pro·gpt-6.1-terra와 같은 형식), Gemini 이미지 6개(gemini-nano-banana-2.1, gemini-2.5-flash-image, gemini-3-pro-image와 -preview, gemini-3.1-flash-image와 -preview)는 Google 직접(Gemini 형식 responseId와 필드)이다. 3개는 `basis: "inferred"`다. gpt-image-2는 OpenAI(이미지 생성 응답에 Azure 콘텐츠 필터 필드가 없음, 렛서 설정상 GPT Image 2.5도 OpenAI 직접), byteplus-seedance-2.5-reference-to-video·video-to-video는 BytePlus ModelArk(렛서 모델 id가 byteplus-로 시작하고 단가가 BytePlus 공개가와 같음)다. 경로를 알아내지 못한 14개(GLM 5개, 임베딩 3개, Kling 영상 6개)는 `unresolved`에 이유를 적었다. 기록은 105개에서 116개(settings 10, observed 103, inferred 3)가 됐고 기존 105개는 그대로다. `purpose`·`basis_note`도 고쳤다. 10/29 자료(수집 run 10/29 00:25 KST, 카드 117장)에서 바뀐 카드는 gemini-nano-banana-2.1의 Vercel 경로 추가 1장이다(UNKNOWN · VERIFY → NOT APPLIES · MONITOR, '모델 제공 중 : Google · google_direct 경로로 사용 (호출 확인)'). 추정 기록 3개의 모델에는 아직 카드가 없다. 공급사 비교 표는 Gemini 이미지 4개의 Google 행과 gpt-5.6·gpt-5.5-2026-04-23의 OpenAI 행에 '호출 확인' 칩이 붙는다. gemini-3-pro-image-preview·gemini-3.1-flash-image-preview는 Google 직접 가격을 수집하지 않아 공급로 현황에 '렛서가 쓰는데 가격 수집 안 함'으로 나온다.
   - 2026-10-30 (경로 재확인 도구 `scripts/market_collection/letsur_routes.py` 실제 실행, 요청 115회, 렛서 단위 0.021): 다시 본 경로는 `checked_at`만 2026-10-30으로 바꾸고(이미 있는 `note`는 그대로), 처음 본 경로는 그날 날짜의 기록으로 더했다. 기록은 116개에서 138개(settings 10, observed 124, inferred 4)가 됐다. 10/28 Azure로 가던 GPT-6·5.6 8개는 응답 헤더의 배포 이름이 '<모델>-bedrock-us-east-1'이라 AWS Bedrock 기록이 Azure 기록 옆에 생겼고, 중개사 모델 10개는 다른 게이트웨이, gemini-2.5-flash는 Vercel, gemini-2.5-flash-lite는 Google 직접 기록이 더해졌다. glm-5는 Vercel로 확인(하위 공급자 bedrock), glm-4.7은 Bedrock 추정이 돼 unresolved는 14개에서 12개가 됐다. 날짜가 없던 10/28 기록에는 `checked_at` 2026-10-28을 채웠다. 같은 모델에 경로가 여럿이면 카드는 그 경로 모두를 렛서 사용 경로로 본다(렛서가 경로를 바꿨는지 섞어 쓰는지는 응답만으로 알 수 없다).
+  - 2026-11-04~05 (새 키로 경로 재확인, 전체 6번씩 요청 948회·0.1746 unit, 사라진 것으로 나온 13개 모델 20번씩 요청 380회·0.0223 unit): 처음 본 경로 4개만 더하고 지운 기록은 없다(186개, `unresolved`는 28→38개). gpt-5.4 OpenAI 직접(가격 출처도 더함, 출처 430), gemini-4-argon·gemini-3.1-flash-image-preview·qwen3.5-flash OpenRouter. 20번에도 안 보인 5개(deepseek-v4.1-flash Vercel, glm-4.7 Bedrock, gpt-5-mini·o3 OpenAI, gpt-6.1-sol Azure)는 `checked_at` 10/30 그대로 남았다. 도구가 못 본 기록을 지우지 않게 바꿨다([market-collection.md](market-collection.md)).
 - 실제 연동: 실제 렛서 사용 경로가 생기면 workflow `Build dashboard` 단계에서 `--internal-routes`를 빼거나(모든 카드가 "사용 경로 확인 필요"로 돌아간다), 같은 형식의 실제 경로 파일(`is_demo: false`)로 바꾼다. 시연 파일은 그때 지우면 된다.
 
 ### 상세페이지 필드 (박기범, 2026-10-26)
@@ -309,8 +310,20 @@ python3 -B -m scripts.market_collection.dashboard --root data/market_collection 
 - 데이터: build.py `supply()`가 슬롯 `SUPPLY`를 채운다. `cols`는 공급사 열 `[[이름, [route_id…]]]`, `models`는 `{모델: [가격을 수집하는 route_id…]}`(출처 등록부 `sources.py`의 `source_specs()`, 지금 125개 모델), `routes`는 `--internal-routes` 파일 전체다(옵션이 없거나 파일을 쓸 수 없으면 null). 경로 파일에만 있는 모델(등록부에 없음)도 수집 경로 없이 행이 생긴다. 생성 실패 화면에도 `SUPPLY`는 채운다(이벤트가 필요 없다). 예기치 못한 오류 화면에서는 비어 있다.
 - 행: 모델별 가격 목록처럼 만든 회사(템플릿 `MAKERS`)별로 묶고 이름순이다. 열: 게시자(`ROUTE_PUBLISHERS`)마다 하나라 openai_direct·openai는 OpenAI, vercel_ai_gateway·vercel은 Vercel 한 열이다. 순서는 제조사 직접(Anthropic, Google, Kling AI, OpenAI, Z.ai), 클라우드(AWS, BytePlus, Databricks, Google Cloud, Microsoft), 게이트웨이·fal(OpenRouter, Vercel, fal)이다(build.py `SUPPLIERS`). 수집 경로도 기록도 없는 게시자(지금 Ideogram)는 빼고, `ROUTE_PUBLISHERS`에 없는 경로는 맨 뒤에 제 이름으로 붙는다.
 - 칸(2026-10-30 박건 요청으로 단순화): 칸마다 체크 상자 하나다. 체크(민트)는 렛서가 그 공급사 경로를 쓴다는 뜻이고(경로 파일의 기록, 근거가 설정 답변·호출 확인·관리자 지정 어느 것이든 같다), 빈 상자는 가격을 수집하는 후보, 흐린 비활성 상자는 그 공급사 경로의 가격을 수집하지 않아 후보가 아닌 칸이다. 렛서가 쓰는데 가격을 수집하지 않는 칸은 있으면 안 되는 상태라 빨간 체크로만 드러난다(테스트가 경로 파일에서 막는다).
-- 머리줄은 '모델 n개'만 적는다(모델 검색 중에는 'n/전체개'). 근거·날짜·개수 줄, 범례, 칸 정보 상자는 없다(박건: 사용이면 사용하는 경로일 뿐, 글이 많으면 정보가 너무 많다).
+- 머리줄은 '모델 n개'만 적는다(모델 검색이나 요약의 행으로 거르는 중에는 'n/전체개'). 근거·날짜·개수 줄, 범례, 칸 정보 상자는 없다(박건: 사용이면 사용하는 경로일 뿐, 글이 많으면 정보가 너무 많다).
 - 폰 폭: 표만 가로·세로로 스크롤하고(페이지에는 가로 스크롤이 없다) 모델 열과 머리글은 고정된다.
+
+### 렛서 공급 경로 요약 (2026-11-05)
+
+표 위의 카드다. 박기범의 시험 PR #40이 홈 캘린더 옆에 둔 카드를 박건 요청으로 이 탭에 옮겼다('저런걸 공급로 현황 탭에 넣으면 좋을 것 같긴 한데'). 홈 카드, '대체 경로 없는 모델만' 토글, 캘린더·목록 거르기는 옮기지 않았다. #40을 그대로 합치면 같은 내용의 카드가 둘이 되므로 #40은 고치거나 닫아야 한다. 이름은 겹치지 않게 `spSummary`·`SUM_HUE`로 뒀다.
+
+- 숫자는 표와 같은 공급사 칸(`SUPPLY.cols`)과 같은 초안(`spDoc`)으로 센다. 크기는 모델 수이고 렛서 사용량이 아니다. 모델 검색은 표만 거르고 요약 숫자는 그대로다. 경로 파일이 없으면 카드를 숨긴다.
+- 머리줄의 '경로 마지막 확인 M/D'는 경로 파일에서 가장 늦은 `checked_at`이다. 경로마다 마지막으로 본 날은 다를 수 있다. 가격 수집 시각은 맨 위 '최신 업데이트'에 있다.
+- 세 칸: 대체 경로 없는 모델(체크한 공급사가 하나인 모델), 경로 기록 없음(체크가 없는 모델), 수집 실패(`HEALTH.failing`, 있으면 빨간 숫자이고 누르면 수집 상태).
+- 공급사별(도넛과 표): 모델은 그 공급사를 쓰는 모델 수다. 두 곳을 쓰는 모델은 두 줄에 모두 들어가서 합이 전체 모델 수보다 크다. 단독은 그 공급사만 쓰는 모델, 변화는 렛서가 그 공급사로 쓰는 모델의 변화(`relOf` use) 중 최근 7일·앞으로이고 확인 처리 전인 것이다. 모델 하나뿐이고 변화도 없는 공급사가 둘 이상이면 '그 밖 n곳'으로 묶고 모델은 중복 없이 센다.
+- 회사별(표): 모델 많은 8곳과 '그 밖 n곳'이다. 2곳+는 렛서 경로가 두 곳 이상, 1곳은 한 곳, 없음은 기록이 없는 모델이다.
+- 행과 앞의 두 칸을 누르면 아래 표를 그 모델들로 거른다(머리줄 'n/전체개 · <이름>만', '전체 보기'). 다시 누르면 풀린다. 폰처럼 요약이 화면을 채우면 표까지 내려간다.
+- 주소 `#supply`는 탭 전체 구역의 id다(요약 아래 표로 뛰지 않게). 표 카드는 `#sptable`, 요약 카드는 `#spsum`이다.
 
 ### 편집 (페이지 안에서만, 백엔드 없음)
 
