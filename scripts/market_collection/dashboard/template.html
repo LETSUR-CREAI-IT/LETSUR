@@ -181,7 +181,8 @@ a{color:var(--ink)}
 .lhead span{font-size:12px;color:var(--muted)}
 .lfilter{padding:0 8px 8px} .lfilter:empty{display:none} .lfilter>div{display:flex;flex-wrap:wrap;align-items:center;gap:4px}
 .lfilter .mchip{height:24px;padding:0 8px;gap:4px;font-size:12px}
-.lfilter .mchip[data-past][aria-pressed="true"]{background:var(--grey-soft);border-color:var(--line-strong);color:var(--ink)}
+.mchip small.ackn{color:var(--amber)} .ackn:empty{display:none}  /* 숨긴 묶음의 중간 줄이 달라졌다는 표시 */
+.lfilter .mchip[aria-pressed="true"]{background:var(--grey-soft);border-color:var(--line-strong);color:var(--ink)}
 .lhid{font-size:12px;color:var(--muted)}
 .lempty{margin:16px 8px 8px;font-size:13px;color:var(--muted)}
 /* 메인페이지 정규화 (김연우 10/27): 정렬 · Suggested Action · Applicability · 달력 날짜 종류 · 그래프 비교 조건 */
@@ -220,6 +221,11 @@ a{color:var(--ink)}
 .grp h3 i{width:8px;height:8px;border-radius:50%}
 .i-review{background:var(--mint)} .i-verify{background:var(--amber)} .i-watch{background:var(--slate)} .i-record{background:var(--line-strong)} .i-pending{background:transparent;border:1.5px dashed var(--muted)}
 .rows{list-style:none;margin:0;padding:0}
+.rows li{position:relative}
+.ack{position:absolute;top:12px;right:8px;display:inline-flex;align-items:center;gap:4px;min-height:20px;font-size:12px;color:var(--muted);cursor:pointer}  /* 확인 처리: 줄(버튼) 안에 넣을 수 없어 곁에 겹쳐 둔다 */
+.ack:hover{color:var(--ink)}
+.row[aria-current="true"]+.ack{color:var(--body)}  /* 선택한 줄의 민트 바탕 위: 다크에서 --muted는 4.5:1이 안 된다 */
+#queue .row .t>.qbadges{padding-right:76px}  /* 첫 줄의 칩이 확인 처리와 겹치지 않게 */
 .row{display:grid;grid-template-columns:58px minmax(0,1fr);gap:12px;width:100%;padding:12px 8px;border:0;border-radius:var(--r-m);background:none;text-align:left;cursor:pointer}
 .row:hover{background:var(--surface-2)}
 .row[aria-current="true"]{background:var(--mint-soft)}
@@ -819,7 +825,32 @@ let modelQ = "";
 const searchKey = s => String(s || "").toLowerCase().replace(/[^0-9a-z가-힣]+/g, "");
 const modelHit = (id, name) => !modelQ || [id, name, makerOf(id || "")].some(s => searchKey(s).includes(modelQ));
 const modeShown = e => (!letsurOnly || letsurRoute(e)) && modelHit(e.mid, e.m);
-const listed = () => EVENTS.filter(e => modeShown(e) && kindShown(e) && (showPast || !isPast(e)));
+// 확인 처리(2026-11-04 박건: 대응이 끝났거나 필요 없다고 본 알림이 목록을 가린다): 서버가 없어 이 브라우저에만 저장하고, 없어도 화면은 그대로 돈다.
+// 카드 id는 수집이 거듭돼도 유지되지만 같은 카드에 새 변화가 붙기도 하므로, 항목 수·확인 상태·적용일이 바뀌면 다시 올라온다.
+// 변동 잦음 묶음은 그 규칙이면 거의 매일 다시 올라오므로 체크할 때의 항목별 가격을 저장하고 두 단계로 나눈다(2026-11-04 박건 '10% 이상일 때만', '중간 것들의 변화도 인지는 해야').
+// 렛서가 쓰는 줄이나 항목별 최저가가 10% 이상 달라지면 목록에 다시 올리고, 그 밖의 줄이 달라지면 숨긴 채 '확인한 알림'과 상세에 표시한다. 어느 줄이든 올리면 묶음 9개 중 7~8개가 하루 안에 다시 올라왔다.
+const ACK_KEY = "letsur-acked";
+let acked = {}, ackOnly = false;
+try { acked = JSON.parse(localStorage.getItem(ACK_KEY) || "{}") || {}; } catch (err) {}
+const ackSig = e => [e.sum, e.st, e.eff].join("|");
+const vgPrices = id => Object.fromEntries(VGS[id].chg.map(r => [r[0], r[2]]));
+const tenPct = (a, b) => a !== null && b !== null && a !== b && (!a || Math.abs(b - a) / a >= .1 - 1e-9);
+const wasPrice = (r, was) => r[0] in was ? was[r[0]] : r[1];
+// 체크 뒤 10% 이상 달라진 줄. 체크할 때 없던 줄은 처음 가격과 견주고, 가격이 아닌 값은 견주지 않는다.
+const vgDrift = (id, was) => VGS[id].chg.filter(r => tenPct(money(wasPrice(r, was)), money(r[2])));
+const itemLows = prices => { const low = {}; Object.entries(prices).forEach(([k, v]) => { const item = k.split(" · ").pop(), p = money(v); if (p !== null && !(low[item] <= p)) low[item] = p; }); return low; };
+const letsurEnds = m => ((COMPARE[m] || {}).groups || []).flatMap(g => g[1]).filter(r => (r.t || []).some(t => t[1] === "as")).map(r => String(r.w[1]));
+function vgMajor(id, was){ const low = itemLows(was), now = itemLows(vgPrices(id)), mine = letsurEnds(VG[id][0].mid);
+  return Object.keys(now).some(k => k in low && tenPct(low[k], now[k])) || vgDrift(id, was).some(r => mine.includes(r[0].split(" · ").slice(0, -1).join(" · "))); }
+const isAcked = e => e.vg ? !!acked[e.vg] && !vgMajor(e.vg, acked[e.vg]) : acked[e.id] === ackSig(e);
+const ackMembers = id => VG[id] || EVENTS.filter(e => e.id === id);
+const ackSave = () => { try { localStorage.setItem(ACK_KEY, JSON.stringify(acked)); } catch (err) {} };
+function ackToggle(id){ const e = ackMembers(id)[0];
+  if (isAcked(e)) delete acked[id]; else acked[id] = VG[id] ? vgPrices(id) : ackSig(e);
+  ackSave(); }
+const BACK_CHIP = `<span class="chip verify" title="확인 처리한 뒤 내용이 바뀌어 다시 올라왔습니다">다시 올라옴</span>`;
+const dayShown = e => ackOnly ? isAcked(e) : !isAcked(e) && (showPast || !isPast(e));
+const listed = () => EVENTS.filter(e => modeShown(e) && kindShown(e) && dayShown(e));
 // 상세페이지 상단용 7유형 (이벤트유형_분류규칙.md 기준, 10/10 김연우)
 const EV7 = byEv("t7"), EV7SUB = byEv("sub"), EV7FLAG = byEv("flag");
 Object.keys(VGS).forEach(id => { EV7[id] = "가격 변경"; EV7SUB[id] = "변동 잦음"; });
@@ -1189,7 +1220,7 @@ function renderCalendar(){
     const cls = ["day", monthOf(d) === calMonth ? "" : "out", d === TODAY ? "today" : "", days(d) < 0 ? "past" : ""].filter(Boolean).join(" ");
     g += `<div class="${cls}"><span class="dn tn">${+d.slice(8)}${d === TODAY ? " 기준일" : ""}</span>${l.slice(0, 2).map(calBtn).join("")}${l.length > 2 ? `<span class="more-ev">+${l.length - 2}</span>` : ""}</div>`;
   }
-  const next = entries.filter(x => days(x.date) >= 0).sort((a, b) => dt(a.date) - dt(b.date)).slice(0, 4);
+  const next = entries.filter(x => days(x.date) >= 0 && !isAcked(x.e)).sort((a, b) => dt(a.date) - dt(b.date)).slice(0, 4);  // 확인 처리한 카드는 칸을 차지하지 않는다(달력에는 남는다)
   document.getElementById("cal").innerHTML = `<div class="calh"><span class="mo">${y}년 ${m}월<small>날짜 ${inMonth}건</small></span>
       <button type="button" class="todayb" data-mon="today">기준일</button>
       <button type="button" class="nav" data-mon="-1" aria-label="이전 달"${calMonth <= MONTHS[0] ? " disabled" : ""}>‹</button>
@@ -1440,13 +1471,17 @@ function drawPrice(M, mi, look, span){
 function renderFilter(){
   const box = document.getElementById("lf");
   if (!EVENTS.length) return;
-  if (!box.children.length) box.innerHTML = `<div><button type="button" class="mchip" data-past>지난 변화 보기</button><span class="lhid"></span></div>`;
+  if (!box.children.length) box.innerHTML = `<div><button type="button" class="mchip" data-past>지난 변화 보기</button><button type="button" class="mchip" data-ack>확인한 알림 <small></small><small class="ackn"></small></button><span class="lhid"></span></div>`;
   const kinds = [...Object.keys(T7GROUP), ...(EVENTS.some(e => e.kind === "유형 미정") ? ["유형 미정"] : [])], menu = document.getElementById("qkind");
-  const byDay = EVENTS.filter(e => modeShown(e) && (showPast || !isPast(e)));
+  const byDay = EVENTS.filter(e => modeShown(e) && dayShown(e));
   menu.innerHTML = `<option value="">전체 ${byDay.length}</option>` + kinds.map(k => `<option value="${esc(k)}">${esc(k)} ${byDay.filter(e => e.kind === k).length}</option>`).join("");
   menu.value = listKind;
   box.querySelector("[data-past]").setAttribute("aria-pressed", showPast);
-  const hid = showPast ? 0 : EVENTS.filter(e => modeShown(e) && kindShown(e) && isPast(e)).length;
+  box.querySelector("[data-ack]").setAttribute("aria-pressed", ackOnly);
+  box.querySelector("[data-ack] small").textContent = EVENTS.filter(e => modeShown(e) && kindShown(e) && isAcked(e)).length;
+  const moved = Object.keys(VG).filter(id => modeShown(VG[id][0]) && kindShown(VG[id][0]) && isAcked(VG[id][0]) && vgDrift(id, acked[id]).length).length;
+  box.querySelector(".ackn").textContent = moved ? `새 변동 ${moved}` : "";
+  const hid = showPast || ackOnly ? 0 : EVENTS.filter(e => modeShown(e) && kindShown(e) && !isAcked(e) && isPast(e)).length;
   box.querySelector(".lhid").textContent = hid ? `지난 변화 ${hid}건 숨김` : "";
 }
 // 정렬: 추천 순(렛서 판단 단계 → 급한 순 → Suggested Action) · 적용일 순(급한 순 → Suggested Action) · 유형별(종류 묶음 안에서 급한 순)
@@ -1464,23 +1499,23 @@ function tierOf(e){
 }
 function recCmp(a, b){ return tierOf(a) - tierOf(b) || cmpU(a, b) || actOrder(a) - actOrder(b); }
 function queueCmp(a, b){ return state.queueSort === "date" ? cmpU(a, b) || actOrder(a) - actOrder(b) : recCmp(a, b); }
-function queueRow(e){ return `<li>
-    <button type="button" class="row${e.done ? " done" : ""}" data-id="${esc(e.id)}" aria-current="${state.sel === e.id}">
+function queueRow(e){ return `<button type="button" class="row${e.done ? " done" : ""}" data-id="${esc(e.id)}" aria-current="${state.sel === e.id}">
       <span class="dl2"${!e.eff && e.effShort ? ` title="${esc(e.effShort)}"` : ""}>${ddHtml(e)}${e.eff ? `<small class="tn">${md(e.eff)}${e.effQual ? ` <b class="chip qt" title="${esc(e.effQual)}">해석</b>` : ""}</small>` : e.effSeen ? `<small class="tn">${md(e.cd)}</small>` : ""}</span>
-      <span class="t"><span class="qbadges">${qchips(e)}</span><b><span class="subj">${logoOf(e.mid)}${esc(e.m)}</span> ${esc(e.sum)}${e.done ? `<span class="tags"><span class="chip">결정됨</span></span>` : ""}</b><span><span class="chip t7">${esc(EV7[e.id] || "수집 확인")}</span>${esc(e.ch)}</span></span>
-    </button></li>`; }
+      <span class="t"><span class="qbadges">${qchips(e)}${!e.vg && acked[e.id] && !isAcked(e) ? BACK_CHIP : ""}</span><b><span class="subj">${logoOf(e.mid)}${esc(e.m)}</span> ${esc(e.sum)}${e.done ? `<span class="tags"><span class="chip">결정됨</span></span>` : ""}</b><span><span class="chip t7">${esc(EV7[e.id] || "수집 확인")}</span>${esc(e.ch)}</span></span>
+    </button>`; }
 // 변동 잦음 묶음: 정렬된 목록에서 묶음 구성원은 맨 앞 구성원 자리에 한 줄로 모은다. 날짜 칸은 묶인 카드 수와 기간이다.
 function bundled(list){ const seen = new Set();
   return list.flatMap(e => !e.vg ? [e] : seen.has(e.vg) ? [] : (seen.add(e.vg), [{vg: e.vg}])); }
 function vgSum(id){ const l = VG[id], days = l.map(e => e.cd).filter(Boolean).sort();
   return {l, e0: l[0], up: l.filter(e => dirOf(e) === "bad").length, down: l.filter(e => dirOf(e) === "good").length, res: l.filter(e => e.rv).length, from: days[0], to: days[days.length - 1]}; }
-function vgRow(b){ const {l, e0, up, down, res, from, to} = vgSum(b.vg);
-  return `<li>
-    <button type="button" class="row vg" data-id="${esc(b.vg)}" aria-current="${state.sel === b.vg}">
+function vgRow(b){ const {l, e0, up, down, res, from, to} = vgSum(b.vg), was = acked[b.vg], drift = was ? vgDrift(b.vg, was).length : 0;
+  return `<button type="button" class="row vg" data-id="${esc(b.vg)}" aria-current="${state.sel === b.vg}">
       <span class="dl2"><span class="chip none">${l.length}장</span><small class="tn">${md(from)}~</small><small class="tn">${md(to)}</small></span>
-      <span class="t"><span class="qbadges"><span class="chip">변동 잦음</span>${appChip(e0)}</span><b><span class="subj">${logoOf(e0.mid)}${esc(e0.m)}</span> 가격이 자주 바뀜 · 인상 ${up} · 인하 ${down}${res ? ` · 되돌아감 ${res}` : ""}</b><span><span class="chip t7">가격 변경 묶음</span>${esc(e0.ch)}</span></span>
-    </button></li>`; }
-const rowOf = x => x.vg && !x.id ? vgRow(x) : queueRow(x);
+      <span class="t"><span class="qbadges"><span class="chip">변동 잦음</span>${appChip(e0)}${was && !isAcked(e0) ? BACK_CHIP : drift ? `<span class="chip verify" title="체크한 뒤 10% 이상 달라진 줄 수입니다. 묶음을 열면 어떤 줄인지 보입니다">체크 뒤 ${drift}줄 변동</span>` : ""}</span><b><span class="subj">${logoOf(e0.mid)}${esc(e0.m)}</span> 가격이 자주 바뀜 · 인상 ${up} · 인하 ${down}${res ? ` · 되돌아감 ${res}` : ""}</b><span><span class="chip t7">가격 변경 묶음</span>${esc(e0.ch)}</span></span>
+    </button>`; }
+const plainRow = e => `<li>${queueRow(e)}</li>`;  // 상세·수집 상태 안의 줄에는 확인 처리를 두지 않는다
+const ackBox = id => { const l = ackMembers(id); return `<label class="ack"><input type="checkbox" class="spx" data-ack-id="${esc(id)}" aria-label="${esc(l[0].m)} 확인 처리"${isAcked(l[0]) ? " checked" : ""}>확인 처리</label>`; };
+const rowOf = x => { const vg = x.vg && !x.id; return `<li>${vg ? vgRow(x) : queueRow(x)}${ackBox(vg ? x.vg : x.id)}</li>`; };
 function renderQueue(){
   const list = listed();
   // 선택은 거르기와 무관하다: 주소의 #id나 캘린더에서 고른 카드는 목록에서 숨겨져도 상세에 남는다. 처음 고를 때만 보이는 카드를 먼저 본다.
@@ -1489,8 +1524,8 @@ function renderQueue(){
   renderFilter();
   document.getElementById("qsort").value = state.queueSort;
   const lines = bundled(list).length;
-  document.getElementById("lt").textContent = `${letsurOnly ? "렛서 경로 변화" : "전체 변화"} ${list.length}${lines < list.length ? ` · 묶어서 ${lines}줄` : ""}`;
-  const none = EVENTS.length ? `<p class="lempty">${letsurOnly ? "렛서 경로의 " : ""}${modelQ ? "검색한 모델의 " : ""}${listKind ? "선택한 유형의 " : ""}${showPast ? "" : "최근 7일과 앞으로의 "}변화 0건</p>` : "";
+  document.getElementById("lt").textContent = `${ackOnly ? "확인한 알림" : letsurOnly ? "렛서 경로 변화" : "전체 변화"} ${list.length}${lines < list.length ? ` · 묶어서 ${lines}줄` : ""}`;
+  const none = EVENTS.length ? `<p class="lempty">${letsurOnly ? "렛서 경로의 " : ""}${modelQ ? "검색한 모델의 " : ""}${listKind ? "선택한 유형의 " : ""}${ackOnly ? "확인한 알림" : `${showPast ? "" : "최근 7일과 앞으로의 "}변화`} 0건</p>` : "";
   if (state.queueSort !== "type") { document.getElementById("queue").innerHTML = list.length ? `<ul class="rows">${bundled(list.slice().sort(queueCmp)).map(rowOf).join("")}</ul>` : none; return; }
   const groups = Object.keys(TYPE).map(k => [k, list.filter(e => typeOf(e) === k).sort((a, b) => cmpU(a, b) || actOrder(a) - actOrder(b))]).filter(([, l]) => l.length);
   document.getElementById("queue").innerHTML = groups.map(([k, l]) => `<section class="grp" aria-label="${TYPE[k].ko}"><h3><i class="ti-${k}"></i>${TYPE[k].ko} ${l.length}</h3><ul class="rows">${bundled(l).map(rowOf).join("")}</ul></section>`).join("") || none;
@@ -1584,6 +1619,9 @@ function vgChart(s){
 }
 function vgKey(e){ const s = e.vgs, said = [["인상", s.up], ["인하", s.down], ["되돌아감", s.back]].filter(x => x[1]).map(x => x.join(" "));
   return `<section class="kc"><h3>핵심 변화</h3><div class="big">처음 가격과 비교해 ${said.join(" · ") || "변화 없음"}</div>${vgChart(s)}</section>`; }
+function ackNote(e){ const was = e.vgs && acked[e.id], d = was ? vgDrift(e.id, was) : []; if (!d.length) return "";
+  const top = d.map(r => { const a = money(wasPrice(r, was)), b = money(r[2]); return [a ? Math.abs(b - a) / a : 1, `${r[0]} ${wasPrice(r, was)} → ${r[2]}`]; }).sort((x, y) => y[0] - x[0]).slice(0, 3).map(x => x[1]);
+  return `<p class="rvnote">체크한 뒤 10% 이상 달라진 줄 ${d.length}개: ${esc(top.join(", "))}${d.length > 3 ? ` 외 ${d.length - 3}개` : ""}</p><button type="button" class="tlink" data-ack-again="${esc(e.id)}">지금 가격으로 다시 확인</button>`; }
 function renderDetail(){
   const e = VG[state.sel] ? vgCard(state.sel) : EVENTS.find(x => x.id === state.sel), el = document.getElementById("detail");
   if (!e) { el.innerHTML = `<p class="unknown">이 칸에 해당하는 변화가 없습니다.</p>`; return; }
@@ -1591,7 +1629,7 @@ function renderDetail(){
   const eff = e.eff ? `${md(e.eff)} (${wd(e.eff)}) ${ddHtml(e)}${e.effQual ? ` <b class="chip qt" title="${esc(e.effQual)}">해석</b>` : ""}` : esc([e.effShort, e.effNote].filter(Boolean).join(" · ") || "미확인");
   let h = `${missingLink ? `<p class="linkmiss" role="status">링크한 카드(#${esc(missingLink)})를 이 페이지에서 찾지 못했습니다. 아래는 목록 맨 위 카드입니다.</p>` : ""}<div class="dident"><span class="who">${logoOf(e.mid)}${esc(e.m)}</span><span>${esc(e.ch)}</span></div>
     <div class="dmeta">${typeHead(e)}${costChip(net)}<span class="chip big">${e.real ? "실제 · 공개 출처" : "시연 데이터"}</span>${e.done ? `<span class="chip big">결정됨</span>` : ""}</div>
-    <h2 class="headline">${e.head || esc(e.sum)}</h2>
+    <h2 class="headline">${e.head || esc(e.sum)}</h2>${ackNote(e)}
     ${e.rv && !e.vgs ? `<p class="rvnote">${e.rv === e.rn ? `이후 수집에서 바뀐 가격 ${e.rn}개가 모두 원래 값으로 돌아왔습니다. 지금은 적용되지 않는 변화라 기록만 남깁니다(해소됨).` : `바뀐 가격 ${e.rn}개 중 ${e.rv}개가 이후 수집에서 원래 값으로 돌아왔습니다(일부 해소).`}</p>` : ""}
     <div class="decide"><div class="next"><div class="k">다음 할 일 <span class="qbadges" style="display:inline-flex">${qchips(e)}</span></div><div class="v">${nextHtml(e)}</div></div><div><div class="k">${esc(e.effLabel || "적용일")}</div><div class="v">${eff}</div></div>
       <div><div class="k">현재 사용 경로${relDemoOf(e) ? ` <span class="chip">가정</span>` : ""}</div><div class="v">${esc(relShortOf(e))}</div></div></div>
@@ -1602,7 +1640,7 @@ function renderDetail(){
   if (e.chg && e.chg.length) parts.push(sec("바뀐 내용", changeMeta(e), changeTable(e)));
   parts.push(sec("렛서에 주는 영향", "", impactHtml(net), true));
   parts.push(sec("제안", "", suggestHtml(e), true));
-  if (e.vgs) parts.push(sec("변동 내역", `${VG[e.id].length}건`, `<ul class="rows">${VG[e.id].slice().sort((a, b) => (b.cd || "").localeCompare(a.cd || "") || recCmp(a, b)).map(queueRow).join("")}</ul>`));
+  if (e.vgs) parts.push(sec("변동 내역", `${VG[e.id].length}건`, `<ul class="rows">${VG[e.id].slice().sort((a, b) => (b.cd || "").localeCompare(a.cd || "") || recCmp(a, b)).map(plainRow).join("")}</ul>`));
   if (e.ev && e.ev.length) parts.push(sec("출처", `${e.ev.length}건`, `<ul class="srcs">${e.ev.map(([n, t]) => { const s = SRC[n] || {nm:n}; const q = t == null ? "" : Array.isArray(t) ? `이전 “${esc(t[0])}” → 현재 “${esc(t[1])}”` : esc(t);
     const link = s.url ? `<a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.url.replace(/^https:\/\//, ""))}</a>` : esc(s.u || "");
     return `<li><span class="n">${esc(s.short || n)}</span><div><div class="nm">${esc(s.nm)}${srcTag(n)}</div><div class="meta">${esc(s.t || "")}${link ? ` · ${link}` : ""}</div>${q ? `<div class="quote">${q}</div>` : ""}</div></li>`; }).join("")}</ul>`));
@@ -1656,7 +1694,7 @@ function renderHealth(){
     <section class="hsec"><h3>지금 실패 중인 출처</h3>${count}<p class="note">최근 수집에서 받지 못했거나 읽지 못한 출처입니다. 이 출처의 가격은 실패한 동안 모릅니다. 대시보드의 '변화 없음'이나 그래프의 이어진 선은 이 출처에 대해서는 확인된 결과가 아닙니다. 수집기·등록부·주소를 손봐야 하는 실패를 먼저 보입니다. 일시 오류(시간 초과, 연결 끊김, HTTP 429·5xx)는 다음 수집에서 다시 받아 보고, 2회 연속 실패하면 확인이 필요한 것으로 바뀝니다.</p>${fail}</section>
     <section class="hsec"><h3>최근 ${H.days || 14}일 실패 기록</h3><p class="note">지금은 실패하지 않는 출처입니다. 다시 정상으로 받았는지, 등록부에서 빠졌는지 적습니다.</p>${recent}</section>
     <section class="hsec"><h3>원문 재검증 필요</h3><p class="note">파서 코드가 바뀐 뒤 이전 관측을 원문으로 다시 확인하지 못한 가격입니다. 값이 틀렸다는 뜻은 아니고, 아직 확인하지 않았다는 뜻입니다.</p>${recheck}</section>
-    <section class="hsec"><h3>등록부 점검 후보</h3><p class="note">모델이 새로 나오거나 공급 경로가 생기고 끝나면 출처 등록부(sources.py)에 출처를 더하거나 빼야 할 수 있습니다. 최근 7일과 앞으로 일정이 있는 변화만 모았습니다.</p>${reg.length ? `<ul class="rows">${reg.map(queueRow).join("")}</ul>` : `<p class="none">해당하는 변화가 없습니다.</p>`}</section>`;
+    <section class="hsec"><h3>등록부 점검 후보</h3><p class="note">모델이 새로 나오거나 공급 경로가 생기고 끝나면 출처 등록부(sources.py)에 출처를 더하거나 빼야 할 수 있습니다. 최근 7일과 앞으로 일정이 있는 변화만 모았습니다.</p>${reg.length ? `<ul class="rows">${reg.map(plainRow).join("")}</ul>` : `<p class="none">해당하는 변화가 없습니다.</p>`}</section>`;
 }
 
 // ---- 공급로 현황 (2026-10-29 박건 요청, 2026-10-30 체크 칸으로 줄임) ----
@@ -1787,6 +1825,13 @@ function select(id, scroll){ const e = EVENTS.find(x => x.id === id); if (!e && 
   renderCalendar(); renderQueue(); renderDetail();
   if (scroll) { showSel(); document.getElementById("detail").scrollIntoView({behavior: REDUCE ? "auto" : "smooth", block: "start"}); } }
 function refilter(){ renderQueue(); document.getElementById("queue").scrollTop = 0; }
+// 체크하면 그 줄이 사라진다. 보던 카드였으면 다음 줄로 넘어가고, 목록 스크롤은 그 자리에 둔다.
+function ackChange(box){ const id = box.dataset.ackId, li = box.closest("li"), q = document.getElementById("queue"), y = q.scrollTop;
+  const next = li.nextElementSibling || li.previousElementSibling || [...q.querySelectorAll("li")].find(x => x !== li), nextId = next && next.querySelector("[data-id]").dataset.id;
+  ackToggle(id);
+  if (state.sel === id && nextId) select(nextId); else { renderCalendar(); renderQueue(); }
+  q.scrollTop = y;
+  if (nextId) q.querySelector(`[data-ack-id="${CSS.escape(nextId)}"]`)?.focus(); }
 // 검색어가 바뀌면 지금 화면만 다시 그린다. 변화 화면과 모델별 가격은 고른 카드·모델이 결과에 없으면 맨 위 결과를 연다(상세와 그래프가 다른 모델에 남지 않게).
 function onModelSearch(){
   const page = document.body.dataset.page;
@@ -1799,7 +1844,7 @@ function onModelSearch(){
   renderCalendar(); refilter();
 }
 document.addEventListener("input", ev => { if (ev.target && ev.target.id === "msq") { modelQ = searchKey(ev.target.value); onModelSearch(); } });
-document.addEventListener("change", ev => { if (ev.target && ev.target.id === "qsort") { state.queueSort = ev.target.value; refilter(); } else if (ev.target && ev.target.id === "qkind") { listKind = ev.target.value; refilter(); } });
+document.addEventListener("change", ev => { if (ev.target && ev.target.dataset && ev.target.dataset.ackId) ackChange(ev.target); else if (ev.target && ev.target.id === "qsort") { state.queueSort = ev.target.value; refilter(); } else if (ev.target && ev.target.id === "qkind") { listKind = ev.target.value; refilter(); } });
 document.addEventListener("click", ev => {
   const pg = ev.target.closest("[data-ptab]"); if (pg) { setPage(pg.dataset.ptab); window.scrollTo(0, 0); return; }
   const sp = ev.target.closest("[data-sp]"); if (sp) { spAct(sp, ev.detail === 0); return; }
@@ -1810,7 +1855,9 @@ document.addEventListener("click", ev => {
   const tr = ev.target.closest("[data-trend]"); if (tr) { setPage("models", tr.dataset.trend, tr.dataset.tview || "chart"); return; }
   const mn = ev.target.closest("[data-mon]");
   if (mn) { if (!mn.disabled) { calMonth = mn.dataset.mon === "today" ? monthOf(TODAY) : addMonth(calMonth, +mn.dataset.mon); renderCalendar(); } return; }
-  const pb = ev.target.closest("[data-past]"); if (pb) { showPast = !showPast; refilter(); return; }
+  const pb = ev.target.closest("[data-past]"); if (pb) { showPast = !showPast; ackOnly = false; refilter(); return; }
+  const ab = ev.target.closest("[data-ack]"); if (ab) { ackOnly = !ackOnly; refilter(); return; }
+  const ag = ev.target.closest("[data-ack-again]"); if (ag) { acked[ag.dataset.ackAgain] = vgPrices(ag.dataset.ackAgain); ackSave(); renderCalendar(); renderQueue(); renderDetail(); return; }
   const lm = ev.target.closest("[data-lmode]"); if (lm) { letsurOnly = !letsurOnly; renderMeta(); renderCalendar(); refilter(); return; }
   const r = ev.target.closest("[data-id]"); if (!r) return;
   const inList = !!r.closest("#queue");
