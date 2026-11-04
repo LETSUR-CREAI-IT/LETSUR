@@ -144,6 +144,7 @@ jobs:
       # Events (all_verified): continues state.json from the latest successful run of this
       # workflow on the same branch and writes data/market_collection/events/ (packed below).
       - name: Build events
+        id: events
         if: always()
         env:
           GITHUB_TOKEN: ${{ github.token }}
@@ -177,25 +178,27 @@ jobs:
           if-no-files-found: error
 
       # Dashboard (docs/dashboard.md): the events output above filled into the 사용자뷰 page.
-      # Built even when an earlier step failed, so the page says today's build failed instead
-      # of yesterday's page staying up as if current. Whenever the page exists it goes up as the
-      # Pages artifact, and the deploy job below publishes it to GitHub Pages.
+      # Built even when an earlier step failed, because a failed source still leaves a full page
+      # that says so; that page goes up as the Pages artifact and the deploy job below publishes it.
+      # When Build events or this step itself failed the page has no cards, so it is not uploaded:
+      # the last page stays up and the failure mail says why (2026-11-04, after run 41826091709).
       # LETSUR's route per model comes from the committed demo assumptions (is_demo, so the page
       # marks them as assumed); drop --internal-routes or replace the file when real routes exist.
       - name: Build dashboard
+        id: dashboard
         if: always()
         run: python3 -B -m scripts.market_collection.dashboard --root data/market_collection --output dashboard-site --internal-routes samples/market_collection/demo_internal_routes.json
 
       - name: Upload Pages artifact
         id: pages
-        if: always() && hashFiles('dashboard-site/index.html') != ''
+        if: always() && steps.events.outcome == 'success' && steps.dashboard.outcome == 'success' && hashFiles('dashboard-site/index.html') != ''
         uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
           path: dashboard-site
 
   # GitHub Pages (https://letsur-creai-it.github.io/LETSUR/), public because the repository is.
-  # Runs whenever collect uploaded the page, failed collection included, and is skipped without
-  # adding a failure when no page was built. The github-pages environment decides which
+  # Runs whenever collect uploaded the page, failed sources included, and is skipped without
+  # adding a failure when no page was uploaded. The github-pages environment decides which
   # branches may deploy (docs/dashboard.md).
   deploy:
     needs: collect

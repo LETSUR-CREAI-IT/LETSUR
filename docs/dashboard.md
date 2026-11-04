@@ -57,7 +57,8 @@ python3 -B -m scripts.market_collection.dashboard --root data/market_collection 
 - 두 필터는 AND로 합친다. 목록 머리의 "전체 변화 N"은 지금 보이는 카드 수다.
 - 확인 처리(2026-11-04 박건: 대응이 끝났거나 필요 없다고 본 알림이 목록을 가린다): 목록 줄 오른쪽 위의 '확인 처리' 체크(`.ack`)를 누르면 그 줄이 목록에서 사라진다. 보던 카드였으면 다음 줄로 넘어가고, 목록 스크롤은 그 자리에 둔다.
   - '확인한 알림 N' 버튼(`data-ack`)을 누른 동안 목록에는 확인한 카드만 보인다. 지난 변화도 함께 보이고, 체크를 풀면 원래 목록으로 돌아간다. 유형·렛서 경로만·모델 검색은 그대로 걸리고, N도 그 조건 안에서 센다. '지난 변화 보기'를 누르면 원래 목록으로 돌아간다.
-  - 저장은 이 브라우저의 `localStorage`(`letsur-acked`)뿐이다. 서버가 없어 다른 사람이나 다른 브라우저에는 보이지 않고, 브라우저 자료를 지우면 사라진다.
+  - 처리 시각(2026-11-04 박건): 체크한 때를 `letsur-acked-at`에 저장하고 '확인한 알림'의 줄과 상세에 "11/4 21:30 확인" 칩으로 보인다(KST). 체크를 풀면 지우고, 묶음의 '지금 가격으로 다시 확인'을 누르면 그때로 바꾼다. 이 기능 전에 체크한 카드는 시각 없이 그대로 숨겨진다.
+  - 저장은 이 브라우저의 `localStorage`(`letsur-acked`, `letsur-acked-at`)뿐이다. 서버가 없어 다른 사람이나 다른 브라우저에는 보이지 않고, 브라우저 자료를 지우면 사라진다.
   - 숨기는 곳은 목록과 다음 일정이다(박건 '빼줘': 이미 대응한 일이 칸 4개를 차지하지 않게, 그다음 일정이 올라와 채운다). 요약 숫자와 캘린더는 그대로다. 슬랙 알림과도 연결되지 않는다.
   - 일반 카드가 다시 올라오는 경우: 카드 id는 수집이 거듭돼도 유지되지만 같은 카드에 새 변화가 붙기도 한다. 그래서 id와 함께 항목 수가 든 요약·확인 상태·적용일(`ackSig`)을 저장하고, 달라지면 미확인으로 돌아간다. 되돌아간 항목 수만 바뀐 경우는 다시 올리지 않는다.
   - 변동 잦음 묶음(2026-11-04 박건 '10% 이상일 때만', '중간 것들의 변화도 인지는 해야'): 일반 카드 규칙이면 거의 매일 다시 올라온다. 11/4 01:17과 19:58 수집 사이에 요약이 바뀐 카드 12장은 전부 묶음 안 카드였고 묶음 11개 중 8개가 바뀌었다. 그래서 체크할 때의 줄별 현재 가격(`vgPrices`)을 저장하고 두 단계로 나눈다. 10%는 렛서 인하 알림 기준을 빌린 값이다.
@@ -343,7 +344,8 @@ python3 -B -m scripts.market_collection.dashboard --root data/market_collection 
 
 ## 실패·경고 표시
 
-- 아래 경우에는 카드 없이 "오늘 생성 실패" 배너와 이유를 보인다(exit 0). 어제 화면이 최신처럼 남지 않도록 실패 화면도 그대로 배포한다. 수집 run 목록은 `report.json`을 읽을 수 있으면 채운다.
+- 아래 경우에는 카드 없이 "오늘 생성 실패" 배너와 이유를 보인다(exit 0). 수집 run 목록은 `report.json`을 읽을 수 있으면 채운다.
+- 이 화면은 배포하지 않는다(2026-11-04 박건, 전에는 어제 화면이 최신처럼 남지 않도록 그대로 배포했다). 11/4 21:07~21:12 KST에 카드 0장 페이지가 공개되어, workflow는 `Build events`나 `Build dashboard`가 실패하면 직전 페이지를 그대로 둔다. 실패는 실패 메일과 머리줄의 '최신 업데이트' 시각으로 드러난다. 출처 일부가 실패한 날은 카드가 있으므로 전처럼 배포한다.
   - `events.json`이 없음, 읽을 수 없음, `events` 목록이 없음
   - `report.json`·`continuity.json`이 있는데 읽을 수 없음
   - `continuity.json` `status`가 `ok`가 아님(continuity·reason·error 값을 적는다)
@@ -357,11 +359,12 @@ python3 -B -m scripts.market_collection.dashboard --root data/market_collection 
 기존 단계·cron·permissions·concurrency는 그대로 두고 `collect` 잡 끝에 2단계를, 그 뒤에 `deploy` 잡을 더했다(박건 승인 2026-10-20). 배포 대상은 2026-10-22에 Cloudflare Pages에서 같은 저장소의 GitHub Pages로 바꿨다(저장소 공개는 박건 결정).
 
 1. `Build dashboard`(`if: always()`): 위 실행 명령에 `--internal-routes samples/market_collection/demo_internal_routes.json`을 붙인다(2026-10-21 박건 요청). 배포 페이지의 렛서 관계는 파일의 기록대로 표시되고 근거는 적지 않는다(2026-10-30, 그 전에는 "(렛서 설정)"·"(호출 확인)" 등, 2026-10-28 전에는 시연용 가정이라 "(가정)"이었다). 앞 단계가 실패해도 실패 화면을 만든다.
-2. `Upload Pages artifact`(`if: always()`이고 `dashboard-site/index.html`이 있을 때): `actions/upload-pages-artifact` v5.0.0(커밋 `fc324d3547104276b827a68afc52ff2a11cc49c9`로 고정, 2026-04-10 릴리스)으로 `dashboard-site`를 artifact `github-pages`(1일 보관)로 올린다. 이 단계 결과(`steps.pages.outcome`)가 `collect` 잡 output `dashboard`다.
+2. `Upload Pages artifact`(`if: always()`이고 `Build events`와 `Build dashboard`가 성공했고 `dashboard-site/index.html`이 있을 때): `actions/upload-pages-artifact` v5.0.0(커밋 `fc324d3547104276b827a68afc52ff2a11cc49c9`로 고정, 2026-04-10 릴리스)으로 `dashboard-site`를 artifact `github-pages`(1일 보관)로 올린다. 이 단계 결과(`steps.pages.outcome`)가 `collect` 잡 output `dashboard`다.
 3. `deploy` 잡(`needs: collect`, `if: always() && needs.collect.outputs.dashboard == 'success'`): `actions/deploy-pages` v5.0.1(커밋 `368f82528645a54fb793d4d04e342629a3f51346`로 고정, 2026-09-01 릴리스)으로 배포한다. 잡 권한은 `pages: write`, `id-token: write`이고 환경은 `github-pages`(배포 주소를 환경 url로 보인다)다.
 
 - 최상위 permissions(`contents: read`, `actions: read`)는 그대로다. 잡에 permissions를 쓰면 그 잡은 최상위 값 대신 자기 값만 쓰므로 Pages 권한은 `deploy` 잡에만 있다.
-- 수집·요약 단계가 실패해도 페이지가 있으면 배포한다. 페이지가 없으면 업로드 단계와 `deploy` 잡을 건너뛰고 실패를 더하지 않는다.
+- 수집·요약 단계가 실패해도 `Build events`와 `Build dashboard`가 성공했으면 배포한다. 둘 중 하나가 실패했거나 페이지가 없으면 업로드 단계와 `deploy` 잡을 건너뛰고 직전 페이지를 둔다. 건너뛴 것이 실패를 더하지는 않지만, 실패한 단계 때문에 `collect` 잡은 그대로 실패로 끝나 실패 메일이 간다.
+- 배포만 실패했을 때(예: Pages API 500)는 Re-run failed jobs로 그 잡만 다시 돌려도 된다. 다음 수집은 이전 시도 이름의 artifact를 찾는다(`docs/events.md`).
 - 페이지 파일은 Pages artifact `github-pages`(`artifact.tar`)에 1일 남는다. 같은 파일을 올리던 `Upload dashboard` artifact(`dashboard-<run_id>-<run_attempt>`)는 뺐다.
 - Pages 소스가 GitHub Actions라 Jekyll 처리가 없어 `.nojekyll`은 필요 없다. secrets도 쓰지 않는다.
 - 주의

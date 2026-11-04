@@ -934,7 +934,7 @@ def test_template_has_the_supply_tab_and_its_editor(tmp_path: Path) -> None:
     assert 'const spJson = () => JSON.stringify(spDoc(), null, 2) + "\\n";' in page and 'link.download = "demo_internal_routes.json";' in page
     # the draft: every storage call is inside try, so a browser that blocks storage still gets the page
     assert "function spSave(){ try { " in page and "try { const d = JSON.parse(localStorage.getItem(SP_DRAFT)" in page
-    assert page.count("localStorage") == 6  # four for the supply draft, two for 확인 처리
+    assert page.count("localStorage") == 8  # four for the supply draft, four for 확인 처리 and its time
     # one checkbox per cell: checked from the file (plus the draft), disabled where no price is collected; a second click undoes
     assert '<input type="checkbox" class="spx${use && !got ? " warn" : ""}" data-sp="cell"' in page
     assert '${use ? " checked" : ""}${got && SUPPLY.routes ? "" : " disabled"}></td>' in page
@@ -1887,13 +1887,18 @@ def test_a_card_can_be_marked_handled_and_comes_back_when_it_changes(tmp_path: P
     assert "return Object.keys(now).some(k => k in low && tenPct(low[k], now[k])) || vgDrift(id, was).some(r => mine.includes(" in page
     assert 'box.querySelector(".ackn").textContent = moved ? `새 변동 ${moved}` : "";' in page
     assert "체크 뒤 ${drift}줄 변동" in page and "체크한 뒤 10% 이상 달라진 줄 ${d.length}개" in page and "${BACK_CHIP}" not in page and "BACK_CHIP" in page
-    assert 'acked[ag.dataset.ackAgain] = vgPrices(ag.dataset.ackAgain); ackSave(); renderCalendar(); renderQueue(); renderDetail();' in page
-    assert "acked[id] = VG[id] ? vgPrices(id) : ackSig(e);" in page
+    assert 'acked[ag.dataset.ackAgain] = vgPrices(ag.dataset.ackAgain); ackedAt[ag.dataset.ackAgain] = new Date().toISOString(); ackSave(); renderCalendar(); renderQueue(); renderDetail();' in page
+    assert "acked[id] = VG[id] ? vgPrices(id) : ackSig(e); ackedAt[id] = new Date().toISOString();" in page
+    # 2026-11-04 박건 '언제 처리했는지 처리 시간도 기록': shown in KST on handled rows and in the detail; a check saved before this has no time and keeps working
+    assert "delete acked[id]; delete ackedAt[id];" in page and 'const ACK_KEY = "letsur-acked", ACK_AT_KEY = "letsur-acked-at";' in page
+    assert "const ackWhen = id => { const iso = new Date(Date.parse(ackedAt[id]) + 9 * 36e5).toISOString();" in page
+    assert "const ackChip = (id, big) => ackedAt[id] ? " in page and "${ackWhen(id)} 확인</span>" in page
+    assert "${!e.vg && acked[e.id] ? (isAcked(e) ? ackChip(e.id) : BACK_CHIP) : \"\"}" in page and "? ackChip(e.id, true) : \"\"}</div>" in page
     assert "const dayShown = e => ackOnly ? isAcked(e) : !isAcked(e) && (showPast || !isPast(e));" in page
     assert "const listed = () => EVENTS.filter(e => modeShown(e) && kindShown(e) && dayShown(e));" in page
     # saved in this browser only, and the page runs without it
-    assert 'try { acked = JSON.parse(localStorage.getItem(ACK_KEY) || "{}") || {}; } catch (err) {}' in page
-    assert "try { localStorage.setItem(ACK_KEY, JSON.stringify(acked)); } catch (err) {}" in page
+    assert 'try { acked = JSON.parse(localStorage.getItem(ACK_KEY) || "{}") || {}; ackedAt = JSON.parse(localStorage.getItem(ACK_AT_KEY) || "{}") || {}; } catch (err) {}' in page
+    assert "try { localStorage.setItem(ACK_KEY, JSON.stringify(acked)); localStorage.setItem(ACK_AT_KEY, JSON.stringify(ackedAt)); } catch (err) {}" in page
     # the check sits beside the row's button, never inside it, and only rows of the change list have it
     assert "return `<li>${vg ? vgRow(x) : queueRow(x)}${ackBox(vg ? x.vg : x.id)}</li>`;" in page
     assert "const plainRow = e => `<li>${queueRow(e)}</li>`;" in page and ".map(queueRow)" not in page and page.count(".map(plainRow)") == 2
