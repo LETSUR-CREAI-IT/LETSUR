@@ -547,7 +547,7 @@ CURRENT = {
     "is_demo": False, "purpose": "경로 파일", "basis_note": "note",
     "records": [
         record("a", "openrouter", note="hand written"),                           # seen again, nothing new to say: the note stays
-        record("b", "azure_foundry", checked_at=OLD),                             # now on Bedrock only: the Azure record goes
+        record("b", "azure_foundry", checked_at=OLD),                             # not seen this time, Bedrock seen: the Azure record stays
         record("c", "google_direct", basis="settings"), record("c", "openrouter", basis="settings"),
         record("d", "anthropic_direct", checked_at=OLD),                          # answers, but shows no route now: kept
         record("e", "vercel_ai_gateway"),                                         # no answer at all: kept
@@ -586,13 +586,15 @@ RESULTS = {
 }
 
 
-def test_merge_keeps_what_the_run_saw_and_drops_the_observed_routes_it_did_not_see():
+def test_merge_keeps_what_the_run_saw_and_a_route_it_did_not_see_stays_with_the_day_it_was_last_seen():
+    """2026-11-05 박건 '사라진 경로나 빠지는건 말이 안되는거같은데': 6 samples each 'lost' 14 routes and 20 samples brought 9 back, so not seeing a route proves nothing."""
     before = copy.deepcopy(CURRENT)
     doc, diff = lr.merge(CURRENT, RESULTS, DAY)
     assert CURRENT == before  # the document it was given is not edited
     assert doc["records"] == [
         record("a", "openrouter", note="hand written", checked_at=DAY),           # re-seen: dated; an empty new note keeps the old one
-        record("b", "aws_bedrock", note=HERE, checked_at=DAY),                    # the route seen now; the Azure one not seen is gone
+        record("b", "azure_foundry", checked_at=OLD),                             # not seen: its date stays the day it was last seen
+        record("b", "aws_bedrock", note=HERE, checked_at=DAY),                    # the route seen now
         record("c", "google_direct", basis="settings"), record("c", "openrouter", basis="settings"),
         record("d", "anthropic_direct", checked_at=OLD),                          # no route identified: nothing proved against it
         record("e", "vercel_ai_gateway"),
@@ -602,17 +604,17 @@ def test_merge_keeps_what_the_run_saw_and_drops_the_observed_routes_it_did_not_s
         record("m", "fal", basis="manual", note="by hand"),                       # a person's record is never touched
         record("p", "openrouter", endpoint="Host", note=SEEN, checked_at=DAY),
         record("r", "BytePlus ModelArk", basis="inferred", note="id와 단가"),
-        record("s", "fal", basis="manual"), record("s", "openrouter", note=SEEN, checked_at=DAY),
+        record("s", "fal", basis="manual"), record("s", "vercel_ai_gateway", checked_at=OLD), record("s", "openrouter", note=SEEN, checked_at=DAY),
         record("h", "openrouter", note=SEEN, checked_at=DAY),                     # a model with no record yet goes to the end
         record("k", "vercel_ai_gateway", note=SEEN, checked_at=DAY),
         record("w", "openrouter", note=SEEN, checked_at=DAY)]
     assert (doc["is_demo"], doc["purpose"], doc["basis_note"]) == (False, "경로 파일", "note") and list(doc)[:3] == ["is_demo", "purpose", "basis_note"]
-    assert diff["new_route"] == [("b", ("aws_bedrock", None, "observed"), []), ("f", ("openai_direct", None, "observed"), []),
+    assert diff["new_route"] == [("b", ("aws_bedrock", None, "observed"), [("azure_foundry", None, "observed", OLD)]), ("f", ("openai_direct", None, "observed"), []),
                                  ("h", ("openrouter", None, "observed"), []), ("k", ("vercel_ai_gateway", None, "observed"), []),
-                                 ("s", ("openrouter", None, "observed"), [("fal", None, "manual", None)]),
+                                 ("s", ("openrouter", None, "observed"), [("fal", None, "manual", None), ("vercel_ai_gateway", None, "observed", OLD)]),
                                  ("w", ("openrouter", None, "observed"), [])]
     assert diff["re_seen"] == ["a", "claude-haiku-4-5", "g", "p"]
-    assert diff["dropped"] == [("b", ("azure_foundry", None, "observed"), OLD), ("s", ("vercel_ai_gateway", None, "observed"), OLD)]
+    assert diff["not_seen"] == [("b", ("azure_foundry", None, "observed"), OLD), ("s", ("vercel_ai_gateway", None, "observed"), OLD)]
     assert diff["inferred"] == [("f", ("openai_direct", None, "inferred"), OLD), ("q", ("aws_bedrock", None, "inferred"), OLD)]
     assert diff["kept"] == [("d", ("anthropic_direct", None, "observed"), OLD, "chat 404 model_not_found"),
                             ("e", ("vercel_ai_gateway", None, "observed"), None, SILENT)]
@@ -622,19 +624,20 @@ def test_merge_keeps_what_the_run_saw_and_drops_the_observed_routes_it_did_not_s
 def test_unresolved_entries_follow_what_the_answers_showed_and_a_written_note_is_never_replaced():
     doc, diff = lr.merge(CURRENT, RESULTS, DAY)
     # d's old record stays, but its answers showed no route; k showed one route and a deployment without a mark
-    assert doc["unresolved"] == {"u": "human note", "z": "old note", "k": "old note", "d": "chat 404 model_not_found", "q": UNKNOWN, "v": UNKNOWN}
-    assert list(doc["unresolved"]) == ["u", "z", "k", "d", "q", "v"]              # the order of the file, new entries at the end
+    assert doc["unresolved"] == {"u": "human note", "w": "old note", "z": "old note", "k": "old note", "d": "chat 404 model_not_found", "q": UNKNOWN, "v": UNKNOWN}
+    assert list(doc["unresolved"]) == ["u", "w", "z", "k", "d", "q", "v"]         # the order of the file, new entries at the end
     assert diff["unresolved"] == ["d", "k", "q", "u", "v", "z"] and diff["no_answer"] == [("x", SILENT)]  # no answer, no record: no finding
 
 
-def test_an_entry_goes_only_when_every_answer_showed_a_route():
+def test_an_entry_stays_when_every_answer_showed_a_route():
+    """2026-11-05: not drawing a hidden deployment proves as little as not drawing a route."""
     current = {"records": [record("m", "fal", basis="manual"), record("s", "openrouter", basis="settings"), record("o", "openrouter")],
                "unresolved": {"m": "old", "s": "old", "o": "old", "e": "old", "other": "kept"}}
     results = {"m": result(("fal", "")), "s": result(("openrouter", "")), "o": result(note="new"), "n": result(note="new"),
                "e": result(("vercel_ai_gateway", ""))}
     doc, diff = lr.merge(current, results, DAY)
     assert doc["records"] == [*current["records"], record("e", "vercel_ai_gateway", checked_at=DAY)]
-    assert doc["unresolved"] == {"o": "old", "other": "kept", "n": "new"} and diff["unresolved"] == ["n", "o"]
+    assert doc["unresolved"] == {"m": "old", "s": "old", "o": "old", "e": "old", "other": "kept", "n": "new"} and diff["unresolved"] == ["n", "o"]
 
 
 def test_nothing_asked_is_a_finding_that_gets_its_entry():
@@ -646,19 +649,21 @@ def test_nothing_asked_is_a_finding_that_gets_its_entry():
 def test_a_second_run_the_same_day_adds_nothing_and_changes_nothing():
     first, _ = lr.merge(CURRENT, RESULTS, DAY)
     second, diff = lr.merge(first, RESULTS, DAY)
-    assert second == first and not (diff["new_route"] or diff["dropped"] or diff["inferred"])
+    assert second == first and not (diff["new_route"] or diff["inferred"])
+    assert diff["not_seen"] == [("b", ("azure_foundry", None, "observed"), OLD), ("s", ("vercel_ai_gateway", None, "observed"), OLD)]
     assert diff["re_seen"] == ["a", "b", "claude-haiku-4-5", "f", "g", "h", "k", "p", "s", "w"]
 
 
-def test_the_file_follows_the_routes_letsur_uses_from_run_to_run():
+def test_a_route_comes_and_goes_from_run_to_run_without_losing_its_record():
     first, _ = lr.merge(CURRENT, RESULTS, DAY)
     both, diff = lr.merge(first, {"b": result(("aws_bedrock", HERE), ("azure_foundry", "Azure 배포 지역 uk-south"))}, "2026-10-31")
     assert [r for r in both["records"] if r["model_id"] == "b"] == [
-        record("b", "aws_bedrock", note=HERE, checked_at="2026-10-31"), record("b", "azure_foundry", note="Azure 배포 지역 uk-south", checked_at="2026-10-31")]
-    assert diff["re_seen"] == ["b"] and diff["new_route"] == [("b", ("azure_foundry", None, "observed"), [("aws_bedrock", None, "observed", "2026-10-31")])]
+        record("b", "azure_foundry", note="Azure 배포 지역 uk-south", checked_at="2026-10-31"), record("b", "aws_bedrock", note=HERE, checked_at="2026-10-31")]
+    assert diff["re_seen"] == ["b"] and not diff["new_route"] and not diff["not_seen"]
     back, diff = lr.merge(both, {"b": result(("azure_foundry", ""))}, "2026-11-01")
-    assert [r for r in back["records"] if r["model_id"] == "b"] == [record("b", "azure_foundry", note="Azure 배포 지역 uk-south", checked_at="2026-11-01")]
-    assert diff["dropped"] == [("b", ("aws_bedrock", None, "observed"), "2026-10-31")]
+    assert [r for r in back["records"] if r["model_id"] == "b"] == [
+        record("b", "azure_foundry", note="Azure 배포 지역 uk-south", checked_at="2026-11-01"), record("b", "aws_bedrock", note=HERE, checked_at="2026-10-31")]
+    assert diff["not_seen"] == [("b", ("aws_bedrock", None, "observed"), "2026-10-31")]
 
 
 def test_a_route_seen_again_keeps_the_note_already_written():
@@ -674,12 +679,13 @@ def test_a_run_over_some_models_leaves_the_others_alone():
     assert [part for part, rows in diff.items() if rows] == ["new_route"]
 
 
-def test_diff_text_names_what_was_added_dropped_and_kept():
+def test_diff_text_names_what_was_added_not_seen_and_kept():
     _, diff = lr.merge(CURRENT, RESULTS, DAY)
     diff["not_registered"] = ["gpt-4", "o1-pro"]
     lines = lr.format_diff(diff).splitlines()
-    for expected in ("new route (6)", "  b: aws_bedrock [observed]", "  s: openrouter [observed] (also fal [manual])",
-                     "observed before, not seen this run, dropped (2)", "  b: azure_foundry [observed] 2026-10-28",
+    for expected in ("new route (6)", "  b: aws_bedrock [observed] (also azure_foundry [observed] 2026-10-28)",
+                     "  s: openrouter [observed] (also fal [manual], vercel_ai_gateway [observed] 2026-10-28)",
+                     "observed before, not seen this run, kept (2)", "  b: azure_foundry [observed] 2026-10-28",
                      "  s: vercel_ai_gateway [observed] 2026-10-28",
                      "inferred (no longer written), dropped (2)", "  f: openai_direct [inferred] 2026-10-28", "  q: aws_bedrock [inferred] 2026-10-28",
                      "no route identified this run, kept (2)", "  d: anthropic_direct [observed] 2026-10-28 (chat 404 model_not_found)",
@@ -764,7 +770,7 @@ def setup(tmp_path, monkeypatch):
     return run, routes, output, opener
 
 
-def test_a_run_samples_the_registered_models_names_the_rest_and_keeps_only_the_routes_it_saw(setup, capsys):
+def test_a_run_samples_the_registered_models_names_the_rest_and_keeps_the_routes_it_did_not_see(setup, capsys):
     run, routes, output, opener = setup
     before = routes.read_bytes()
     assert run() == 0
@@ -778,8 +784,10 @@ def test_a_run_samples_the_registered_models_names_the_rest_and_keeps_only_the_r
     assert text == json.dumps(json.loads(text), ensure_ascii=False, indent=2) + "\n" and "경로 파일" in text
     proposal = json.loads(text)
     assert proposal["records"] == [
-        record("gpt-6.1-terra", "aws_bedrock", note="Bedrock 배포 지역 us-east-1", checked_at=DAY),   # the 10/28 route not seen now is gone
+        record("gpt-6.1-terra", "openai_direct", checked_at="2026-10-28"),                         # the 10/28 route not seen now stays with that date
+        record("gpt-6.1-terra", "aws_bedrock", note="Bedrock 배포 지역 us-east-1", checked_at=DAY),
         {**record("deepseek-v4-pro", "openrouter"), "note": "이번 확인의 하위 공급자 Example Host(요청마다 바뀔 수 있음)", "checked_at": DAY},
+        record("kimi-k2.5", "openrouter"),
         record("kimi-k2.5", "vercel_ai_gateway", note="이번 확인의 하위 공급자 beta(계획 alpha, 요청마다 바뀔 수 있음)", checked_at=DAY),
         {**record("claude-haiku-4-5", "anthropic_direct"), "checked_at": DAY},                     # LETSUR's dated id, our id
         record("seedance-2.5", "fal", basis="settings"), record("seedance-2.5", "BytePlus ModelArk", basis="settings"),
@@ -790,8 +798,8 @@ def test_a_run_samples_the_registered_models_names_the_rest_and_keeps_only_the_r
     assert not set(LETSUR_ONLY) & ({r["model_id"] for r in proposal["records"]} | set(proposal["unresolved"]))
     assert "byteplus-seedance-2.5" not in text and routes.read_bytes() == before  # never overwritten without --write
     captured = capsys.readouterr()
-    for expected in ("new route (3)", "  gpt-6.1-terra: aws_bedrock [observed]", "  kimi-k2.5: vercel_ai_gateway [observed]", "  gpt-5.4: azure_foundry [observed]",
-                     "observed before, not seen this run, dropped (2)", "  gpt-6.1-terra: openai_direct [observed] 2026-10-28",
+    for expected in ("new route (3)", "  gpt-6.1-terra: aws_bedrock [observed] (also openai_direct [observed] 2026-10-28)", "  kimi-k2.5: vercel_ai_gateway [observed] (also openrouter [observed] no date)", "  gpt-5.4: azure_foundry [observed]",
+                     "observed before, not seen this run, kept (2)", "  gpt-6.1-terra: openai_direct [observed] 2026-10-28",
                      "  kimi-k2.5: openrouter [observed] no date", "re-seen (2): claude-haiku-4-5, deepseek-v4-pro",
                      "unresolved (4): glm-5, glm-5.2, gpt-image-2, kling-v3-text-to-video", "not registered, skipped (3): gpt-4, o1-pro, qwen3-max"):
         assert expected in captured.out.splitlines()
@@ -877,7 +885,7 @@ def test_the_bedrock_check_runs_only_with_its_flag_and_records_the_deployment_it
                      '{"foo_probe_param": 1}': 6}
     proposal = json.loads(output.read_text(encoding="utf-8"))
     assert [r for r in proposal["records"] if r["model_id"] == "glm-5"] == [record("glm-5", "aws_bedrock", note=lr.BEDROCK_NOTE, checked_at=DAY)]
-    assert "glm-5" not in proposal["unresolved"]  # its only deployment is now known
+    assert proposal["unresolved"]["glm-5"] == "Bedrock 형식이나 확인 못 함"  # a person takes the note out now that the record says it
     captured = capsys.readouterr()
     assert "[bedrock 1/1] glm-5: 1 of 1 chatcmpl-<uuid> deployments check Bedrock's own field" in captured.err.splitlines()
     assert "checked 1 models with 24 requests" in captured.out
