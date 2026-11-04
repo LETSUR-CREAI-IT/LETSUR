@@ -1820,6 +1820,28 @@ def test_the_supply_tab_opens_with_a_summary_of_letsur_routes(tmp_path: Path) ->
     assert not re.search(r"#[0-9a-fA-F]{3,8}\b", css) and ".spv.solo{font-weight:650;color:var(--amber)}" in css and ".spv.dual{font-weight:650;color:var(--down-ink)}" in css
 
 
+def test_the_solo_route_switch_sits_beside_letsur_only(tmp_path: Path) -> None:
+    """2026-11-05 박건 '렛서 경로만 쓰는 토글이 있으니까 그 옆에 대체 경로 없는 모델 토글을 붙이면' (박기범's draft PR #40 has it as a chip on the
+    calendar): it keeps the changes of a route LETSUR uses for a model on that route alone, across the summary, the calendar and the list,
+    counted from the same columns and draft as the 공급로 현황 table. It starts off and is not saved. The browser check covers the
+    numbers against a separate count, the draft and the widths."""
+    _write(tmp_path, [])
+    page = _build(tmp_path)[1]
+    # left of the other switch, in the same shape, so the gear ends the row (박건 '저 톱니바퀴 버튼이 맨 오른쪽이면 좋겠어'); the pair stays at the right edge, also on two lines
+    assert 'data-t1="대체 경로 없는 모델만"><span>OFF</span></button></div>' in page and '<label for="ssw">대체 경로 없는 모델만</label><button type="button" id="ssw" class="lswitch" role="switch" data-single aria-checked="false"' in page
+    assert page.index('<div class="lmodes">') < page.index('id="ssw"') < page.index('id="lsw"') < page.index('class="lgear"') and ".lmodes{display:flex;flex-wrap:wrap;justify-content:flex-end;" in page
+    # on a phone each pair of words and switch takes its own line from the left, and the gear stays at the right end
+    phone = page[page.index("@media (max-width:480px){\n  .lmodes{"):]
+    phone = phone[:phone.index("\n}\n")]
+    assert ".lmodes{position:relative;flex-direction:column;align-items:flex-start;" in phone and ".lgear{position:absolute;top:50%;right:0" in phone
+    # a change of a route LETSUR uses, for a model with one supplier column; the draft empties the count
+    assert 'return relOf(e) === "use" && spUseCount[e.mid] === 1;' in page and "[m, spUses(D, m).length]" in page and "spUseCount = null; spSave(); renderSupply();" in page
+    # it filters like 렛서 경로만, starts off, and its names and count follow
+    assert "let singleOnly = false" in page and "singleOnly = !singleOnly; renderMeta(); renderCalendar(); refilter();" in page
+    assert 'singleOnly ? "대체 경로 없는 모델 변화" : letsurOnly ? "렛서 경로 변화" : "전체 변화"' in page and 'singleOnly ? "대체 경로 없는 모델의 " : letsurOnly ? "렛서 경로의 " : ""' in page
+    assert 'so.firstElementChild.textContent = singleOnly ? "ON" : "OFF";' in page and "한 곳은 경로 파일 기록 기준이라 아직 못 본 경로가 더 있을 수 있습니다." in page
+
+
 def test_template_css_keeps_to_the_design_scales() -> None:
     """docs/design-system.md (2026-10-30): corners are role tokens (or 0 and 50%), font sizes the eight-step scale, and
     padding, margin and gap the 4px grid (2px for the narrowest gaps)."""
@@ -1855,7 +1877,7 @@ def test_team_feedback_icons_calendar_words_title_and_letsur_mode(tmp_path: Path
     assert "확인할 변화" not in page
     # 렛서 경로만: off when the page opens, keeps 렛서 경로를 모르는 cards, filters the summary, the calendar and the list
     assert 'class="lswitch" role="switch" data-lmode aria-checked="false"' in page and "let letsurOnly = false;" in page
-    assert 'const letsurRoute = e => ["use", "unk"].includes(relOf(e));' in page and "const modeShown = e => (!letsurOnly || letsurRoute(e)) && modelHit(e.mid, e.m);" in page
+    assert 'const letsurRoute = e => ["use", "unk"].includes(relOf(e));' in page and "const modeShown = e => (!letsurOnly || letsurRoute(e)) && (!singleOnly || singleRoute(e)) && modelHit(e.mid, e.m);" in page
     assert "const shown = EVENTS.filter(modeShown)" in page and "const entries = CAL_ENTRIES.filter(x => modeShown(x.e));" in page
     assert "const listed = () => EVENTS.filter(e => modeShown(e) && kindShown(e) && dayShown(e));" in page
     assert "letsurOnly = !letsurOnly; renderMeta(); renderCalendar(); refilter();" in page
