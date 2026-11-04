@@ -319,3 +319,53 @@ def test_real_events_cli_accepts_restored_state(tmp_path: Path) -> None:
     assert code == 0, report
     assert report["build_exit_code"] == 0 and report["continuity"] == "continued"
     assert json.loads((root / "events" / "state.json").read_text())["processed_runs"] == ["20261014T001700Z-live"]
+
+
+def _attempt(run_id: int, attempt: int, artifact_id: int = 4000) -> dict:
+    return {**_artifact(run_id), "id": artifact_id, "name": f"market-collection-{run_id}-{attempt}"}
+
+
+def _rerun(attempt: int, *artifacts: dict) -> Transport:
+    return Transport({"/actions/workflows/7/runs": {"workflow_runs": [CURRENT, {**_run(400, "2026-10-14T00:17:00Z"), "run_attempt": attempt}]},
+                      "/actions/runs/400/artifacts": {"artifacts": list(artifacts)}})
+
+
+def test_rerun_of_failed_jobs_alone_reads_the_artifact_of_the_attempt_that_collected(root: Path) -> None:
+    """2026-11-04: re-running only the deploy of run 41817741856 made it attempt 2 while its artifact stayed market-collection-41817741856-1.
+    The next run looked for -2, failed, and published a page with no cards; so would every run after it."""
+    pages = {"id": 1, "name": "github-pages", "expired": False, "size_in_bytes": 1, "created_at": "2026-10-14T00:31:00Z", "workflow_run": {"id": 400}}
+    code, report = _daily(root, _rerun(2, pages, _attempt(400, 1)), Build())
+    assert code == 0 and report["continuity"] == "continued" and report["previous_run"]["run_attempt"] == 2
+    assert report["previous_artifact"]["name"] == "market-collection-400-1"
+
+
+def test_the_newest_attempt_up_to_the_runs_own_is_read(root: Path) -> None:
+    code, report = _daily(root, _rerun(2, _attempt(400, 1, 11), _attempt(400, 2), _attempt(400, 3, 13)), Build())
+    assert code == 0 and report["previous_artifact"]["name"] == "market-collection-400-2"
+
+
+@pytest.mark.parametrize("artifacts", [
+    [],
+    [{"id": 1, "name": "github-pages", "workflow_run": {"id": 400}}],
+    [{"id": 1, "name": "market-collection-999-1", "workflow_run": {"id": 400}}],
+    [{"id": 1, "name": "market-collection-400-1", "workflow_run": {"id": 999}}],
+    [{"id": 1, "name": "market-collection-400-3", "workflow_run": {"id": 400}}],
+    [{"id": 1, "name": "market-collection-400-2", "workflow_run": {"id": 400}}, {"id": 2, "name": "market-collection-400-2", "workflow_run": {"id": 400}}],
+], ids=["none", "pages_only", "other_run_name", "other_run", "later_attempt", "two_same_name"])
+def test_no_usable_artifact_still_fails_instead_of_an_older_run(root: Path, artifacts: list) -> None:
+    code, report = _daily(root, _rerun(2, *artifacts), Build())
+    assert code == 1 and report["status"] == "failed" and report["reason"] == "previous_artifact_missing"
+
+
+def test_the_workflow_publishes_no_page_without_events_and_keeps_failing_loudly() -> None:
+    """2026-11-04 박건 '둘 다 고쳐줘': a failed Build events or Build dashboard leaves a page with no cards, which must not replace the last one.
+    A failed source still publishes its full page. The failure judgement, the failure mail and the cron line are not this change's to touch."""
+    workflow = (events_daily.REPO_ROOT / ".github/workflows/market-collection.yml").read_text(encoding="utf-8")
+    assert "      - name: Build events\n        id: events\n        if: always()\n" in workflow
+    assert "      - name: Build dashboard\n        id: dashboard\n        if: always()\n" in workflow
+    assert "if: always() && steps.events.outcome == 'success' && steps.dashboard.outcome == 'success' && hashFiles('dashboard-site/index.html') != ''" in workflow
+    assert "dashboard: ${{ steps.pages.outcome }}" in workflow and "if: always() && needs.collect.outputs.dashboard == 'success'" in workflow
+    assert "cron: '17 0 * * *'" in workflow
+    # steps after a failure still run, and nothing masks the failure: the job stays failed, which is what sends the mail
+    steps = {name: workflow.split(f"      - name: {name}\n", 1)[1].split("      - name:", 1)[0] for name in ("Build events", "Build dashboard")}
+    assert not any("continue-on-error" in step for step in steps.values()) and "      - name: Upload collection data\n        if: always()\n" in workflow

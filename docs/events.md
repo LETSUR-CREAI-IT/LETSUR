@@ -202,6 +202,7 @@ python -m scripts.market_collection.events legacy --event <case>/event.json ... 
 - 이전 state는 같은 repo·같은 workflow·같은 branch의 완료 run 중, 현재 run보다 먼저 만들어진 가장 최근 run에서 가져온다. 현재 run, 미래 run, fork, 다른 branch, 다른 workflow는 제외한다.
   - run 전체가 success이면 그대로 후보이다.
   - run 전체가 failure여도(예: 출처 하나 실패로 Summarize collection 실패) jobs/steps 메타데이터(기존 `actions: read`)에서 `Build events` 단계가 success이면 후보이다. 개별 출처 실패는 엔진이 이미 gap/unknown으로 기록하므로 공식성·비교 규칙은 약해지지 않는다.
+  - artifact는 그 run이 목록에 보여 주는 `market-collection-<run id>-<시도>` 중 run의 시도 번호 이하에서 가장 큰 것이다. 실패한 잡만 다시 돌리면(Re-run failed jobs) 시도 번호만 오르고 수집 잡과 artifact는 이전 시도 이름으로 남기 때문이다(2026-11-04 run 41817741856, 이때 다음 수집이 `previous_artifact_missing`으로 실패했다). 전체를 다시 돌린 run은 그 시도의 artifact만 보여 준다. 쓸 artifact가 없거나 같은 이름이 둘이면 `previous_artifact_missing`으로 실패한다.
   - artifact에서 `market_collection/events/state.json`과 엔진 `report.json` 두 멤버만 읽는다. report `status`가 `ok`이고 state 형식이 맞아야 이어받는다. 경로·중복·symlink·크기 검사는 그대로이다.
 - `Build events`가 failure이거나 실행되지 않은 run, 또는 jobs에 그 이름의 단계가 없는 run(단계 이름 변경·실행 전 취소일 수 있으므로 이전 버전으로 추정하지 않는다)은 건너뛰고 `continuity.json`의 `unprocessed_runs`에 run id와 이유(`events_step_failure`/`events_step_not_run`/`events_step_not_present`)를 남긴다.
   - 더 오래된 state를 이어받으면 `continuity`는 `continued`가 아니라 `continued_with_gaps`이다. 전체 이력이 완전하다는 뜻이 아니다.

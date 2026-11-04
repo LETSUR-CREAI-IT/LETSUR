@@ -32,6 +32,7 @@ import hashlib
 import json
 import lzma
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -202,12 +203,17 @@ def restore(env: dict, http, work: Path) -> tuple[dict, Path | None]:
     info["previous_run"] = {**{key: previous[key] for key in ("id", "run_attempt", "created_at", "conclusion", "html_url")},
                             "events_step": step}
 
-    name = f"market-collection-{previous['id']}-{previous['run_attempt']}"
-    artifacts = [item for item in get(f"/actions/runs/{previous['id']}/artifacts?{urllib.parse.urlencode({'name': name})}")["artifacts"]
-                 if item["name"] == name and (item.get("workflow_run") or {}).get("id", previous["id"]) == previous["id"]]
-    if len(artifacts) != 1:
-        raise ContinuityError("previous_artifact_missing", f"run {previous['id']} has {len(artifacts)} artifacts named {name}")
-    artifact = artifacts[0]
+    # Re-running failed jobs alone (the deploy after a Pages error, 2026-11-04) raises run_attempt but keeps the collect job,
+    # so its artifact keeps the earlier attempt's name and the run lists it. The newest attempt up to the run's own holds the state.
+    attempts: dict[int, list[dict]] = {}
+    for item in get(f"/actions/runs/{previous['id']}/artifacts?per_page=100")["artifacts"]:
+        found = re.fullmatch(rf"market-collection-{previous['id']}-(\d+)", item["name"])
+        if found and int(found[1]) <= previous["run_attempt"] and (item.get("workflow_run") or {}).get("id", previous["id"]) == previous["id"]:
+            attempts.setdefault(int(found[1]), []).append(item)
+    if not attempts or len(attempts[max(attempts)]) != 1:
+        raise ContinuityError("previous_artifact_missing", f"run {previous['id']} attempt {previous['run_attempt']} lists "
+                              f"{sum(map(len, attempts.values()))} artifacts named market-collection-{previous['id']}-<attempt>")
+    artifact = attempts[max(attempts)][0]
     info["previous_artifact"] = {key: artifact.get(key) for key in ("id", "name", "expired", "size_in_bytes", "created_at")}
     if artifact["expired"]:
         return {**info, "continuity": "broken", "reason": "previous_artifact_expired"}, None
