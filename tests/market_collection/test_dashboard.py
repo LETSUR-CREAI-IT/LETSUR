@@ -934,7 +934,7 @@ def test_template_has_the_supply_tab_and_its_editor(tmp_path: Path) -> None:
     assert 'const spJson = () => JSON.stringify(spDoc(), null, 2) + "\\n";' in page and 'link.download = "demo_internal_routes.json";' in page
     # the draft: every storage call is inside try, so a browser that blocks storage still gets the page
     assert "function spSave(){ try { " in page and "try { const d = JSON.parse(localStorage.getItem(SP_DRAFT)" in page
-    assert page.count("localStorage") == 4
+    assert page.count("localStorage") == 6  # four for the supply draft, two for 확인 처리
     # one checkbox per cell: checked from the file (plus the draft), disabled where no price is collected; a second click undoes
     assert '<input type="checkbox" class="spx${use && !got ? " warn" : ""}" data-sp="cell"' in page
     assert '${use ? " checked" : ""}${got && SUPPLY.routes ? "" : " disabled"}></td>' in page
@@ -1830,7 +1830,7 @@ def test_team_feedback_icons_calendar_words_title_and_letsur_mode(tmp_path: Path
     assert 'class="lswitch" role="switch" data-lmode aria-checked="false"' in page and "let letsurOnly = false;" in page
     assert 'const letsurRoute = e => ["use", "unk"].includes(relOf(e));' in page and "const modeShown = e => (!letsurOnly || letsurRoute(e)) && modelHit(e.mid, e.m);" in page
     assert "const shown = EVENTS.filter(modeShown)" in page and "const entries = CAL_ENTRIES.filter(x => modeShown(x.e));" in page
-    assert "const listed = () => EVENTS.filter(e => modeShown(e) && kindShown(e) && (showPast || !isPast(e)));" in page
+    assert "const listed = () => EVENTS.filter(e => modeShown(e) && kindShown(e) && dayShown(e));" in page
     assert "letsurOnly = !letsurOnly; renderMeta(); renderCalendar(); refilter();" in page
 
 
@@ -1865,3 +1865,43 @@ def test_the_detail_head_and_every_display_chip_share_one_shape(tmp_path: Path) 
     assert ".row .t>.qbadges{display:flex;overflow:visible}" in css
     # inside a calendar bar the change's name is coloured text: the bar is the box
     assert ".dkind{flex:none;font-size:11px;font-weight:650}" in css and '<span class="dkind ${x.kind}">${calWord(x)}</span>${logoOf(e.mid)}' in page
+
+
+def test_a_card_can_be_marked_handled_and_comes_back_when_it_changes(tmp_path: Path) -> None:
+    """2026-11-04 박건: 대응이 끝났거나 필요 없다고 본 알림이 목록을 가리니 '확인 처리'로 숨기고, '확인한 알림'으로 다시 본다. The page has no server, so
+    this browser keeps it. A card id survives collections but a card can gain changes under it, so a card whose item count, status or date
+    moved comes back. A 변동 잦음 bundle would then be back almost daily, so it keeps its prices at the check (박건 '10% 이상일 때만', '중간 것들의
+    변화도 인지는 해야'): LETSUR's own row or an item's lowest price moving 10% puts it back in the list; any other row moving 10% leaves it hidden
+    and shows on the 확인한 알림 button, its row and its detail. Any-row would bring back 7 or 8 of 9 bundles within a day, this rule 1 or 2. The list
+    and 다음 일정 hide a handled card (박건 '빼줘': it shouldn't hold one of the four cells); the calendar and the summary keep it. The browser check
+    covers behaviour."""
+    _write(tmp_path, [])
+    page = _build(tmp_path)[1]
+    assert 'const ackSig = e => [e.sum, e.st, e.eff].join("|");' in page
+    assert "const isAcked = e => e.vg ? !!acked[e.vg] && !vgMajor(e.vg, acked[e.vg]) : acked[e.id] === ackSig(e);" in page
+    assert "const vgPrices = id => Object.fromEntries(VGS[id].chg.map(r => [r[0], r[2]]));" in page
+    # 10% either way; a row that wasn't there at the check against its first price; only prices are compared
+    assert "const tenPct = (a, b) => a !== null && b !== null && a !== b && (!a || Math.abs(b - a) / a >= .1 - 1e-9);" in page
+    assert "const vgDrift = (id, was) => VGS[id].chg.filter(r => tenPct(money(wasPrice(r, was)), money(r[2])));" in page
+    # back in the list: an item's lowest price or LETSUR's own row; hidden with a mark: any other row
+    assert "return Object.keys(now).some(k => k in low && tenPct(low[k], now[k])) || vgDrift(id, was).some(r => mine.includes(" in page
+    assert 'box.querySelector(".ackn").textContent = moved ? `새 변동 ${moved}` : "";' in page
+    assert "체크 뒤 ${drift}줄 변동" in page and "체크한 뒤 10% 이상 달라진 줄 ${d.length}개" in page and "${BACK_CHIP}" not in page and "BACK_CHIP" in page
+    assert 'acked[ag.dataset.ackAgain] = vgPrices(ag.dataset.ackAgain); ackSave(); renderCalendar(); renderQueue(); renderDetail();' in page
+    assert "acked[id] = VG[id] ? vgPrices(id) : ackSig(e);" in page
+    assert "const dayShown = e => ackOnly ? isAcked(e) : !isAcked(e) && (showPast || !isPast(e));" in page
+    assert "const listed = () => EVENTS.filter(e => modeShown(e) && kindShown(e) && dayShown(e));" in page
+    # saved in this browser only, and the page runs without it
+    assert 'try { acked = JSON.parse(localStorage.getItem(ACK_KEY) || "{}") || {}; } catch (err) {}' in page
+    assert "try { localStorage.setItem(ACK_KEY, JSON.stringify(acked)); } catch (err) {}" in page
+    # the check sits beside the row's button, never inside it, and only rows of the change list have it
+    assert "return `<li>${vg ? vgRow(x) : queueRow(x)}${ackBox(vg ? x.vg : x.id)}</li>`;" in page
+    assert "const plainRow = e => `<li>${queueRow(e)}</li>`;" in page and ".map(queueRow)" not in page and page.count(".map(plainRow)") == 2
+    # the filter sits beside 지난 변화 보기 and shows every handled card, past or not
+    assert '<button type="button" class="mchip" data-past>지난 변화 보기</button><button type="button" class="mchip" data-ack>확인한 알림 <small></small><small class="ackn"></small></button>' in page
+    assert 'if (ab) { ackOnly = !ackOnly; refilter(); return; }' in page and "showPast = !showPast; ackOnly = false;" in page
+    # 다음 일정 leaves out a handled card; the calendar and the summary don't use the list's filter
+    assert "const next = entries.filter(x => days(x.date) >= 0 && !isAcked(x.e)).sort(" in page
+    assert "const entries = CAL_ENTRIES.filter(x => modeShown(x.e));" in page and "const shown = EVENTS.filter(modeShown)" in page
+    # checking the card being read moves on to the next row and keeps the list where it was
+    assert "if (state.sel === id && nextId) select(nextId); else { renderCalendar(); renderQueue(); }\n  q.scrollTop = y;" in page
