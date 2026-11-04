@@ -11,7 +11,7 @@
   --amber:#8f5300; --amber-soft:#fbeed7;
   --slate:#3f5273; --slate-soft:#e7ecf4;
   --grey-soft:#eceeed;
-  --up:#d6403f; --down:#2a78d6; --emph:#00936d; --deemph:#bcc5c1; --track:#e8ecea;
+  --up:#d6403f; --down:#2a78d6; --up-ink:color-mix(in srgb, var(--up) 72%, var(--ink)); --down-ink:color-mix(in srgb, var(--down) 72%, var(--ink)); --emph:#00936d; --deemph:#bcc5c1; --track:#e8ecea;
   --nav:#101413; --nav-ink:#ffffff; --nav-muted:#a3aca8;
   --font:"Pretendard Variable",Pretendard,system-ui,-apple-system,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;
   --r-xs:4px; --r-s:6px; --r-m:10px; --r-l:12px; --r-xl:16px; --r-pill:999px;  /* 모서리 역할: docs/design-system.md */
@@ -116,12 +116,6 @@ a{color:var(--ink)}
 .allb[aria-pressed="true"]{background:var(--mint-soft);border-color:var(--mint);color:var(--mint-ink);font-weight:700}
 
 /* 일정 캘린더 */
-.dd{justify-self:end;display:inline-flex;align-items:center;height:22px;padding:0 8px;border-radius:var(--r-s);font-size:12px;font-weight:700;white-space:nowrap}
-.dd.now{background:var(--ink);color:var(--surface)}
-.dd.later{border:1px solid var(--line-strong);color:var(--ink)}
-.dd.past{color:var(--muted)}
-.dd.none{color:var(--muted);font-weight:500}
-.dd.seen{border:1px dashed var(--line-strong)}
 .calh{display:flex;align-items:center;gap:8px;margin:0 0 12px}
 .calh .mo{margin-right:auto;font-size:15px;font-weight:750;color:var(--ink);letter-spacing:-.01em}
 .calh .mo small{margin-left:8px;font-size:12px;font-weight:500;color:var(--muted)}
@@ -147,7 +141,6 @@ a{color:var(--ink)}
 .ev:hover{outline:1.5px solid var(--ink)}
 .ev[aria-current="true"]{outline:2px solid var(--ink);opacity:1}
 .more-ev{padding-left:4px;font-size:11px;color:var(--muted)}
-.qt{flex:none;display:inline-block;padding:0 4px;border:1px solid var(--amber);border-radius:var(--r-xs);font-size:11px;font-weight:700;line-height:15px;color:var(--amber);vertical-align:1px}
 .linkmiss{margin:0 0 12px;padding:8px 12px;border-radius:var(--r-m);background:var(--amber-soft);color:var(--amber);font-size:13px;overflow-wrap:anywhere}
 .ev.drv{outline:1.5px dashed var(--amber);outline-offset:-1.5px}
 .lk{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin-top:12px;padding:12px 12px;border:1px dashed var(--line-strong);border-radius:var(--r-m);font-size:13px;color:var(--body)}
@@ -165,7 +158,6 @@ a{color:var(--ink)}
 .cn1,.cn2{display:flex;align-items:center;gap:8px;min-width:0}
 .cn2 b{min-width:0;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .cn2 small{flex:none;margin-left:auto;font-size:11px;color:var(--muted)}
-.calnext .dd{height:18px;padding:0 4px;font-size:11px}
 @media (max-width:560px){.day{min-height:46px;padding:4px}.ev{height:12px;padding:0}.ev span,.ev i,.ev .logo{display:none}.cal{gap:4px}}
 
 /* 단가 변동 */
@@ -199,15 +191,26 @@ a{color:var(--ink)}
 .qtools label{font-size:12px;color:var(--muted)}
 .qtools select{width:136px;height:32px;padding:0 8px;border:1px solid var(--line);border-radius:var(--r-m);background:var(--surface);color:var(--ink);font:inherit;font-size:12px}
 .qbadges{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:4px}
-.qchip{display:inline-flex;align-items:center;min-height:18px;padding:0 8px;border:1px solid transparent;border-radius:var(--r-pill);font-size:11px;font-weight:750;letter-spacing:.01em;white-space:nowrap}
-.qchip.review{background:var(--mint-soft);color:var(--mint-ink)} .qchip.verify{background:var(--amber-soft);color:var(--amber)}
-.qchip.monitor{background:var(--slate-soft);color:var(--slate)} .qchip.record{background:var(--grey-soft);color:var(--muted)}
-.qchip.vgc{border-color:var(--line-strong);background:var(--surface);color:var(--ink)}
-.qchip.rvc{border-color:var(--line-strong);border-style:dashed;background:var(--grey-soft);color:var(--muted)}  /* 해소됨·일부 해소(2026-10-28) */
+/* 표시 칩(2026-11-04 박건 '칩 통일', docs/design-system.md): 눌리지 않는 표시는 모두 이 모양 하나다. 모서리 6, 테두리 없음, 높이 20·글자 11, 상세 머리만 .big(24·12). 색만 뜻을 따른다. 눌리는 것은 알약이라 모양으로 갈린다 */
+.chip{display:inline-flex;align-items:center;flex:none;min-height:20px;padding:0 8px;border-radius:var(--r-s);background:var(--grey-soft);font-size:11px;font-weight:650;line-height:20px;color:var(--body);white-space:nowrap;vertical-align:1px}
+.chip.big{min-height:24px;padding:2px 8px;font-size:12px;white-space:normal}  /* 위아래 2px 덕에 한 줄이면 24px, 길면 줄을 바꾼다 */
+.chip.review,.chip.applies,.chip.confirmed,.chip.ok,.chip.effective,.chip.src-sup,.chip.sct-t-as{background:var(--mint-soft);color:var(--mint-ink)}
+.chip.verify,.chip.unk,.chip.candidate,.chip.flag,.chip.bad,.chip.qt,.chip.src-ext,.chip.sct-t-con{background:var(--amber-soft);color:var(--amber)}
+.chip.monitor,.chip.kind,.chip.t7,.chip.next_check,.chip.src-ch{background:var(--slate-soft);color:var(--slate)}
+.chip.up,.chip.end,.chip.conflicted{background:color-mix(in srgb, var(--up) 14%, var(--surface));color:var(--up-ink)}
+.chip.down{background:color-mix(in srgb, var(--down) 14%, var(--surface));color:var(--down-ink)}
+.chip.now{background:var(--ink);color:var(--surface)}
+.chip.later{color:var(--ink)}
+.chip.record,.chip.not-applies,.chip.rvc,.chip.gone,.chip.past,.chip.none,.chip.src-ls,.chip.ref{color:var(--muted)}
+.row[aria-current="true"] .chip:not(.now),.decide .next .chip{background:var(--surface)}  /* 민트 바탕 위에서도 칩이 보이게 */
+.chip.ref{margin:0 2px;cursor:help}
+.row .t>.qbadges{display:flex;overflow:visible}  /* .row .t>span이 block으로 덮어 칩 사이 4px이 사라졌었다 */
+.row .t .chip.t7{margin-right:8px}
+.srcs .nm .chip{margin-left:8px}
+.sct-who .chip{margin-left:4px}
 .rvnote{margin:8px 0 0;font-size:13px;line-height:1.55;color:var(--body)}
-.qchip.applies{border-color:var(--mint);color:var(--mint-ink)} .qchip.unknown{border-color:var(--amber);color:var(--amber)} .qchip.not-applies{border-color:var(--line-strong);color:var(--muted)}
-.dkind{display:inline-flex;align-items:center;flex:none;height:16px;padding:0 4px;border-radius:var(--r-xs);font-size:11px;font-weight:800}
-.dkind.effective{background:var(--mint-soft);color:var(--mint-ink)} .dkind.end{background:var(--surface-2);color:var(--up);box-shadow:inset 0 0 0 1px var(--line)} .dkind.next_check{background:var(--slate-soft);color:var(--slate)}
+.dkind{flex:none;font-size:11px;font-weight:650}  /* 캘린더 일정 막대 안의 변화 이름: 막대가 이미 칸이라 상자 없이 글자색만 */
+.dkind.effective{color:var(--mint-ink)} .dkind.end{color:var(--up-ink)} .dkind.next_check{color:var(--slate)}
 .ev.dk-end{box-shadow:inset 3px 0 0 var(--up)} .ev.dk-next_check{box-shadow:inset 3px 0 0 var(--slate)} .ev.dk-effective{box-shadow:inset 3px 0 0 var(--mint)}
 .cmpbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin:8px 0 8px;padding:8px 12px;border:1px solid var(--line);border-radius:var(--r-m);background:var(--surface-2);font-size:12px;color:var(--muted)}
 .cmpbar b{color:var(--ink);font-weight:700}
@@ -221,33 +224,22 @@ a{color:var(--ink)}
 .row:hover{background:var(--surface-2)}
 .row[aria-current="true"]{background:var(--mint-soft)}
 .row .dl2{display:flex;flex-direction:column;align-items:flex-start;gap:2px}
-.row .dl2 .dd{justify-self:start}
 .row .dl2 small{font-size:12px;color:var(--muted);padding-left:2px}
 .row .t{min-width:0}
 .row .t b{display:block;font-size:15px;font-weight:650;color:var(--ink);line-height:1.35}
 .row .t b .subj{font-weight:750}  /* 목록 줄의 주어: 어떤 모델의 변화인지(2026-10-27 박건 요청) */
 .row .t>span{display:block;font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .row .tags{display:inline-flex;gap:4px;margin-left:8px;vertical-align:1px}
-.tg{display:inline-flex;align-items:center;height:18px;padding:0 8px;border:1px solid var(--line-strong);border-radius:var(--r-s);font-size:11px;font-weight:600;color:var(--muted)}
-.tg.real{border-color:var(--ink);color:var(--ink)}
 .row.done{opacity:.65}
-
-.pill{display:inline-flex;align-items:center;gap:8px;height:24px;padding:0 8px;border-radius:var(--r-s);font-size:13px;font-weight:700;white-space:nowrap}
-.pill.review{background:var(--mint-soft);color:var(--mint-ink)}
-.pill.verify{background:var(--amber-soft);color:var(--amber)}
-.pill.pending{color:var(--muted);border:1px dashed var(--line-strong)}
-.pill.watch{background:var(--slate-soft);color:var(--slate)}
-.pill.record{background:var(--grey-soft);color:var(--muted)}
 
 .detail{position:sticky;top:16px;padding:24px}
 @media (max-width:940px){.detail{position:static;padding:20px}}
-.dmeta{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;font-size:13px;color:var(--muted)}
+/* 상세 머리(2026-11-04 박건): 첫 줄은 어느 모델·경로의 변화인지, 둘째 줄은 칩. 칩은 모양이 하나이고 색만 뜻을 따른다. 위아래 2px 덕에 한 줄이면 24px, 길면 줄을 바꾼다 */
+.dident{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px;font-size:13px;color:var(--muted)}
+.dident .who{font-size:18px;font-weight:750;color:var(--ink);letter-spacing:-.01em}
+.dident .who .logo{width:16px;height:16px;margin-right:4px;vertical-align:-2px}
+.dmeta{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
 .dmeta .pos{color:var(--muted)}
-.dmeta .who{font-weight:650;color:var(--ink)}
-.pill.t7{background:var(--slate-soft);color:var(--slate)}
-.pill.t7.chkd{background:transparent;color:var(--muted);border:1px dashed var(--line-strong)}
-.dmeta .sub{color:var(--ink);font-weight:600}
-.tg.flag{border-color:var(--amber);color:var(--amber)}
 .dmeta .eid{font-size:11px;opacity:.7}
 .headline{margin:12px 0 0;font-size:22px;line-height:1.45;font-weight:600;color:var(--ink);letter-spacing:-.015em;text-wrap:balance}
 .headline b{font-weight:800}
@@ -262,13 +254,9 @@ a{color:var(--ink)}
 .decide .next{background:var(--mint-soft)}
 .decide .next .k{color:var(--mint-ink)}
 .decide .next .v{font-size:15px;font-weight:700}
-.decide .v .dd{margin-left:8px;vertical-align:1px}
+.decide .v .chip{margin-left:8px}
 
 .pc{margin-top:20px}
-.cchip{display:inline-flex;align-items:center;height:24px;padding:0 8px;border-radius:var(--r-s);font-size:13px;font-weight:700;white-space:nowrap}
-.cchip.up{background:color-mix(in srgb, var(--up) 14%, transparent);color:var(--up)}
-.cchip.down{background:color-mix(in srgb, var(--down) 14%, transparent);color:var(--down)}
-.cchip.none{background:var(--grey-soft);color:var(--muted)}
 .sg{display:grid;gap:8px}
 .sgh{font-size:18px;font-weight:700;color:var(--ink);display:flex;flex-wrap:wrap;align-items:center;gap:8px}
 .sgh .pre{color:var(--amber)}
@@ -278,9 +266,6 @@ a{color:var(--ink)}
 .sgw{font-size:14px;color:var(--ink)} .sgw b{display:inline-block;min-width:68px;color:var(--muted);font-weight:650}
 .sgy{font-size:12px;color:var(--muted)}
 .chk1{margin-top:8px;font-size:13px;font-weight:600;color:var(--mint-ink)}
-.stag{display:inline-flex;align-items:center;height:18px;padding:0 8px;margin-left:8px;border-radius:var(--r-s);font-size:11px;font-weight:650;vertical-align:1px}
-.stag.sup{background:var(--mint-soft);color:var(--mint-ink)} .stag.ch{background:var(--slate-soft);color:var(--slate)}
-.stag.ext{background:var(--amber-soft);color:var(--amber)} .stag.ls{background:var(--grey-soft);color:var(--muted)}
 .cnd{margin:0 0 12px;font-size:13px;color:var(--muted)} .cnd b{color:var(--ink);margin-right:8px}
 .kc{margin-top:20px;padding:16px 20px;border:1px solid var(--line);border-radius:var(--r-l)}
 .kc h3{margin:0 0 8px;font-size:13px;font-weight:700;color:var(--muted);letter-spacing:.02em}
@@ -335,7 +320,6 @@ td.v{color:var(--ink);font-variant-numeric:tabular-nums;white-space:nowrap}
 td small{display:block;font-size:12px;color:var(--muted)}
 .unkv{color:var(--muted);border-bottom:1px dashed var(--line-strong)}
 .conv{color:var(--amber)}
-.ref{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:17px;padding:0 4px;margin:0 2px;border-radius:var(--r-xs);background:var(--grey-soft);color:var(--muted);font-size:11px;font-weight:650;vertical-align:1px;cursor:help}
 .self{font-size:11px;color:var(--mint-ink);font-weight:700;margin-left:8px}
 .two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 20px}
 @media (max-width:700px){.two{grid-template-columns:minmax(0,1fr)}}
@@ -453,10 +437,8 @@ body:not([data-page="health"]) .hpage{display:none}
 .hsec td,.hsec th{padding:8px 8px;text-align:left;vertical-align:top;border-top:1px solid var(--line)}
 .hsec th{color:var(--muted);font-weight:650}
 .hsec td small{display:block;color:var(--muted)}
-.hsec td .hst + small{margin-top:4px}
+.hsec td .chip + small{margin-top:4px}
 .hsec .none{font-size:13px;color:var(--muted)}
-.hst{display:inline-flex;align-items:center;height:20px;padding:0 8px;border-radius:var(--r-pill);font-size:11px;font-weight:700;white-space:nowrap}
-.hst.bad{background:var(--amber-soft);color:var(--ink);border:1px solid var(--amber)} .hst.ok{background:var(--mint-soft);color:var(--mint-ink)} .hst.gone{background:var(--grey-soft);color:var(--muted)}
 .mpage{display:grid;grid-template-columns:minmax(0,230px) minmax(0,1fr);gap:16px;align-items:start}
 .mcol{display:flex;flex-direction:column;gap:16px;min-width:0}
 .mlist{padding:12px;position:sticky;top:12px;max-height:calc(100vh - 24px);overflow-y:auto}  /* 모델 목록 높이 제한(2026-10-28): 화면보다 긴 목록은 아래쪽 모델을 고르려면 그래프가 화면 밖으로 밀려서 목록 안에서 스크롤한다 */
@@ -465,7 +447,7 @@ body:not([data-page="health"]) .hpage{display:none}
 .mgrp+.mgrp{margin-top:12px;padding-top:12px;border-top:1px solid var(--line-strong)}  /* 회사 묶음 사이 구분선(2026-10-30 박건 요청) */
 .mgrp h3{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink)}
 .logo{width:14px;height:14px;flex:none;fill:currentColor}  /* 회사 아이콘: 글자색을 따라 다크 모드에서도 보인다(옛 .mk 상태 표시와 이름을 나눔) */
-.subj .logo,.dmeta .who .logo,.hsec td b .logo{margin-right:4px;vertical-align:-2px}  /* 모델 이름 앞(2026-10-31 팀 상호 피드백) */
+.subj .logo,.hsec td b .logo{margin-right:4px;vertical-align:-2px}  /* 모델 이름 앞(2026-10-31 팀 상호 피드백) */
 .sprite{position:absolute;width:0;height:0;overflow:hidden}
 @media (max-width:900px){.mgrp{display:flex;flex-wrap:wrap;gap:4px;width:100%}}
 .mrow{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;padding:8px 8px;border:0;border-radius:var(--r-m);background:none;text-align:left;font-size:13px;color:var(--ink);cursor:pointer}
@@ -518,8 +500,6 @@ body:not([data-page="health"]) .hpage{display:none}
 .grp h3 i.ti-price,.grp h3 i.ti-model,.grp h3 i.ti-cond,.grp h3 i.ti-data{width:9px;height:9px;border-radius:var(--r-xs)}
 .grp h3{font-size:13px;color:var(--ink);margin-top:16px}
 .grp:first-child h3{margin-top:4px}
-.qs{display:inline-block;margin-right:8px;padding:0 4px;border-radius:var(--r-s);font-size:11px;font-weight:700;line-height:17px;vertical-align:1px}
-.qs.review{background:var(--mint-soft);color:var(--mint-ink)} .qs.verify{background:var(--amber-soft);color:var(--amber)} .qs.watch{background:var(--slate-soft);color:var(--slate)} .qs.record{background:var(--grey-soft);color:var(--muted)} .qs.pending{border:1px dashed var(--line-strong);color:var(--muted);line-height:15px}
 .trend .th{margin-bottom:0}
 .tstats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin:16px 0 8px}
 .tstat.let{background:var(--mint-soft)} .tstat.let .k{color:var(--mint-ink)}  /* 렛서 경로 칸 */
@@ -569,7 +549,6 @@ body:not([data-page="health"]) .hpage{display:none}
 .dmx .hd{grid-column:2/4;padding:8px 8px;border:1px dashed var(--line-strong);border-radius:var(--r-m);font-size:12px;font-weight:650;color:var(--muted)}
 .dmx .hd.on{border-style:solid;border-color:var(--ink);border-width:2px;color:var(--ink)}
 .dmx p{margin:8px 0 0;font-size:12px;line-height:1.5;color:var(--muted)}
-.qs.t7{background:var(--slate-soft);color:var(--slate)}
 .more tr.same td{color:var(--muted)}
 .cnd.note{margin:8px 0 0;font-size:12px}
 .alt{margin-top:12px;padding-top:12px;border-top:1px dashed var(--line-strong)}
@@ -597,10 +576,6 @@ body:not([data-page="health"]) .hpage{display:none}
 .gen-status.fail{border-color:var(--up)}
 .gen-status.warn{border-color:var(--amber)}
 /* ---- 상세: 종류별 정교화 ---- */
-.cchip{max-width:100%;overflow:hidden;text-overflow:ellipsis}
-.tg.st.confirmed{border-color:var(--mint);color:var(--mint-ink)}
-.tg.st.candidate{border-color:var(--amber);color:var(--amber)}
-.tg.st.conflicted{border-color:var(--up);color:var(--up)}
 .kc.clue{border-style:dashed;border-color:var(--amber)}
 .kc.clue h3{color:var(--amber)}
 .clq{margin:12px 0 0;padding-left:20px;font-size:13px;color:var(--body);display:grid;gap:4px}
@@ -630,15 +605,10 @@ tr.gh td{padding-top:12px;font-size:12px;font-weight:700;color:var(--muted);back
 .sct-t td.sct-est,.sct-t td.sct-min{color:var(--muted)}
 .sct-t tr.sct-ex td{color:var(--muted);background:transparent;border-top:1px dashed var(--line-strong);border-bottom:1px dashed var(--line-strong)}
 .sct-t tr.sct-ex .sct-who{font-weight:500}
-.sct-tag{display:inline-flex;align-items:center;height:17px;padding:0 4px;margin-left:4px;border:1px solid var(--line-strong);border-radius:var(--r-xs);font-size:11px;font-weight:650;color:var(--muted);white-space:nowrap;vertical-align:1px}
-.sct-tag.sct-t-con{border-color:var(--amber);background:var(--amber-soft);color:var(--amber)}
-.sct-tag.sct-t-as{border-color:var(--ink);color:var(--ink)}
 .sct-key{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin:8px 0 0;font-size:12px;color:var(--muted)}
-.sct-key>span{display:inline-flex;align-items:center;height:18px;padding:0 8px;border-radius:var(--r-xs)}
 .sct-key .sct-lo{background:var(--mint-soft);color:var(--mint-ink);box-shadow:inset 0 0 0 1px currentColor}
 .sct-key .sct-un{background:var(--slate-soft);color:var(--slate);box-shadow:inset 0 0 0 1px currentColor}
-.sct-key .sct-gy{background:var(--grey-soft)}
-.sct-key .sct-dash{border:1px dashed var(--line-strong)}
+.sct-key .sct-dash{border:1px dashed var(--line-strong);background:transparent;line-height:18px}
 .sct-sp{margin-top:12px;padding:8px 12px;border-left:3px solid var(--line-strong);border-radius:0 var(--r-m) var(--r-m) 0;background:var(--surface-2)}
 .sct-sp h5{margin:0 0 2px;font-size:12px;font-weight:700;color:var(--ink)}
 .sct-sp p{margin:0;font-size:13px;color:var(--body)}
@@ -797,9 +767,9 @@ const md = d => `${+d.slice(5,7)}/${+d.slice(8,10)}`;
 const WD = ["일","월","화","수","목","금","토"], wd = d => WD[new Date(dt(d)).getUTCDay()];
 const ddTxt = d => { const n = days(d); return n > 0 ? `D-${n}` : n === 0 ? "오늘" : `${-n}일 전`; };
 const ddCls = d => { const n = days(d); return n < 0 ? "past" : n <= 14 ? "now" : "later"; };
-const ddHtml = e => e.eff ? `<span class="dd ${ddCls(e.eff)} tn">${ddTxt(e.eff)}</span>` : `<span class="dd none${e.effSeen ? " seen" : ""}">${esc(e.effSeen || "날짜 없음")}</span>`;
+const ddHtml = e => e.eff ? `<span class="chip ${ddCls(e.eff)} tn">${ddTxt(e.eff)}</span>` : `<span class="chip none">${esc(e.effSeen || "날짜 없음")}</span>`;
 const fmtPct = v => (v > 0 ? "+" : v < 0 ? "−" : "") + Math.abs(v).toFixed(1) + "%";
-const refs = text => esc(text).replace(/\[([\w-]+)\]/g, (m, n) => SRC[n] ? `<span class="ref" title="${esc(SRC[n].nm)}">${esc(SRC[n].short || n)}</span>` : m);
+const refs = text => esc(text).replace(/\[([\w-]+)\]/g, (m, n) => SRC[n] ? `<span class="chip ref" title="${esc(SRC[n].nm)}">${esc(SRC[n].short || n)}</span>` : m);
 function val(v){
   if (v && typeof v === "object" && v.unk) return `<span class="unkv">${esc(v.t || "미확인")}</span>`;
   if (v && typeof v === "object" && v.con) return `<span class="conv">${v.con.map(([x, n]) => `${esc(x)} ${refs("[" + n + "]")}`).join(" · ")}</span>`;
@@ -939,7 +909,7 @@ function priceKey(e){
 // 출처 태그: 누가 게시했는가 (공급사 공식 / 채널 공식 / 외부 출처). 공식이라도 수집값이 정확하다는 판정은 아님
 const SRCTAG = Object.fromEntries(Object.entries(SRC).map(([k, s]) => [k, s.tag]));
 const SRCTAGKO = {sup:"공급사 공식", ch:"채널 공식", ext:"외부 출처", ls:"렛서 샘플"};
-const srcTag = n => SRCTAG[n] ? `<span class="stag ${SRCTAG[n]}">${SRCTAGKO[SRCTAG[n]]}</span>` : "";
+const srcTag = n => SRCTAG[n] ? `<span class="chip src-${SRCTAG[n]}">${SRCTAGKO[SRCTAG[n]]}</span>` : "";
 // 렛서에 주는 영향: 확인된 것만, 세 줄 고정
 function impactHtml(e){
   const kn = (e.imp_rows || []).filter(r => r[1]), get = ks => kn.filter(r => ks.includes(r[0])).map(r => refs(r[1]));
@@ -1081,15 +1051,15 @@ function nextHtml(e){ const n = nextOf(e);
   return `${esc(n.act)}${n.due ? ` <span class="due">${esc(n.due)}</span>` : ""}${n.subs.map(x => `<div class="s">${esc(x)}</div>`).join("")}`; }
 function suggestHtml(e){
   const g = suggestOf(e), cf = CHECKFIRST[e.id] || [];
-  return `<div class="sg"><div class="sgh"><span class="pre">${esc(g.pre || "")}</span><span class="resp ${g.resp}">${RESP[g.resp]}${g.note ? ` · ${esc(g.note)}` : ""}</span>${g.resp === "hold" ? "" : " 검토"}${e.done ? ` <span class="tg">결정됨 · ${esc(e.next)}</span>` : ""}${g.due ? ` <span class="due">${esc(g.due)}</span>` : ""}</div>
+  return `<div class="sg"><div class="sgh"><span class="pre">${esc(g.pre || "")}</span><span class="resp ${g.resp}">${RESP[g.resp]}${g.note ? ` · ${esc(g.note)}` : ""}</span>${g.resp === "hold" ? "" : " 검토"}${e.done ? ` <span class="chip">결정됨 · ${esc(e.next)}</span>` : ""}${g.due ? ` <span class="due">${esc(g.due)}</span>` : ""}</div>
     <div class="sgw"><b>검토할 것</b> ${esc(g.text)}</div>
     <div class="sgy">제안 근거 · ${esc(g.why)}${EV7[e.id] !== null && relOf(e) !== "unk" && relDemoOf(e) ? " (렛서 관계는 시연용 가정)" : ""}</div></div>`;
 }
 // 상단 원가 칩: 유리/불리 판정이 아니라 단가 방향 사실만 (▲ 인상 빨강 / ▼ 인하 파랑 / 회색)
 function costChip(e){
-  if (e.chip) return `<span class="cchip ${e.chip[0]}">${esc(e.chip[1])}</span>`;
-  if (EV7[e.id] === null) return `<span class="cchip none">원가 확인 전</span>`;
-  if (isClue(e)) return `<span class="cchip none">원가 판단 전</span>`;
+  if (e.chip) return `<span class="chip big ${e.chip[0]}">${esc(e.chip[1])}</span>`;
+  if (EV7[e.id] === null) return `<span class="chip big">원가 확인 전</span>`;
+  if (isClue(e)) return `<span class="chip big">원가 판단 전</span>`;
   const rows = changed(e), prr = rows.filter(r => money(r[1]) != null && money(r[2]) != null && money(r[1]) !== 0),
     pr = prr.map(r => (money(r[2]) - money(r[1])) / money(r[1]) * 100);
   // 수정안: 단가 항목 일부만 바뀌면 '원가' 대신 바뀐 항목 이름 (전체 원가가 그만큼 바뀐 것처럼 읽히지 않게)
@@ -1098,20 +1068,20 @@ function costChip(e){
   const unk = (e.chg || []).some(r => /단가|토큰|가격|캐시|배치/.test(r[0]) && r[2] && (r[2].unk || r[2].con));
   const fmt = v => (Math.round(Math.abs(v) * 10) / 10).toString().replace(/\.0$/, "");
   if (pr.length) { const v = pr.reduce((a, b) => Math.abs(b) > Math.abs(a) ? b : a, 0), mixed = pr.some(x => x > 0) && pr.some(x => x < 0);
-    if (mixed) return `<span class="cchip none">원가 ▲▼ 항목별 상이</span>`;
+    if (mixed) return `<span class="chip big">원가 ▲▼ 항목별 상이</span>`;
     const mx = new Set(pr.map(fmt)).size > 1 ? "최대 " : "";
-    return v > 0 ? `<span class="cchip up">${esc(lab)} ▲ ${mx}${fmt(v)}%${cnt}</span>` : `<span class="cchip down">${esc(lab)} ▼ ${mx}${fmt(v)}%${cnt}</span>`; }
+    return v > 0 ? `<span class="chip big up">${esc(lab)} ▲ ${mx}${fmt(v)}%${cnt}</span>` : `<span class="chip big down">${esc(lab)} ▼ ${mx}${fmt(v)}%${cnt}</span>`; }
   const txt = rows.map(r => plain(String(r[2]))).join(" "), m = txt.match(/(\d+(?:\.\d+)?)%\s*(인상|인하)/);
-  if (m) return `<span class="cchip ${m[2] === "인상" ? "up" : "down"}">원가 ${m[2] === "인상" ? "▲" : "▼"} ${m[1]}% 예고</span>`;
-  if (unk) return `<span class="cchip none">원가 확인 전</span>`;
-  return `<span class="cchip none">원가 변화 없음</span>`;
+  if (m) return `<span class="chip big ${m[2] === "인상" ? "up" : "down"}">원가 ${m[2] === "인상" ? "▲" : "▼"} ${m[1]}% 예고</span>`;
+  if (unk) return `<span class="chip big">원가 확인 전</span>`;
+  return `<span class="chip big">원가 변화 없음</span>`;
 }
 function typeHead(e){
   const t = EV7[e.id];
-  if (t === null) return `<span class="pill t7 chkd">수집 확인 필요</span><span class="sub">이벤트 아님 · 실제 변화인지 재조회 전</span>`;
-  if (!e.st) return `<span class="pill t7">${esc(t || "미분류")}</span>${EV7SUB[e.id] ? `<span class="sub">${esc(EV7SUB[e.id])}</span>` : ""}${EV7FLAG[e.id] ? `<span class="tg flag">${esc(EV7FLAG[e.id])}</span>` : ""}`;
+  if (t === null) return `<span class="chip big">수집 확인 필요</span><span class="chip big">이벤트 아님 · 실제 변화인지 재조회 전</span>`;
+  if (!e.st) return `<span class="chip big kind">${esc(t || "미분류")}</span>${EV7SUB[e.id] ? `<span class="chip big">${esc(EV7SUB[e.id])}</span>` : ""}${EV7FLAG[e.id] ? `<span class="chip big flag">${esc(EV7FLAG[e.id])}</span>` : ""}`;
   const name = e.tc ? "유형 미정" : t || "미분류";
-  return `<span class="pill t7">${esc(name)}</span>${EV7SUB[e.id] ? `<span class="sub">${esc(EV7SUB[e.id])}</span>` : ""}<span class="tg st ${e.st}">${esc(ST_KO[e.st] || e.st)}</span>${e.tc ? `<span class="tg">${esc(e.tc.join(" 또는 "))}</span>` : ""}`;
+  return `<span class="chip big kind">${esc(name)}</span>${EV7SUB[e.id] ? `<span class="chip big">${esc(EV7SUB[e.id])}</span>` : ""}<span class="chip big ${e.st}">${esc(ST_KO[e.st] || e.st)}</span>${e.tc ? `<span class="chip big">${esc(e.tc.join(" 또는 "))}</span>` : ""}`;
 }
 // 캘린더 칸에 들어갈 짧은 이름 [이름, 변동, 방향]
 const CAL = byEv("cal");
@@ -1119,11 +1089,11 @@ const CAL = byEv("cal");
 // Applicability: 이 이벤트의 경로가 렛서의 현재 사용 경로에 해당하는지(relKey). relDemo면 시연용 가정이라 "가정"을 붙인다.
 // 렛서 사용 경로는 근거(9/23 설정 답변·API 호출 확인·관리자 지정)를 가리지 않고 같게 보인다(2026-10-30 박건: 사용이면 사용).
 // 표시는 한국어로 쓴다(2026-11-03 팀 피드백 5). cards.json의 action·applicability(슬랙봇이 읽는 값)는 build.py judge()의 영어 값 그대로다.
-const APPSTAT = {use:{ko:"렛서 사용", tip:"렛서가 이 경로를 씁니다", cls:"applies"}, unk:{ko:"사용 미확인", tip:"렛서가 이 경로를 쓰는지 아직 모릅니다", cls:"unknown"}, no:{ko:"렛서 미사용", tip:"렛서가 쓰지 않는 경로입니다", cls:"not-applies"}};
+const APPSTAT = {use:{ko:"렛서 사용", tip:"렛서가 이 경로를 씁니다", cls:"applies"}, unk:{ko:"사용 미확인", tip:"렛서가 이 경로를 쓰는지 아직 모릅니다", cls:"unk"}, no:{ko:"렛서 미사용", tip:"렛서가 쓰지 않는 경로입니다", cls:"not-applies"}};
 const applicabilityOf = e => { const r = relOf(e); return r === "use" ? APPSTAT.use : r === "unk" ? APPSTAT.unk : APPSTAT.no; };
 const relMark = e => relDemoOf(e) ? {chip: "가정", note: "시연용 가정"} : null;
 const appChip = e => { const a = applicabilityOf(e), m = relMark(e);
-  return `<span class="qchip ${a.cls}" title="${a.tip}${m ? ` (${m.note})` : ""}">${a.ko}${m && a !== APPSTAT.unk ? " · " + m.chip : ""}</span>`; };
+  return `<span class="chip ${a.cls}" title="${a.tip}${m ? ` (${m.note})` : ""}">${a.ko}${m && a !== APPSTAT.unk ? " · " + m.chip : ""}</span>`; };
 // Suggested Action: 담당자가 다음에 할 작업 구분(조달 결정이 아님). 상세의 제안(suggestOf)과 같은 판단에서 나와 목록·달력·상세가 같은 말을 한다.
 // VERIFY 유형·값·출처·렛서 적용이 아직 안 정해짐 → RECORD 끝난 할인, 제안이 "기존 조건 유지" → MONITOR 값은 있으나 공식 확인 전 → REVIEW 나머지(고객 할인·경로 검토)
 const QACTION = {review:{ko:"검토", tip:"고객 할인이나 경로 변경을 검토할 변화", order:0}, verify:{ko:"확인 필요", tip:"유형·값·출처·렛서 사용 여부의 확인이 먼저 필요한 변화", order:1}, monitor:{ko:"관측 유지", tip:"공식 확인 전이거나 가격이 오르내리는 중이라 지켜볼 변화", order:2}, record:{ko:"기록", tip:"끝난 변화라 기록만 남기는 변화", order:3}};
@@ -1141,7 +1111,7 @@ function actionKey(e){
 }
 const actOrder = e => QACTION[actionKey(e)].order;
 const qchips = e => { const k = actionKey(e);
-  return `<span class="qchip ${k}" title="${QACTION[k].tip}">${QACTION[k].ko}</span>${appChip(e)}${e.rv && !e.vgs ? `<span class="qchip rvc" title="이후 수집에서 원래 가격으로 돌아온 항목 ${e.rv}/${e.rn}">${e.rv === e.rn ? "해소됨" : `일부 해소 ${e.rv}/${e.rn}`}</span>` : ""}`; };
+  return `<span class="chip ${k}" title="${QACTION[k].tip}">${QACTION[k].ko}</span>${appChip(e)}${e.rv && !e.vgs ? `<span class="chip rvc" title="이후 수집에서 원래 가격으로 돌아온 항목 ${e.rv}/${e.rn}">${e.rv === e.rn ? "해소됨" : `일부 해소 ${e.rv}/${e.rn}`}</span>` : ""}`; };
 // 달력 날짜: 한 이벤트에 날짜가 여럿일 수 있다. effective 적용·변경 / end 할인·경로·현재 단가가 끝나는 날 / next_check 다시 볼 날(팀 기준, 공지 날짜 아님)
 const DATE_KIND = {effective:"적용", end:"종료", next_check:"확인"};
 const calAddDays = (d, n) => new Date(dt(d) + n * 864e5).toISOString().slice(0, 10);
@@ -1205,7 +1175,7 @@ function calBtn(x){ const e = x.e, tp = calTip(x), k = typeOf(e), c = CAL[e.id] 
   return `<button type="button" class="ev t-${k} dk-${x.kind}${x.drv ? " drv" : ""}" data-id="${esc(e.id)}" data-t1="${esc(tp.t1)}" data-t2="${esc(tp.t2)}" aria-current="${state.sel === e.id}" aria-label="${esc(tp.t1 + ", " + e.m + " " + e.sum)}"><span class="dkind ${x.kind}">${calWord(x)}</span>${logoOf(e.mid)}<span>${esc(c[0])}</span>${arrow ? `<b class="ar ${c[2]}">${esc(c[1])}</b>` : ""}</button>`; }
 // 다음 일정 칸: 언제·무슨 변화·어느 모델·어느 공급사만 쓰고 나머지는 툴팁에 둔다(2026-11-04 박건: 문구가 길다).
 function nextCell(x){ const tp = calTip(x), who = x.e.ch.includes(" · ") ? x.e.ch.split(" · ")[0] : "";
-  return `<button type="button" data-id="${esc(x.e.id)}" data-t1="${esc(tp.t1)}" data-t2="${esc(tp.t2)}"><span class="cn1"><span class="dd ${ddCls(x.date)} tn">${ddTxt(x.date)}</span><span class="dkind ${x.kind}">${calWord(x)}</span></span><span class="cn2">${logoOf(x.e.mid)}<b>${esc(x.e.m)}</b>${who ? `<small>${esc(who)}</small>` : ""}</span></button>`; }
+  return `<button type="button" data-id="${esc(x.e.id)}" data-t1="${esc(tp.t1)}" data-t2="${esc(tp.t2)}"><span class="cn1"><span class="chip ${ddCls(x.date)} tn">${ddTxt(x.date)}</span><span class="chip ${x.kind}">${calWord(x)}</span></span><span class="cn2">${logoOf(x.e.mid)}<b>${esc(x.e.m)}</b>${who ? `<small>${esc(who)}</small>` : ""}</span></button>`; }
 function renderCalendar(){
   const [y, m] = calMonth.split("-").map(Number);
   const first = Date.UTC(y, m - 1, 1), startDow = new Date(first).getUTCDay(), last = new Date(Date.UTC(y, m, 0)).getUTCDate();
@@ -1496,8 +1466,8 @@ function recCmp(a, b){ return tierOf(a) - tierOf(b) || cmpU(a, b) || actOrder(a)
 function queueCmp(a, b){ return state.queueSort === "date" ? cmpU(a, b) || actOrder(a) - actOrder(b) : recCmp(a, b); }
 function queueRow(e){ return `<li>
     <button type="button" class="row${e.done ? " done" : ""}" data-id="${esc(e.id)}" aria-current="${state.sel === e.id}">
-      <span class="dl2"${!e.eff && e.effShort ? ` title="${esc(e.effShort)}"` : ""}>${ddHtml(e)}${e.eff ? `<small class="tn">${md(e.eff)}${e.effQual ? ` <b class="qt" title="${esc(e.effQual)}">해석</b>` : ""}</small>` : e.effSeen ? `<small class="tn">${md(e.cd)}</small>` : ""}</span>
-      <span class="t"><span class="qbadges">${qchips(e)}</span><b><span class="subj">${logoOf(e.mid)}${esc(e.m)}</span> ${esc(e.sum)}${e.done ? `<span class="tags"><span class="tg">결정됨</span></span>` : ""}</b><span><span class="qs t7">${esc(EV7[e.id] || "수집 확인")}</span>${esc(e.ch)}</span></span>
+      <span class="dl2"${!e.eff && e.effShort ? ` title="${esc(e.effShort)}"` : ""}>${ddHtml(e)}${e.eff ? `<small class="tn">${md(e.eff)}${e.effQual ? ` <b class="chip qt" title="${esc(e.effQual)}">해석</b>` : ""}</small>` : e.effSeen ? `<small class="tn">${md(e.cd)}</small>` : ""}</span>
+      <span class="t"><span class="qbadges">${qchips(e)}</span><b><span class="subj">${logoOf(e.mid)}${esc(e.m)}</span> ${esc(e.sum)}${e.done ? `<span class="tags"><span class="chip">결정됨</span></span>` : ""}</b><span><span class="chip t7">${esc(EV7[e.id] || "수집 확인")}</span>${esc(e.ch)}</span></span>
     </button></li>`; }
 // 변동 잦음 묶음: 정렬된 목록에서 묶음 구성원은 맨 앞 구성원 자리에 한 줄로 모은다. 날짜 칸은 묶인 카드 수와 기간이다.
 function bundled(list){ const seen = new Set();
@@ -1507,8 +1477,8 @@ function vgSum(id){ const l = VG[id], days = l.map(e => e.cd).filter(Boolean).so
 function vgRow(b){ const {l, e0, up, down, res, from, to} = vgSum(b.vg);
   return `<li>
     <button type="button" class="row vg" data-id="${esc(b.vg)}" aria-current="${state.sel === b.vg}">
-      <span class="dl2"><span class="dd none seen">${l.length}장</span><small class="tn">${md(from)}~</small><small class="tn">${md(to)}</small></span>
-      <span class="t"><span class="qbadges"><span class="qchip vgc">변동 잦음</span>${appChip(e0)}</span><b><span class="subj">${logoOf(e0.mid)}${esc(e0.m)}</span> 가격이 자주 바뀜 · 인상 ${up} · 인하 ${down}${res ? ` · 되돌아감 ${res}` : ""}</b><span><span class="qs t7">가격 변경 묶음</span>${esc(e0.ch)}</span></span>
+      <span class="dl2"><span class="chip none">${l.length}장</span><small class="tn">${md(from)}~</small><small class="tn">${md(to)}</small></span>
+      <span class="t"><span class="qbadges"><span class="chip">변동 잦음</span>${appChip(e0)}</span><b><span class="subj">${logoOf(e0.mid)}${esc(e0.m)}</span> 가격이 자주 바뀜 · 인상 ${up} · 인하 ${down}${res ? ` · 되돌아감 ${res}` : ""}</b><span><span class="chip t7">가격 변경 묶음</span>${esc(e0.ch)}</span></span>
     </button></li>`; }
 const rowOf = x => x.vg && !x.id ? vgRow(x) : queueRow(x);
 function renderQueue(){
@@ -1562,7 +1532,7 @@ function compareTable(mid){
   const T = COMPARE[mid]; if (!T) return "";
   const span = T.items.length + (T.disc ? 3 : 0) + 3;
   const td = ([v, k], f, x) => `<td class="v${k ? " sct-" + k : ""}${f && (k === "lo" || k === "un") ? " sct-fill" : ""}${x ? " " + x : ""}">${esc(v)}</td>`;
-  const tr = (r, ex) => `<tr${ex ? ` class="sct-ex"` : ""}><td class="sct-who"><span class="sct-rt">${esc(r.w[0])} · </span>${esc(r.w[1])}${(r.t || []).map(([t, k]) => `<span class="sct-tag sct-t-${k}">${esc(t)}</span>`).join("")}</td>`
+  const tr = (r, ex) => `<tr${ex ? ` class="sct-ex"` : ""}><td class="sct-who"><span class="sct-rt">${esc(r.w[0])} · </span>${esc(r.w[1])}${(r.t || []).map(([t, k]) => `<span class="chip sct-t-${k}">${esc(t)}</span>`).join("")}</td>`
     + r.c.map(c => td(ex ? [c[0], ""] : c, r.f)).join("")
     + (T.disc ? (r.d || []).map(c => td(ex && c[1] !== "gy" ? [c[0], ""] : c, r.f, "sct-d")).join("") : "")
     + `<td class="v">${esc(r.p[0])}${r.p[1] ? `<small>${esc(r.p[1])}</small>` : ""}</td><td class="sct-note">${esc(r.n || "–")}</td></tr>`;
@@ -1573,7 +1543,7 @@ function compareTable(mid){
     <div class="sct-scroll"><table class="sct-t"><thead>${head}</thead><tbody>${T.ex.map(r => tr(r, true)).join("")}</tbody></table></div></details>` : "";
   return `<section class="sct" aria-label="공급사 비교 표">
     <div class="sct-scroll"><table class="sct-t"><thead>${head}</thead><tbody>${body}</tbody></table></div>${ex}
-    <p class="sct-key"><span class="sct-lo">최저</span><span class="sct-un">유일</span><span class="sct-gy">종료·미확인</span><span class="sct-dash">비교 제외</span><span class="sct-tag sct-t-con">출처 상충</span>테두리는 정밀도가 적힌 행, 추정·상태 저하·가격 변동 큼·비공개 모델 행은 채움만${T.disc ? ` · 할인가·종료 후 가격은 ${esc(T.items.join(" / "))} 순` : ""}</p>
+    <p class="sct-key"><span class="chip sct-lo">최저</span><span class="chip sct-un">유일</span><span class="chip">종료·미확인</span><span class="chip sct-dash">비교 제외</span><span class="chip sct-t-con">출처 상충</span>테두리는 정밀도가 적힌 행, 추정·상태 저하·가격 변동 큼·비공개 모델 행은 채움만${T.disc ? ` · 할인가·종료 후 가격은 ${esc(T.items.join(" / "))} 순` : ""}</p>
     ${T.special ? `<div class="sct-sp"><h5>특이사항</h5><p>${esc(T.special)}</p></div>` : ""}${(T.foot || []).map(x => `<p class="cnd note">${esc(x)}</p>`).join("")}</section>`;
 }
 const compareMeta = mid => { const T = COMPARE[mid];
@@ -1618,12 +1588,13 @@ function renderDetail(){
   const e = VG[state.sel] ? vgCard(state.sel) : EVENTS.find(x => x.id === state.sel), el = document.getElementById("detail");
   if (!e) { el.innerHTML = `<p class="unknown">이 칸에 해당하는 변화가 없습니다.</p>`; return; }
   const net = e.vgs ? {...e, chg: e.chg.filter(r => money(r[1]) !== money(r[2]))} : e;  // 묶음에서 되돌아간 항목은 원가 판단에 넣지 않는다
-  const eff = e.eff ? `${md(e.eff)} (${wd(e.eff)}) ${ddHtml(e)}${e.effQual ? ` <b class="qt" title="${esc(e.effQual)}">해석</b>` : ""}` : esc([e.effShort, e.effNote].filter(Boolean).join(" · ") || "미확인");
-  let h = `${missingLink ? `<p class="linkmiss" role="status">링크한 카드(#${esc(missingLink)})를 이 페이지에서 찾지 못했습니다. 아래는 목록 맨 위 카드입니다.</p>` : ""}<div class="dmeta">${typeHead(e)}${costChip(net)}<span class="who">${logoOf(e.mid)}${esc(e.m)}</span><span>${esc(e.ch)}</span>${e.real ? `<span class="tg real">실제 · 공개 출처</span>` : `<span class="tg">시연 데이터</span>`}${e.done ? `<span class="tg">결정됨</span>` : ""}</div>
+  const eff = e.eff ? `${md(e.eff)} (${wd(e.eff)}) ${ddHtml(e)}${e.effQual ? ` <b class="chip qt" title="${esc(e.effQual)}">해석</b>` : ""}` : esc([e.effShort, e.effNote].filter(Boolean).join(" · ") || "미확인");
+  let h = `${missingLink ? `<p class="linkmiss" role="status">링크한 카드(#${esc(missingLink)})를 이 페이지에서 찾지 못했습니다. 아래는 목록 맨 위 카드입니다.</p>` : ""}<div class="dident"><span class="who">${logoOf(e.mid)}${esc(e.m)}</span><span>${esc(e.ch)}</span></div>
+    <div class="dmeta">${typeHead(e)}${costChip(net)}<span class="chip big">${e.real ? "실제 · 공개 출처" : "시연 데이터"}</span>${e.done ? `<span class="chip big">결정됨</span>` : ""}</div>
     <h2 class="headline">${e.head || esc(e.sum)}</h2>
     ${e.rv && !e.vgs ? `<p class="rvnote">${e.rv === e.rn ? `이후 수집에서 바뀐 가격 ${e.rn}개가 모두 원래 값으로 돌아왔습니다. 지금은 적용되지 않는 변화라 기록만 남깁니다(해소됨).` : `바뀐 가격 ${e.rn}개 중 ${e.rv}개가 이후 수집에서 원래 값으로 돌아왔습니다(일부 해소).`}</p>` : ""}
     <div class="decide"><div class="next"><div class="k">다음 할 일 <span class="qbadges" style="display:inline-flex">${qchips(e)}</span></div><div class="v">${nextHtml(e)}</div></div><div><div class="k">${esc(e.effLabel || "적용일")}</div><div class="v">${eff}</div></div>
-      <div><div class="k">현재 사용 경로${relDemoOf(e) ? ` <span class="tg">가정</span>` : ""}</div><div class="v">${esc(relShortOf(e))}</div></div></div>
+      <div><div class="k">현재 사용 경로${relDemoOf(e) ? ` <span class="chip">가정</span>` : ""}</div><div class="v">${esc(relShortOf(e))}</div></div></div>
     ${e.link && EVENTS.some(x => x.id === e.link[0]) ? (l => `<div class="lk"><span>함께 볼 이벤트</span><b>${esc(l.m)} · ${esc(l.ch)}</b><span>${esc(e.link[1])}</span><button type="button" data-id="${esc(l.id)}">열기 →</button></div>`)(EVENTS.find(x => x.id === e.link[0])) : ""}
     ${e.vg ? `<div class="lk"><span>변동 잦음 묶음</span><b>${esc(e.m)} · ${esc(e.ch)}</b><span>이 경로의 가격 변경 카드 ${VG[e.vg].length}장을 목록에서 한 줄로 묶었습니다</span><button type="button" data-id="${esc(e.vg)}">묶음 보기 →</button></div>` : ""}
     ${keyChange(e)}<div class="vgbtn">${TREND[e.mid] ? `<button type="button" class="tlink" data-trend="${esc(e.mid)}" data-tview="chart">${esc(TREND[e.mid].name)} 가격 추이 보기 →</button>` : ""}${COMPARE[e.mid] ? `<button type="button" class="tlink" data-trend="${esc(e.mid)}" data-tview="table">공급사 비교 표 보기 → <small>${compareMeta(e.mid)}</small></button>` : ""}</div>`;
@@ -1674,9 +1645,9 @@ function renderHealth(){
   // 판단 (2026-10-29 박건 제안: 수집기를 고쳐야 하는 실패를 가려 보인다): build.py가 core/failures.py로 정하고 확인할 곳(fix)을 앞에 둔다
   const todo = H.failing.filter(x => x.fix).length, tone = x => x.fix ? "bad" : "gone";
   const count = H.failing.length ? `<p class="hcount"><b>수집기 확인 필요 ${todo}곳</b> · 일시 오류 ${H.failing.length - todo}곳</p>` : "";
-  const fail = H.failing.length ? table(["출처", "판단", "오류", "실패"], H.failing.map(x => `<tr><td>${who(x)}${link(x.url)}</td><td><span class="hst ${tone(x)}">${esc(x.label)}</span><small>${esc(x.action)}</small></td><td>${esc(x.error)}</td><td><span class="hst ${tone(x)}">${x.since ? md(x.since) + "부터 · " : ""}${x.runs}회 연속</span></td></tr>`))
+  const fail = H.failing.length ? table(["출처", "판단", "오류", "실패"], H.failing.map(x => `<tr><td>${who(x)}${link(x.url)}</td><td><span class="chip ${tone(x)}">${esc(x.label)}</span><small>${esc(x.action)}</small></td><td>${esc(x.error)}</td><td><span class="chip ${tone(x)}">${x.since ? md(x.since) + "부터 · " : ""}${x.runs}회 연속</span></td></tr>`))
     : `<p class="none">${modelQ ? "검색한 모델에서 " : ""}지금 실패 중인 출처가 없습니다.</p>`;
-  const recent = H.recent.length ? table(["출처", "실패한 수집", "마지막 오류", "지금"], H.recent.map(x => `<tr><td>${who(x)}</td><td>${md(x.first)}${x.first !== x.last ? "~" + md(x.last) : ""} · ${x.runs}회</td><td>${esc(x.error || "—")}</td><td><span class="hst ${x.now === "ok" ? "ok" : "gone"}">${x.now === "ok" ? "정상으로 돌아옴" : "등록부에서 빠짐"}</span></td></tr>`))
+  const recent = H.recent.length ? table(["출처", "실패한 수집", "마지막 오류", "지금"], H.recent.map(x => `<tr><td>${who(x)}</td><td>${md(x.first)}${x.first !== x.last ? "~" + md(x.last) : ""} · ${x.runs}회</td><td>${esc(x.error || "—")}</td><td><span class="chip ${x.now === "ok" ? "ok" : "gone"}">${x.now === "ok" ? "정상으로 돌아옴" : "등록부에서 빠짐"}</span></td></tr>`))
     : `<p class="none">${modelQ ? "검색한 모델에서 " : ""}최근 ${H.days || 14}일 동안 실패한 출처가 없습니다.</p>`;
   const recheck = H.recheck.length ? table(["출처", "건수"], H.recheck.map(x => `<tr><td>${who(x)}</td><td>${x.n}건</td></tr>`)) : `<p class="none">없습니다.</p>`;
   const reg = EVENTS.filter(e => ["제공 종료", "모델 출시", "공급 경로 변경"].includes(EV7[e.id]) && !isPast(e) && modelHit(e.mid, e.m)).sort(recCmp);

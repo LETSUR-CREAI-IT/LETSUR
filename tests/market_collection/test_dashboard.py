@@ -912,7 +912,7 @@ def test_template_marks_a_called_route_like_a_registered_one(tmp_path: Path) -> 
     _write(tmp_path, [])
     page = _build(tmp_path)[1]
     assert 'const relMark = e => relDemoOf(e) ? {chip: "가정", note: "시연용 가정"} : null;' in page
-    assert '현재 사용 경로${relDemoOf(e) ? ` <span class="tg">가정</span>` : ""}</div>' in page
+    assert '현재 사용 경로${relDemoOf(e) ? ` <span class="chip">가정</span>` : ""}</div>' in page
     assert '&& relDemoOf(e) ? " (렛서 관계는 시연용 가정)" : ""}</div></div>`;' in page
     assert not re.search(r"relSet|relObs|relMan|relInf|호출 추정", page)
 
@@ -1446,7 +1446,7 @@ def test_team_feedback_of_1103_legend_korean_labels_switch_draft_and_search(tmp_
     # 1. no colour legend under the calendar
     assert "callg" not in page and "dkey" not in page and "drvk" not in page
     # 5. the list says what to do and whether LETSUR uses the route in Korean; only the Slack bot's cards.json keeps the English values
-    assert '<span class="qchip ${k}" title="${QACTION[k].tip}">${QACTION[k].ko}</span>' in page and "${a.ko}${m && a !== APPSTAT.unk" in page
+    assert '<span class="chip ${k}" title="${QACTION[k].tip}">${QACTION[k].ko}</span>' in page and "${a.ko}${m && a !== APPSTAT.unk" in page
     assert 'en:"' not in page and "${QACTION[actionKey(e)].ko} · 제안: " in page
     for word in ("렛서 사용", "렛서 미사용", "사용 미확인", "관측 유지", "확인 필요"):
         assert f'ko:"{word}"' in page
@@ -1832,3 +1832,36 @@ def test_team_feedback_icons_calendar_words_title_and_letsur_mode(tmp_path: Path
     assert "const shown = EVENTS.filter(modeShown)" in page and "const entries = CAL_ENTRIES.filter(x => modeShown(x.e));" in page
     assert "const listed = () => EVENTS.filter(e => modeShown(e) && kindShown(e) && (showPast || !isPast(e)));" in page
     assert "letsurOnly = !letsurOnly; renderMeta(); renderCalendar(); refilter();" in page
+
+
+def test_the_detail_head_and_every_display_chip_share_one_shape(tmp_path: Path) -> None:
+    """2026-11-04 박건 '첫줄에 모델명, 공급 경로를 두고 그 아랫줄에 나머지를 넣고 크기와 디자인 성격을 통일', then '칩 통일부터': the first
+    line of a detail says what the card is about and the second holds its chips. Everything that only shows a state is one .chip, 20px
+    (24px in the detail head), radius 6, no border, and differs only in colour; what can be pressed is a pill, so the shape tells them
+    apart. The browser check covers the sizes, the contrast in light and dark, and 375px."""
+    _write(tmp_path, [])
+    page = _build(tmp_path)[1]
+    assert ('<div class="dident"><span class="who">${logoOf(e.mid)}${esc(e.m)}</span><span>${esc(e.ch)}</span></div>\n'
+            '    <div class="dmeta">${typeHead(e)}${costChip(net)}<span class="chip big">${e.real ? "실제 · 공개 출처" : "시연 데이터"}</span>') in page
+    css = page[page.index("<style>"):page.index("</style>")]
+    shape = re.search(r"\.chip\{([^}]+)\}", css).group(1)
+    assert all(rule in shape for rule in ("min-height:20px", "font-size:11px", "font-weight:650", "border-radius:var(--r-s)")) and "border:" not in shape
+    assert ".chip.big{min-height:24px;padding:2px 8px;font-size:12px;white-space:normal}" in css
+    # a colour variant changes the colours and nothing else
+    colours = re.findall(r"^\.chip\.[a-z_-]+(?:,\.chip\.[a-z0-9_-]+)*\{([^}]+)\}", css, re.M)
+    colours = [c for c in colours if "color:" in c and "min-height" not in c and "margin" not in c]
+    assert len(colours) == 8 and all(set(re.findall(r"([a-z-]+):", re.sub(r"(color-mix\([^)]*\)|var\([^)]*\))", "", c))) <= {"background", "color"} for c in colours)
+    for old in ('class="qchip', 'class="qs', 'class="dd', 'class="tg', 'class="hst', 'class="stag', "sct-tag", 'class="dc', 'class="qt"', 'class="ref', 'class="pill', "cchip"):
+        assert old not in page
+    # what can be pressed stays a pill
+    for pressable in (".mchip{", ".tlink{", ".seg{", ".spbar button,.spbar a{"):
+        assert re.search(rf"^{re.escape(pressable)}[^}}]*border-radius:var\(--r-pill\)", css, re.M)
+    # 인상·인하 text is mixed with --ink: --up and --down alone were 3.7:1 on their fill; chips stay visible on a mint background
+    assert "--up-ink:color-mix(in srgb, var(--up) 72%, var(--ink))" in css and ".chip.down{background:color-mix(in srgb, var(--down) 14%, var(--surface));color:var(--down-ink)}" in css
+    assert '.row[aria-current="true"] .chip:not(.now),.decide .next .chip{background:var(--surface)}' in css
+    # .unknown is the page's "nothing here" line, which made the old 사용 미확인 chip 13px with a 12px top margin
+    assert 'cls:"unk"}' in page and ".chip.unk" in css and 'cls:"unknown"' not in page
+    # .row .t>span turned .qbadges into a block and took away the 4px between chips
+    assert ".row .t>.qbadges{display:flex;overflow:visible}" in css
+    # inside a calendar bar the change's name is coloured text: the bar is the box
+    assert ".dkind{flex:none;font-size:11px;font-weight:650}" in css and '<span class="dkind ${x.kind}">${calWord(x)}</span>${logoOf(e.mid)}' in page
