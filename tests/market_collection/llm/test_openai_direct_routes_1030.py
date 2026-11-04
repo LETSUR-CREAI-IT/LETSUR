@@ -1,5 +1,5 @@
-"""OpenAI's own route for the seven models LETSUR was seen sending there beside Azure on 2026-10-30 (letsur_routes.py, 16
-samples, Responses answers carrying OpenAI's billing). Six are read from their model pages by openai_models_more.py; o3's page
+"""OpenAI's own route for the models LETSUR was seen sending there beside Azure: seven on 2026-10-30 and gpt-5.4 on 2026-11-04 (letsur_routes.py,
+Responses answers carrying OpenAI's billing). All but o3 are read from their model pages by openai_models_more.py; o3's page
 lists two Text tokens tables without a tier name, so its Standard price comes from the pricing page (openai_pricing_standard.py).
 Fixtures are the pages as served (fixtures/direct/provenance.json, checked in test_direct_makers.py)."""
 from pathlib import Path
@@ -16,6 +16,7 @@ SPECS = {s.model_id: s for s in route_gap_source_specs() if s.route == "openai_d
 PAGES = {  # model: (input, cached input, output) per 1M tokens on its page, 10/30
     "gpt-4.1": ("2", "0.5", "8"), "gpt-4.1-mini": ("0.4", "0.1", "1.6"), "gpt-4o": ("2.5", "1.25", "10"),
     "gpt-4o-mini": ("0.15", "0.075", "0.6"), "gpt-5": ("1.25", "0.125", "10"), "gpt-5-mini": ("0.25", "0.025", "2"),
+    "gpt-5.4": ("2.5", "0.25", "15"),  # 11/4
 }
 PRICING = (F / "openai-pricing.md").read_bytes()
 
@@ -27,7 +28,7 @@ def parse(model, body):
     return {price["billing_item"]: price["amount"] for price in prices}, conditions
 
 
-def test_the_seven_sources_are_on_openais_route_and_priced():
+def test_the_sources_are_on_openais_route_and_priced():
     assert set(SPECS) == {*PAGES, "o3", "o3-pro"} and all(spec in source_specs() for spec in SPECS.values())
     catalog = Catalog()
     for model, spec in SPECS.items():

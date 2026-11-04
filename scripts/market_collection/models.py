@@ -308,6 +308,8 @@ OPENAI_DIRECT_MORE_MODELS = (
     ("gpt-4o-mini", "GPT-4o Mini", "gpt-4o-mini"),
     ("gpt-5", "GPT-5", "gpt-5"),
     ("gpt-5-mini", "GPT-5 Mini", "gpt-5-mini"),
+    # 11/4 recheck (Responses answer with OpenAI's billing): gpt-5.4 goes to OpenAI's own API beside Azure.
+    ("gpt-5.4", "GPT-5.4", "gpt-5.4"),
 )
 
 # o3 is on OpenAI's own route too (10/30 recheck), but its model page lists two Text tokens tables without a tier name ($2/$8

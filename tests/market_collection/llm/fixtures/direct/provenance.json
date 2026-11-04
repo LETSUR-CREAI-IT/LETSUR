@@ -151,5 +151,14 @@
     "raw_bytes": 22824,
     "fixture_sha256": "93d302a9b7a384877533bc3ab5bb48eebf4b56bd6add0f194095054b2a13f952",
     "method": "The whole page as served, byte for byte."
+  },
+  {
+    "fixture": "openai-gpt-5.4.md",
+    "source_url": "https://developers.openai.com/api/docs/models/gpt-5.4.md",
+    "fetched_at_utc": "2026-11-04T15:16:52+00:00",
+    "raw_sha256": "8912cd2f9c517765174dd16d79eec1e63636f37ae765e293a6350fdec9f010a3",
+    "raw_bytes": 4023,
+    "fixture_sha256": "8912cd2f9c517765174dd16d79eec1e63636f37ae765e293a6350fdec9f010a3",
+    "method": "The whole page as served, byte for byte."
   }
 ]

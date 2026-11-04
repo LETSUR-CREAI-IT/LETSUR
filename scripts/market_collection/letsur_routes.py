@@ -16,13 +16,15 @@ come only from the environment and are never printed or written. The proposal go
 with --write.
 
 The routes file shows what LETSUR uses now. For a model this run identified a route of, the observed records of the routes it
-saw are kept (a new checked_at; a note already there stays) or added with that day's checked_at, and its observed records of
-routes it did not see are dropped; a model with no identified answer keeps its records. Settings and manual records are a
-person's and are never touched; one of the same route stands for that route. Inferred records, which earlier versions wrote,
+saw are kept (a new checked_at; a note already there stays) or added with that day's checked_at. A route it did not see stays with
+the day it was last seen: LETSUR's picks are uneven and a fallback may never show, so not seeing a route proves nothing (2026-11-05,
+6 samples each "lost" 14 routes and 20 samples brought 9 back, gemini-2.5-flash-lite's OpenRouter once in 20). Only a person takes a
+record out. Settings and manual records are a person's and are never touched; one of the same route stands for that route. Inferred records, which earlier versions wrote,
 are dropped for a model that answered this run. Only models in our registry (models.py, plus ALIASES for LETSUR's other ids) are
 asked and recorded; the rest of LETSUR's list is named in the diff only. A model with a deployment that answered without
 showing its route gets an entry in the top-level "unresolved" map as {model_id: note}, even when other deployments showed
-theirs; one whose answers all showed routes loses it, and an entry already there is left as written. No record gets an
+theirs. An entry already there stays as written whatever a later run shows, for the same reason as a route (on 11/4 five GPT
+models showed no such deployment and five others did): only a person takes it out. No record gets an
 endpoint_id: OpenRouter and Vercel pick a sub-provider per request, so the ones seen go into the note, which is plain Korean
 because the admin's route tab shows it as written.
 Exit codes: 0 done, 1 no model gave a usable answer (nothing written), 2 refused (bad setup or the key was refused).
@@ -95,7 +97,7 @@ CHANCE = 0.05  # how likely a deployment that takes "bogus" may be to miss every
 NOT_PROBED = {"video": "렛서 영상 API는 자체 입력 형식이라 생성 없이 경로가 드러나지 않음(호출하지 않음)",
               "image": "이미지 생성은 비용이 들어 호출하지 않음"}
 BEDROCK_NOTE = "Bedrock 전용 performanceConfig 값 검사를 함"
-DIFF_PARTS = ("new_route", "re_seen", "dropped", "inferred", "kept", "covered", "unresolved", "no_answer", "not_registered")
+DIFF_PARTS = ("new_route", "re_seen", "not_seen", "inferred", "kept", "covered", "unresolved", "no_answer", "not_registered")
 
 
 class GatewayError(Exception):
@@ -506,12 +508,12 @@ def merge(current: dict, results: dict, checked_at: str) -> tuple[dict, dict]:
 
     The file shows what LETSUR uses now (2026-10-30). For a model this run identified a route of, an observed record of a route
     it saw gets the new date (and a note only when it had none), a route seen for the first time becomes a record of its own with
-    `checked_at` next to the model's other records, and its observed records of routes it did not see are dropped. A model with
-    no identified answer keeps its records: the run proved nothing against them. Settings and manual records are never touched
+    `checked_at` next to the model's other records, and an observed record of a route it did not see stays as it was, so its date
+    says when it was last seen: the run proved nothing against it (see the module note). Settings and manual records are never touched
     and stop a new record of the same route. Inferred records, which earlier versions wrote, are dropped for a model the run
     checked. A model with a deployment that answered without its route gets an unresolved entry even when others showed routes;
-    one whose answers all showed routes loses it; one with no route record left gets it when the gateway answered. An entry
-    already there stays as written."""
+    one with no route record gets it when the gateway answered. An entry already there stays as written, even when every answer
+    of this run showed a route: the run proved nothing against it either."""
     records, unresolved = [dict(record) for record in current["records"]], dict(current.get("unresolved") or {})
     diff = {part: [] for part in DIFF_PARTS}
     for model in sorted(results):
@@ -535,13 +537,13 @@ def merge(current: dict, results: dict, checked_at: str) -> tuple[dict, dict]:
         if seen:
             diff["re_seen"].append(name)
         unseen = [i for i in mine if i not in seen]
-        gone = guessed + (unseen if result["routes"] else [])
+        gone = guessed
         others = [tuple(records[i].get(key) for key in ("route_id", "endpoint_id", "basis", "checked_at")) for i in own if i not in gone]
         diff["new_route"].extend((name, (record["route_id"], None, "observed"), others) for record in new)
         for i in unseen:
             row = (name, tuple(records[i].get(key) for key in ("route_id", "endpoint_id", "basis")), records[i].get("checked_at"))
             if result["routes"]:
-                diff["dropped"].append(row)
+                diff["not_seen"].append(row)
             else:
                 diff["kept"].append((*row, result["note"]))
         diff["inferred"].extend((name, tuple(records[i].get(key) for key in ("route_id", "endpoint_id", "basis")),
@@ -554,9 +556,7 @@ def merge(current: dict, results: dict, checked_at: str) -> tuple[dict, dict]:
         if result["unidentified"] or not has_route and (name in unresolved or result["answered"]):
             unresolved.setdefault(name, result["note"])
             diff["unresolved"].append(name)
-        elif has_route:
-            unresolved.pop(name, None)
-        else:
+        elif not has_route:
             diff["no_answer"].append((name, result["note"]))
     return {**current, "records": records, "unresolved": unresolved}, diff
 
@@ -577,7 +577,7 @@ def format_diff(diff: dict) -> str:
 
     section("new route", [f"{name}: {describe([after])}" + (f" (also {', '.join(dated(*other) for other in others)})" if others else "")
                           for name, after, others in diff["new_route"]])
-    section("observed before, not seen this run, dropped", [f"{name}: {dated(*record, day)}" for name, record, day in diff["dropped"]])
+    section("observed before, not seen this run, kept", [f"{name}: {dated(*record, day)}" for name, record, day in diff["not_seen"]])
     section("inferred (no longer written), dropped", [f"{name}: {describe([record])} {day or 'no date'}" for name, record, day in diff["inferred"]])
     section("no route identified this run, kept", [f"{name}: {dated(*record, day)}" + (f" ({why})" if why else "") for name, record, day, why in diff["kept"]])
     section("covered by a settings or manual record", [f"{name}: {describe([after])}" for name, after in diff["covered"]])
