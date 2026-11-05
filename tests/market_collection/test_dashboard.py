@@ -1804,13 +1804,13 @@ def test_the_supply_tab_opens_with_a_summary_of_letsur_routes(tmp_path: Path) ->
     assert '<section class="spage" id="supply" aria-label="공급로 현황">\n    <div class="card" id="spsum" hidden></div>\n    <div class="card" id="sptable"></div>' in page
     # the same columns and draft as the table, and no card without a routes file
     assert "const spUses = (D, m) => SUPPLY.cols.filter(c => spCell(D, m, c).length).map(c => c[0]);" in page
-    assert 'sumHtml = spSummary(D); sum.innerHTML = sumHtml; sum.hidden = !sumHtml;' in page and 'if (!ids.length || !SUPPLY.routes) return "";' in page
+    assert 'sumHtml = spSummary(D, false); sum.innerHTML = sumHtml; sum.hidden = !sumHtml;' in page and 'if (!ids.length || !SUPPLY.routes) return "";' in page
     # 변화 counts what the list shows for a route LETSUR uses: recent or coming, not yet handled
-    assert 'EVENTS.filter(e => relOf(e) === "use" && !isPast(e) && !isAcked(e))' in page
+    assert 'EVENTS.filter(e => !isPast(e) && !isAcked(e)).forEach(e => { const r = relOf(e), c = SUPPLY.cols.find(x => x[1].includes(e.rt)); if (r === "use" && c) on[c[0]]' in page
     # colour and order follow the supplier's name, so a change in counts repaints nothing and keeps the validated neighbours
     assert 'const SUM_HUE = ["OpenRouter", "Vercel", "Microsoft", "Google", "OpenAI", "Anthropic"];' in page
     assert "sort((a, b) => hue(a) - hue(b) || count[b] - count[a] || a.localeCompare(b))" in page
-    for words in ("렛서 공급 경로", "대체 경로 없는 모델", "경로 기록 없음", "수집 실패", "공급사별 렛서 사용 모델", "회사별 렛서 경로 수", "숫자는 모델 수(사용량 아님) · 행을 누르면 아래 표를 거름"):
+    for words in ("렛서 공급 경로", "대체 경로 없는 모델", "경로 기록 없음", "수집 실패", "공급사별 렛서 사용 모델", "회사별 렛서 경로 수", '숫자는 모델 수(사용량 아님) · 행을 누르면 ${home ? "캘린더·목록을" : "아래 표를"} 거름'):
         assert words in page
     # a pressed row or state filters the table, again or '전체 보기' clears it, and the row keeps the focus
     assert "modelHit(m, modelName(m)) && spLensHit(D, m)" in page and 'data-sp="lens" data-lk="off">전체 보기</button>' in page
@@ -1835,11 +1835,36 @@ def test_the_solo_route_switch_sits_beside_letsur_only(tmp_path: Path) -> None:
     phone = phone[:phone.index("\n}\n")]
     assert ".lmodes{position:relative;flex-direction:column;align-items:flex-start;" in phone and ".lgear{position:absolute;top:50%;right:0" in phone
     # a change of a route LETSUR uses, for a model with one supplier column; the draft empties the count
-    assert 'return relOf(e) === "use" && spUseCount[e.mid] === 1;' in page and "[m, spUses(D, m).length]" in page and "spUseCount = null; spSave(); renderSupply();" in page
+    assert 'const singleRoute = e => relOf(e) === "use" && spUseN(e.mid) === 1;' in page and "[m, spUses(D, m).length]" in page and "spUseCount = null; spSave(); renderSupply();" in page
     # it filters like 렛서 경로만, starts off, and its names and count follow
     assert "let singleOnly = false" in page and "singleOnly = !singleOnly; renderMeta(); renderCalendar(); refilter();" in page
     assert 'singleOnly ? "대체 경로 없는 모델 변화" : letsurOnly ? "렛서 경로 변화" : "전체 변화"' in page and 'singleOnly ? "대체 경로 없는 모델의 " : letsurOnly ? "렛서 경로의 " : ""' in page
     assert 'so.firstElementChild.textContent = singleOnly ? "ON" : "OFF";' in page and "한 곳은 경로 파일 기록 기준이라 아직 못 본 경로가 더 있을 수 있습니다." in page
+
+
+def test_the_changes_tab_has_the_same_route_card_and_its_rows_filter_the_changes(tmp_path: Path) -> None:
+    """2026-11-05 박건 '변화 탭에도 공급로 현황 그래프를 똑같이', '공급사 줄의 빨간 표시도 반영해줘' (박기범's draft PR #40): one renderer draws the card in both
+    places. On the changes tab a pressed row filters the summary, the calendar and the list, and a supplier row leaves exactly what its 변화
+    number counts. The browser check covers the numbers against a separate count, the failure mark on both tabs and the widths."""
+    _write(tmp_path, [])
+    page = _build(tmp_path)[1]
+    assert '<div id="cal"></div>\n    </div>\n    <div class="card" id="hsum" hidden></div>' in page
+    assert "function spSummary(D, home){" in page and "spSummary(spDoc() || {records: []}, true)" in page and "renderHsum();\n" in page
+    # the rows filter what the page lists; a handled change or the draft redraws the numbers
+    assert "(!singleOnly || singleRoute(e)) && chLensHit(e) && modelHit(e.mid, e.m)" in page and "const ackSave = () => { renderHsum();" in page
+    assert 'const c = SUPPLY.cols.find(x => x[1].includes(e.rt));\n  return relOf(e) === "use" && !!c && names.includes(c[0]);' in page
+    assert 'if (chLens.k === "maker") return names.includes(makerOf(e.mid || ""));' in page and 'if (chLens.k === "none") return relOf(e) === "unk" && !spUseN(e.mid);' in page
+    assert 'const cl = ev.target.closest("[data-cl]"); if (cl) { chAct(cl, ev.detail === 0); return; }' in page
+    assert 'k === "solo" ? singleOnly :' in page and 'if (k === "solo") singleOnly = !singleOnly;' in page  # that state is the switch above it
+    assert '<span>${esc(chLens.l)}만 · 목록 ${listed().length}건</span><button type="button" class="mchip" data-cl="off">전체 보기</button>' in page
+    # a pattern in a hidden tab paints nothing, so each card has its own
+    assert 'hatchId = home ? "hsumhatch" : "sphatch"' in page and '<pattern id="${hatchId}"' in page
+    # a supplier with a failing source says so in its row and is not folded away
+    assert ".spnm.bad{font-weight:650;color:var(--up-ink)}" in page and '<span class="spnm${r.fail ? " bad" : ""}">${esc(r.l)}${r.fail ? " !" : ""}</span>' in page
+    assert "count[g] === 1 && !on[g] && !failCol[g]" in page and "if (c) failCol[c[0]] = (failCol[c[0]] || 0) + 1;" in page
+    # beside the calendar on a wide screen, under it below 1200px, and on a phone only on the supply tab
+    assert ".hero.withsum{grid-template-columns:minmax(0,1fr) minmax(280px,340px);align-items:start}" in page and "@media (max-width:1200px){.hero.withsum{grid-template-columns:minmax(0,1fr)}}" in page
+    assert "@media (max-width:640px){#hsum{display:none}}" in page and "@media (min-width:1201px){\n  #hsum .spstats>*{padding:8px}" in page
 
 
 def test_template_css_keeps_to_the_design_scales() -> None:
@@ -1877,7 +1902,7 @@ def test_team_feedback_icons_calendar_words_title_and_letsur_mode(tmp_path: Path
     assert "확인할 변화" not in page
     # 렛서 경로만: off when the page opens, keeps 렛서 경로를 모르는 cards, filters the summary, the calendar and the list
     assert 'class="lswitch" role="switch" data-lmode aria-checked="false"' in page and "let letsurOnly = false;" in page
-    assert 'const letsurRoute = e => ["use", "unk"].includes(relOf(e));' in page and "const modeShown = e => (!letsurOnly || letsurRoute(e)) && (!singleOnly || singleRoute(e)) && modelHit(e.mid, e.m);" in page
+    assert 'const letsurRoute = e => ["use", "unk"].includes(relOf(e));' in page and "const modeShown = e => (!letsurOnly || letsurRoute(e)) && (!singleOnly || singleRoute(e)) && chLensHit(e) && modelHit(e.mid, e.m);" in page
     assert "const shown = EVENTS.filter(modeShown)" in page and "const entries = CAL_ENTRIES.filter(x => modeShown(x.e));" in page
     assert "const listed = () => EVENTS.filter(e => modeShown(e) && kindShown(e) && dayShown(e));" in page
     assert "letsurOnly = !letsurOnly; renderMeta(); renderCalendar(); refilter();" in page
