@@ -681,9 +681,26 @@ body:not([data-page="supply"]) .spage{display:none}
 .spv.on{font-weight:650;color:var(--mint-ink)}
 .spv.dual{font-weight:650;color:var(--down-ink)}
 .spnm{display:flex;align-items:center;gap:4px;min-width:0;overflow:hidden;white-space:nowrap;color:var(--ink)}
+.spnm.bad{font-weight:650;color:var(--up-ink)}  /* 이 공급사 출처의 수집이 실패 중(2026-11-05 박건) */
 .spsw{width:10px;height:10px;border-radius:var(--r-xs)}
 .spsw.unk{background:repeating-linear-gradient(135deg,var(--deemph) 0 2px,transparent 2px 4px);box-shadow:inset 0 0 0 1px var(--deemph)}
 .spsnote{margin:12px 0 0;font-size:11px;color:var(--muted)}
+/* 변화 탭의 같은 카드(2026-11-05 박건 '변화 탭에도 똑같이', 박기범 시험 PR #40의 자리): 캘린더 오른쪽 좁은 칸. 1200px 이하에서는 캘린더 칸이 좁아져 글자가 잘리므로 캘린더 아래로 내려가 넓은 모양이 되고, 폰에서는 목록이 너무 밀려 숨긴다(공급로 현황 탭에는 있다) */
+.hero.withsum{grid-template-columns:minmax(0,1fr) minmax(280px,340px);align-items:start}
+@media (max-width:1200px){.hero.withsum{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:640px){#hsum{display:none}}
+@media (min-width:1201px){
+  #hsum .spstats>*{padding:8px}
+  #hsum .spstats span{font-size:11px}
+  #hsum .spgrid{grid-template-columns:minmax(0,1fr);gap:16px}
+  #hsum .spdonut{grid-template-columns:96px minmax(0,1fr);gap:8px}
+  #hsum .spdonut svg{width:96px;height:96px}
+  #hsum .spdonut .c1{font-size:26px}
+  #hsum .spdonut .c2{font-size:14px}
+  #hsum .sprow,#hsum .sphead{grid-template-columns:10px minmax(0,1fr) 24px 24px 24px;gap:4px;padding-inline:4px}
+  #hsum .spco .sprow,#hsum .spco .sphead{grid-template-columns:minmax(0,1fr) 28px 28px 28px 28px}
+  #hsum .sprow{min-height:24px}
+}
 </style>
 
 <header class="top">
@@ -715,6 +732,7 @@ body:not([data-page="supply"]) .spage{display:none}
       <div class="ch"><h2>일정 캘린더</h2></div>
       <div id="cal"></div>
     </div>
+    <div class="card" id="hsum" hidden></div>
   </section>
 
   <section class="work" aria-label="변화 목록과 상세">
@@ -868,15 +886,28 @@ const letsurRoute = e => ["use", "unk"].includes(relOf(e));
 // 대체 경로 없는 모델만(2026-11-05 박건 '렛서 경로만 옆에 붙이면', 박기범 시험 PR #40의 캘린더 토글을 옮김): 렛서 경로가 한 곳뿐인 모델의 렛서 경로 변화만 남긴다.
 // '한 곳'은 공급로 현황 표와 같은 공급사 칸 수이고 초안을 따른다. 렛서 경로만처럼 페이지 전체에 걸리고 저장하지 않는다.
 let singleOnly = false, spUseCount = null;  // spUseCount: 모델 → 렛서 공급사 칸 수. 초안을 바꾸면 비운다(spAct)
-const singleRoute = e => {
+const spUseN = m => {
   if (!spUseCount) { const D = spDoc() || {records: []}; spUseCount = Object.fromEntries(Object.keys(SUPPLY.models).map(m => [m, spUses(D, m).length])); }
-  return relOf(e) === "use" && spUseCount[e.mid] === 1;
+  return spUseCount[m];
 };
+const singleRoute = e => relOf(e) === "use" && spUseN(e.mid) === 1;
+// 변화 탭 카드의 행(2026-11-05 박건, PR #40의 렌즈): 요약·캘린더·목록을 그 공급사나 회사로 거른다. 공급사 행은 카드의 '변화' 칸과 같은 것(렛서가 그 공급사로 쓰는 경로의 변화)만 남겨 누른 숫자와 목록 수가 같다.
+let chLens = null;  // {k: sup·maker·none, v: 이름(여럿이면 탭으로 이음), l: 표시 이름}
+const chLensHit = e => {
+  if (!chLens) return true;
+  const names = chLens.v.split("\t");
+  if (chLens.k === "maker") return names.includes(makerOf(e.mid || ""));
+  if (chLens.k === "none") return relOf(e) === "unk" && !spUseN(e.mid);
+  const c = SUPPLY.cols.find(x => x[1].includes(e.rt));
+  return relOf(e) === "use" && !!c && names.includes(c[0]);
+};
+const listName = () => chLens ? (chLens.k === "sup" ? `${chLens.l} 경로 변화` : chLens.k === "maker" ? `${chLens.l} 모델 변화` : "경로 기록 없는 모델 변화")
+  : singleOnly ? "대체 경로 없는 모델 변화" : letsurOnly ? "렛서 경로 변화" : "전체 변화";
 // 모델 검색(2026-11-03 팀 피드백 2): 띄어쓰기·하이픈·점은 무시하고('gemini 4 argon') 모델 id·이름·만든 회사에서 찾는다. 유형 메뉴처럼 저장하지 않는다.
 let modelQ = "";
 const searchKey = s => String(s || "").toLowerCase().replace(/[^0-9a-z가-힣]+/g, "");
 const modelHit = (id, name) => !modelQ || [id, name, makerOf(id || "")].some(s => searchKey(s).includes(modelQ));
-const modeShown = e => (!letsurOnly || letsurRoute(e)) && (!singleOnly || singleRoute(e)) && modelHit(e.mid, e.m);
+const modeShown = e => (!letsurOnly || letsurRoute(e)) && (!singleOnly || singleRoute(e)) && chLensHit(e) && modelHit(e.mid, e.m);
 // 확인 처리(2026-11-04 박건: 대응이 끝났거나 필요 없다고 본 알림이 목록을 가린다): 서버가 없어 이 브라우저에만 저장하고, 없어도 화면은 그대로 돈다.
 // 카드 id는 수집이 거듭돼도 유지되지만 같은 카드에 새 변화가 붙기도 하므로, 항목 수·확인 상태·적용일이 바뀌면 다시 올라온다.
 // 변동 잦음 묶음은 그 규칙이면 거의 매일 다시 올라오므로 체크할 때의 항목별 가격을 저장하고 두 단계로 나눈다(2026-11-04 박건 '10% 이상일 때만', '중간 것들의 변화도 인지는 해야').
@@ -896,7 +927,7 @@ function vgMajor(id, was){ const low = itemLows(was), now = itemLows(vgPrices(id
   return Object.keys(now).some(k => k in low && tenPct(low[k], now[k])) || vgDrift(id, was).some(r => mine.includes(r[0].split(" · ").slice(0, -1).join(" · "))); }
 const isAcked = e => e.vg ? !!acked[e.vg] && !vgMajor(e.vg, acked[e.vg]) : acked[e.id] === ackSig(e);
 const ackMembers = id => VG[id] || EVENTS.filter(e => e.id === id);
-const ackSave = () => { try { localStorage.setItem(ACK_KEY, JSON.stringify(acked)); localStorage.setItem(ACK_AT_KEY, JSON.stringify(ackedAt)); } catch (err) {} };
+const ackSave = () => { renderHsum(); try { localStorage.setItem(ACK_KEY, JSON.stringify(acked)); localStorage.setItem(ACK_AT_KEY, JSON.stringify(ackedAt)); } catch (err) {} };
 // 처리 시각(2026-11-04 박건): 언제 확인했는지 남긴다. 페이지의 다른 시각처럼 KST로 보인다.
 const ackWhen = id => { const iso = new Date(Date.parse(ackedAt[id]) + 9 * 36e5).toISOString(); return `${md(iso.slice(0, 10))} ${iso.slice(11, 16)}`; };
 const ackChip = (id, big) => ackedAt[id] ? `<span class="chip${big ? " big" : ""}" title="이 브라우저에서 확인 처리한 시각(KST)">${ackWhen(id)} 확인</span>` : "";
@@ -1222,6 +1253,7 @@ function calWord(x){ const e = x.e, t = EV7[e.id], sub = EV7SUB[e.id] || "";
   return x.kind === "next_check" ? `${w} 확인` : w; }
 
 function renderMeta(){
+  renderHsum();
   const shown = EVENTS.filter(modeShown), n = k => shown.filter(e => typeOf(e) === k).length;
   const soon = new Set(CAL_ENTRIES.filter(x => modeShown(x.e) && days(x.date) >= 0 && days(x.date) <= 14).map(x => x.e.id)).size;
   const runs = COLLECTED.runs;
@@ -1237,7 +1269,7 @@ function renderMeta(){
   const gear = document.querySelector(".lgear"), drafts = Object.keys(spEdits).length;
   gear.classList.toggle("on", drafts > 0);
   gear.dataset.t2 = drafts ? `공급로 현황에서 바꾼 칸 ${drafts}개가 이 브라우저의 화면에 반영돼 있습니다. 커밋 전에는 다른 사람에게 보이지 않습니다.` : "공급로 현황에서 모델별 렛서 경로를 고칩니다.";
-  document.getElementById("sum-total-k").textContent = singleOnly ? "대체 경로 없는 모델 변화" : letsurOnly ? "렛서 경로 변화" : "전체 변화";
+  document.getElementById("sum-total-k").textContent = listName();
   document.getElementById("sum-total").textContent = shown.length;
   document.getElementById("sum-price").textContent = n("price");
   document.getElementById("sum-model").textContent = n("model");
@@ -1583,8 +1615,8 @@ function renderQueue(){
   renderFilter();
   document.getElementById("qsort").value = state.queueSort;
   const lines = bundled(list).length;
-  document.getElementById("lt").textContent = `${ackOnly ? "확인한 알림" : singleOnly ? "대체 경로 없는 모델 변화" : letsurOnly ? "렛서 경로 변화" : "전체 변화"} ${list.length}${lines < list.length ? ` · 묶어서 ${lines}줄` : ""}`;
-  const none = EVENTS.length ? `<p class="lempty">${singleOnly ? "대체 경로 없는 모델의 " : letsurOnly ? "렛서 경로의 " : ""}${modelQ ? "검색한 모델의 " : ""}${listKind ? "선택한 유형의 " : ""}${ackOnly ? "확인한 알림" : `${showPast ? "" : "최근 7일과 앞으로의 "}변화`} 0건</p>` : "";
+  document.getElementById("lt").textContent = `${ackOnly ? "확인한 알림" : listName()} ${list.length}${lines < list.length ? ` · 묶어서 ${lines}줄` : ""}`;
+  const none = EVENTS.length ? `<p class="lempty">${chLens ? `${esc(chLens.l)}의 ` : singleOnly ? "대체 경로 없는 모델의 " : letsurOnly ? "렛서 경로의 " : ""}${modelQ ? "검색한 모델의 " : ""}${listKind ? "선택한 유형의 " : ""}${ackOnly ? "확인한 알림" : `${showPast ? "" : "최근 7일과 앞으로의 "}변화`} 0건</p>` : "";
   if (state.queueSort !== "type") { document.getElementById("queue").innerHTML = list.length ? `<ul class="rows">${bundled(list.slice().sort(queueCmp)).map(rowOf).join("")}</ul>` : none; return; }
   const groups = Object.keys(TYPE).map(k => [k, list.filter(e => typeOf(e) === k).sort((a, b) => cmpU(a, b) || actOrder(a) - actOrder(b))]).filter(([, l]) => l.length);
   document.getElementById("queue").innerHTML = groups.map(([k, l]) => `<section class="grp" aria-label="${TYPE[k].ko}"><h3><i class="ti-${k}"></i>${TYPE[k].ko} ${l.length}</h3><ul class="rows">${bundled(l).map(rowOf).join("")}</ul></section>`).join("") || none;
@@ -1829,32 +1861,35 @@ function sumArc(r0, r1, a0, a1){  // 12시에서 시계 방향, 라디안
   const p = (r, a) => `${(Math.sin(a) * r).toFixed(2)},${(-Math.cos(a) * r).toFixed(2)}`, big = a1 - a0 > Math.PI ? 1 : 0;
   return `M${p(r1, a0)}A${r1},${r1} 0 ${big} 1 ${p(r1, a1)}L${p(r0, a1)}A${r0},${r0} 0 ${big} 0 ${p(r0, a0)}Z`;
 }
-function spSummary(D){
+function spSummary(D, home){  // home: 변화 탭의 카드. 행이 캘린더·목록을 거른다. 아니면 공급로 현황 탭의 카드로 행이 아래 표를 거른다
   const ids = SP_GROUPS.flatMap(([, l]) => l); if (!ids.length || !SUPPLY.routes) return "";
   const uses = Object.fromEntries(ids.map(m => [m, spUses(D, m)])), count = {}, solo = {}, on = {};
   ids.forEach(m => { uses[m].forEach(g => { count[g] = (count[g] || 0) + 1; }); if (uses[m].length === 1) solo[uses[m][0]] = (solo[uses[m][0]] || 0) + 1; });
   // 변화: 렛서가 이 공급사로 쓰는 모델의 변화 중 목록에 나오는 것(최근 7일·앞으로, 확인 처리 전)
-  EVENTS.filter(e => relOf(e) === "use" && !isPast(e) && !isAcked(e)).forEach(e => { const c = SUPPLY.cols.find(x => x[1].includes(e.rt)); if (c) on[c[0]] = (on[c[0]] || 0) + 1; });
-  const single = ids.filter(m => uses[m].length === 1), none = ids.filter(m => !uses[m].length), fail = HEALTH.failing || [];
+  let noneOn = 0;  // 경로 기록이 없는 모델의 변화(렛서가 쓰는지 모르는 카드)
+  EVENTS.filter(e => !isPast(e) && !isAcked(e)).forEach(e => { const r = relOf(e), c = SUPPLY.cols.find(x => x[1].includes(e.rt)); if (r === "use" && c) on[c[0]] = (on[c[0]] || 0) + 1; else if (r === "unk" && !(uses[e.mid] || []).length) noneOn++; });
+  const single = ids.filter(m => uses[m].length === 1), none = ids.filter(m => !uses[m].length), fail = HEALTH.failing || [], failCol = {};
+  fail.forEach(f => { const c = SUPPLY.cols.find(x => x[1].includes(f.route)); if (c) failCol[c[0]] = (failCol[c[0]] || 0) + 1; });  // 수집이 실패 중인 출처의 공급사
   const hue = g => SUM_HUE.includes(g) ? SUM_HUE.indexOf(g) : SUM_HUE.length;
   const names = Object.keys(count).sort((a, b) => hue(a) - hue(b) || count[b] - count[a] || a.localeCompare(b));
-  const tiny = names.filter(g => count[g] === 1 && !on[g]), fold = tiny.length > 1 ? tiny : [];  // 모델 하나뿐이고 변화도 없는 공급사는 한 줄로 묶는다
+  const tiny = names.filter(g => count[g] === 1 && !on[g] && !failCol[g]), fold = tiny.length > 1 ? tiny : [];  // 모델 하나뿐이고 변화도 실패도 없는 공급사는 한 줄로 묶는다
   const tip = (t1, t2) => ` data-t1="${esc(t1)}" data-t2="${esc(t2)}"`;
-  const lens = (k, v, l) => ` data-sp="lens" data-lk="${k}" data-lv="${esc(v)}" data-ll="${esc(l)}" aria-pressed="${!!spLens && spLens.k === k && spLens.v === v}"`;
+  const lens = (k, v, l) => home ? ` data-cl="${k}" data-lv="${esc(v)}" data-ll="${esc(l)}" aria-pressed="${k === "solo" ? singleOnly : !!chLens && chLens.k === k && chLens.v === v}"`
+    : ` data-sp="lens" data-lk="${k}" data-lv="${esc(v)}" data-ll="${esc(l)}" aria-pressed="${!!spLens && spLens.k === k && spLens.v === v}"`;
   const num = (n, k) => `<span class="spv${n ? " " + k : ""}">${n || "–"}</span>`, some = (l, n) => l.slice(0, n).join(", ") + (l.length > n ? ` 외 ${l.length - n}개` : "");
-  const press = "누르면 아래 표를 이 모델들로 거릅니다";
+  const press = home ? "누르면 캘린더·목록을 이 변화로 거릅니다" : "누르면 아래 표를 이 모델들로 거릅니다", hatchId = home ? "hsumhatch" : "sphatch";  // 무늬 id: 숨은 탭의 것을 쓰면 빈칸이 된다
   const stat = (n, label, t2, k, risk) => `<button type="button"${lens(k, "", label)}${tip(label, `${t2}\n${press}`)}><b${risk && n ? ` class="risk"` : ""}>${n}</b><span>${label}</span></button>`;
   const stats = `<div class="spstats">${stat(single.length, "대체 경로 없는 모델", `렛서 경로가 한 곳뿐인 모델 ${single.length}개`, "solo", true)}
     ${stat(none.length, "경로 기록 없음", `${some(none, 8)}\n공급로 표에 체크가 없는 모델입니다. 영상처럼 호출하지 않았거나 답에 경로 표시가 없었습니다`, "none")}
     ${fail.length ? `<button type="button" data-ptab="health"${tip("수집 실패", "지금 실패 중인 출처. 누르면 수집 상태")}><b class="risk">${fail.length}</b><span>수집 실패 →</span></button>` : `<div${tip("수집 실패", "지금 실패 중인 출처 없음")}><b>0</b><span>수집 실패</span></div>`}</div>`;
-  const why = g => `모델 ${count[g]}개${solo[g] ? `\n단독 ${solo[g]}: 렛서가 이 공급사로만 쓰는 모델` : ""}${on[g] ? `\n변화 ${on[g]}: 렛서가 이 공급사로 쓰는 모델의 최근 7일·앞으로 변화(확인 처리 전)` : ""}\n${press}`;
-  const rows = [...names.filter(g => !fold.includes(g)).map(g => ({k: "sup", v: g, l: g, n: count[g], solo: solo[g], on: on[g], fill: sumFill(g), t2: why(g)})),
+  const why = g => `모델 ${count[g]}개${solo[g] ? `\n단독 ${solo[g]}: 렛서가 이 공급사로만 쓰는 모델` : ""}${on[g] ? `\n변화 ${on[g]}: 렛서가 이 공급사로 쓰는 모델의 최근 7일·앞으로 변화(확인 처리 전)` : ""}${failCol[g] ? `\n수집 실패 ${failCol[g]}곳: 이 공급사 가격은 최신이 아닙니다` : ""}\n${press}`;
+  const rows = [...names.filter(g => !fold.includes(g)).map(g => ({k: "sup", v: g, l: g, n: count[g], solo: solo[g], on: on[g], fail: failCol[g], fill: sumFill(g), t2: why(g)})),
     ...(fold.length ? [{k: "sup", v: fold.join("\t"), l: `그 밖 ${fold.length}곳`, n: ids.filter(m => uses[m].some(g => fold.includes(g))).length, solo: fold.reduce((t, g) => t + (solo[g] || 0), 0), on: 0, fill: "var(--deemph)", t2: `${fold.map(g => `${g} 모델 ${count[g]}개${solo[g] ? " · 단독" : ""}`).join("\n")}\n${press}`}] : []),
-    ...(none.length ? [{k: "none", v: "", l: "경로 기록 없음", n: none.length, fill: "url(#sphatch)", t2: `렛서 경로를 아직 알아내지 못한 모델\n${press}`}] : [])];
+    ...(none.length ? [{k: "none", v: "", l: "경로 기록 없음", n: none.length, on: noneOn, fill: `url(#${hatchId})`, t2: `렛서 경로를 아직 알아내지 못한 모델${noneOn ? `\n변화 ${noneOn}: 렛서가 쓰는지 모르는 이 모델들의 최근 7일·앞으로 변화` : ""}\n${press}`}] : [])];
   const total = rows.reduce((t, r) => t + r.n, 0); let b = 0;
   const donut = rows.map(r => { const e = b + r.n / total * 2 * Math.PI, d = `<path d="${sumArc(38, 58, b, e)}" fill="${r.fill}"${tip(r.l, `모델 ${r.n}개`)}/>`; b = e; return d; }).join("");
-  const hatch = `<defs><pattern id="sphatch" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="5" height="5" fill="var(--track)"/><line x1="0" y1="0" x2="0" y2="5" stroke="var(--deemph)" stroke-width="2"/></pattern></defs>`;
-  const supRow = r => `<li><button type="button" class="sprow"${lens(r.k, r.v, r.l)}${tip(r.l, r.t2)} aria-label="${esc(`${r.l}: 모델 ${r.n}개, 단독 ${r.solo || 0}개, 변화 ${r.on || 0}건`)}"><i class="spsw${r.k === "none" ? " unk" : ""}"${r.k === "none" ? "" : ` style="background:${r.fill}"`}></i><span class="spnm">${esc(r.l)}</span><b>${r.n}</b>${num(r.solo, "solo")}${num(r.on, "on")}</button></li>`;
+  const hatch = `<defs><pattern id="${hatchId}" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="5" height="5" fill="var(--track)"/><line x1="0" y1="0" x2="0" y2="5" stroke="var(--deemph)" stroke-width="2"/></pattern></defs>`;
+  const supRow = r => `<li><button type="button" class="sprow"${lens(r.k, r.v, r.l)}${tip(r.l, r.t2)} aria-label="${esc(`${r.l}: 모델 ${r.n}개, 단독 ${r.solo || 0}개, 변화 ${r.on || 0}건${r.fail ? `, 수집 실패 ${r.fail}곳` : ""}`)}"><i class="spsw${r.k === "none" ? " unk" : ""}"${r.k === "none" ? "" : ` style="background:${r.fill}"`}></i><span class="spnm${r.fail ? " bad" : ""}">${esc(r.l)}${r.fail ? " !" : ""}</span><b>${r.n}</b>${num(r.solo, "solo")}${num(r.on, "on")}</button></li>`;
   // 회사별: 모델 많은 8곳 + 나머지 한 줄
   const cos = SP_GROUPS.map(([g, l]) => ({g, l, n: l.length, n2: l.filter(m => uses[m].length > 1).length, n1: l.filter(m => uses[m].length === 1).length, n0: l.filter(m => !uses[m].length).length})).sort((x, y) => y.n - x.n || x.g.localeCompare(y.g));
   const top = cos.length > 9 ? cos.slice(0, 8) : cos, rest = cos.slice(top.length), add = k => rest.reduce((t, r) => t + r[k], 0);
@@ -1862,7 +1897,8 @@ function spSummary(D){
   const coRows = top.map(r => coRow(r, r.g, r.g, makerIcon(r.g), `모델 ${r.n}개 · 렛서 경로 두 곳 이상 ${r.n2} · 한 곳 ${r.n1} · 기록 없음 ${r.n0}${r.n0 ? `\n기록 없음: ${some(r.l.filter(m => !uses[m].length), 6)}` : ""}`)).join("")
     + (rest.length ? coRow({n: add("n"), n2: add("n2"), n1: add("n1"), n0: add("n0")}, rest.map(r => r.g).join("\t"), `그 밖 ${rest.length}곳`, "", rest.map(r => `${r.g} 모델 ${r.n}개`).join("\n")) : "");
   const at = SUPPLY.routes.records.map(r => r.checked_at).filter(Boolean).sort().pop();
-  return `<div class="ch"><h2>렛서 공급 경로</h2>${at ? `<span>경로 마지막 확인 ${md(at)}</span>` : ""}</div>
+  const filtered = home && chLens ? `<span>${esc(chLens.l)}만 · 목록 ${listed().length}건</span><button type="button" class="mchip" data-cl="off">전체 보기</button>` : at ? `<span>경로 마지막 확인 ${md(at)}</span>` : "";
+  return `<div class="ch"><h2>렛서 공급 경로</h2>${filtered}</div>
     ${stats}
     <div class="spgrid"><div>
       <h3>공급사별 렛서 사용 모델</h3>
@@ -1872,21 +1908,29 @@ function spSummary(D){
       <h3>회사별 렛서 경로 수</h3>
       <ul class="splist spco"><li class="sphead" aria-hidden="true"><span class="spnh">회사</span><span>모델</span><span${tip("두 곳 이상", "렛서 경로가 두 곳 이상인 모델: 한 곳이 막혀도 옮길 곳이 있음")}>2곳+</span><span${tip("한 곳", "렛서 경로가 한 곳뿐인 모델: 대체 경로 없음")}>1곳</span><span${tip("기록 없음", "렛서 경로 기록이 없는 모델")}>없음</span></li>${coRows}</ul>
     </div></div>
-    <p class="spsnote">숫자는 모델 수(사용량 아님) · 행을 누르면 아래 표를 거름</p>`;
+    <p class="spsnote">숫자는 모델 수(사용량 아님) · 행을 누르면 ${home ? "캘린더·목록을" : "아래 표를"} 거름</p>`;
 }
+function renderHsum(){ const el = document.getElementById("hsum"), h = spSummary(spDoc() || {records: []}, true); el.innerHTML = h; el.hidden = !h; el.parentNode.classList.toggle("withsum", !!h); }
 function renderSupply(){
   const el = document.getElementById("sptable"), box = el.querySelector(".spscroll"), pos = box ? [box.scrollTop, box.scrollLeft] : null;
   const D = spDoc() || {records: []}, C = SUPPLY.cols, n = Object.keys(spEdits).length, count = SP_GROUPS.reduce((s, [, l]) => s + l.length, 0);
   const cell = (m, c, i) => { const use = spCell(D, m, c).length > 0, got = spGot(m, c).length > 0;
     return `<td${spEdits[spKey(m, c)] ? ` class="ed"` : ""}><input type="checkbox" class="spx${use && !got ? " warn" : ""}" data-sp="cell" data-m="${esc(m)}" data-c="${i}" aria-label="${esc(m + " · " + c[0])}"${use ? " checked" : ""}${got && SUPPLY.routes ? "" : " disabled"}></td>`; };
   const shown = SP_GROUPS.map(([g, l]) => [g, l.filter(m => modelHit(m, modelName(m)) && spLensHit(D, m))]).filter(([, l]) => l.length);
-  const sum = document.getElementById("spsum"), sumHtml = spSummary(D); sum.innerHTML = sumHtml; sum.hidden = !sumHtml;
+  const sum = document.getElementById("spsum"), sumHtml = spSummary(D, false); sum.innerHTML = sumHtml; sum.hidden = !sumHtml;
   const rows = shown.map(([g, l]) => `<tr class="spg"><th scope="rowgroup">${makerIcon(g)}${esc(g)}</th><td colspan="${C.length}"></td></tr>`
     + l.map(m => `<tr><th scope="row">${esc(m)}</th>${C.map((c, i) => cell(m, c, i)).join("")}</tr>`).join("")).join("") || `<tr><th scope="row" class="lempty" colspan="${C.length + 1}">검색한 모델이 없습니다.</th></tr>`;
   el.innerHTML = `<div class="ch"><h2>공급로 현황</h2><span>모델 ${modelQ || spLens ? `${shown.reduce((s, [, l]) => s + l.length, 0)}/` : ""}${count}개${spLens ? ` · ${esc(spLens.l)}만` : ""}</span>${spLens ? `<button type="button" class="mchip" data-sp="lens" data-lk="off">전체 보기</button>` : ""}</div>
     ${n || spMsg ? `<div class="spbar"><span>바꾼 칸 ${n}개 · 변화 화면에는 이 브라우저에서 바로 반영됩니다. 다른 사람에게 보이려면 커밋하세요</span><button type="button" data-sp="dl"${n ? "" : " disabled"}>파일 내려받기</button><button type="button" data-sp="copy"${n ? "" : " disabled"}>JSON 복사</button><a href="${SP_FILE}" target="_blank" rel="noopener">GitHub에서 파일 편집 →</a><button type="button" data-sp="reset"${n ? "" : " disabled"}>모두 되돌리기</button>${spMsg ? `<span class="msg" role="status">${esc(spMsg)}</span>` : ""}${spText && n ? `<textarea readonly aria-label="바꾼 경로 파일 JSON">${esc(spJson())}</textarea>` : ""}</div>` : ""}
     <div class="spscroll"><table class="sptab"><thead><tr><th>모델</th>${C.map(c => `<th>${esc(c[0])}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table></div>`;
   const nb = el.querySelector(".spscroll"); if (pos && nb) [nb.scrollTop, nb.scrollLeft] = pos;
+}
+function chAct(t, key){  // 변화 탭 카드의 행과 칸. '대체 경로 없는 모델' 칸은 위 스위치와 같고, 다시 누르거나 '전체 보기'를 누르면 풀린다
+  const k = t.dataset.cl, v = t.dataset.lv, was = chLens;
+  if (k === "solo") singleOnly = !singleOnly;
+  else chLens = k === "off" || (chLens && chLens.k === k && chLens.v === v) ? null : {k, v, l: t.dataset.ll};
+  tip.hidden = true; renderMeta(); renderCalendar(); refilter();
+  if (key) { const b = [...document.querySelectorAll("#hsum [data-cl]")].find(x => k === "off" ? x.dataset.cl === was.k && x.dataset.lv === was.v : x.dataset.cl === k && x.dataset.lv === v); if (b) b.focus({preventScroll: true}); }
 }
 function spAct(t, key){  // key: Space·Enter로 누른 것. 다시 그린 뒤 같은 상자(버튼)에 포커스를 둔다
   const a = t.dataset.sp, m = t.dataset.m, c = t.dataset.c == null ? null : SUPPLY.cols[+t.dataset.c], was = spLens;
@@ -1984,6 +2028,7 @@ document.addEventListener("click", ev => {
   const ag = ev.target.closest("[data-ack-again]"); if (ag) { acked[ag.dataset.ackAgain] = vgPrices(ag.dataset.ackAgain); ackedAt[ag.dataset.ackAgain] = new Date().toISOString(); ackSave(); renderCalendar(); renderQueue(); renderDetail(); return; }
   const lm = ev.target.closest("[data-lmode]"); if (lm) { letsurOnly = !letsurOnly; renderMeta(); renderCalendar(); refilter(); return; }
   const so = ev.target.closest("[data-single]"); if (so) { singleOnly = !singleOnly; renderMeta(); renderCalendar(); refilter(); return; }
+  const cl = ev.target.closest("[data-cl]"); if (cl) { chAct(cl, ev.detail === 0); return; }
   const r = ev.target.closest("[data-id]"); if (!r) return;
   const inList = !!r.closest("#queue");
   select(r.dataset.id, !inList || matchMedia("(max-width:940px)").matches);
