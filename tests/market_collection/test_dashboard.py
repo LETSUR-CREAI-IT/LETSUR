@@ -2036,9 +2036,14 @@ def test_a_card_can_be_marked_handled_and_comes_back_when_it_changes(tmp_path: P
     # 2026-11-06 박건 'B로 하는게 나을 것 같은데 ... 체크박스 크기가 체크여부에 따라 달라지는게 별로야': one 28px round check, no text,
     # the same size before and after; the real checkbox lies over it, invisible, so clicks, the keyboard and screen readers still use it
     assert '<label class="ack" title="${on ? "확인함" : "확인 처리"}"><input type="checkbox" class="spx" data-ack-id="${esc(id)}"' in page
-    assert ".ack{position:absolute;top:8px;right:8px;width:28px;height:28px;cursor:pointer}" in page and "확인 처리</label>" not in page
+    assert "확인 처리</label>" not in page  # the 28px target itself is checked below
     assert ".ack .spx{position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0;cursor:pointer}" in page
     assert ".ack .spx:checked+.ackic{border-color:var(--mint-ink);background:var(--mint-ink);color:var(--surface)}" in page
+    # the same day '원말고 모서리가 둥근 네모': a square with the --r-s corners rather than a circle
+    assert "border:1px solid var(--line-strong);border-radius:var(--r-s);background:var(--surface);color:var(--muted);pointer-events:none}" in page
+    # then '클릭되는 범위는 그대로 두되, 체크 표시가 시각적으로 보이는건 좀 줄여': the box shows at the chips' 20px in the middle of the 28px target
+    assert ".ack{position:absolute;top:8px;right:8px;display:flex;align-items:center;justify-content:center;width:28px;height:28px;cursor:pointer}" in page
+    assert "justify-content:center;width:20px;height:20px;border:1px solid var(--line-strong)" in page and ".ack .ackic svg{width:12px;height:12px}" in page
     assert "#queue .row .t>.qbadges{padding-right:40px}" in page
     # (2026-11-06: 수집 상태 folds its registry rows and opens a card from a model button, so only the detail still lists plain rows)
     assert "const plainRow = e => `<li>${queueRow(e)}</li>`;" in page and ".map(queueRow)" not in page and page.count(".map(plainRow)") == 1

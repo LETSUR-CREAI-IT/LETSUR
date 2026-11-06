@@ -229,11 +229,13 @@ a{color:var(--ink)}
 .rows{list-style:none;margin:0;padding:0}
 .rows li{position:relative}
 /* 확인 처리: 줄(버튼) 안에 넣을 수 없어 곁에 겹쳐 둔다. 2026-11-06 박건('B로 ... 체크박스 크기가 체크여부에 따라 달라지는게 별로야')부터
-   글자 없는 28px 원 하나라 체크 전후 크기가 같다. 체크 상자는 원 위에 투명하게 겹쳐 눌림·키보드·화면 읽기를 그대로 받고, 원은 모양만 그린다 */
-.ack{position:absolute;top:8px;right:8px;width:28px;height:28px;cursor:pointer}
+   글자 없는 칸 하나라 체크 전후 크기가 같다. 같은 날 '원말고 모서리가 둥근 네모'로 모서리 --r-s(6px)의 네모가 됐고, '앞의 칩들에 비해 너무
+   큰 것 같아 클릭되는 범위는 그대로 두되, 체크 표시가 시각적으로 보이는건 좀 줄여'로 보이는 칸은 칩 높이(20px), 눌리는 범위는 28px 그대로다.
+   체크 상자는 28px 범위 전체에 투명하게 겹쳐 눌림·키보드·화면 읽기를 그대로 받고, 칸은 그 가운데에 모양만 그린다 */
+.ack{position:absolute;top:8px;right:8px;display:flex;align-items:center;justify-content:center;width:28px;height:28px;cursor:pointer}
 .ack .spx{position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0;cursor:pointer}
-.ack .ackic{display:flex;align-items:center;justify-content:center;width:100%;height:100%;border:1px solid var(--line-strong);border-radius:50%;background:var(--surface);color:var(--muted);pointer-events:none}
-.ack .ackic svg{width:14px;height:14px}
+.ack .ackic{display:flex;align-items:center;justify-content:center;width:20px;height:20px;border:1px solid var(--line-strong);border-radius:var(--r-s);background:var(--surface);color:var(--muted);pointer-events:none}
+.ack .ackic svg{width:12px;height:12px}
 .ack:hover .ackic{border-color:var(--ink);color:var(--ink)}
 .ack .spx:checked+.ackic{border-color:var(--mint-ink);background:var(--mint-ink);color:var(--surface)}  /* --mint 위 흰 체크는 3:1이 안 돼 --mint-ink */
 .ack .spx:focus-visible+.ackic{outline:2px solid var(--mint-ink);outline-offset:2px}
