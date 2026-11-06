@@ -106,7 +106,7 @@ docs/external-signals.md           실행 방법, 출력 칸, 출처, 한계
 .github/workflows/market-collection.yml   GitHub Actions 예약·수동 실행. 수집·이미지 비교 보고서를 XZ artifact로 보관
 ```
 
-현재 workflow 설정은 UTC `17 0 * * *`이며 한국 시간으로 **매일 09:17**이다. 예약 동작에는 기본 브랜치 반영이 필요하며, GitHub가 시작을 늦추거나 예약을 누락할 수 있다. 이 변경의 실제 예약 firing은 아직 확인하지 않았다. Actions에서 수동 실행과 결과 다운로드도 가능하다. 2026-10-09 변경 내용은 [수집 일정 변경 기록](docs/collection-schedule-changelog.md)에 있다.
+현재 workflow 설정은 UTC `17 17 * * *`이며 한국 시간으로 **매일 02:17**이다(2026-11-06에 09:17에서 당김: 09:17 예약이 실제로는 14~16시에 시작해서 아침 화면이 전날 오후 자료였다). 예약 동작에는 기본 브랜치 반영이 필요하며, GitHub가 시작을 늦추거나 예약을 누락할 수 있다. 02:17 예약의 실제 시작 시각은 아직 확인하지 않았다. Actions에서 수동 실행과 결과 다운로드도 가능하다. 2026-10-09·2026-11-06 변경 내용은 [수집 일정 변경 기록](docs/collection-schedule-changelog.md)에 있다.
 
 입력은 공개 출처 registry, 출력은 CSV·manifest·원문과 GPT Image 2.5 두 모델의 비교 보고서가 들어 있는 `market-collection.tar.xz`다. 수집 직후 `image_reviews`가 validated run을 읽어 보고서를 만들며, 별도 API key나 유료 모델 호출은 하지 않는다. Artifact 보관 설정은 90일이다. PR #4의 feature와 `develop` 수동 run 및 artifact 검사는 성공했다. cron firing은 별도 상태라 **NOT_RUN**으로 남는다. 보고서 형식과 판정 범위는 [비교 보고서 자동화](docs/image-docs-automation.md)를 참고한다.
 
