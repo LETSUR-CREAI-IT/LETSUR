@@ -77,8 +77,12 @@ def test_streamed_guide_exhausted_stays_failed(tmp_path, monkeypatch):
     assert rows(replayed / 'sources.csv')[0]['fetched_at_utc'] == data['source']['fetched_at_utc']
 
 
-def test_initial_http_error_never_retries(tmp_path, monkeypatch):
-    _, data, calls, sleeps = collect(tmp_path, monkeypatch, [(SHELL, 503)])
+def test_initial_http_error_is_asked_again_only_when_transient(tmp_path, monkeypatch):
+    # 2026-11-06: a 503 is transient (asked twice more after 5 s and 15 s); a 404 is not and fails at once as before
+    _, data, calls, sleeps = collect(tmp_path, monkeypatch, [(SHELL, 503)] * 3)
+    assert len(calls) == 3 and sleeps == [5, 15]
+    assert data['source']['fetch_status'] == 'http_error' and len(data['fetch_attempts']) == 3
+    _, data, calls, sleeps = collect(tmp_path / 'gone', monkeypatch, [(SHELL, 404)])
     assert len(calls) == 1 and sleeps == []
     assert data['source']['fetch_status'] == 'http_error'
     assert 'fetch_attempts' not in data
@@ -86,11 +90,11 @@ def test_initial_http_error_never_retries(tmp_path, monkeypatch):
 
 @pytest.mark.parametrize('response', [(b'unavailable', 503), (SHELL, 503), socket.timeout('retry timed out')])
 def test_failed_retry_never_falls_back_to_shell(tmp_path, monkeypatch, response):
-    run, data, calls, sleeps = collect(tmp_path, monkeypatch, [(SHELL, 200), response])
+    run, data, calls, sleeps = collect(tmp_path, monkeypatch, [(SHELL, 200), response, response])
     source = data['source']
-    assert len(calls) == 2 and sleeps == [1]
+    assert len(calls) == 3 and sleeps == [1, 15]  # 2026-11-06: the transient retry failure is asked once more
     assert source['fetch_status'] in {'error', 'http_error'}
-    assert len(data['fetch_attempts']) == 2
+    assert len(data['fetch_attempts']) == 3
     assert rows(run / 'conditions.csv') == []
     if isinstance(response, Exception):
         assert source['raw_path'] == source['raw_sha256'] == source['body_bytes'] == ''

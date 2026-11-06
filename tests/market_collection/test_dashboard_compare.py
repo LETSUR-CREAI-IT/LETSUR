@@ -8,6 +8,7 @@ import re
 from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 
@@ -51,8 +52,9 @@ def _run(root: Path, model: str, openrouter: list | None, vercel: list | str | N
     specs = [spec for spec in source_specs() if bodies.get(spec.source_key) is not None]
     listing = {key: {"data": {"id": model_id, "endpoints": bodies[key]}} for key, model_id in zip(KEYS[model], IDS[model])}
     _, adapters = core.registry()
-    return core.live(root, specs=specs, adapters=adapters, fetcher=lambda spec: (json.dumps(listing[spec.source_key]).encode(), spec.url,
-                                                                                    500 if bodies[spec.source_key] == "fail" else 200))
+    with patch("time.sleep"):  # 2026-11-06: an HTTP 500 is asked twice more after 5 s and 15 s; the test does not wait for them
+        return core.live(root, specs=specs, adapters=adapters, fetcher=lambda spec: (json.dumps(listing[spec.source_key]).encode(), spec.url,
+                                                                                        500 if bodies[spec.source_key] == "fail" else 200))
 
 
 def _run_models(root: Path, lists: dict) -> Path:

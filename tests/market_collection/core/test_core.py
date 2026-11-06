@@ -39,8 +39,9 @@ def rows(path):
         return list(csv.DictReader(stream))
 
 
-def test_live_partial_repeated_replay_history_and_tamper(tmp_path):
+def test_live_partial_repeated_replay_history_and_tamper(tmp_path, monkeypatch):
     calls = []
+    monkeypatch.setattr("time.sleep", lambda _: None)
 
     def fetcher(spec):
         calls.append(spec.source_key)
@@ -52,7 +53,7 @@ def test_live_partial_repeated_replay_history_and_tamper(tmp_path):
     first = core.live(tmp_path, **kwargs)
     second = core.live(tmp_path, **kwargs)
     assert first != second and first.exists() and second.exists()
-    assert calls == ["sample", "other", "sample", "other"]
+    assert calls == ["sample", "other", "other", "other"] * 2  # 2026-11-06: a timeout is asked twice more before it stays failed
     sources = rows(first / "sources.csv")
     assert [row["fetch_status"] for row in sources] == ["ok", "error"]
     assert "timed out" in sources[1]["error"]

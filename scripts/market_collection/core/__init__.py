@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import csv
 import hashlib
+import http.client
 import importlib
 import json
 import re
@@ -22,7 +23,15 @@ from typing import Callable
 MAX_BODY_BYTES = 4 * 1024 * 1024
 TIMEOUT_SECONDS = 20
 MAX_REDIRECTS = 2
-SOURCE_FIELDS = ("run_id", "source_id", "source_key", "model_id", "route", "requested_url", "effective_url", "fetched_at_utc", "http_status", "fetch_status", "parse_status", "raw_path", "raw_sha256", "body_bytes", "error")
+# A transient failure (HTTP 408, 429 or 5xx, or a network error such as a timeout) is asked again after these waits, within the
+# same three attempts as the BytePlus and fal shells (2026-11-06 박건: '요청이 많아 거절되는 http429에 대해서는 수집 단계에서 바로
+# 다시 요청해서 받게 해야하는거아니야?'). All retries of one run share TRANSIENT_BUDGET_SECONDS, so a wide outage cannot stretch
+# the daily run; once it is spent a transient failure is recorded at once, as before.
+TRANSIENT_STATUSES = frozenset({408, 429, *range(500, 600)})
+TRANSIENT_ERRORS = (OSError, http.client.HTTPException)  # timeouts, refused or reset connections, TLS and DNS errors, broken HTTP
+TRANSIENT_WAITS = (5, 15)  # seconds before the second and the third attempt
+TRANSIENT_BUDGET_SECONDS = 180
+SOURCE_FIELDS =("run_id", "source_id", "source_key", "model_id", "route", "requested_url", "effective_url", "fetched_at_utc", "http_status", "fetch_status", "parse_status", "raw_path", "raw_sha256", "body_bytes", "error")
 PRICE_FIELDS = ("observation_id", "run_id", "source_id", "observed_at_utc", "modality", "model_id", "provider_model_id", "model_version", "route", "upstream_provider", "task", "billing_item", "price_kind", "amount", "currency", "unit", "normalized_amount", "normalized_unit", "condition_set_id", "effective_from", "effective_until", "locator", "evidence_status", "unknown_reason")
 CONDITION_FIELDS = ("condition_set_id", "condition_key", "operator", "value", "unit", "status", "source_id", "locator")
 ADAPTER_PRICE_FIELDS = ("provider_model_id", "model_version", "upstream_provider", "task", "billing_item", "price_kind", "amount", "currency", "unit", "normalized_amount", "normalized_unit", "condition_set_id", "effective_from", "effective_until", "locator", "evidence_status", "unknown_reason")
@@ -284,6 +293,11 @@ def live(output_root: Path | str, disable_source: tuple[str, ...] = (), *, specs
     prices: list[dict] = []
     conditions: list[dict] = []
     manifest = {"schema_version": 1, "mode": "live", "run_id": run_id, "created_at_utc": _utc_now(), "disabled_sources": sorted(set(disable_source)), "sources": []}
+    # One request per address in a run (2026-11-06): 430 sources use 348 addresses, and 32 Azure retail sources share 3 that were
+    # asked back to back until the API answered 429. A later source with the same address takes the accepted response (and its
+    # fetch time) of the first; each source still keeps its own raw file and row.
+    shared: dict[str, tuple[bytes, str, int, str]] = {}
+    retry_spent = 0.0  # seconds this run spent on retries, waits included
     for index, spec in enumerate(specs, 1):
         if spec.source_key in disable_source:
             continue
@@ -291,19 +305,30 @@ def live(output_root: Path | str, disable_source: tuple[str, ...] = (), *, specs
         source = _record_source(run_id, source_id, spec, _utc_now())
         sources.append(source)
         fetch_attempts: list[dict] = []
+        wait = 0
         try:
             for attempt in range(1, 4):
                 if attempt > 1:
-                    time.sleep(attempt - 1)
+                    retry_started = time.monotonic()
+                    time.sleep(wait)
                     # A failed retry must never select the earlier shell as current.
                     source.update(_record_source(run_id, source_id, spec, _utc_now()))
+                reused = shared.get(spec.url)
                 try:
-                    body, effective_url, status = fetcher(spec)
+                    body, effective_url, status = reused[:3] if reused else fetcher(spec)
                 except Exception as exc:
-                    if fetch_attempts:
+                    if attempt > 1:
+                        retry_spent += time.monotonic() - retry_started
+                    transient = isinstance(exc, TRANSIENT_ERRORS) and attempt < 3 and retry_spent < TRANSIENT_BUDGET_SECONDS
+                    if fetch_attempts or transient:
                         source.update(fetched_at_utc=_utc_now(), fetch_status="error", error=f"{type(exc).__name__}: {exc}")
                         fetch_attempts.append(_fetch_attempt(source))
-                    raise
+                    if not transient:
+                        raise
+                    wait = TRANSIENT_WAITS[attempt - 1]
+                    continue
+                if attempt > 1:
+                    retry_spent += time.monotonic() - retry_started
                 if not isinstance(body, bytes) or len(body) > MAX_BODY_BYTES:
                     raise CollectionError("invalid or oversized response body")
                 if _validate_url(effective_url) != _validate_url(spec.url):
@@ -318,13 +343,19 @@ def live(output_root: Path | str, disable_source: tuple[str, ...] = (), *, specs
                     from scripts.market_collection.collectors.image25_supplement import is_unrendered_fal_guide
                     source["fetched_at_utc"] = _utc_now()
                     incomplete = status == 200 and is_unrendered_fal_guide(body)
-                if incomplete or fetch_attempts:
+                if reused:
+                    source["fetched_at_utc"] = reused[3]
+                transient = status in TRANSIENT_STATUSES and attempt < 3 and retry_spent < TRANSIENT_BUDGET_SECONDS
+                if incomplete or transient or fetch_attempts:
                     attempt_path = f"raw/{source_id}-attempt{attempt:02d}.bin"
                     _write_bytes(run_dir / attempt_path, body)
                     source.update(raw_path=attempt_path, raw_sha256=hashlib.sha256(body).hexdigest())
                     fetch_attempts.append(_fetch_attempt(source))
-                if not incomplete or attempt == 3:
+                if not (incomplete or transient) or attempt == 3:
                     break
+                wait = attempt if incomplete else TRANSIENT_WAITS[attempt - 1]  # shells keep their 1 s and 2 s
+            if status == 200 and not incomplete:
+                shared.setdefault(spec.url, (body, effective_url, status, source["fetched_at_utc"]))
             raw_path = f"raw/{source_id}.bin"
             _write_bytes(run_dir / raw_path, body)
             source.update(raw_path=raw_path, raw_sha256=hashlib.sha256(body).hexdigest())

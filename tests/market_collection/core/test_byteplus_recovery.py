@@ -107,21 +107,22 @@ def test_non_byteplus_template_does_not_retry(tmp_path, monkeypatch, spec):
 
 @pytest.mark.parametrize("response", [socket.timeout("retry timed out"), (b"unavailable", 503), (SHELL, 503)])
 def test_retry_failure_retains_earlier_response_and_never_falls_back(tmp_path, monkeypatch, response):
-    run, calls, sleeps = collect(tmp_path, monkeypatch, [(SHELL, 200), response])
+    # 2026-11-06: a timeout or 503 on the retry is transient, so it is asked once more after 15 s before it stays failed
+    run, calls, sleeps = collect(tmp_path, monkeypatch, [(SHELL, 200), response, response])
     source = rows(run / "sources.csv")[0]
-    assert len(calls) == 2 and sleeps == [1]
+    assert len(calls) == 3 and sleeps == [1, 15]
     assert source["fetch_status"] in {"error", "http_error"}
     assert rows(run / "price_observations.csv") == []
     attempts = manifest(run)["sources"][0]["fetch_attempts"]
-    assert len(attempts) == 2
+    assert len(attempts) == 3
     assert (run / attempts[0]["raw_path"]).read_bytes() == SHELL
     if isinstance(response, Exception):
         assert "retry timed out" in source["error"]
         assert source["raw_path"] == source["raw_sha256"] == source["body_bytes"] == ""
-        assert "retry timed out" in attempts[1]["error"]
+        assert "retry timed out" in attempts[1]["error"] and "retry timed out" in attempts[2]["error"]
     else:
         assert source["http_status"] == "503"
-        assert (run / attempts[1]["raw_path"]).read_bytes() == response[0]
+        assert (run / attempts[1]["raw_path"]).read_bytes() == (run / attempts[2]["raw_path"]).read_bytes() == response[0]
     core._validated_run(run)
     replayed = core.replay(run, tmp_path, adapters={"video": video})
     assert rows(replayed / "price_observations.csv") == []
@@ -129,12 +130,12 @@ def test_retry_failure_retains_earlier_response_and_never_falls_back(tmp_path, m
 
 def test_non_byteplus_http_error_preserves_valid_partial_manifest(tmp_path, monkeypatch):
     spec = replace(SPEC, source_key="not_byteplus", url="https://example.test/prices")
-    run, calls, sleeps = collect(tmp_path, monkeypatch, [(b"unavailable", 503)], spec)
+    run, calls, sleeps = collect(tmp_path, monkeypatch, [(b"unavailable", 503)] * 3, spec)
     source = rows(run / "sources.csv")[0]
     assert source["fetch_status"] == "http_error" and source["parse_status"] == "not_run"
     assert source["http_status"] == "503"
     assert (run / source["raw_path"]).read_bytes() == b"unavailable"
-    assert len(calls) == 1 and sleeps == []
+    assert len(calls) == 3 and sleeps == [5, 15]  # 2026-11-06: a 503 is transient and asked twice more before it stays failed
     assert manifest(run)["sources"][0]["source"] == source
     core._validated_run(run)
 
