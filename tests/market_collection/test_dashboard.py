@@ -1851,6 +1851,13 @@ def test_health_rows_say_what_they_are_about_and_label_each_fact(tmp_path: Path)
     assert '"가격표에서 빠지면 출처 빼기"' in page and '"이 경로 가격은 모으지 않아 할 일 없음"' in page
 
 
+def test_the_header_logo_is_a_little_smaller(tmp_path: Path) -> None:
+    """2026-11-06 박건 '좌측 상단 LETSUR 아이콘 크기 좀만 줄이자': 19px → 16px high, its size hints to match (the image is 186×24)."""
+    _write(tmp_path, [])
+    page = _build(tmp_path)[1]
+    assert ".top img{height:16px;width:auto;display:block}" in page and 'alt="LETSUR" width="124" height="16">' in page
+
+
 def test_the_supply_tab_opens_with_a_summary_of_letsur_routes(tmp_path: Path) -> None:
     """2026-11-05 박건 '이런식의 뷰는 못 만드는거야? 저런걸 공급로 현황 탭에 넣으면 좋을 것 같긴 한데' (박기범's draft PR #40 keeps the same card on the
     home screen): three states, suppliers as a donut and a list, companies as a list. It counts models, never usage, from the same columns
