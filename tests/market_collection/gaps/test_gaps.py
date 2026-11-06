@@ -50,8 +50,8 @@ def test_existing_specs_preserved_in_each_modality_order():
     for modality in ('llm', 'image', 'video'):
         assert [asdict(s) for s in source_specs() if s.modality == modality and s.parser not in NEW_PARSERS and not s.parser.endswith("endpoints_llm") and not s.source_key.startswith("image25_") and s.parser not in ("openai_audio_pricing", "azure_llm_retail", "azure_models_retail", "google_model_pricing", "zai_pricing") and s.parser not in MAKER_DIRECT and s not in LATER and s.parser not in gateway_image_endpoints.PARSERS] == [s for s in old if s['modality'] == modality]
     assert len(NEW) == 5
-    assert len(source_specs()) == 430
-    assert len({(s.model_id, s.route) for s in source_specs()}) == 363
+    assert len(source_specs()) == 429  # 2026-11-06: Vercel's gemini-3.1-flash-image-preview listing left
+    assert len({(s.model_id, s.route) for s in source_specs()}) == 362
     assert not any(s.route == 'openrouter' and s.modality == 'video' for s in source_specs())
 
 

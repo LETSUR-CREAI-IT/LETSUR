@@ -187,8 +187,9 @@ def test_gateway_api_sources_cover_every_listed_model_of_both_gateways():
     # 2026-10-30: qwen3.5-plus gets an OpenRouter id and gemini-3-flash-preview a Vercel id -> OpenRouter 106, Vercel 105, 219;
     # GPT Image 2.5 Flare and Sunburst join the image models with a Vercel id only -> Vercel 107, 221
     # 2026-11-03: 6 models LETSUR's calls failed on join the more models, 3 with an OpenRouter id and 5 with a Vercel id -> OpenRouter 109, Vercel 112, 229
-    assert len(specs) == 229 and {parser: len(found) for parser, found in by_parser.items()} == {
-        "atom": 3, "rss": 1, "openrouter_endpoints": 109, "vercel_endpoints": 112, "azure_retirements": 1, "openai_deprecations": 1,
+    # 2026-11-06: Vercel dropped gemini-3.1-flash-image-preview (404 model_not_found) -> Vercel 111, 228
+    assert len(specs) == 228 and {parser: len(found) for parser, found in by_parser.items()} == {
+        "atom": 3, "rss": 1, "openrouter_endpoints": 109, "vercel_endpoints": 111, "azure_retirements": 1, "openai_deprecations": 1,
         "anthropic_deprecations": 1, "google_deprecations": 1}
     assert [spec.source_key for spec in specs[-4:]] == ["azure_retirement_schedule", "openai_deprecations", "anthropic_deprecations",
                                                         "google_deprecations"]

@@ -26,8 +26,8 @@ def test_registry_is_additive_and_fixture_hashes_match():
     specs=source_specs()
     old=without_retired(json.loads((F/'registry111.json').read_text()))
     assert [asdict(s) for s in specs[:len(old)]] == old
-    assert len(specs)==430 and len({s.model_id for s in specs})==132
-    assert len({(s.model_id,s.route) for s in specs})==363  # 2026-10-30: Vercel endpoint listings of GPT Image 2.5; 2026-11-03: 10 of the models left out on 10/29
+    assert len(specs)==429 and len({s.model_id for s in specs})==132  # 2026-11-06: Vercel's gemini-3.1-flash-image-preview listing left
+    assert len({(s.model_id,s.route) for s in specs})==362  # 2026-10-30: Vercel endpoint listings of GPT Image 2.5; 2026-11-03: 10 of the models left out on 10/29
     for p in json.loads((F/'provenance.json').read_text()):
         assert hashlib.sha256((F/(p['variant']+'.json')).read_bytes()).hexdigest()==p['raw_sha256']
 
