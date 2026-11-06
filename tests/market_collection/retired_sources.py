@@ -9,7 +9,9 @@ RETIRED_SOURCE_KEYS = frozenset({"google_veo_3_1_standard", "google_veo_3_1_fast
                                  "fal_ideogram_45_t2i", "fal_ideogram_45_edit", "fal_ideogram_45_precise_edit",
                                  # Azure catalog pages of the GPT models, replaced by the retail-meter specs azure_retail_<model> (2026-10-28).
                                  "azure_gpt_6_astra", "azure_gpt_6_sol", "azure_gpt_6_1_sol", "azure_gpt_6_luna",
-                                 "azure_gpt_5_6_sol", "azure_gpt_5_6_terra", "azure_gpt_5_6_luna"})
+                                 "azure_gpt_5_6_sol", "azure_gpt_5_6_terra", "azure_gpt_5_6_luna",
+                                 # Vercel dropped the Gemini 3.1 Flash Image preview: 404 model_not_found from 2026-11-06 (models.py).
+                                 "vercel_image_endpoints_gemini_3_1_flash_image_preview"})
 
 # Google moved the Gemini API pricing page off ai.google.dev (2026-11-03).
 MOVED_SOURCE_URLS = {"google_gemini_38_flash": "https://aistudio.google.com/docs/pricing.md"}

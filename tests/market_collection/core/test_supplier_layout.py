@@ -12,7 +12,7 @@ from scripts.market_collection.models import MODEL_MODALITIES
 
 def test_registered_model_modality_and_fixed_suppliers():
     specs, adapters = registry()
-    assert len(specs) == 430
+    assert len(specs) == 429  # 2026-11-06: Vercel's gemini-3.1-flash-image-preview listing left
     assert len(MODEL_MODALITIES) == 132
     assert all(MODEL_MODALITIES[spec.model_id] == spec.modality for spec in specs)
     assert {spec.route for spec in specs} == set(SUPPLIERS)

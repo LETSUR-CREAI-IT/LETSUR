@@ -205,12 +205,15 @@ ZAI_DIRECT_MODELS = (
 # - gemini-3-pro-image-preview and gemini-3.1-flash-image-preview are ids no other source covers: Google's pricing page has no
 #   section for them and their model pages are gone. Vercel's endpoint API still answers for gemini-3-pro-image-preview (as an
 #   alias of gemini-3-pro-image), but its model list does not carry it, so it has no Vercel id.
+# - gemini-3.1-flash-image-preview has had no Vercel id since 2026-11-06: Vercel's endpoint API answers 404 model_not_found for it
+#   and its model list carries only gemini-3.1-flash-image (Nano Banana 2). OpenRouter still lists the preview. LETSUR's routes for
+#   it are Google direct and OpenRouter.
 # - gpt-image-2 is not in OpenRouter's /api/v1/models. Its prices are in OpenRouter's images catalog (GATEWAY_IMAGE_CATALOG_MODELS);
 #   the record that /api/v1/models/openai/gpt-image-2/endpoints still returns lists prompt 8e-06 and input_cache_read 2e-06, which
 #   are the catalog's image-input rates (its text input is 5e-06), so that record is not read.
 GATEWAY_IMAGE_MODELS = (
     ("gemini-3-pro-image-preview", "Gemini 3 Pro Image Preview", "google/gemini-3-pro-image-preview", None),
-    ("gemini-3.1-flash-image-preview", "Gemini 3.1 Flash Image Preview", "google/gemini-3.1-flash-image-preview", "google/gemini-3.1-flash-image-preview"),
+    ("gemini-3.1-flash-image-preview", "Gemini 3.1 Flash Image Preview", "google/gemini-3.1-flash-image-preview", None),
     ("gemini-nano-banana-2.1", "Gemini Nano Banana 2.1", "google/gemini-nano-banana-2.1", "google/gemini-nano-banana-2.1"),
     ("gemini-2.5-flash-image", "Gemini 2.5 Flash Image", "google/gemini-2.5-flash-image", "google/gemini-2.5-flash-image"),
     ("gemini-3-pro-image", "Gemini 3 Pro Image", "google/gemini-3-pro-image", "google/gemini-3-pro-image"),

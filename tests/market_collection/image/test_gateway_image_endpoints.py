@@ -18,9 +18,14 @@ from scripts.market_collection.models import GATEWAY_IMAGE_CATALOG_MODELS, GATEW
 from scripts.market_collection.signals.parsers import openrouter_endpoint_signals, vercel_endpoint_signals
 
 F = Path(__file__).parent / "fixtures" / "gateway_image_endpoints"
-SPECS = {s.source_key: s for s in source_specs() if s.parser in G.PARSERS}
+REGISTERED = {s.source_key: s for s in source_specs() if s.parser in G.PARSERS}
 OR_FLASH, OR_PRO_PREVIEW = "openrouter_image_endpoints_gemini_3_1_flash_image", "openrouter_image_endpoints_gemini_3_pro_image_preview"
 VC_FLASH_PREVIEW, VC_GPT = "vercel_image_endpoints_gemini_3_1_flash_image_preview", "vercel_image_endpoints_gpt_image_2"
+# Vercel dropped the Gemini 3.1 Flash Image preview on 2026-11-06 (404 model_not_found), so its source left the registry. Its saved
+# listing still tests the Vercel parser and the runs below, so the spec stays here as it was registered.
+SPECS = REGISTERED | {VC_FLASH_PREVIEW: core.SourceSpec(VC_FLASH_PREVIEW, "image", "gemini-3.1-flash-image-preview", "vercel_ai_gateway", "text-to-image",
+                                                         "https://ai-gateway.vercel.sh/v1/models/google/gemini-3.1-flash-image-preview/endpoints",
+                                                         "vercel_image_endpoints")}
 CATALOG_GPT = "openrouter_image_catalog_endpoints_gpt_image_2"
 FIXTURES = {OR_FLASH: "openrouter-gemini-3.1-flash-image.json", OR_PRO_PREVIEW: "openrouter-gemini-3-pro-image-preview.json",
             VC_FLASH_PREVIEW: "vercel-gemini-3.1-flash-image-preview.json", VC_GPT: "vercel-gpt-image-2.json",
@@ -36,7 +41,8 @@ def body(key):
 
 def parse(key, content=None):
     spec = SPECS[key]
-    return core._validate_parse(spec, "saved-s1", *parse_source(spec, body(key) if content is None else content, "saved-s1"))
+    read = parse_source if key in REGISTERED else G.parse_source  # the adapter reads registered sources only; the retired listing goes to the collector
+    return core._validate_parse(spec, "saved-s1", *read(spec, body(key) if content is None else content, "saved-s1"))
 
 
 def changed(key, mutate):
@@ -55,28 +61,29 @@ def endpoint_rows(key, content=None):
     return rows
 
 
-def test_nine_models_register_seventeen_sources_after_the_existing_ones():
-    assert len(SPECS) == 17 and {s.model_id for s in SPECS.values()} == {row[0] for row in GATEWAY_IMAGE_MODELS}
-    assert all(s.modality == "image" and s.task == "text-to-image" and MODEL_MODALITIES[s.model_id] == "image" for s in SPECS.values())
-    assert {(s.route, s.parser) for s in SPECS.values()} == {("openrouter", "openrouter_image_endpoints"), ("vercel_ai_gateway", "vercel_image_endpoints"),
-                                                             ("openrouter", "openrouter_image_catalog_endpoints")}
+def test_nine_models_register_sixteen_sources_after_the_existing_ones():
+    assert len(REGISTERED) == 16 and {s.model_id for s in REGISTERED.values()} == {row[0] for row in GATEWAY_IMAGE_MODELS}
+    assert all(s.modality == "image" and s.task == "text-to-image" and MODEL_MODALITIES[s.model_id] == "image" for s in REGISTERED.values())
+    assert {(s.route, s.parser) for s in REGISTERED.values()} == {("openrouter", "openrouter_image_endpoints"), ("vercel_ai_gateway", "vercel_image_endpoints"),
+                                                                  ("openrouter", "openrouter_image_catalog_endpoints")}
     registered = sources.source_specs()
-    first = registered.index(next(iter(SPECS.values())))
-    assert registered[first:first + 17] == list(SPECS.values())  # one block, in this order
+    first = registered.index(next(iter(REGISTERED.values())))
+    assert registered[first:first + 16] == list(REGISTERED.values())  # one block, in this order
     routes = {}
-    for s in SPECS.values():
+    for s in REGISTERED.values():
         routes.setdefault(s.model_id, set()).add((s.route, s.parser))
-    # gemini-3-pro-image-preview: Vercel's model list does not carry it. gpt-image-2: OpenRouter's /api/v1/models does not, its images catalog does.
-    assert routes["gemini-3-pro-image-preview"] == {("openrouter", "openrouter_image_endpoints")}
+    # gemini-3-pro-image-preview: Vercel's model list does not carry it, nor gemini-3.1-flash-image-preview since 2026-11-06.
+    # gpt-image-2: OpenRouter's /api/v1/models does not, its images catalog does.
+    assert routes["gemini-3-pro-image-preview"] == routes["gemini-3.1-flash-image-preview"] == {("openrouter", "openrouter_image_endpoints")}
+    assert VC_FLASH_PREVIEW not in REGISTERED
     assert routes["gpt-image-2"] == {("vercel_ai_gateway", "vercel_image_endpoints"), ("openrouter", "openrouter_image_catalog_endpoints")}
     # GPT Image 2.5 (2026-10-30): the endpoint listings beside the model pages, which give one headline price per gateway.
     assert routes["gpt-image-2.5-flare"] == routes["gpt-image-2.5-sunburst"] == routes["gpt-image-2"]
     assert all(routes[m] == {("openrouter", "openrouter_image_endpoints"), ("vercel_ai_gateway", "vercel_image_endpoints")}
-               for m in routes if m.startswith("gemini") and m != "gemini-3-pro-image-preview")
-    urls = {s.source_key: s.url for s in SPECS.values()}
+               for m in routes if m.startswith("gemini") and m not in ("gemini-3-pro-image-preview", "gemini-3.1-flash-image-preview"))
+    urls = {s.source_key: s.url for s in REGISTERED.values()}
     for key, url in (
         (OR_PRO_PREVIEW, "https://openrouter.ai/api/v1/models/google/gemini-3-pro-image-preview/endpoints"),
-        (VC_FLASH_PREVIEW, "https://ai-gateway.vercel.sh/v1/models/google/gemini-3.1-flash-image-preview/endpoints"),
         ("openrouter_image_endpoints_gemini_nano_banana_2_1", "https://openrouter.ai/api/v1/models/google/gemini-nano-banana-2.1/endpoints"),
         (VC_GPT, "https://ai-gateway.vercel.sh/v1/models/openai/gpt-image-2/endpoints"),
         (CATALOG_GPT, "https://openrouter.ai/api/v1/images/models/openai/gpt-image-2/endpoints"),
@@ -89,7 +96,7 @@ def test_nine_models_register_seventeen_sources_after_the_existing_ones():
 
 
 def test_gateway_listings_are_api_role_channel_sources():
-    for spec in SPECS.values():
+    for spec in REGISTERED.values():
         info = Catalog().price_source(asdict(spec))
         assert (info["role"], info["authority"], info["publisher"]) == ("api", "channel_official", "OpenRouter" if spec.route == "openrouter" else "Vercel")
     with pytest.raises(ValueError):  # image sources need a source ID at parse time
@@ -252,21 +259,23 @@ def test_a_listing_with_no_endpoints_is_read_as_no_rows():
 
 def test_runs_over_the_fixtures_are_read_into_baselines_and_image_output_events(tmp_path):
     _, adapters = core.registry()
-    specs = [SPECS[key] for key in FIXTURES]
+    specs = [SPECS[key] for key in FIXTURES if key in REGISTERED]  # 2026-11-06: the retired Vercel preview listing is no longer collected
     cheaper = changed(CATALOG_GPT, lambda doc: doc["endpoints"][0]["pricing"][2].update(cost_usd=2.4e-05))
     runs = []
     for catalog_body in (body(CATALOG_GPT), cheaper):
-        bodies = {SPECS[key].url: body(key) for key in FIXTURES} | {SPECS[CATALOG_GPT].url: catalog_body}
+        bodies = {SPECS[key].url: body(key) for key in FIXTURES if key in REGISTERED} | {SPECS[CATALOG_GPT].url: catalog_body}
         runs.append(core.live(tmp_path, specs=specs, adapters=adapters, fetcher=lambda spec, bodies=bodies: (bodies[spec.url], spec.url, 200)))
     sources = core._read_csv(runs[0] / "sources.csv", core.SOURCE_FIELDS)
-    assert {(s["source_key"], s["fetch_status"], s["parse_status"], s["error"]) for s in sources} == {(key, "ok", "ok", "") for key in FIXTURES}
+    assert {(s["source_key"], s["fetch_status"], s["parse_status"], s["error"]) for s in sources} == {(key, "ok", "ok", "") for key in FIXTURES if key in REGISTERED}
     builder = Builder(Catalog())
     builder.build([evidence.load_run(run) for run in runs])
     # Since 2026-10-30 an unstated serving precision does not keep a closed model's gateway row out, nor do Vercel's untiered
     # tier and region (decisions 10, 18; evidence.blocking_unknowns): the endpoint rows of these closed models form series too.
     # Only OpenRouter's cache writes, whose TTL is not stated, stay out.
     assert {(n["reason"], n["route"], n["billing_item"]) for n in builder.state["not_comparable"]} == {("condition_unknown", "openrouter", "cache_write")}
-    assert len(builder.state["baselines"]) == 26  # the catalog's input, image_input and image_output (the last then moved) and 23 endpoint rows
+    # the catalog's input, image_input and image_output (the last then moved) and 20 endpoint rows (23 until 2026-11-06, when the retired
+    # Vercel preview listing's input, output and cache_read left the run)
+    assert len(builder.state["baselines"]) == 23
     assert [(e["model_id"], e["route"], e["billing_item"], e["before"]["amount"], e["after"]["amount"], e["change"]["pct"])
             for e in builder.state["events"].values()] == [("gpt-image-2", "openrouter", "image_output", "30", "24", "-20.00")]
 
