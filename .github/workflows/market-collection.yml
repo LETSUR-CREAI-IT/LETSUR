@@ -2,7 +2,9 @@ name: Market collection
 
 on:
   schedule:
-    - cron: '17 0 * * *'
+    # 02:17 KST (2026-11-06 박건 '새벽으로 당겨줘'): GitHub started the 09:17 slot at 14:14-15:57 KST in the 10 runs to 11/5,
+    # so the morning page showed the previous afternoon's data. See docs/collection-schedule-changelog.md.
+    - cron: '17 17 * * *'
   workflow_dispatch:
 
 permissions:

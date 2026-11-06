@@ -365,7 +365,7 @@ def test_the_workflow_publishes_no_page_without_events_and_keeps_failing_loudly(
     assert "      - name: Build dashboard\n        id: dashboard\n        if: always()\n" in workflow
     assert "if: always() && steps.events.outcome == 'success' && steps.dashboard.outcome == 'success' && hashFiles('dashboard-site/index.html') != ''" in workflow
     assert "dashboard: ${{ steps.pages.outcome }}" in workflow and "if: always() && needs.collect.outputs.dashboard == 'success'" in workflow
-    assert "cron: '17 0 * * *'" in workflow
+    assert "cron: '17 17 * * *'" in workflow  # 02:17 KST since 2026-11-06 (박건 '새벽으로 당겨줘'); 09:17 started at 14-16 h
     # steps after a failure still run, and nothing masks the failure: the job stays failed, which is what sends the mail
     steps = {name: workflow.split(f"      - name: {name}\n", 1)[1].split("      - name:", 1)[0] for name in ("Build events", "Build dashboard")}
     assert not any("continue-on-error" in step for step in steps.values()) and "      - name: Upload collection data\n        if: always()\n" in workflow

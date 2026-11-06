@@ -81,7 +81,7 @@ CLI는 `runs/` 아래 모든 회차를 먼저 검증하고, 새 결과를 `<root
 
 ## GitHub Actions에서 하루 한 번 수집
 
-[Market collection workflow](../.github/workflows/market-collection.yml)는 매일 한국 시간 **09:17**에 전체 수집과 GPT Image 2.5 비교 보고서 생성을 실행하도록 설정되어 있다. UTC cron은 `17 0 * * *`이다. GitHub 사정에 따라 시작이 늦어지거나 예약 실행이 누락될 수 있으므로 시각과 회차는 Actions 기록으로 확인한다. 실제 예약 firing은 아직 확인하지 않았다. 변경 경위는 [수집 일정 변경 기록](collection-schedule-changelog.md)에 있다.
+[Market collection workflow](../.github/workflows/market-collection.yml)는 매일 한국 시간 **02:17**에 전체 수집과 GPT Image 2.5 비교 보고서 생성을 실행하도록 설정되어 있다. UTC cron은 `17 17 * * *`이다(2026-11-06에 09:17에서 당김). GitHub 사정에 따라 시작이 늦어지거나 예약 실행이 누락될 수 있으므로 시각과 회차는 Actions 기록으로 확인한다. 09:17 예약은 10/27~11/5 10번 모두 14:14~15:57 KST에 시작했고, 02:17 예약의 실제 시작 시각은 아직 확인하지 않았다. 변경 경위는 [수집 일정 변경 기록](collection-schedule-changelog.md)에 있다.
 
 97개 사양 baseline과 Actions workflow는 [PR #1](https://github.com/LETSUR-CREAI-IT/LETSUR/pull/1)로 `develop`에 병합됐다. 과거 run의 97 source/415 price/1,192 condition 및 PR #2의 113 source/454 price/1,905 condition 원격 artifact 검증은 각 시점의 기록이다. PR #4에서 현재 125-source registry와 비교 보고서가 merge됐으며 feature/`develop` manual run과 artifact 검사가 성공했다. 최신 receipt는 아래에 정리한다.
 
