@@ -2033,6 +2033,13 @@ def test_a_card_can_be_marked_handled_and_comes_back_when_it_changes(tmp_path: P
     assert "try { localStorage.setItem(ACK_KEY, JSON.stringify(acked)); localStorage.setItem(ACK_AT_KEY, JSON.stringify(ackedAt)); } catch (err) {}" in page
     # the check sits beside the row's button, never inside it, and only rows of the change list have it
     assert "return `<li>${vg ? vgRow(x) : queueRow(x)}${ackBox(vg ? x.vg : x.id)}</li>`;" in page
+    # 2026-11-06 박건 'B로 하는게 나을 것 같은데 ... 체크박스 크기가 체크여부에 따라 달라지는게 별로야': one 28px round check, no text,
+    # the same size before and after; the real checkbox lies over it, invisible, so clicks, the keyboard and screen readers still use it
+    assert '<label class="ack" title="${on ? "확인함" : "확인 처리"}"><input type="checkbox" class="spx" data-ack-id="${esc(id)}"' in page
+    assert ".ack{position:absolute;top:8px;right:8px;width:28px;height:28px;cursor:pointer}" in page and "확인 처리</label>" not in page
+    assert ".ack .spx{position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0;cursor:pointer}" in page
+    assert ".ack .spx:checked+.ackic{border-color:var(--mint-ink);background:var(--mint-ink);color:var(--surface)}" in page
+    assert "#queue .row .t>.qbadges{padding-right:40px}" in page
     # (2026-11-06: 수집 상태 folds its registry rows and opens a card from a model button, so only the detail still lists plain rows)
     assert "const plainRow = e => `<li>${queueRow(e)}</li>`;" in page and ".map(queueRow)" not in page and page.count(".map(plainRow)") == 1
     # the filter sits beside 지난 변화 보기 and shows every handled card, past or not

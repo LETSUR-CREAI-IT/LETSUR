@@ -228,10 +228,16 @@ a{color:var(--ink)}
 .i-review{background:var(--mint)} .i-verify{background:var(--amber)} .i-watch{background:var(--slate)} .i-record{background:var(--line-strong)} .i-pending{background:transparent;border:1.5px dashed var(--muted)}
 .rows{list-style:none;margin:0;padding:0}
 .rows li{position:relative}
-.ack{position:absolute;top:12px;right:8px;display:inline-flex;align-items:center;gap:4px;min-height:20px;font-size:12px;color:var(--muted);cursor:pointer}  /* 확인 처리: 줄(버튼) 안에 넣을 수 없어 곁에 겹쳐 둔다 */
-.ack:hover{color:var(--ink)}
-.row[aria-current="true"]+.ack{color:var(--body)}  /* 선택한 줄의 민트 바탕 위: 다크에서 --muted는 4.5:1이 안 된다 */
-#queue .row .t>.qbadges{padding-right:76px}  /* 첫 줄의 칩이 확인 처리와 겹치지 않게 */
+/* 확인 처리: 줄(버튼) 안에 넣을 수 없어 곁에 겹쳐 둔다. 2026-11-06 박건('B로 ... 체크박스 크기가 체크여부에 따라 달라지는게 별로야')부터
+   글자 없는 28px 원 하나라 체크 전후 크기가 같다. 체크 상자는 원 위에 투명하게 겹쳐 눌림·키보드·화면 읽기를 그대로 받고, 원은 모양만 그린다 */
+.ack{position:absolute;top:8px;right:8px;width:28px;height:28px;cursor:pointer}
+.ack .spx{position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0;cursor:pointer}
+.ack .ackic{display:flex;align-items:center;justify-content:center;width:100%;height:100%;border:1px solid var(--line-strong);border-radius:50%;background:var(--surface);color:var(--muted);pointer-events:none}
+.ack .ackic svg{width:14px;height:14px}
+.ack:hover .ackic{border-color:var(--ink);color:var(--ink)}
+.ack .spx:checked+.ackic{border-color:var(--mint-ink);background:var(--mint-ink);color:var(--surface)}  /* --mint 위 흰 체크는 3:1이 안 돼 --mint-ink */
+.ack .spx:focus-visible+.ackic{outline:2px solid var(--mint-ink);outline-offset:2px}
+#queue .row .t>.qbadges{padding-right:40px}  /* 첫 줄의 칩이 확인 처리 원과 겹치지 않게 */
 .row{display:grid;grid-template-columns:58px minmax(0,1fr);gap:12px;width:100%;padding:12px 8px;border:0;border-radius:var(--r-m);background:none;text-align:left;cursor:pointer}
 .row:hover{background:var(--surface-2)}
 .row[aria-current="true"]{background:var(--mint-soft)}
@@ -1629,7 +1635,8 @@ function vgRow(b){ const {l, e0, up, down, res, from, to} = vgSum(b.vg), was = a
       <span class="t"><span class="qbadges"><span class="chip">변동 잦음</span>${appChip(e0)}${was && !isAcked(e0) ? BACK_CHIP : ackChip(b.vg)}${was && !isAcked(e0) ? "" : drift ? `<span class="chip verify" title="체크한 뒤 10% 이상 달라진 줄 수입니다. 묶음을 열면 어떤 줄인지 보입니다">체크 뒤 ${drift}줄 변동</span>` : ""}</span><b><span class="subj">${logoOf(e0.mid)}${esc(e0.m)}</span> 가격이 자주 바뀜 · 인상 ${up} · 인하 ${down}${res ? ` · 되돌아감 ${res}` : ""}</b><span><span class="chip t7">가격 변경 묶음</span>${esc(e0.ch)}</span></span>
     </button>`; }
 const plainRow = e => `<li>${queueRow(e)}</li>`;  // 상세 안의 줄에는 확인 처리를 두지 않는다(수집 상태는 2026-11-06부터 묶은 줄이라 쓰지 않는다)
-const ackBox = id => { const l = ackMembers(id); return `<label class="ack"><input type="checkbox" class="spx" data-ack-id="${esc(id)}" aria-label="${esc(l[0].m)} 확인 처리"${isAcked(l[0]) ? " checked" : ""}>확인 처리</label>`; };
+const ACK_ICON = `<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+const ackBox = id => { const l = ackMembers(id), on = isAcked(l[0]); return `<label class="ack" title="${on ? "확인함" : "확인 처리"}"><input type="checkbox" class="spx" data-ack-id="${esc(id)}" aria-label="${esc(l[0].m)} 확인 처리"${on ? " checked" : ""}><span class="ackic">${ACK_ICON}</span></label>`; };
 const rowOf = x => { const vg = x.vg && !x.id; return `<li>${vg ? vgRow(x) : queueRow(x)}${ackBox(vg ? x.vg : x.id)}</li>`; };
 function renderQueue(){
   const list = listed();
