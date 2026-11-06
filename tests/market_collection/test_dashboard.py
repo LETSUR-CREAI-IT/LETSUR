@@ -1816,6 +1816,13 @@ def test_the_health_screen_has_item_tabs_and_folds_repeated_rows(tmp_path: Path)
     assert 'groupBy(H.recent, x => [x.ch, x.error, x.now].join("\\t"))' in page
     assert 'e => [EV7[e.id], EV7SUB[e.id] || "", e.eff || e.effShort || "", e.ch].join("\\t")).sort((a, b) => cmpU(a[0], b[0]))' in page
     assert ">원문 열기</a>" in page and 'class="hsec"' not in page and 'table(["출처"' not in page
+    # 2026-11-06 박건 '각 탭의 이런 메시지 없애줘': the rows come right under the tabs, with no explanatory sentence above them
+    assert '${panel("now", fail)}${panel("past", recent)}${panel("recheck", recheck)}${panel("registry", regRows)}' in page
+    assert 'class="hmore"' not in page and "최근 수집에서 받지 못했거나 읽지 못한 출처입니다" not in page
+    # 2026-11-06 박건 '저 위에 문구를 점으로 나누지 않고, 상세페이지처럼 칩으로': the summary and the failing count are big chips
+    assert '<div class="hsum"><span class="chip big">마지막 수집 ' in page and '<span class="chip big ok">정상 ${H.ok}곳</span>' in page
+    assert '<div class="hcount"><span class="chip big${todo ? " bad" : ""}">수집기 확인 필요 ${todo}곳</span>' in page
+    assert ".hsum{display:flex;flex-wrap:wrap;gap:4px;margin:8px 0 0}" in page and "정상 ${H.ok}곳 · 실패" not in page
 
 
 def test_health_rows_say_what_they_are_about_and_label_each_fact(tmp_path: Path) -> None:
