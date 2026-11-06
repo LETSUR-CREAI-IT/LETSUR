@@ -1656,6 +1656,7 @@ def health(root: Path, report: dict | None, state: dict | None, today: str) -> d
     bad = lambda row: row.get("fetch_status") != "ok" or row.get("parse_status") != "ok"
     day = lambda run_id: day_of(run_time(run_id)) if run_time(run_id) else ""
     out["total"], out["ok"] = len(rows), sum(1 for row in rows if not bad(row))
+    start = (date.fromisoformat(today) - timedelta(days=HEALTH_DAYS)).isoformat()
     for row in rows:
         if not bad(row):
             continue
@@ -1665,12 +1666,13 @@ def health(root: Path, report: dict | None, state: dict | None, today: str) -> d
                 break
             streak.append(earlier)
         status = row.get("http_status") if row.get("fetch_status") == "http_error" else ""  # a source that answered with an error page has no error text
+        # 2026-11-06 (박건: 줄 정보의 가독성): failed runs of the last HEALTH_DAYS days, this one included, so a source that keeps failing shows
+        window = sorted(run_id for run_id in set(failed.get(row["source_key"], {})) | {run.name} if day(run_id) >= start)
         out["failing"].append({"key": row["source_key"], "model": row.get("model_id") or "", "route": row.get("route") or "", "ch": route_label(row.get("route") or ""),
                                "error": row.get("error") or (f"HTTP {status}" if status else f"{row.get('fetch_status')} / {row.get('parse_status')}"),
                                "since": day(streak[-1]), "sinceRun": streak[-1], "runs": len(streak), **classify(row, len(streak)),
-                               "url": row.get("requested_url") or ""})
+                               "url": row.get("requested_url") or "", "failRuns": len(window), "failDays": sorted({day(run_id) for run_id in window})})
     out["failing"].sort(key=lambda item: not item["fix"])  # stable: the sources to act on first
-    start = (date.fromisoformat(today) - timedelta(days=HEALTH_DAYS)).isoformat()
     for key, by_run in failed.items():
         if key in newest and bad(newest[key]):
             continue
@@ -1681,12 +1683,20 @@ def health(root: Path, report: dict | None, state: dict | None, today: str) -> d
                                   "error": last.get("error") or "", "first": day(recent[0]), "last": day(recent[-1]),
                                   "runs": len(recent), "now": "ok" if key in newest else "gone"})
     out["recent"].sort(key=lambda item: (item["last"], item["key"]), reverse=True)
-    recheck: dict[str, int] = {}
+    # 2026-11-06: the day the unchecked prices were recorded (the run of the later observation) and which price items they are
+    recheck: dict[str, dict] = {}
     for gap in gaps:
         if gap.get("kind") == "parser_fingerprint_mismatch" and gap.get("source_key"):
-            recheck[str(gap["source_key"])] = recheck.get(str(gap["source_key"]), 0) + 1
+            item = recheck.setdefault(str(gap["source_key"]), {"n": 0, "days": set(), "items": []})
+            item["n"] += 1
+            if day(gap.get("after_observation_id") or ""):
+                item["days"].add(day(gap["after_observation_id"]))
+            label = MEASURE_KO.get(str(gap.get("billing_item") or ""), str(gap.get("billing_item") or ""))
+            if label and label not in item["items"]:
+                item["items"].append(label)
     out["recheck"] = [{"key": key, "model": (newest.get(key) or {}).get("model_id") or "", "ch": route_label((newest.get(key) or {}).get("route") or ""),
-                       "n": n} for key, n in sorted(recheck.items(), key=lambda pair: (-pair[1], pair[0]))]
+                       "n": item["n"], "since": min(item["days"], default=""), "items": item["items"]}
+                      for key, item in sorted(recheck.items(), key=lambda pair: (-pair[1]["n"], pair[0]))]
     return out
 
 

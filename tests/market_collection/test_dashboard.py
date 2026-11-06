@@ -1723,16 +1723,19 @@ def test_health_reads_the_newest_run_and_the_failure_gaps(tmp_path: Path) -> Non
     gaps = [{"kind": "source_failed", "source_key": "down", "run_id": runs[1], "model_id": "m1", "route": "openrouter", "error": "x", "active": True},
             {"kind": "source_failed", "source_key": "back", "run_id": runs[0], "model_id": "m2", "route": "openrouter", "error": "old", "active": True},
             {"kind": "source_failed", "source_key": "gone", "run_id": runs[1], "model_id": "m3", "route": "fal", "error": "gone err", "active": True},
-            {"kind": "parser_fingerprint_mismatch", "source_key": "fine"}, {"kind": "parser_fingerprint_mismatch", "source_key": "fine"}]
+            {"kind": "parser_fingerprint_mismatch", "source_key": "fine", "billing_item": "cache_read", "after_observation_id": f"{runs[2]}-s001-p0001"},
+            {"kind": "parser_fingerprint_mismatch", "source_key": "fine", "billing_item": "input", "after_observation_id": f"{runs[1]}-s001-p0002"}]
     health = build.health(tmp_path / "root", {"status": "ok", "processed_runs": runs}, {"processed_runs": runs, "gaps": gaps}, "2026-10-22")
     assert (health["total"], health["ok"], health["run"]["id"]) == (3, 2, runs[-1])
+    # 2026-11-06: failRuns and failDays count the source's failed runs of the last 14 days, this one included
     assert health["failing"] == [{"key": "down", "model": "m1", "route": "openrouter", "ch": build.route_label("openrouter"),
                                   "error": "ValueError: layout changed", "since": "2026-10-21", "sinceRun": runs[1], "runs": 2,
                                   "kind": "format", "label": "수집기 수정 필요", "action": "원문을 열어 바뀐 형식에 맞게 수집기를 고치세요", "fix": True,
-                                  "url": "https://x.example/a"}]
+                                  "url": "https://x.example/a", "failRuns": 2, "failDays": ["2026-10-21", "2026-10-22"]}]
     assert [(r["key"], r["now"], r["first"], r["last"], r["runs"]) for r in health["recent"]] == [
         ("gone", "gone", "2026-10-21", "2026-10-21", 1), ("back", "ok", "2026-10-20", "2026-10-20", 1)]
-    assert health["recheck"] == [{"key": "fine", "model": "m0", "ch": build.route_label("openrouter"), "n": 2}]
+    # 2026-11-06: the day the earliest unchecked price was recorded and which items, in Korean, in the order first seen
+    assert health["recheck"] == [{"key": "fine", "model": "m0", "ch": build.route_label("openrouter"), "n": 2, "since": "2026-10-21", "items": ["캐시 읽기", "입력"]}]
 
 
 def test_health_judges_each_failure_and_puts_the_ones_to_act_on_first(tmp_path: Path) -> None:
@@ -1789,8 +1792,56 @@ def test_template_has_the_health_screen(tmp_path: Path) -> None:
     assert 'if (h === "health") startHealth = true;' in page and "function renderHealth(){" in page
     assert re.search(r"^const HEALTH = \{.*\};$", page, re.M) and 'body:not([data-page="health"]) .hpage{display:none}' in page
     assert '<button type="button" data-ptab="health">수집 상태 보기 →</button>' in page
-    # 2026-10-29: the failing table has a 판단 column and the section says how many sources need action
-    assert 'table(["출처", "판단", "오류", "실패"]' in page and "수집기 확인 필요 ${todo}곳" in page
+    # 2026-10-29: each failing source carries its 판단 and the section says how many sources need action
+    assert '`<span class="chip ${tone(x)}">${esc(x.label)}</span>' in page and "수집기 확인 필요 ${todo}곳" in page
+
+
+def test_the_health_screen_has_item_tabs_and_folds_repeated_rows(tmp_path: Path) -> None:
+    """2026-11-06 박건 '수집 상태 탭의 가독성이 조금 안좋아보이는데 ... 세부 알림 항목별로 페이지 내부에 탭을 만드는 건 어때?', then '숫자 칸 탭으로'
+    and '숫자를 강조하지 말고, 뭐에 대한 항목인지를 강조해줘': four tabs named by what they hold (name 14·650 ink, count 12 under it,
+    two by two on a phone), the failing sources open first and the 수집 상태 shortcuts outside the header open them again, rows instead of
+    tables (the long source address only behind '원문 열기'), and repeated rows folded into one: past failures with the same route, error
+    and state whatever the day (the daily Azure price API failures become one row), registry candidates with the same change, date and
+    route (11/5 data: 30 → 7 and 23 → 11 rows). The browser check covers the groups, the model filter, the links, the dark theme and 375px."""
+    _write(tmp_path, [])
+    page = _build(tmp_path)[1]
+    assert 'let healthTab = "now";' in page and '<div class="htabs" role="tablist" aria-label="수집 상태 항목">' in page
+    for name in ('"지금 실패 중인 출처"', "`최근 ${H.days || 14}일 실패 기록`", '"원문 재검증 필요"', '"등록부 점검 후보"'):
+        assert name in page
+    assert ".htabs b{font-size:14px;font-weight:650;line-height:1.3;color:var(--ink)}" in page
+    assert ".htabs span{font-size:12px;line-height:1.3;color:var(--body)}" in page
+    assert "@media (max-width:640px){.htabs{grid-template-columns:repeat(2,minmax(0,1fr))}}" in page
+    assert 'if (pg.dataset.ptab === "health" && !pg.closest(".ptabs")) healthTab = "now";' in page
+    assert 'const ht = ev.target.closest("[data-htab]"); if (ht) { healthShow(ht.dataset.htab); return; }' in page
+    assert 'groupBy(H.recent, x => [x.ch, x.error, x.now].join("\\t"))' in page
+    assert 'e => [EV7[e.id], EV7SUB[e.id] || "", e.eff || e.effShort || "", e.ch].join("\\t")).sort((a, b) => cmpU(a[0], b[0]))' in page
+    assert ">원문 열기</a>" in page and 'class="hsec"' not in page and 'table(["출처"' not in page
+
+
+def test_health_rows_say_what_they_are_about_and_label_each_fact(tmp_path: Path) -> None:
+    """2026-11-06 박건 '분류한 것 자체는 좋은데 각 페이지에서 보여주는 각 항목에서 주는 정보의 가독성이 좀 떨어지는 것 같아', then '전부 만들면 되는데':
+    each row puts what it is about in bold (model, supplier or change) and its facts under named labels (원인·기간·할 일·실패·모델·가격·내용·
+    등록부), with the date on the left where the date matters and the route id and source key in small text at the bottom. The error
+    text gets a plain reading beside it (the 판단 stays core.failures'), a failing source says how often it failed in the last 14 days,
+    the unchecked prices say which items and since when, grouped by route and day, and a registry candidate says what to do in the
+    registry from whether the page collects that route's price now (SUPPLY.models). The browser check covers the five readings of
+    the 11/5 errors, the Azure row, the registry actions (20 to remove after the date, 3 with nothing to do), 375px and the dark theme."""
+    _write(tmp_path, [])
+    page = _build(tmp_path)[1]
+    assert "const dl = pairs => `<dl class=\"hdl\">${pairs.filter(p => p[1]).map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join(\"\")}</dl>`;" in page
+    assert ".hdl{display:grid;grid-template-columns:48px minmax(0,1fr);gap:4px 8px;margin:8px 0 0;font-size:13px;line-height:1.5}" in page
+    assert '.hrows>li.hd{grid-template-columns:72px minmax(0,1fr) auto;grid-template-areas:"d m s"}' in page
+    assert ".htitle b{font-size:14px;font-weight:650;color:var(--ink)}" in page
+    # plain readings of the error text, the raw text kept beside it
+    assert 'const causeOf = err => !err ? "오류 내용이 남지 않음" : (CAUSES.find(([re]) => re.test(err)) || [null, "원인 미상"])[1];' in page
+    for reading in ("요청이 많아 잠시 거절됨", "가격표 주소가 다른 사이트로 옮겨짐", "응답 시간 초과", "페이지에서 항목을 찾지 못함", "페이지 형식이 바뀌어 값을 읽지 못함"):
+        assert f'"{reading}"' in page
+    for label in ('["원인", cause(x.error)]', '["할 일", esc(x.action)]', '["등록부", regTodo(l)]', '["모델", names(l)]'):
+        assert label in page
+    assert "최근 ${H.days || 14}일 동안 ${x.failRuns}번째" in page
+    assert 'groupBy(H.recheck, x => [x.ch, x.since || ""].join("\\t"))' in page and "기록 ${l.reduce((a, y) => a + y.n, 0)}건" in page
+    assert "const kept = e => ((SUPPLY.models || {})[e.mid] || []).includes(e.rt);" in page
+    assert '"가격표에서 빠지면 출처 빼기"' in page and '"이 경로 가격은 모으지 않아 할 일 없음"' in page
 
 
 def test_the_supply_tab_opens_with_a_summary_of_letsur_routes(tmp_path: Path) -> None:
@@ -1975,7 +2026,8 @@ def test_a_card_can_be_marked_handled_and_comes_back_when_it_changes(tmp_path: P
     assert "try { localStorage.setItem(ACK_KEY, JSON.stringify(acked)); localStorage.setItem(ACK_AT_KEY, JSON.stringify(ackedAt)); } catch (err) {}" in page
     # the check sits beside the row's button, never inside it, and only rows of the change list have it
     assert "return `<li>${vg ? vgRow(x) : queueRow(x)}${ackBox(vg ? x.vg : x.id)}</li>`;" in page
-    assert "const plainRow = e => `<li>${queueRow(e)}</li>`;" in page and ".map(queueRow)" not in page and page.count(".map(plainRow)") == 2
+    # (2026-11-06: 수집 상태 folds its registry rows and opens a card from a model button, so only the detail still lists plain rows)
+    assert "const plainRow = e => `<li>${queueRow(e)}</li>`;" in page and ".map(queueRow)" not in page and page.count(".map(plainRow)") == 1
     # the filter sits beside 지난 변화 보기 and shows every handled card, past or not
     assert '<button type="button" class="mchip" data-past>지난 변화 보기</button><button type="button" class="mchip" data-ack>확인한 알림 <small></small><small class="ackn"></small></button>' in page
     assert 'if (ab) { ackOnly = !ackOnly; refilter(); return; }' in page and "showPast = !showPast; ackOnly = false;" in page
